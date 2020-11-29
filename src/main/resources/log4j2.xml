@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE xml>
+<Configuration status="WARN"
+               packages="com.github.gpluscb.smashggnotifications.util" monitorInterval="60">
+    <Properties>
+        <Property name="logPath">src/main/resources/logs</Property>
+        <Property name="rollingFileName">ChallongeBot</Property>
+    </Properties>
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout
+                    pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+        </Console>
+        <RollingFile name="LogFile"
+                     fileName="${logPath}/${rollingFileName}.log"
+                     filePattern="${logPath}/${rollingFileName}_%d{yyyy-MM-dd}.log.gz"
+                     ignoreExceptions="false">
+            <PatternLayout
+                    pattern="%d{yyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1"
+                                           modulate="true"/>
+            </Policies>
+            <DefaultRolloverStrategy max="30"/>
+        </RollingFile>
+        <Discord name="DiscordLog" ChannelID="698933099370905651">
+            <PatternLayout
+                    pattern="%d{yyy-MM-dd HH:mm:ss.SSS}%n%level%n[%t]%n%logger{36}%n%msg"/>
+        </Discord>
+    </Appenders>
+    <Loggers>
+        <Root level="INFO">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="LogFile"/>
+            <AppenderRef level="ERROR" ref="DiscordLog"/>
+        </Root>
+        <Logger name="com.github.gpluscb.smashggnotifications" level="TRACE"
+                additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="LogFile"/>
+            <AppenderRef level="WARN" ref="DiscordLog"/>
+        </Logger>
+    </Loggers>
+</Configuration>

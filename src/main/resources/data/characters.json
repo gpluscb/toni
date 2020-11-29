@@ -1,0 +1,1406 @@
+[
+  {
+    "type": "character",
+    "id": 0,
+    "name": "Banjo & Kazooie",
+    "alt_names": [
+      "banjo & kazooie",
+      "banjo and kazooie",
+      "banjo kazooie",
+      "banjo-kazooie",
+      "banjo"
+    ],
+    "emote_id": 736674479102754817,
+    "guild": 736625420467699763,
+    "games": [
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 1,
+    "name": "Bowser",
+    "alt_names": [
+      "bowser"
+    ],
+    "emote_id": 736674479396356187,
+    "guild": 736625420467699763,
+    "games": [
+      "melee",
+      "brawl",
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 2,
+    "name": "Bayonetta",
+    "alt_names": [
+      "bayonetta",
+      "bayo"
+    ],
+    "emote_id": 736674479408939129,
+    "guild": 736625420467699763,
+    "games": [
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 3,
+    "name": "Byleth",
+    "alt_names": [
+      "byleth"
+    ],
+    "emote_id": 736674479513796749,
+    "guild": 736625420467699763,
+    "games": [
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 4,
+    "name": "Bowser Jr.",
+    "alt_names": [
+      "bowser jr.",
+      "bowser jr"
+    ],
+    "emote_id": 736674479589163028,
+    "guild": 736625420467699763,
+    "games": [
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 5,
+    "name": "Diddy Kong",
+    "alt_names": [
+      "diddy kong",
+      "diddy"
+    ],
+    "emote_id": 736674479685632051,
+    "guild": 736625420467699763,
+    "games": [
+      "brawl",
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 6,
+    "name": "Captain Falcon",
+    "alt_names": [
+      "captain falcon",
+      "falcon"
+    ],
+    "emote_id": 736674479748415598,
+    "guild": 736625420467699763,
+    "games": [
+      "64",
+      "melee",
+      "brawl",
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 7,
+    "name": "Corrin",
+    "alt_names": [
+      "corrin",
+      "corn"
+    ],
+    "emote_id": 736674479815786536,
+    "guild": 736625420467699763,
+    "games": [
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 8,
+    "name": "Cloud",
+    "alt_names": [
+      "cloud"
+    ],
+    "emote_id": 736674479844884661,
+    "guild": 736625420467699763,
+    "games": [
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 9,
+    "name": "Dr. Mario",
+    "alt_names": [
+      "dr. mario",
+      "dr mario",
+      "doc"
+    ],
+    "emote_id": 736674479932965005,
+    "guild": 736625420467699763,
+    "games": [
+      "melee",
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 10,
+    "name": "King Dedede",
+    "alt_names": [
+      "king dedede",
+      "dedede",
+      "ddd",
+      "d3"
+    ],
+    "emote_id": 736674479970844703,
+    "guild": 736625420467699763,
+    "games": [
+      "brawl",
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 11,
+    "name": "Ganondorf",
+    "alt_names": [
+      "ganondorf",
+      "ganon",
+      "dorf"
+    ],
+    "emote_id": 736674480008724562,
+    "guild": 736625420467699763,
+    "games": [
+      "melee",
+      "brawl",
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 12,
+    "name": "Donkey Kong",
+    "alt_names": [
+      "donkey kong",
+      "dk"
+    ],
+    "emote_id": 736674480029565049,
+    "guild": 736625420467699763,
+    "games": [
+      "64",
+      "melee",
+      "brawl",
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 13,
+    "name": "Duck Hunt",
+    "alt_names": [
+      "duck hunt",
+      "duck hunt duo"
+    ],
+    "emote_id": 736674480054730873,
+    "guild": 736625420467699763,
+    "games": [
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 14,
+    "name": "Greninja",
+    "alt_names": [
+      "greninja"
+    ],
+    "emote_id": 736674480092610602,
+    "guild": 736625420467699763,
+    "games": [
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 15,
+    "name": "Falco",
+    "alt_names": [
+      "falco"
+    ],
+    "emote_id": 736674480125902940,
+    "guild": 736625420467699763,
+    "games": [
+      "melee",
+      "brawl",
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 16,
+    "name": "Fox",
+    "alt_names": [
+      "fox"
+    ],
+    "emote_id": 736674480176234526,
+    "guild": 736625420467699763,
+    "games": [
+      "64",
+      "melee",
+      "brawl",
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 17,
+    "name": "Mr. Game & Watch",
+    "alt_names": [
+      "mr. game & watch",
+      "mr. game and watch",
+      "mr game and watch",
+      "mr game & watch",
+      "g&w",
+      "g & w",
+      "game and watch",
+      "game & watch",
+      "game&watch"
+    ],
+    "emote_id": 736674480201400410,
+    "guild": 736625420467699763,
+    "games": [
+      "melee",
+      "brawl",
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 18,
+    "name": "Ice Climbers",
+    "alt_names": [
+      "ice climbers",
+      "ics"
+    ],
+    "emote_id": 736674480390406155,
+    "guild": 736625420467699763,
+    "games": [
+      "melee",
+      "brawl",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 19,
+    "name": "Hero",
+    "alt_names": [
+      "hero"
+    ],
+    "emote_id": 736674480537206904,
+    "guild": 736625420467699763,
+    "games": [
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 20,
+    "name": "Mario",
+    "alt_names": [
+      "mario"
+    ],
+    "emote_id": 736674480553852929,
+    "guild": 736625420467699763,
+    "games": [
+      "64",
+      "melee",
+      "brawl",
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 21,
+    "name": "Ike",
+    "alt_names": [
+      "ike"
+    ],
+    "emote_id": 736674480650453064,
+    "guild": 736625420467699763,
+    "games": [
+      "brawl",
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 22,
+    "name": "King K. Rool",
+    "alt_names": [
+      "king k. rool",
+      "king k rool",
+      "k rool",
+      "k-rool"
+    ],
+    "emote_id": 736674480700522617,
+    "guild": 736625420467699763,
+    "games": [
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 23,
+    "name": "Incineroar",
+    "alt_names": [
+      "incineroar",
+      "inciniroar"
+    ],
+    "emote_id": 736674480709173339,
+    "guild": 736625420467699763,
+    "games": [
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 24,
+    "name": "Inkling",
+    "alt_names": [
+      "inkling",
+      "squid",
+      "squidkid"
+    ],
+    "emote_id": 736674480717561887,
+    "guild": 736625420467699763,
+    "games": [
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 25,
+    "name": "Jigglypuff",
+    "alt_names": [
+      "jigglypuff",
+      "puff",
+      "jiggs",
+      "jigs"
+    ],
+    "emote_id": 736674480725950575,
+    "guild": 736625420467699763,
+    "games": [
+      "64",
+      "melee",
+      "brawl",
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 26,
+    "name": "Little Mac",
+    "alt_names": [
+      "little mac",
+      "lil mac",
+      "mac"
+    ],
+    "emote_id": 736674480755048529,
+    "guild": 736625420467699763,
+    "games": [
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "miis",
+    "characters": [
+      {
+        "type": "character",
+        "id": 27,
+        "name": "Mii Gunner",
+        "alt_names": [
+          "mii gunner",
+          "gunner",
+          "mii-gunner"
+        ],
+        "emote_id": 736674480759242783,
+        "guild": 736625420467699763,
+        "games": [
+          "4",
+          "ult"
+        ]
+      },
+      {
+        "type": "character",
+        "id": 28,
+        "name": "Mii Brawler",
+        "alt_names": [
+          "mii brawler",
+          "brawler",
+          "mii-brawler"
+        ],
+        "emote_id": 736674481120084041,
+        "guild": 736625420467699763,
+        "games": [
+          "4",
+          "ult"
+        ]
+      },
+      {
+        "type": "character",
+        "id": 29,
+        "name": "Mii Swordfighter",
+        "alt_names": [
+          "mii swordfighter",
+          "mii swordsfighter",
+          "swordfighter",
+          "swordsfighter",
+          "mii-swordfighter",
+          "mii-swordsfighter"
+        ],
+        "emote_id": 736674481317085189,
+        "guild": 736625420467699763,
+        "games": [
+          "4",
+          "ult"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "character",
+    "id": 30,
+    "name": "Luigi",
+    "alt_names": [
+      "luigi",
+      "loogie",
+      "lugi",
+      "weegee"
+    ],
+    "emote_id": 736674480793059349,
+    "guild": 736625420467699763,
+    "games": [
+      "64",
+      "melee",
+      "brawl",
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 31,
+    "name": "Joker",
+    "alt_names": [
+      "joker"
+    ],
+    "emote_id": 736674480876683335,
+    "guild": 736625420467699763,
+    "games": [
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 32,
+    "name": "Kirby",
+    "alt_names": [
+      "kirby",
+      "kirbs"
+    ],
+    "emote_id": 736674480897654864,
+    "guild": 736625420467699763,
+    "games": [
+      "64",
+      "melee",
+      "brawl",
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 33,
+    "name": "Pac Man",
+    "alt_names": [
+      "pac man",
+      "pac-man",
+      "pac"
+    ],
+    "emote_id": 736674480897916981,
+    "guild": 736625420467699763,
+    "games": [
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 34,
+    "name": "Isabelle",
+    "alt_names": [
+      "isabelle"
+    ],
+    "emote_id": 736674480914432121,
+    "guild": 736625420467699763,
+    "games": [
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 35,
+    "name": "Lucario",
+    "alt_names": [
+      "lucario"
+    ],
+    "emote_id": 736674481002774618,
+    "guild": 736625420467699763,
+    "games": [
+      "brawl",
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 36,
+    "name": "Mega Man",
+    "alt_names": [
+      "mega man",
+      "mega-man"
+    ],
+    "emote_id": 736674481065558016,
+    "guild": 736625420467699763,
+    "games": [
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "echos",
+    "characters": [
+      {
+        "type": "character",
+        "id": 37,
+        "name": "Marth",
+        "alt_names": [
+          "marth"
+        ],
+        "emote_id": 736674481082204170,
+        "guild": 736625420467699763,
+        "games": [
+          "melee",
+          "brawl",
+          "4",
+          "ult"
+        ]
+      },
+      {
+        "type": "character",
+        "id": 38,
+        "name": "Lucina",
+        "alt_names": [
+          "lucina"
+        ],
+        "emote_id": 736674480847585420,
+        "guild": 736625420467699763,
+        "games": [
+          "4",
+          "ult"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "character",
+    "id": 39,
+    "name": "Lucas",
+    "alt_names": [
+      "lucas"
+    ],
+    "emote_id": 736674481141055498,
+    "guild": 736625420467699763,
+    "games": [
+      "brawl",
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 80,
+    "name": "Olimar",
+    "alt_names": [
+      "olimar",
+      "alph"
+    ],
+    "emote_id": 736674481212489790,
+    "guild": 736625420467699763,
+    "games": [
+      "brawl",
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 40,
+    "name": "Ness",
+    "alt_names": [
+      "ness"
+    ],
+    "emote_id": 736674481224810507,
+    "guild": 736625420467699763,
+    "games": [
+      "64",
+      "melee",
+      "brawl",
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 41,
+    "name": "Palutena",
+    "alt_names": [
+      "palutena",
+      "palu"
+    ],
+    "emote_id": 736674481308696586,
+    "guild": 736625420467699763,
+    "games": [
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 42,
+    "name": "Min Min",
+    "alt_names": [
+      "min min",
+      "minmin",
+      "min-min"
+    ],
+    "emote_id": 736674481317085209,
+    "guild": 736625420467699763,
+    "games": [
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 43,
+    "name": "Link",
+    "alt_names": [
+      "link",
+      "lonk",
+      "best boi"
+    ],
+    "emote_id": 736674482554667188,
+    "guild": 736625420467699763,
+    "games": [
+      "64",
+      "melee",
+      "brawl",
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "echos",
+    "characters": [
+      {
+        "type": "character",
+        "id": 44,
+        "name": "Peach",
+        "alt_names": [
+          "peach",
+          "\uD83C\uDF51"
+        ],
+        "emote_id": 736674759219085393,
+        "guild": 736625517154926623,
+        "games": [
+          "melee",
+          "brawl",
+          "4",
+          "ult"
+        ]
+      },
+      {
+        "type": "character",
+        "id": 45,
+        "name": "Daisy",
+        "alt_names": [
+          "daisy"
+        ],
+        "emote_id": 736674480008462356,
+        "guild": 736625420467699763,
+        "games": [
+          "ult"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "character",
+    "id": 46,
+    "name": "Pikachu",
+    "alt_names": [
+      "pikachu",
+      "pika",
+      "rat",
+      "busted"
+    ],
+    "emote_id": 736674759462617100,
+    "guild": 736625517154926623,
+    "games": [
+      "64",
+      "melee",
+      "brawl",
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 47,
+    "name": "Pichu",
+    "alt_names": [
+      "pichu"
+    ],
+    "emote_id": 736674759659487243,
+    "guild": 736625517154926623,
+    "games": [
+      "melee",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 48,
+    "name": "Piranha Plant",
+    "alt_names": [
+      "piranha plant",
+      "piranha-plant",
+      "plant"
+    ],
+    "emote_id": 736674759856881664,
+    "guild": 736625517154926623,
+    "games": [
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 49,
+    "name": "R.O.B.",
+    "alt_names": [
+      "rob",
+      "r.o.b.",
+      "r.o.b"
+    ],
+    "emote_id": 736674759898562631,
+    "guild": 736625517154926623,
+    "games": [
+      "brawl",
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": null,
+    "name": "Pokemon Trainer",
+    "alt_names": [
+      "pokémon trainer",
+      "pokemon trainer",
+      "pt",
+      "trainer",
+      "pokemon-trainer",
+      "pokémon-trainer"
+    ],
+    "emote_id": 736674759898824704,
+    "guild": 736625517154926623,
+    "games": [
+      "brawl",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 50,
+    "name": "Squirtle",
+    "alt_names": [
+      "squirtle"
+    ],
+    "emote_id": 763785274194657290,
+    "guild": 736625517154926623,
+    "games": []
+  },
+  {
+    "type": "character",
+    "id": 51,
+    "name": "Ivysaur",
+    "alt_names": [
+      "ivysaur",
+      "ivy"
+    ],
+    "emote_id": 763785448970518549,
+    "guild": 736625517154926623,
+    "games": []
+  },
+  {
+    "type": "character",
+    "id": 52,
+    "name": "Charizard",
+    "alt_names": [
+      "charizard",
+      "zard"
+    ],
+    "emote_id": 742051563383554200,
+    "guild": 736625517154926623,
+    "games": [
+      "4"
+    ]
+  },
+  {
+    "type": "echos",
+    "characters": [
+      {
+        "type": "character",
+        "id": 81,
+        "name": "Pit",
+        "alt_names": [
+          "pit"
+        ],
+        "emote_id": 736674759940767865,
+        "guild": 736625517154926623,
+        "games": [
+          "brawl",
+          "4",
+          "ult"
+        ]
+      },
+      {
+        "type": "character",
+        "id": 82,
+        "name": "Dark Pit",
+        "alt_names": [
+          "dark pit",
+          "edgy pit"
+        ],
+        "emote_id": 736674479597682790,
+        "guild": 736625420467699763,
+        "games": [
+          "4",
+          "ult"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "character",
+    "id": 53,
+    "name": "Rosalina and Luma",
+    "alt_names": [
+      "rosalina and luma",
+      "rosalina",
+      "rosaluma",
+      "rosa",
+      "rosalina & luma"
+    ],
+    "emote_id": 736674760016003176,
+    "guild": 736625517154926623,
+    "games": [
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 54,
+    "name": "Ridley",
+    "alt_names": [
+      "ridley"
+    ],
+    "emote_id": 736674760062402651,
+    "guild": 736625517154926623,
+    "games": [
+      "ult"
+    ]
+  },
+  {
+    "type": "zss/samus",
+    "characters": [
+      {
+        "type": "echos",
+        "characters": [
+          {
+            "type": "character",
+            "id": 55,
+            "name": "Samus",
+            "alt_names": [
+              "samus",
+              "spamus",
+              "spammus",
+              "samosa",
+              "salmon"
+            ],
+            "emote_id": 736674760192294923,
+            "guild": 736625517154926623,
+            "games": [
+              "64",
+              "melee",
+              "brawl",
+              "4",
+              "ult"
+            ]
+          },
+          {
+            "type": "character",
+            "id": 56,
+            "name": "Dark Samus",
+            "alt_names": [
+              "dark samus",
+              "edgy samus",
+              "dark spamus",
+              "edgy spamus",
+              "dark spammus",
+              "edgy spammus",
+              "dark samosa",
+              "edgy samosa",
+              "dark salmon",
+              "edgy salmon"
+            ],
+            "emote_id": 736674479840952331,
+            "guild": 736625420467699763,
+            "games": [
+              "ult"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "character",
+        "id": 57,
+        "name": "Zero Suit Samus",
+        "alt_names": [
+          "zero suit samus",
+          "zero suit",
+          "zss"
+        ],
+        "emote_id": 736674760682897419,
+        "guild": 736625517154926623,
+        "games": [
+          "brawl",
+          "4",
+          "ult"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "echos",
+    "characters": [
+      {
+        "type": "character",
+        "id": 58,
+        "name": "Roy",
+        "alt_names": [
+          "roy"
+        ],
+        "emote_id": 736674760213397514,
+        "guild": 736625517154926623,
+        "games": [
+          "melee",
+          "4",
+          "ult"
+        ]
+      },
+      {
+        "type": "character",
+        "id": 59,
+        "name": "Chrom",
+        "alt_names": [
+          "chrom"
+        ],
+        "emote_id": 736674479631237172,
+        "guild": 736625420467699763,
+        "games": [
+          "ult"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "character",
+    "id": 60,
+    "name": "Terry",
+    "alt_names": [
+      "terry",
+      "bogard",
+      "terry bogard"
+    ],
+    "emote_id": 736674760318255245,
+    "guild": 736625517154926623,
+    "games": [
+      "ult"
+    ]
+  },
+  {
+    "type": "echos",
+    "characters": [
+      {
+        "type": "character",
+        "id": 61,
+        "name": "Ryu",
+        "alt_names": [
+          "ryu"
+        ],
+        "emote_id": 736674760322187324,
+        "guild": 736625517154926623,
+        "games": [
+          "4",
+          "ult"
+        ]
+      },
+      {
+        "type": "character",
+        "id": 62,
+        "name": "Ken",
+        "alt_names": [
+          "ken"
+        ],
+        "emote_id": 736674480365240381,
+        "guild": 736625420467699763,
+        "games": [
+          "ult"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "character",
+    "id": 63,
+    "name": "Robin",
+    "alt_names": [
+      "robin"
+    ],
+    "emote_id": 736674760355741767,
+    "guild": 736625517154926623,
+    "games": [
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 64,
+    "name": "Villager",
+    "alt_names": [
+      "villager"
+    ],
+    "emote_id": 736674760402010173,
+    "guild": 736625517154926623,
+    "games": [
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 65,
+    "name": "Shulk",
+    "alt_names": [
+      "shulk",
+      "shluk",
+      "monado boy",
+      "monado boi"
+    ],
+    "emote_id": 736674760402141374,
+    "guild": 736625517154926623,
+    "games": [
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "echos",
+    "characters": [
+      {
+        "type": "character",
+        "id": 66,
+        "name": "Simon",
+        "alt_names": [
+          "simon"
+        ],
+        "emote_id": 736674760448278611,
+        "guild": 736625517154926623,
+        "games": [
+          "ult"
+        ]
+      },
+      {
+        "type": "character",
+        "id": 67,
+        "name": "Richter",
+        "alt_names": [
+          "richter"
+        ],
+        "emote_id": 736674759869333555,
+        "guild": 736625517154926623,
+        "games": [
+          "ult"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "character",
+    "id": 68,
+    "name": "Toon Link",
+    "alt_names": [
+      "toon link",
+      "tl",
+      "tink"
+    ],
+    "emote_id": 736674760473182280,
+    "guild": 736625517154926623,
+    "games": [
+      "brawl",
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 69,
+    "name": "Wii Fit Trainer",
+    "alt_names": [
+      "wii fit trainer",
+      "wii fit",
+      "wii",
+      "fit",
+      "trainer"
+    ],
+    "emote_id": 736674760544616499,
+    "guild": 736625517154926623,
+    "games": [
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 70,
+    "name": "Snake",
+    "alt_names": [
+      "snake"
+    ],
+    "emote_id": 736674760544616528,
+    "guild": 736625517154926623,
+    "games": [
+      "brawl",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 71,
+    "name": "Yoshi",
+    "alt_names": [
+      "yoshi",
+      "yosh"
+    ],
+    "emote_id": 736674760569651232,
+    "guild": 736625517154926623,
+    "games": [
+      "64",
+      "melee",
+      "brawl",
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 72,
+    "name": "Wario",
+    "alt_names": [
+      "wario"
+    ],
+    "emote_id": 736674760708325457,
+    "guild": 736625517154926623,
+    "games": [
+      "brawl",
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 73,
+    "name": "Sonic",
+    "alt_names": [
+      "sonic",
+      "sanic"
+    ],
+    "emote_id": 736674760758525982,
+    "guild": 736625517154926623,
+    "games": [
+      "brawl",
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 74,
+    "name": "Wolf",
+    "alt_names": [
+      "wolf"
+    ],
+    "emote_id": 736674760796143706,
+    "guild": 736625517154926623,
+    "games": [
+      "brawl",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 75,
+    "name": "Young Link",
+    "alt_names": [
+      "young link",
+      "yl",
+      "yink"
+    ],
+    "emote_id": 736674760930361384,
+    "guild": 736625517154926623,
+    "games": [
+      "melee",
+      "ult"
+    ]
+  },
+  {
+    "type": "sheik/zelda",
+    "characters": [
+      {
+        "type": "character",
+        "id": 76,
+        "name": "Zelda",
+        "alt_names": [
+          "zelda",
+          "best girl"
+        ],
+        "emote_id": 736674760955527168,
+        "guild": 736625517154926623,
+        "games": [
+          "melee",
+          "brawl",
+          "4",
+          "ult"
+        ]
+      },
+      {
+        "type": "character",
+        "id": 77,
+        "name": "Sheik",
+        "alt_names": [
+          "sheik",
+          "shiek"
+        ],
+        "emote_id": 736674760406335611,
+        "guild": 736625517154926623,
+        "games": [
+          "melee",
+          "brawl",
+          "4",
+          "ult"
+        ]
+      }
+    ]
+  },
+  {
+    "type": "character",
+    "id": 78,
+    "name": "Mewtwo",
+    "alt_names": [
+      "mewtwo",
+      "mew2",
+      "m2",
+      "mewto"
+    ],
+    "emote_id": 742010944485589032,
+    "guild": 736625517154926623,
+    "games": [
+      "melee",
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 79,
+    "name": "Meta Knight",
+    "alt_names": [
+      "meta knight",
+      "mk",
+      "metaknight",
+      "meta-knight"
+    ],
+    "emote_id": 742010944485326959,
+    "guild": 736625517154926623,
+    "games": [
+      "brawl",
+      "4",
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": null,
+    "name": "Steve",
+    "alt_names": [
+      "steve",
+      "alex",
+      "zombie",
+      "enderman"
+    ],
+    "emote_id": 761265022499422249,
+    "guild": 736625517154926623,
+    "games": [
+      "ult"
+    ]
+  }
+]

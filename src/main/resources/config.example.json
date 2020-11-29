@@ -1,0 +1,14 @@
+{
+  "discordToken": "DiscordToken",
+  "ggToken": "smash.ggToken",
+  "challongeUsername": "challongeUsername",
+  "challongeToken": "challongeToken",
+  "botId": 1234567,
+  "inviteUrl": "https://discordapp.com/api/oauth2/authorize?client_id=BOT_ID&permissions=0&scope=bot",
+  "supportServer": "https://discord.gg/invite_code",
+  "devId": 1234567,
+  "stopwordListLocation": "/path/to/stopword/list.txt",
+  "stateDbLocation": "/path/to/toni_state.db",
+  "smashdataDbLocation": "/path/to/ultimate_player_database.db",
+  "charactersFileLocation": "/path/to/characters_file.json"
+}

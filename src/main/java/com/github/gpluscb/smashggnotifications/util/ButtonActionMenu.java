@@ -49,21 +49,25 @@ public class ButtonActionMenu extends Menu {
 
     @Override
     public void display(MessageChannel channel) {
-        channel.sendMessage(start).queue(this::activate);
+        channel.sendMessage(start).queue(this::init);
     }
 
     @Override
     public void display(Message message) {
-        message.editMessage(start).queue(this::activate);
+        message.editMessage(start).queue(this::init);
     }
 
-    private void activate(@Nonnull Message message) {
+    private void init(@Nonnull Message message) {
         if (!message.isFromGuild() || message.getGuild().getSelfMember().hasPermission(message.getTextChannel(), Permission.MESSAGE_ADD_REACTION)) {
             buttonActions.keySet().forEach(e -> message.addReaction(e).queue());
             buttonActions.keySet().stream().map(message::addReaction).forEach(RestAction::queue);
             if (deletionButton != null) message.addReaction(deletionButton).queue();
         }
 
+        awaitEvents(message);
+    }
+
+    private void awaitEvents(@Nonnull Message message) {
         long messageId = message.getIdLong();
         long channelId = message.getChannel().getIdLong();
         JDA jda = message.getJDA();
@@ -102,7 +106,7 @@ public class ButtonActionMenu extends Menu {
             else log.warn("User was null despite event being from guild. Not removing reaction");
         }
 
-        channel.editMessageById(messageId, buttonActions.get(reactionName).get()).queue(this::activate);
+        channel.editMessageById(messageId, buttonActions.get(reactionName).get()).queue(this::awaitEvents);
     }
 
     public static class Builder extends Menu.Builder<Builder, ButtonActionMenu> {

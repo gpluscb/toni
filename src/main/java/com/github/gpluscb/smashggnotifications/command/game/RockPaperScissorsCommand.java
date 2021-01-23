@@ -4,6 +4,7 @@ import com.github.gpluscb.smashggnotifications.command.Command;
 import com.github.gpluscb.smashggnotifications.command.CommandContext;
 import com.github.gpluscb.smashggnotifications.util.DMChoiceWaiter;
 import com.github.gpluscb.smashggnotifications.util.FailLogger;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 
 import javax.annotation.Nonnull;
@@ -58,12 +59,13 @@ public class RockPaperScissorsCommand implements Command {
         users.add(user2);
 
         boolean worked = waiter.waitForDMChoice(users, true, e -> {
-            String choice = e.getMessage().getContentRaw();
+            Message message = e.getMessage();
+            String choice = message.getContentRaw();
 
             RPS rpsChoice = RPS.fromString(choice);
             if (rpsChoice == null)
-                e.getChannel().sendMessage("What is that supposed to mean? I only know rock, paper, and scissors.").queue();
-            else e.getChannel().sendMessage("Noted!").queue();
+                message.reply("What is that supposed to mean? I only know rock, paper, and scissors.").queue();
+            else message.reply("Noted!").queue();
 
             return Optional.ofNullable(rpsChoice);
         }, map -> {

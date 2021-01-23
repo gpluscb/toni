@@ -40,21 +40,21 @@ public class CommandContext {
     @CheckReturnValue
     public MessageAction reply(@Nonnull Message message) {
         log.debug("Reply: {}", message.getContentRaw());
-        return event.getChannel().sendMessage(message);
+        return getMessage().reply(message);
     }
 
     @Nonnull
     @CheckReturnValue
     public MessageAction reply(@Nonnull String message) {
         log.debug("Reply: {}", message);
-        return event.getChannel().sendMessage(message);
+        return getMessage().reply(message);
     }
 
     @Nonnull
     @CheckReturnValue
     public MessageAction reply(@Nonnull MessageEmbed embed) {
         log.debug("Reply: {}", embed);
-        return event.getChannel().sendMessage(embed);
+        return getMessage().reply(embed);
     }
 
     public boolean hasAdminPermission() {

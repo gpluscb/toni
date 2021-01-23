@@ -130,6 +130,7 @@ public class Bot {
 
         // Avoid unintentional pings.
         MessageAction.setDefaultMentions(Collections.emptyList());
+        MessageAction.setDefaultMentionRepliedUser(false);
         // Avoid too long request queue
         RestAction.setDefaultTimeout(30, TimeUnit.SECONDS);
 

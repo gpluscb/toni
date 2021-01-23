@@ -112,7 +112,7 @@ public class CharacterCommand implements Command {
                 .setStart(pages.getCurrent())
                 .build();
 
-        menu.display(ctx.getChannel());
+        menu.display(ctx.getChannel(), ctx.getMessage());
     }
 
     @Nonnull

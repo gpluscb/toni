@@ -52,6 +52,10 @@ public class ButtonActionMenu extends Menu {
         channel.sendMessage(start).queue(this::init);
     }
 
+    public void display(MessageChannel channel, Message reference) {
+        reference.reply(start).queue(this::init);
+    }
+
     @Override
     public void display(Message message) {
         message.editMessage(start).queue(this::init);

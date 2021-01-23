@@ -6,6 +6,7 @@ import com.github.gpluscb.smashggnotifications.util.CharacterTree;
 import com.github.gpluscb.smashggnotifications.util.DMChoiceWaiter;
 import com.github.gpluscb.smashggnotifications.util.FailLogger;
 import com.github.gpluscb.smashggnotifications.util.MiscUtil;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 
 import javax.annotation.Nonnull;
@@ -81,11 +82,12 @@ public class BlindPickCommand implements Command {
         long[] userMentionsArray = users.stream().mapToLong(u -> u).toArray(); // TODO: Could be a bit more efficient, do the two streams in one pass...
 
         boolean worked = waiter.waitForDMChoice(users, true, e -> {
-            String choice = e.getMessage().getContentRaw();
+            Message message = e.getMessage();
+            String choice = message.getContentRaw();
 
             CharacterTree.Character character = characters.stream().filter(c -> c.getAltNames().contains(choice.toLowerCase())).findAny().orElse(null);
-            if (character == null) e.getChannel().sendMessage("I don't know that character.").queue();
-            else e.getChannel().sendMessage("Accepted!").queue();
+            if (character == null) message.reply("I don't know that character.").queue();
+            else message.reply("Accepted!").queue();
 
             return Optional.ofNullable(character);
         }, map -> {

@@ -170,7 +170,7 @@ public class GGManager implements GGClient {
             lightVariables.addProperty("id", Long.parseLong(filteredTerm));
         } catch (NumberFormatException ignored) {
         }
-        lightVariables.addProperty("numTournaments", 900);
+        lightVariables.addProperty("numTournaments", 500);
 
         return query(LIGHT_TOURNAMENTS_QUERY, lightVariables).<OneOfTwo<List<Long>, GGResponse<QueryResponse>>>thenApply(response ->
                 response.map(OneOfTwo::ofU, success -> {

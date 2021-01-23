@@ -52,7 +52,7 @@ public class ButtonActionMenu extends Menu {
         channel.sendMessage(start).queue(this::init);
     }
 
-    public void display(MessageChannel channel, Message reference) {
+    public void displayReplying(Message reference) {
         reference.reply(start).queue(this::init);
     }
 

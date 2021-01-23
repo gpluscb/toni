@@ -77,7 +77,7 @@ public class SmashdataCommand implements Command {
                 .setStart(pages.getCurrent())
                 .build();
 
-        menu.display(ctx.getChannel(), ctx.getMessage());
+        menu.displayReplying(ctx.getMessage());
     }
 
     @Nonnull

@@ -34,9 +34,9 @@ public class PrivacyCommand implements Command {
 						"When that feature launches, you will be able to remove that data via a command to unlink your Discord account. " +
 						"If you still have concerns about such data, you will be able to contact my dev using the methods described above.");
 		privacy = privacyBuilder.build();*/
-        privacy = new MessageBuilder("Find my privacy policy at https://gist.github.com/gpluscb/66e3318e776a900222297e698006fe5e. If you have questions, contact my dev:\n")
+        privacy = new MessageBuilder("Find my privacy policy at <https://gist.github.com/gpluscb/66e3318e776a900222297e698006fe5e>. If you have questions, contact my dev:\n")
                 .appendFormat("• You can DM them directly if you have common servers: <@%d>%n", devId)
-                .appendFormat("• You can go to [my support server](%s)%n", supportServer)
+                .appendFormat("• You can go to my support server: %s%n", supportServer)
                 .append("• You can @ or dm me on Twitter, I promise you only the highest quality of tweets: <https://twitter.com/tonissb>").build();
     }
 

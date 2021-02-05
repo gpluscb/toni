@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
+// TODO: Melee Wolf? P+ Mewtwo?? This gonna be a headache
 public class RandomCharacterCommand implements Command {
     @Nonnull
     private final CharacterTree characterTree;

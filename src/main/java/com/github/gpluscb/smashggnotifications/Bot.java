@@ -230,6 +230,7 @@ public class Bot {
     private List<CommandCategory> loadCommands(@Nonnull UltimateframedataClient ufdClient, @Nonnull EventWaiter waiter, @Nonnull DMChoiceWaiter dmWaiter, /*@Nonnull ChallongeExtension challonge, @Nonnull TournamentListener listener, */@Nonnull CharacterTree characterTree, @Nonnull Config cfg) {
         String supportServer = cfg.getSupportServer();
         long devId = cfg.getDevId();
+        String twitterHandle = cfg.getTwitterHandle();
 
         List<CommandCategory> commands = new ArrayList<>();
 
@@ -241,8 +242,8 @@ public class Bot {
         commands.add(new CommandCategory(null, null, adminCommands));
 
         List<Command> infoCommands = new ArrayList<>();
-        infoCommands.add(new HelpCommand(commands, supportServer, devId));
-        infoCommands.add(new PrivacyCommand(supportServer, devId));
+        infoCommands.add(new HelpCommand(commands, supportServer, twitterHandle, devId));
+        infoCommands.add(new PrivacyCommand(supportServer, twitterHandle, devId));
         infoCommands.add(new PingCommand());
         commands.add(new CommandCategory("info", "Bot information commands", infoCommands));
 

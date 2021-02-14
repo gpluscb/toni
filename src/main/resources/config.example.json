@@ -6,6 +6,7 @@
   "botId": 1234567,
   "inviteUrl": "https://discordapp.com/api/oauth2/authorize?client_id=BOT_ID&permissions=0&scope=bot",
   "supportServer": "https://discord.gg/invite_code",
+  "twitterHandle": "twitter_handle",
   "devId": 1234567,
   "stopwordListLocation": "/path/to/stopword/list.txt",
   "stateDbLocation": "/path/to/toni_state.db",

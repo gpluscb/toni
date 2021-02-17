@@ -45,7 +45,6 @@ import org.apache.logging.log4j.Logger;
 import javax.annotation.Nonnull;
 import javax.security.auth.login.LoginException;
 import java.io.*;
-import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -53,7 +52,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Scanner;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -230,6 +228,7 @@ public class Bot {
     private List<CommandCategory> loadCommands(@Nonnull UltimateframedataClient ufdClient, @Nonnull EventWaiter waiter, @Nonnull DMChoiceWaiter dmWaiter, /*@Nonnull ChallongeExtension challonge, @Nonnull TournamentListener listener, */@Nonnull CharacterTree characterTree, @Nonnull Config cfg) {
         String supportServer = cfg.getSupportServer();
         long devId = cfg.getDevId();
+        String inviteUrl = cfg.getInviteUrl();
         String twitterHandle = cfg.getTwitterHandle();
 
         List<CommandCategory> commands = new ArrayList<>();
@@ -242,7 +241,7 @@ public class Bot {
         commands.add(new CommandCategory(null, null, adminCommands));
 
         List<Command> infoCommands = new ArrayList<>();
-        infoCommands.add(new HelpCommand(commands, supportServer, twitterHandle, devId));
+        infoCommands.add(new HelpCommand(commands, supportServer, inviteUrl, twitterHandle, devId));
         infoCommands.add(new PrivacyCommand(supportServer, twitterHandle, devId));
         infoCommands.add(new PingCommand());
         commands.add(new CommandCategory("info", "Bot information commands", infoCommands));

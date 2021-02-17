@@ -147,7 +147,7 @@ public class RandomCharacterCommand implements Command {
     @Nonnull
     @Override
     public String[] getAliases() {
-        return new String[]{"random"};
+        return new String[]{"random", "randomchar", "random-char", "random-character", "randomcharacter"};
     }
 
     @Nullable

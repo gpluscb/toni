@@ -18,12 +18,15 @@ public class HelpCommand implements Command {
     @Nonnull
     private final String supportServer;
     @Nonnull
+    private final String inviteUrl;
+    @Nonnull
     private final String twitterHandle;
     private final long devId;
 
-    public HelpCommand(@Nonnull List<CommandCategory> commands, @Nonnull String supportServer, @Nonnull String twitterHandle, long devId) {
+    public HelpCommand(@Nonnull List<CommandCategory> commands, @Nonnull String supportServer, @Nonnull String inviteUrl, @Nonnull String twitterHandle, long devId) {
         this.commands = commands;
         this.supportServer = supportServer;
+        this.inviteUrl = inviteUrl;
         this.twitterHandle = twitterHandle;
         this.devId = devId;
     }
@@ -93,7 +96,8 @@ public class HelpCommand implements Command {
                 .appendDescription("(but please also understand that they live in the central-european time zone and may have uni or other stuff going on as well).\n")
                 .appendDescription(String.format("• You can DM them directly if you have common servers: <@%d>%n", devId))
                 .appendDescription(String.format("• You can go to [my support server](%s)%n", supportServer))
-                .appendDescription(String.format("• You can @ or dm me on Twitter, I promise you only the highest quality of tweets: [@%1$s](https://twitter.com/%s)", twitterHandle));
+                .appendDescription(String.format("• You can @ or dm me on Twitter, I promise you only the highest quality of tweets: [@%s](https://twitter.com/%1$s)%n", twitterHandle))
+                .appendDescription(String.format("Invite me to your server by clicking [here](%s)", inviteUrl));
 
         List<EmbedUtil.InlineField> helpFields = commands.stream()
                 .filter(category -> category.getCategoryName() != null)

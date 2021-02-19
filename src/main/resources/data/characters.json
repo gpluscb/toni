@@ -1389,7 +1389,7 @@
   },
   {
     "type": "character",
-    "id": null,
+    "id": 83,
     "name": "Steve",
     "alt_names": [
       "steve",
@@ -1398,6 +1398,20 @@
       "enderman"
     ],
     "emote_id": 761265022499422249,
+    "guild": 736625517154926623,
+    "games": [
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 84,
+    "name": "Sephiroth",
+    "alt_names": [
+      "sephiroth",
+      "seph"
+    ],
+    "emote_id": 789894656431357952,
     "guild": 736625517154926623,
     "games": [
       "ult"

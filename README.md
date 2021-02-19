@@ -20,7 +20,7 @@ Feel free to pr stuff too.
 ## About self hosting
 
 I don't know why you would self-host, and I'd discourage it, but you can if you really want to.
-Replace [config.example.json](isrc/main/resources/config.example.json) with an according config.json, and start the bot supplying the path to the config file as the only argument.
+Replace [config.example.json](src/main/resources/config.example.json) with an according config.json, and start the bot supplying the path to the config file as the only argument.
 
 ## Screenshots
 

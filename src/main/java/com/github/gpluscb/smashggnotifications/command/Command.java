@@ -3,6 +3,8 @@ package com.github.gpluscb.smashggnotifications.command;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+// TODO: Neat system for getting arguments out of CommandContext with defaults optionals and such and such
+// Tried in the other branch but abandoned for now, seems not worth the effort
 public interface Command {
     void execute(@Nonnull CommandContext ctx);
 

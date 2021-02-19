@@ -30,7 +30,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-// FIXME: ABSOLUTELY DO NOT DEPLOY THIS MESS LOL
 public class TournamentCommand implements Command {
     private static final Logger log = LogManager.getLogger(TournamentCommand.class);
 
@@ -52,7 +51,7 @@ public class TournamentCommand implements Command {
         }
 
         // more than 15 -> risk of query complexiy
-        ggManager.searchTouranmentsByNameWorkaround(ctx.getArgsFrom(0), 15, 8).whenComplete(FailLogger.logFail((response, t) -> {
+        ggManager.searchTouranmentsByName(ctx.getArgsFrom(0), 15, 8).whenComplete(FailLogger.logFail((response, t) -> {
             try {
                 if (t != null) {
                     ctx.reply("The request to smash.gg failed. Tell my dev if this happens a lot - I've already annoyed them about it, but it can't hurt to give them some more context.").queue();

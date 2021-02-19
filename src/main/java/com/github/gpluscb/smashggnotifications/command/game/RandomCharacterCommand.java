@@ -22,8 +22,6 @@ public class RandomCharacterCommand implements Command {
 
     @Override
     public void execute(@Nonnull CommandContext ctx) {
-        // TODO: Neat system for getting arguments out of CommandContext with defaults optionals and such and such
-
         CharacterTree.Game game = CharacterTree.Game.ULTIMATE;
         boolean stackEchos = false;
         boolean stackMiis = false;

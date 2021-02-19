@@ -159,7 +159,7 @@ public class GGManager implements GGClient {
     }
 
     @Nonnull
-    public CompletableFuture<OneOfTwo<List<TournamentResponse>, GGResponse<QueryResponse>>> searchTouranmentsByNameWorkaround(@Nonnull String term, int numTournaments, int numStandings) {
+    public CompletableFuture<OneOfTwo<List<TournamentResponse>, GGResponse<QueryResponse>>> searchTouranmentsByName(@Nonnull String term, int numTournaments, int numStandings) {
         String[] split = term.replaceAll("[\\^%#}+*]", "").split("\\W+");
         String filteredTerm = Arrays.stream(split).filter(Predicate.not(stopwords::contains)).collect(Collectors.joining(" "));
 
@@ -236,11 +236,12 @@ public class GGManager implements GGClient {
         );
     }
 
-    /**
+    /* Below are other (abandoned) attempts at tournament search. Since tournament search is still not very good, I want to keep them just in case.
+    /
      * Works, but abandoned in favour of workaround
      *
      * @deprecated
-     */
+     /
     @Deprecated
     @Nonnull
     public CompletableFuture<OneOfTwo<List<TournamentResponse>, GGResponse<QueryResponse>>> searchTournamentsByName(@Nonnull String term, int numTournaments, int numStandings) {
@@ -294,11 +295,11 @@ public class GGManager implements GGClient {
                 }));
     }
 
-    /**
+    /
      * May return list of size numTournaments + 1 if slug matches
      *
      * @deprecated
-     */
+     /
     @Nonnull
     @Deprecated
     public CompletableFuture<OneOfTwo<List<TournamentResponse>, GGResponse<QueryResponse>>> searchTournamentsByNameBrokenRn(@Nonnull String term, int numTournaments, int numStandings) {
@@ -420,9 +421,9 @@ public class GGManager implements GGClient {
 
                     return OneOfTwo.ofT(ret);
                 })
-        );*/
+        );/
     }
-
+*/
     @Nonnull
     @Override
     public CompletableFuture<Void> shutdown() {

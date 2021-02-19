@@ -1,5 +1,6 @@
 package com.github.gpluscb.smashggnotifications.util;
 
+// TODO: Read into records, maybe they'd make this obsolete idk
 public class Pair<T, U> {
     private T t;
     private U u;

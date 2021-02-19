@@ -17,7 +17,7 @@ public class PrivacyCommand implements Command {
         privacy = new MessageBuilder("Find my privacy policy at <https://gist.github.com/gpluscb/66e3318e776a900222297e698006fe5e>. If you have questions, contact my dev:\n")
                 .appendFormat("• You can DM them directly if you have common servers: <@%d>%n", devId)
                 .appendFormat("• You can go to my support server: %s%n", supportServer)
-                .append(String.format("• You can @ or dm me on Twitter, I promise you only the highest quality of tweets: <https://twitter.com/%s>", twitterHandle)).build();
+                .appendFormat("• You can @ or dm me on Twitter, I promise you only the highest quality of tweets: <https://twitter.com/%s>", twitterHandle).build();
     }
 
     @Override

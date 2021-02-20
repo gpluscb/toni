@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE xml>
 <Configuration status="WARN"
-               packages="com.github.gpluscb.smashggnotifications.util" monitorInterval="60">
+               packages="com.github.gpluscb.toni.util" monitorInterval="60">
     <Properties>
         <Property name="logPath">logs</Property>
         <Property name="rollingFileName">ChallongeBot</Property>
@@ -34,7 +34,7 @@
             <AppenderRef ref="LogFile"/>
             <AppenderRef level="ERROR" ref="DiscordLog"/>
         </Root>
-        <Logger name="com.github.gpluscb.smashggnotifications" level="TRACE"
+        <Logger name="com.github.gpluscb.toni" level="TRACE"
                 additivity="false">
             <AppenderRef ref="Console"/>
             <AppenderRef ref="LogFile"/>

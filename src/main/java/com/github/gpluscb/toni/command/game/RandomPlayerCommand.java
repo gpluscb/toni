@@ -3,6 +3,7 @@ package com.github.gpluscb.toni.command.game;
 import com.github.gpluscb.toni.command.Command;
 import com.github.gpluscb.toni.command.CommandContext;
 import com.github.gpluscb.toni.util.MiscUtil;
+import com.github.gpluscb.toni.util.OneOfTwo;
 import net.dv8tion.jda.api.entities.User;
 
 import javax.annotation.Nonnull;
@@ -14,52 +15,50 @@ import java.util.concurrent.ThreadLocalRandom;
 public class RandomPlayerCommand implements Command {
     @Override
     public void execute(@Nonnull CommandContext ctx) {
-        List<Long> users = new ArrayList<>();
+        // T: User id, U: string choice
+        List<OneOfTwo<Long, String>> choices = new ArrayList<>();
         for (int i = 0; i < ctx.getArgNum(); i++) {
             User user = ctx.getUserMentionArg(i);
-            if (user == null) {
-                ctx.reply("Arguments must be user mentions of users in this server.").queue();
-                return;
-            }
+            String stringChoice = null;
 
-            long userId = user.getIdLong();
+            if (user == null) stringChoice = ctx.getArg(i);
 
-            users.add(userId);
+            // Exactly one of these two will be null
+            choices.add(new OneOfTwo<>(user, stringChoice).mapT(User::getIdLong));
         }
 
-        if (users.size() < 2) {
-            ctx.reply("You must mention at least two (2) users.").queue();
-            return;
-        }
-
-        if (users.size() > 8) {
-            ctx.reply("You must not mention more than eight (8) users.").queue();
+        if (choices.size() < 2) {
+            ctx.reply("You must give at least two (2) choices.").queue();
             return;
         }
 
         ThreadLocalRandom rng = ThreadLocalRandom.current();
-        int rngIndex = rng.nextInt(users.size());
-        long choice = users.get(rngIndex);
+        int rngIndex = rng.nextInt(choices.size());
+        OneOfTwo<Long, String> choice = choices.get(rngIndex);
 
-        ctx.reply(String.format("I choose you, %s!", MiscUtil.mentionUser(choice))).mentionUsers(choice).queue();
+        choice.map(id ->
+                        ctx.reply(String.format("I choose you, %s!", MiscUtil.mentionUser(id))).mentionUsers(id),
+                str ->
+                        ctx.reply(String.format("I choose %s.", str))
+        ).queue();
     }
 
     @Nonnull
     @Override
     public String[] getAliases() {
-        return new String[]{"randomplayer", "chooseplayer"};
+        return new String[]{"randomplayer", "chooseplayer", "choose"};
     }
 
     @Nullable
     @Override
     public String getShortHelp() {
-        return "Picks a random player out of multiple choices. Usage: `randomplayer <PLAYERS...>`";
+        return "Picks a random element out of multiple choices. Usage: `choose <CHOICES...>`";
     }
 
     @Nullable
     @Override
     public String getDetailedHelp() {
-        return "`randomplayer|chooseplayer <PLAYERS...>`\n" +
-                "Picks a random player out of the given choices. Useful if you don't want to play rock paper scissors.";
+        return "`randomplayer|chooseplayer|choose <CHOICES...>`\n" +
+                "Picks a random choice out of the given choices. Useful if you don't want to play rock paper scissors for example.";
     }
 }

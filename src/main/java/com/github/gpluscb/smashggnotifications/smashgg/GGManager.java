@@ -11,7 +11,6 @@ import com.github.gpluscb.ggjava.entity.object.response.scalars.IntResponse;
 import com.github.gpluscb.ggjava.entity.object.response.scalars.StringResponse;
 import com.github.gpluscb.ggjava.internal.json.Deserializer;
 import com.github.gpluscb.smashggnotifications.util.OneOfTwo;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.apache.logging.log4j.LogManager;

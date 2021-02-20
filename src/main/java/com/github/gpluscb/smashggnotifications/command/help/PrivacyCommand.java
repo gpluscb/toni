@@ -28,7 +28,7 @@ public class PrivacyCommand implements Command {
     @Nonnull
     @Override
     public String[] getAliases() {
-        return new String[]{"privacy", "data"};
+        return new String[]{"privacy"};
     }
 
     @Nullable
@@ -40,7 +40,7 @@ public class PrivacyCommand implements Command {
     @Nullable
     @Override
     public String getDetailedHelp() {
-        return "`privacy|data`\n" +
+        return "`privacy`\n" +
                 "Shows what data I collect and other privacy concerns as per <https://discord.com/developers/docs/legal#a-implement-good-privacy-practices>.";
     }
 }

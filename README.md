@@ -17,6 +17,14 @@ Please note that I'm still a baby, so I appreciate any feedback, feature request
 
 Feel free to pr stuff too.
 
+## Acknowledgements
+Data sources:
+- [ultimateframedata](https://ultimateframedata.com) for the character command.
+- [smashdata.gg database](https://github.com/smashdata/ThePlayerDatabase) for the player command.
+- [smash.gg API](https://developer.smashg.gg) for the tournament command.
+
+Built on [JDA](https://github.com/DV8FromTheWorld/JDA) with [JDA-Utils](https://github.com/JDA-Applications/JDA-Utilities).
+
 ## About self hosting
 
 I don't know why you would self-host, and I'd discourage it, but you can if you really want to.

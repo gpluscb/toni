@@ -1417,5 +1417,22 @@
     "games": [
       "ult"
     ]
+  },
+  {
+    "type": "character",
+    "id": null,
+    "name": "Pyra/Mythra",
+    "alt_names": [
+      "pyra",
+      "mythra",
+      "pythra",
+      "py",
+      "myth"
+    ],
+    "emote_id": 817100307087491072,
+    "guild": 736625517154926623,
+    "games": [
+      "ult"
+    ]
   }
 ]

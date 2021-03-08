@@ -1,7 +1,7 @@
 plugins {
-    id'java'
-    id'application'
-    id'com.github.johnrengelman.shadow' version '4.0.4'
+    id 'java'
+    id 'application'
+    id 'com.github.johnrengelman.shadow' version '4.0.4'
 }
 
 mainClassName = 'com.github.gpluscb.toni.Bot'
@@ -19,13 +19,13 @@ repositories {
 }
 
 dependencies {
-    implementation (group: 'net.dv8tion', name: 'JDA', version: '4.2.0_227') {
+    implementation(group: 'net.dv8tion', name: 'JDA', version: '4.2.0_236') {
         exclude module: 'opus-java'
     }
 
     implementation group: 'com.jagrosh', name: 'jda-utilities', version: '3.0.4'
-    
-    implementation group: 'com.github.gpluscb', name: 'gg-java', version: '1.0.0-SNAPSHOT'  
+
+    implementation group: 'com.github.gpluscb', name: 'gg-java', version: '1.0.0-SNAPSHOT'
 
     implementation group: 'org.apache.commons', name: 'commons-text', version: '1.8'
 

@@ -74,6 +74,8 @@ public class CharacterCommand implements Command {
             return;
         }
 
+        ctx.getChannel().sendTyping().queue();
+
         client.getCharacter(id).whenComplete(FailLogger.logFail((response, t) -> {
             try {
                 if (t != null) {

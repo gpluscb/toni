@@ -51,6 +51,8 @@ public class TournamentCommand implements Command {
             return;
         }
 
+        ctx.getChannel().sendTyping().queue();
+
         // more than 15 -> risk of query complexiy
         ggManager.searchTouranmentsByName(ctx.getArgsFrom(0), 15, 8).whenComplete(FailLogger.logFail((response, t) -> {
             try {

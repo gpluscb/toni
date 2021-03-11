@@ -50,6 +50,8 @@ public class SmashdataCommand implements Command {
 
         String requestedTag = ctx.getArgsFrom(0).toUpperCase();
 
+        ctx.getChannel().sendTyping().queue();
+
         try {
             List<SmashdataManager.PlayerData> results = smashdata.loadSmashdataByTag(requestedTag);
 

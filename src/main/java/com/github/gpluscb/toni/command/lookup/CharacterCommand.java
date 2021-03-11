@@ -8,6 +8,7 @@ import com.github.gpluscb.toni.util.*;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
@@ -165,6 +166,12 @@ public class CharacterCommand implements Command {
         embed.appendDescription(EmbedUtil.parseInlineFields(fields));
 
         return embed;
+    }
+
+    @Nonnull
+    @Override
+    public Permission[] getRequiredBotPerms() {
+        return new Permission[]{Permission.MESSAGE_EMBED_LINKS};
     }
 
     @Nonnull

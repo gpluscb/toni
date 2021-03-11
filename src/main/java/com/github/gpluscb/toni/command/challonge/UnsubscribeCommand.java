@@ -37,7 +37,7 @@ public class UnsubscribeCommand implements Command {
             return;
         }
 
-        if (!ctx.hasManageChannelsPermission() && !ctx.hasAdminPermission()) {
+        if (!ctx.memberHasManageChannelsPermission() && !ctx.memberHasBotAdminPermission()) {
             ctx.reply("Hmmm, can I really really trust you? You'll need the `Manage Channels` permission to use this.").queue();
             return;
         }

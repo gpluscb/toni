@@ -16,7 +16,7 @@ public class StatusCommand implements Command {
 
     @Override
     public void execute(@Nonnull CommandContext ctx) {
-        if (!ctx.hasAdminPermission()) return;
+        if (!ctx.memberHasBotAdminPermission()) return;
 
         if (ctx.getArgNum() < 2) {
             ctx.reply("Too few args. `status <ACTIVITY(listening|watching|playing)> <STATUS...>`").queue();

@@ -1,5 +1,6 @@
 package com.github.gpluscb.toni.util;
 
+import net.dv8tion.jda.api.Permission;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -51,5 +52,15 @@ public class MiscUtil {
     @Nonnull
     public static String mentionUser(long id) {
         return String.format("<@%d>", id);
+    }
+
+    @Nonnull
+    public static String getPermName(@Nonnull Permission perm) {
+        switch (perm) {
+            case MESSAGE_EMBED_LINKS:
+                return "Embed Links";
+            default:
+                return perm.getName();
+        }
     }
 }

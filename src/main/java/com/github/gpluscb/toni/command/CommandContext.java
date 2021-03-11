@@ -36,6 +36,9 @@ public class CommandContext {
         tokens = TOKENIZER.tokenize(event.getMessage().getContentRaw());
     }
 
+    /**
+     * Assumes perms
+     */
     @Nonnull
     @CheckReturnValue
     public MessageAction reply(@Nonnull Message message) {
@@ -43,6 +46,9 @@ public class CommandContext {
         return getMessage().reply(message);
     }
 
+    /**
+     * Assumes perms
+     */
     @Nonnull
     @CheckReturnValue
     public MessageAction reply(@Nonnull String message) {
@@ -50,6 +56,9 @@ public class CommandContext {
         return getMessage().reply(message);
     }
 
+    /**
+     * Assumes perms
+     */
     @Nonnull
     @CheckReturnValue
     public MessageAction reply(@Nonnull MessageEmbed embed) {
@@ -57,11 +66,11 @@ public class CommandContext {
         return getMessage().reply(embed);
     }
 
-    public boolean hasAdminPermission() {
+    public boolean memberHasBotAdminPermission() {
         return event.getAuthor().getIdLong() == 107565973652938752L;
     }
 
-    public boolean hasManageChannelsPermission() {
+    public boolean memberHasManageChannelsPermission() {
         Member member = event.getMember();
         if (member == null) throw new IllegalStateException("This event is not from a server.");
         return member.hasPermission(Permission.MANAGE_CHANNEL);

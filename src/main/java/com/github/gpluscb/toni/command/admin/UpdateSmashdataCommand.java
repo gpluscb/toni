@@ -22,7 +22,7 @@ public class UpdateSmashdataCommand implements Command {
 
     @Override
     public void execute(@Nonnull CommandContext ctx) {
-        if (!ctx.hasAdminPermission()) return;
+        if (!ctx.memberHasBotAdminPermission()) return;
 
         if (ctx.getArgNum() < 1) {
             ctx.reply("Too few args. `updatesmashdata <PATH TO NEW DB>`").queue();

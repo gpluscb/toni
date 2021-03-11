@@ -13,7 +13,7 @@ import javax.script.ScriptEngineManager;
 public class EvalCommand implements Command {
     @Override
     public void execute(@Nonnull CommandContext ctx) {
-        if (!ctx.hasAdminPermission()) return;
+        if (!ctx.memberHasBotAdminPermission()) return;
 
         String args = ctx.getArgsFrom(0);
 

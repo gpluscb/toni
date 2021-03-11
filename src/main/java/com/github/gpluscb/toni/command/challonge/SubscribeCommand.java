@@ -36,7 +36,7 @@ public class SubscribeCommand implements Command {
             return;
         }
 
-        if (!ctx.hasManageChannelsPermission() && !ctx.hasAdminPermission()) {
+        if (!ctx.memberHasManageChannelsPermission() && !ctx.memberHasBotAdminPermission()) {
             ctx.reply("Hmmm, I don't think I can trust you quite yet... You'll need the `Manage Channels` permission to use this.").queue();
             return;
         }

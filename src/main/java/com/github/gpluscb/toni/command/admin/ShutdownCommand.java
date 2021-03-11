@@ -22,7 +22,7 @@ public class ShutdownCommand implements Command {
 
     @Override
     public void execute(@Nonnull CommandContext ctx) {
-        if (!ctx.hasAdminPermission()) return;
+        if (!ctx.memberHasBotAdminPermission()) return;
 
         log.info("Shutdown command executed - shutting down");
         ctx.reply("Alrighty, shutting down!").timeout(3, TimeUnit.SECONDS).queue(m -> bot.shutdown(), t -> {

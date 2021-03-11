@@ -10,6 +10,7 @@ import com.github.gpluscb.toni.util.MiscUtil;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
@@ -135,6 +136,12 @@ public class SmashdataCommand implements Command {
     @Override
     public String[] getAliases() {
         return new String[]{"smashdata", "player", "smasher", "data"};
+    }
+
+    @Nonnull
+    @Override
+    public Permission[] getRequiredBotPerms() {
+        return new Permission[]{Permission.MESSAGE_EMBED_LINKS};
     }
 
     @Nullable

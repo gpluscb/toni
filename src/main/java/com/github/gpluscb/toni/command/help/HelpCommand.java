@@ -5,6 +5,7 @@ import com.github.gpluscb.toni.command.CommandCategory;
 import com.github.gpluscb.toni.command.CommandContext;
 import com.github.gpluscb.toni.util.EmbedUtil;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.Permission;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -108,6 +109,12 @@ public class HelpCommand implements Command {
         builder.addField("Command categories", parsedFields, false);
 
         ctx.reply(builder.build()).queue();
+    }
+
+    @Nonnull
+    @Override
+    public Permission[] getRequiredBotPerms() {
+        return new Permission[] {Permission.MESSAGE_EMBED_LINKS};
     }
 
     @Nonnull

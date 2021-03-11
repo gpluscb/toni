@@ -1,5 +1,7 @@
 package com.github.gpluscb.toni.command;
 
+import net.dv8tion.jda.api.Permission;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -7,6 +9,11 @@ import javax.annotation.Nullable;
 // Tried in the other branch but abandoned for now, seems not worth the effort
 public interface Command {
     void execute(@Nonnull CommandContext ctx);
+
+    @Nonnull
+    default Permission[] getRequiredBotPerms() {
+        return new Permission[0];
+    }
 
     @Nonnull
     String[] getAliases();

@@ -1,6 +1,9 @@
 package com.github.gpluscb.toni.command;
 
 import com.github.gpluscb.toni.util.FailLogger;
+import com.github.gpluscb.toni.util.MiscUtil;
+import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -11,6 +14,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public class CommandDispatcher {
     private static final Logger log = LogManager.getLogger(CommandDispatcher.class);
@@ -36,6 +40,15 @@ public class CommandDispatcher {
         commands.stream().flatMap(category -> category.getCommands().stream())
                 .filter(command -> Arrays.asList(command.getAliases()).contains(ctx.getInvokedName().toLowerCase())).findAny()
                 .ifPresent(command -> {
+                    MessageReceivedEvent e = ctx.getEvent();
+                    Permission[] perms = command.getRequiredBotPerms();
+                    if (e.isFromGuild() && !e.getGuild().getSelfMember().hasPermission(e.getTextChannel(), perms)) {
+                        log.debug("Missing perms: {}", (Object) perms);
+                        ctx.reply(String.format("I need the following permissions for this command: %s.",
+                                Arrays.stream(perms).map(MiscUtil::getPermName).collect(Collectors.joining(", "))))
+                                .queue();
+                        return;
+                    }
                     synchronized (executor) {
                         if (!executor.isShutdown()) {
                             log.trace("Dispatching command: {}", command);

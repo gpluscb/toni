@@ -287,7 +287,7 @@ public class CharacterCommand implements Command {
         @Nonnull
         public synchronized Message nextMove() {
             movePage = (movePage + 1) % sectionPage.getMoveData(data).size();
-            hitboxPage = 0;
+            hitboxPage = -1;
             return getCurrent();
         }
 
@@ -295,7 +295,7 @@ public class CharacterCommand implements Command {
         public synchronized Message prevMove() {
             movePage--;
             if (movePage < 0) movePage = sectionPage.getMoveData(data).size() - 1;
-            hitboxPage = 0;
+            hitboxPage = -1;
             return getCurrent();
         }
 

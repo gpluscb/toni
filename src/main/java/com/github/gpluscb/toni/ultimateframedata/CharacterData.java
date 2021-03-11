@@ -67,7 +67,7 @@ public class CharacterData {
 
     public static class MoveData {
         @Nonnull
-        private final List<String> hitboxUrls;
+        private final List<HitboxData> hitboxes;
         @Nullable
         private final String moveName;
         @Nullable
@@ -91,8 +91,8 @@ public class CharacterData {
         @Nullable
         private final String activeFrames;
 
-        public MoveData(@Nonnull List<String> hitboxUrls, @Nullable String moveName, @Nullable String startup, @Nullable String totalFrames, @Nullable String landingLag, @Nullable String notes, @Nullable String baseDamage, @Nullable String shieldLag, @Nullable String shieldStun, @Nullable String whichHitbox, @Nullable String advantage, @Nullable String activeFrames) {
-            this.hitboxUrls = hitboxUrls;
+        public MoveData(@Nonnull List<HitboxData> hitboxes, @Nullable String moveName, @Nullable String startup, @Nullable String totalFrames, @Nullable String landingLag, @Nullable String notes, @Nullable String baseDamage, @Nullable String shieldLag, @Nullable String shieldStun, @Nullable String whichHitbox, @Nullable String advantage, @Nullable String activeFrames) {
+            this.hitboxes = hitboxes;
             this.moveName = moveName;
             this.startup = startup;
             this.totalFrames = totalFrames;
@@ -107,8 +107,8 @@ public class CharacterData {
         }
 
         @Nonnull
-        public List<String> getHitboxUrls() {
-            return hitboxUrls;
+        public List<HitboxData> getHitboxes() {
+            return hitboxes;
         }
 
         @Nullable
@@ -164,6 +164,28 @@ public class CharacterData {
         @Nullable
         public String getActiveFrames() {
             return activeFrames;
+        }
+    }
+
+    public static class HitboxData {
+        @Nullable
+        private final String name;
+        @Nonnull
+        private final String url;
+
+        public HitboxData(@Nullable String name, @Nonnull String url) {
+            this.name = name;
+            this.url = url;
+        }
+
+        @Nullable
+        public String getName() {
+            return name;
+        }
+
+        @Nonnull
+        public String getUrl() {
+            return url;
         }
     }
 }

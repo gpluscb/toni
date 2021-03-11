@@ -118,6 +118,9 @@ public class CharacterCommand implements Command {
         menu.displayReplying(ctx.getMessage());
     }
 
+    /**
+     * @param hitboxPage -1 means don't show
+     */
     @Nonnull
     private EmbedBuilder applyMove(@Nonnull EmbedBuilder embed, @Nonnull CharacterData data, @Nonnull MoveSection section, int hitboxPage, @Nonnull CharacterData.MoveData move) {
         String moveName = move.getMoveName();
@@ -156,14 +159,27 @@ public class CharacterCommand implements Command {
         String whichHitbox = move.getWhichHitbox();
         if (whichHitbox != null) fields.add(new EmbedUtil.InlineField("Info about which hitbox?", whichHitbox));
 
-        List<String> hitboxUrls = move.getHitboxUrls();
-        int hitboxSize = hitboxUrls.size();
-        String hitboxNote = String.format("%d/%d%s", hitboxPage + 1, hitboxSize, hitboxSize > 1 ? String.format(" (Use the %s reaction to cycle through them)", Constants.FRAME) : "");
+        List<CharacterData.HitboxData> hitboxes = move.getHitboxes();
+        int hitboxesSize = hitboxes.size();
 
-        if (hitboxSize != 0) {
-            fields.add(new EmbedUtil.InlineField("Shown hitbox", hitboxNote));
-            embed.setImage(hitboxUrls.get(hitboxPage));
+        String hitboxNote;
+
+        if (hitboxesSize == 0) {
+            hitboxNote = "No hitbox images available";
+        } else {
+            String noteWithoutName = String.format("%s/%d (Use %s)", hitboxPage < 0 ? "-" : hitboxPage + 1, hitboxesSize, Constants.FRAME);
+
+            if (hitboxPage < 0) hitboxNote = noteWithoutName;
+            else {
+                CharacterData.HitboxData hitbox = hitboxes.get(hitboxPage);
+
+                String name = hitbox.getName();
+                hitboxNote = name == null ? noteWithoutName : String.format("%s | %s", name, noteWithoutName);
+                embed.setImage(hitbox.getUrl());
+            }
         }
+
+        fields.add(new EmbedUtil.InlineField("Shown hitbox", hitboxNote));
 
         embed.appendDescription(EmbedUtil.parseInlineFields(fields));
 
@@ -217,7 +233,7 @@ public class CharacterCommand implements Command {
 
             sectionPage = MoveSection.NORMALS;
 
-            hitboxPage = 0;
+            hitboxPage = -1;
             movePage = 0;
 
             displayCouldNotFindMove = false;
@@ -256,7 +272,7 @@ public class CharacterCommand implements Command {
         public synchronized Message nextSection() {
             sectionPage = sectionPage.next();
             movePage = 0;
-            hitboxPage = 0;
+            hitboxPage = -1;
             return getCurrent();
         }
 
@@ -264,7 +280,7 @@ public class CharacterCommand implements Command {
         public synchronized Message prevSection() {
             sectionPage = sectionPage.prev();
             movePage = 0;
-            hitboxPage = 0;
+            hitboxPage = -1;
             return getCurrent();
         }
 
@@ -285,8 +301,9 @@ public class CharacterCommand implements Command {
 
         @Nonnull
         public synchronized Message nextHitbox() {
-            int hitboxUrlsSize = sectionPage.getMoveData(data).get(movePage).getHitboxUrls().size();
-            if (hitboxUrlsSize > 0) hitboxPage = (hitboxPage + 1) % hitboxUrlsSize;
+            int hitboxUrlsSize = sectionPage.getMoveData(data).get(movePage).getHitboxes().size();
+            hitboxPage++;
+            if (hitboxPage >= hitboxUrlsSize) hitboxPage = -1;
             return getCurrent();
         }
 

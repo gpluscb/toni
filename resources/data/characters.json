@@ -97,7 +97,8 @@
     "name": "Captain Falcon",
     "alt_names": [
       "captain falcon",
-      "falcon"
+      "falcon",
+      "cap"
     ],
     "emote_id": 736674479748415598,
     "guild": 736625420467699763,
@@ -1429,9 +1430,22 @@
         "alt_names": [
           "pyra",
           "py",
+          "pyra/mythra",
+          "mythra/pyra",
+          "pyra&mythra",
+          "mythra&pyra",
           "pythra",
           "myra",
           "pymy",
+          "mypy",
+          "py/my",
+          "my/py",
+          "p&m",
+          "m&p",
+          "pm",
+          "mp",
+          "p/m",
+          "m/p",
           "bae-blades",
           "bae blades",
           "baeblades",

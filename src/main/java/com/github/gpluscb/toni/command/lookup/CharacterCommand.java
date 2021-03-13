@@ -152,6 +152,8 @@ public class CharacterCommand implements Command {
         // General replacements
         // Guarantee space after usually first word for backair|neutralair|sideb etc.
         String name = moveName
+                // for airdodge, with the trim this shouldn't mess anything up
+                .replaceAll("air", "air ")
                 .replaceAll("aerial", "air")
                 // at the top because of (forward[s)pecial] conflict
                 .replaceAll("special", "b")

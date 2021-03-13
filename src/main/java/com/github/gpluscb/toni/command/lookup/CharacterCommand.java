@@ -138,7 +138,8 @@ public class CharacterCommand implements Command {
                     if (moveNameLowercase.contains(name)) return new PairNonnull<>(section, i);
 
                     // Indirect match -> don't return just yet, we might find a direct match later
-                    if (normalisedName != null && moveNameLowercase.contains(normalisedName))
+                    // Only check for the first move we find indirectly, otherwise "neutral air" will find "neutral air dodge"
+                    if (normalisedName != null && foundMove == null && moveNameLowercase.contains(normalisedName))
                         foundMove = new PairNonnull<>(section, i);
                 }
             }

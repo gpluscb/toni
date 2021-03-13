@@ -113,14 +113,14 @@ public class CharacterTree {
                         || (stackMiis && tree.getType() == CharacterTree.CollectionType.MIIS)
                         || (stackSheikZelda && tree.getType() == CharacterTree.CollectionType.SHEIK_ZELDA)
                         || (stackZssSamus && tree.getType() == CharacterTree.CollectionType.ZSS_SAMUS)
-                        || (stackMiis && tree.getType() == CollectionType.PYRA_MYTHRA)) {
+                        || (stackPythra && tree.getType() == CollectionType.PYRA_MYTHRA)) {
                     // Stacking
                     List<Character> stacked = tree.getAllCharacters(game);
                     if (!stacked.isEmpty()) allCharacters.add(stacked);
                 } else {
-                    // Flattening into singleton lists
-                    List<List<Character>> singletonLists = tree.getAllCharacters(game).stream().map(Collections::singletonList).collect(Collectors.toList());
-                    allCharacters.addAll(singletonLists);
+                    // Recursively add
+                    List<List<Character>> recursiveChars = tree.getAllCharacters(game, stackEchos, stackMiis, stackSheikZelda, stackZssSamus, stackPythra);
+                    allCharacters.addAll(recursiveChars);
                 }
             });
         }

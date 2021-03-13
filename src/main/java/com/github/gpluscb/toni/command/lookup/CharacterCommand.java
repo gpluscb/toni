@@ -111,8 +111,8 @@ public class CharacterCommand implements Command {
                     // Direct match -> return early
                     if (moveNameLowercase.contains(name)) return new PairNonnull<>(section, i);
 
-                    // Indirect match -> don't return just yet
-                    if (moveNameLowercase.contains(normalisedName))
+                    // Indirect match -> don't return just yet, we might find a direct match later
+                    if (normalisedName != null && moveNameLowercase.contains(normalisedName))
                         foundMove = new PairNonnull<>(section, i);
                 }
             }
@@ -121,16 +121,25 @@ public class CharacterCommand implements Command {
         return foundMove;
     }
 
-    @Nonnull
+    @Nullable
     private String normaliseMoveName(@Nonnull String moveName) {
         // General replacements
-        String name = moveName.replaceAll("\\baerial\\b", "air")
-                .replaceAll("\\bnormal\\b", "neutral")
-                .replaceAll("\\bspecial\\b", "b")
-                .replaceAll("\\bforwards\\b", "forward")
-                .replaceAll("\\bbackwards?\\b", "back")
-                .replaceAll("\\bdownwards?\\b", "down")
-                .replaceAll("\\bupwards?\\b", "up");
+        // Guarantee space after usually first word for backair|neutralair|sideb etc.
+        String name = moveName
+                .replaceAll("aerial", "air")
+                // at the top because of (forward[s)pecial] conflict
+                .replaceAll("special", "b")
+                .replaceAll("neutral", "neutral ")
+                .replaceAll("normal", "neutral ")
+                .replaceAll("forwards", "forward ")
+                .replaceAll("side", "side ")
+                .replaceAll("back(wards?)?", "back ")
+                .replaceAll("down(wards?)?", "down ")
+                .replaceAll("up(wards?)?", "up ")
+                // remove double spaces
+                .replaceAll(" +", " ")
+                // and remove leading and trailing spaces
+                .trim();
 
         int length = name.length();
 
@@ -155,9 +164,10 @@ public class CharacterCommand implements Command {
         }
 
         // Other special cases
-        if (name.equals("forward b")) return "side b";
+        if (name.matches("forward ?b")) return "side b";
 
-        return name;
+        // If we didn't do anything we might as well skip the check later
+        return name.equals(moveName) ? null : name;
     }
 
     private void sendReply(@Nonnull CommandContext ctx, @Nullable CharacterData data, @Nullable PairNonnull<CharacterData.MoveSection, Integer> startMove, boolean startMoveRequested) {

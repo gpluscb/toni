@@ -34,7 +34,7 @@ public class ShutdownCommand implements Command {
     @Nonnull
     @Override
     public String[] getAliases() {
-        return new String[]{"shutdown", "shut"};
+        return new String[]{"shutdown", "shut", "stfu"};
     }
 
     @Nullable

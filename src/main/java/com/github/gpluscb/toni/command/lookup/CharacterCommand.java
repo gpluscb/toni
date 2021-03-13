@@ -18,9 +18,7 @@ import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class CharacterCommand implements Command {
     private static final Logger log = LogManager.getLogger(CharacterCommand.class);
@@ -85,7 +83,10 @@ public class CharacterCommand implements Command {
                     return;
                 }
 
-                sendReply(ctx, moveName, response);
+                boolean startMoveRequested = moveName != null;
+                PairNonnull<CharacterData.MoveSection, Integer> startMove = startMoveRequested ? findMove(response, moveName) : null;
+
+                sendReply(ctx, response, startMove, startMoveRequested);
             } catch (Exception e) {
                 log.catching(e);
                 ctx.reply("Ouch, an error. This one's really bad, sorry. I'll send a report to my dev. If it keeps happening you might want to provide them with some context too.").queue();
@@ -93,7 +94,33 @@ public class CharacterCommand implements Command {
         }));
     }
 
-    private void sendReply(@Nonnull CommandContext ctx, @Nullable String moveName, @Nullable CharacterData data) {
+    @Nullable
+    private PairNonnull<CharacterData.MoveSection, Integer> findMove(@Nonnull CharacterData data, @Nonnull String name) {
+        String normalisedName = normaliseMoveName(name);
+
+        PairNonnull<CharacterData.MoveSection, Integer> foundMove = null;
+
+        for (CharacterData.MoveSection section : CharacterData.MoveSection.values()) {
+            List<CharacterData.MoveData> moves = data.getMoves(section);
+            for (int i = 0; i < moves.size(); i++) {
+                String moveName = moves.get(i).getMoveName();
+
+                if (moveName != null) {
+                    String moveNameLowercase = moveName.toLowerCase();
+
+                    // Direct match -> return early
+                    if (moveNameLowercase.contains(name)) return new PairNonnull<>(section, i);
+
+                    // Indirect match -> don't return just yet
+                    if (moveNameLowercase.contains(normalisedName)) foundMove = new PairNonnull<>(section, i);
+                }
+            }
+        }
+
+        return foundMove;
+    }
+
+    private void sendReply(@Nonnull CommandContext ctx, @Nullable CharacterData data, @Nullable PairNonnull<CharacterData.MoveSection, Integer> startMove, boolean startMoveRequested) {
         if (data == null) {
             log.error("Valid character requested, but not found by ufd service.");
             ctx.reply("Oh this is a bug. I was sure my buddy program would know about that character but it didn't. I'll tell my dev about it, but you can give them some context too.").queue();
@@ -103,7 +130,7 @@ public class CharacterCommand implements Command {
         User author = ctx.getAuthor();
         Member member = ctx.getEvent().getMember();
 
-        MovesEmbedPaginator pages = new MovesEmbedPaginator(EmbedUtil.getPreparedUFD(member, author).build(), data, moveName);
+        MovesEmbedPaginator pages = new MovesEmbedPaginator(EmbedUtil.getPreparedUFD(member, author).build(), data, startMove, startMoveRequested);
         ButtonActionMenu menu = new ButtonActionMenu.Builder()
                 .setEventWaiter(waiter)
                 .addUsers(author.getIdLong())
@@ -118,14 +145,20 @@ public class CharacterCommand implements Command {
         menu.displayReplying(ctx.getMessage());
     }
 
+    @Nonnull
+    private String normaliseMoveName(@Nonnull String name) {
+        // TODO
+        return "";
+    }
+
     /**
      * @param hitboxPage -1 means don't show
      */
     @Nonnull
-    private EmbedBuilder applyMove(@Nonnull EmbedBuilder embed, @Nonnull CharacterData data, @Nonnull MoveSection section, int hitboxPage, @Nonnull CharacterData.MoveData move) {
+    private EmbedBuilder applyMove(@Nonnull EmbedBuilder embed, @Nonnull CharacterData data, @Nonnull CharacterData.MoveSection section, int hitboxPage, @Nonnull CharacterData.MoveData move) {
         String moveName = move.getMoveName();
         if (moveName == null) moveName = "Some Move";
-        embed.setTitle(String.format("%s - %s - %s", MiscUtil.capitalizeFirst(data.getName()), section.display(), moveName), data.getUfdUrl());
+        embed.setTitle(String.format("%s - %s - %s", MiscUtil.capitalizeFirst(data.getName()), section.displayName(), moveName), data.getUfdUrl());
 
         List<EmbedUtil.InlineField> fields = new ArrayList<>();
 
@@ -221,51 +254,27 @@ public class CharacterCommand implements Command {
         private final CharacterData data;
 
         @Nonnull
-        private MoveSection sectionPage;
+        private CharacterData.MoveSection sectionPage;
         private int movePage;
         private int hitboxPage;
 
         private boolean displayCouldNotFindMove;
 
-        public MovesEmbedPaginator(@Nonnull MessageEmbed template, @Nonnull CharacterData data, @Nullable String startMove) {
+        public MovesEmbedPaginator(@Nonnull MessageEmbed template, @Nonnull CharacterData data, @Nullable PairNonnull<CharacterData.MoveSection, Integer> startMove, boolean startMoveRequested) {
             this.template = template;
             this.data = data;
 
-            sectionPage = MoveSection.NORMALS;
-
-            hitboxPage = -1;
+            sectionPage = CharacterData.MoveSection.NORMALS;
             movePage = 0;
+            // TODO: Make it show by default again after finishing normaliseMoveName
+            hitboxPage = -1;
 
-            displayCouldNotFindMove = false;
+            displayCouldNotFindMove = startMoveRequested && startMove == null;
 
-            if (startMove == null) return;
-            // TODO normalization function: side smash -> forward smash, ftilt -> forward tilt, upb -> up b and so on
-            String startMoveNormalized = startMove.toLowerCase();
-
-            if (tryAssignSectionPageAndMovePage(data.getNormals(), MoveSection.NORMALS, startMoveNormalized)) return;
-            if (tryAssignSectionPageAndMovePage(data.getAerials(), MoveSection.AERIALS, startMoveNormalized)) return;
-            if (tryAssignSectionPageAndMovePage(data.getSpecials(), MoveSection.SPECIALS, startMoveNormalized)) return;
-            if (tryAssignSectionPageAndMovePage(data.getGrabs(), MoveSection.GRABS, startMoveNormalized)) return;
-            if (tryAssignSectionPageAndMovePage(data.getDodges(), MoveSection.DODGES, startMoveNormalized)) return;
-
-            displayCouldNotFindMove = true;
-        }
-
-        /**
-         * Helper
-         */
-        private boolean tryAssignSectionPageAndMovePage(@Nonnull List<CharacterData.MoveData> moves, @Nonnull MoveSection section, @Nonnull String name) {
-            for (int i = 0; i < moves.size(); i++) {
-                String moveName = moves.get(i).getMoveName();
-
-                if (moveName != null && moveName.toLowerCase().contains(name)) {
-                    sectionPage = section;
-                    movePage = i;
-                    return true;
-                }
+            if (startMove != null) {
+                sectionPage = startMove.getT();
+                movePage = startMove.getU();
             }
-
-            return false;
         }
 
         @Nonnull
@@ -325,86 +334,6 @@ public class CharacterCommand implements Command {
             } catch (Exception e) {
                 log.catching(e);
                 return new MessageBuilder("There was a severe unexpected problem with displaying the move data, I don't really know how that happened. I'll tell  my dev, you can go shoot them a message about this too if you want to.").build();
-            }
-        }
-    }
-
-    private enum MoveSection {
-        NORMALS,
-        AERIALS,
-        SPECIALS,
-        GRABS,
-        DODGES;
-
-        @Nonnull
-        public MoveSection next() {
-            switch (this) {
-                case NORMALS:
-                    return AERIALS;
-                case AERIALS:
-                    return SPECIALS;
-                case SPECIALS:
-                    return GRABS;
-                case GRABS:
-                    return DODGES;
-                case DODGES:
-                    return NORMALS;
-                default:
-                    throw new IllegalStateException("Nothing matches");
-            }
-        }
-
-        @Nonnull
-        public MoveSection prev() {
-            switch (this) {
-                case NORMALS:
-                    return DODGES;
-                case AERIALS:
-                    return NORMALS;
-                case SPECIALS:
-                    return AERIALS;
-                case GRABS:
-                    return SPECIALS;
-                case DODGES:
-                    return GRABS;
-                default:
-                    throw new IllegalStateException("Nothing matches");
-            }
-        }
-
-        @Nonnull
-        public List<CharacterData.MoveData> getMoveData(@Nonnull CharacterData data) {
-            switch (this) {
-                case NORMALS:
-                    return data.getNormals();
-                case AERIALS:
-                    return data.getAerials();
-                case SPECIALS:
-                    return data.getSpecials();
-                case GRABS:
-                    return data.getGrabs();
-                case DODGES:
-                    return data.getDodges();
-                default:
-                    throw new IllegalStateException("Nothing matches");
-            }
-        }
-
-        @Nonnull
-        public String display() {
-            switch (this) {
-                case NORMALS:
-                    return "Ground Move";
-                case AERIALS:
-                    return "Aerial";
-                case SPECIALS:
-                    return "Special";
-                case GRABS:
-                    return "Grab";
-                case DODGES:
-                    return "Dodge";
-                default:
-                    throw new IllegalStateException("Nothing matches");
             }
         }
     }

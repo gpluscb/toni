@@ -41,6 +41,24 @@ public class CharacterData {
     }
 
     @Nonnull
+    public List<MoveData> getMoves(@Nonnull MoveSection section) {
+        switch (section) {
+            case NORMALS:
+                return normals;
+            case AERIALS:
+                return aerials;
+            case SPECIALS:
+                return specials;
+            case GRABS:
+                return grabs;
+            case DODGES:
+                return dodges;
+            default:
+                throw new IllegalStateException("Nothing matches");
+        }
+    }
+
+    @Nonnull
     public List<MoveData> getNormals() {
         return normals;
     }
@@ -63,6 +81,86 @@ public class CharacterData {
     @Nonnull
     public List<MoveData> getDodges() {
         return dodges;
+    }
+
+    public enum MoveSection {
+        NORMALS,
+        AERIALS,
+        SPECIALS,
+        GRABS,
+        DODGES;
+
+        @Nonnull
+        public MoveSection next() {
+            switch (this) {
+                case NORMALS:
+                    return AERIALS;
+                case AERIALS:
+                    return SPECIALS;
+                case SPECIALS:
+                    return GRABS;
+                case GRABS:
+                    return DODGES;
+                case DODGES:
+                    return NORMALS;
+                default:
+                    throw new IllegalStateException("Nothing matches");
+            }
+        }
+
+        @Nonnull
+        public MoveSection prev() {
+            switch (this) {
+                case NORMALS:
+                    return DODGES;
+                case AERIALS:
+                    return NORMALS;
+                case SPECIALS:
+                    return AERIALS;
+                case GRABS:
+                    return SPECIALS;
+                case DODGES:
+                    return GRABS;
+                default:
+                    throw new IllegalStateException("Nothing matches");
+            }
+        }
+
+        @Nonnull
+        public List<CharacterData.MoveData> getMoveData(@Nonnull CharacterData data) {
+            switch (this) {
+                case NORMALS:
+                    return data.getNormals();
+                case AERIALS:
+                    return data.getAerials();
+                case SPECIALS:
+                    return data.getSpecials();
+                case GRABS:
+                    return data.getGrabs();
+                case DODGES:
+                    return data.getDodges();
+                default:
+                    throw new IllegalStateException("Nothing matches");
+            }
+        }
+
+        @Nonnull
+        public String displayName() {
+            switch (this) {
+                case NORMALS:
+                    return "Ground Move";
+                case AERIALS:
+                    return "Aerial";
+                case SPECIALS:
+                    return "Special";
+                case GRABS:
+                    return "Grab";
+                case DODGES:
+                    return "Dodge";
+                default:
+                    throw new IllegalStateException("Nothing matches");
+            }
+        }
     }
 
     public static class MoveData {

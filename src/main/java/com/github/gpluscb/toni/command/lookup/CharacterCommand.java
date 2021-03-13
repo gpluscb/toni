@@ -124,13 +124,13 @@ public class CharacterCommand implements Command {
     @Nullable
     private String normaliseMoveName(@Nonnull String moveName) {
         // General replacements
-        String name = moveName.replace("\baerial\b", "air")
-                .replace("\bnormal\b", "neutral")
-                .replace("\bspecial\b", "b")
-                .replace("\bforwards\b", "forward")
-                .replace("\bbackwards?\b", "back")
-                .replace("\bdownwards?\b", "down")
-                .replace("\bupwards?\b", "up");
+        String name = moveName.replaceAll("\\baerial\\b", "air")
+                .replaceAll("\\bnormal\\b", "neutral")
+                .replaceAll("\\bspecial\\b", "b")
+                .replaceAll("\\bforwards\\b", "forward")
+                .replaceAll("\\bbackwards?\\b", "back")
+                .replaceAll("\\bdownwards?\\b", "down")
+                .replaceAll("\\bupwards?\\b", "up");
 
         int length = name.length();
 

@@ -64,7 +64,7 @@ public class CharacterCommand implements Command {
             }
 
             // Rest of arguments will be interpreted as move name
-            moveName = characterArgNum < argNum ? ctx.getArgsFrom(characterArgNum) : null;
+            moveName = characterArgNum < argNum ? ctx.getArgsFrom(characterArgNum).toLowerCase() : null;
         }
 
         if (id == null) {
@@ -112,12 +112,52 @@ public class CharacterCommand implements Command {
                     if (moveNameLowercase.contains(name)) return new PairNonnull<>(section, i);
 
                     // Indirect match -> don't return just yet
-                    if (moveNameLowercase.contains(normalisedName)) foundMove = new PairNonnull<>(section, i);
+                    if (normalisedName != null && moveNameLowercase.contains(normalisedName))
+                        foundMove = new PairNonnull<>(section, i);
                 }
             }
         }
 
         return foundMove;
+    }
+
+    @Nullable
+    private String normaliseMoveName(@Nonnull String moveName) {
+        // General replacements
+        String name = moveName.replace("\baerial\b", "air")
+                .replace("\bnormal\b", "neutral")
+                .replace("\bspecial\b", "b")
+                .replace("\bforwards\b", "forward")
+                .replace("\bbackwards?\b", "back")
+                .replace("\bdownwards?\b", "down")
+                .replace("\bupwards?\b", "up");
+
+        int length = name.length();
+
+        // bair|nair|fair|dair|zair|b air|etc.
+        // we might have "z air" as moveName and return "z air" here but I don't care too much
+        if ((length == 4 || length == 5) && name.endsWith("air")) {
+            char firstChar = name.charAt(0);
+            String expandedCharacter = firstChar == 'z' ? "z" : expandMoveCharacterNBFDZ(name.charAt(0));
+            if (expandedCharacter != null) return String.format("%s air", expandedCharacter);
+        }
+
+        // ftilt|f tilt|etc.
+        if ((length == 5 || length == 6) && name.endsWith("tilt")) {
+            String expandedCharacter = expandMoveCharacterNBFDZ(name.charAt(0));
+            if (expandedCharacter != null) return String.format("%s tilt", expandedCharacter);
+        }
+
+        // fsmash|f smash|etc.
+        if ((length == 6 || length == 7) && name.endsWith("smash")) {
+            String expandedCharacter = expandMoveCharacterNBFDZ(name.charAt(0));
+            if (expandedCharacter != null) return String.format("%s smash", expandedCharacter);
+        }
+
+        // Other special cases
+        if (name.equals("forward b")) return "side b";
+
+        return null;
     }
 
     private void sendReply(@Nonnull CommandContext ctx, @Nullable CharacterData data, @Nullable PairNonnull<CharacterData.MoveSection, Integer> startMove, boolean startMoveRequested) {
@@ -145,10 +185,20 @@ public class CharacterCommand implements Command {
         menu.displayReplying(ctx.getMessage());
     }
 
-    @Nonnull
-    private String normaliseMoveName(@Nonnull String name) {
-        // TODO
-        return "";
+    @Nullable
+    private String expandMoveCharacterNBFDZ(char character) {
+        switch (character) {
+            case 'n':
+                return "neutral";
+            case 'f':
+                return "forward";
+            case 'b':
+                return "back";
+            case 'd':
+                return "down";
+            default:
+                return null;
+        }
     }
 
     /**

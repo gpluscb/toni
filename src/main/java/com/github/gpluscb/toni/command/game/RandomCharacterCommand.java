@@ -113,7 +113,7 @@ public class RandomCharacterCommand implements Command {
                 break;
         }
 
-        List<List<CharacterTree.Character>> possibleCharacters = characterTree.getAllCharacters(game, stackEchos, stackMiis, stackSheikZelda, stackZssSamus, true);
+        List<List<CharacterTree.Character>> possibleCharacters = characterTree.getAllCharacters(game, stackEchos, stackMiis, stackSheikZelda, stackZssSamus);
         ThreadLocalRandom rng = ThreadLocalRandom.current();
         int rngIndex = rng.nextInt(possibleCharacters.size());
         List<CharacterTree.Character> selectedCharacters = possibleCharacters.get(rngIndex);

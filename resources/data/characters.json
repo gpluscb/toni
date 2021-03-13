@@ -1421,60 +1421,65 @@
     ]
   },
   {
-    "type": "pyra/mythra",
-    "characters": [
-      {
-        "type": "character",
-        "id": 85,
-        "name": "Pyra",
-        "alt_names": [
-          "pyra",
-          "py",
-          "pyra/mythra",
-          "mythra/pyra",
-          "pyra&mythra",
-          "mythra&pyra",
-          "pythra",
-          "myra",
-          "pymy",
-          "mypy",
-          "py/my",
-          "my/py",
-          "p&m",
-          "m&p",
-          "pm",
-          "mp",
-          "p/m",
-          "m/p",
-          "bae-blades",
-          "bae blades",
-          "baeblades",
-          "bae-blade",
-          "bae blade",
-          "baeblade",
-          "aegis",
-          "aegises"
-        ],
-        "emote_id": 817100307087491072,
-        "guild": 736625517154926623,
-        "games": [
-          "ult"
-        ]
-      },
-      {
-        "type": "character",
-        "id": 86,
-        "name": "Mythra",
-        "alt_names": [
-          "mythra",
-          "myth"
-        ],
-        "emote_id": 817844435202605076,
-        "guild": 736625517154926623,
-        "games": [
-          "ult"
-        ]
-      }
+    "type": "character",
+    "id": null,
+    "name": "Pyra/Mythra",
+    "alt_names": [
+      "pyra/mythra",
+      "mythra/pyra",
+      "pyra&mythra",
+      "mythra&pyra",
+      "pythra",
+      "myra",
+      "pymy",
+      "mypy",
+      "py/my",
+      "my/py",
+      "p&m",
+      "m&p",
+      "pm",
+      "mp",
+      "p/m",
+      "m/p",
+      "bae-blades",
+      "bae blades",
+      "baeblades",
+      "bae-blade",
+      "bae blade",
+      "baeblade",
+      "aegis",
+      "aegises"
+    ],
+    "emote_id": 820359534404173924,
+    "guild": 736625517154926623,
+    "games": [
+      "ult"
+    ]
+  },
+  {
+    "type": "character",
+    "id": 85,
+    "name": "Pyra",
+    "alt_names": [
+      "pyra",
+      "py"
+    ],
+    "emote_id": 817100307087491072,
+    "guild": 736625517154926623,
+    "games": [
+    ]
+  },
+  {
+    "type": "character",
+    "id": 86,
+    "name": "Mythra",
+    "alt_names": [
+      "mythra",
+      "myth"
+    ],
+    "emote_id": 817844435202605076,
+    "guild": 736625517154926623,
+    "games": [
     ]
   }
 ]

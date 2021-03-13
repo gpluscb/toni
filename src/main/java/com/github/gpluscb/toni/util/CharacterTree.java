@@ -60,10 +60,6 @@ public class CharacterTree {
                         CharacterTree zssSamusTree = CharacterTree.fromJson(CharacterTree.CollectionType.ZSS_SAMUS, characterObject.get("characters").getAsJsonArray());
                         characters.add(OneOfTwo.ofU(zssSamusTree));
                         break;
-                    case "pyra/mythra":
-                        CharacterTree pythraTree = CharacterTree.fromJson(CollectionType.PYRA_MYTHRA, characterObject.get("characters").getAsJsonArray());
-                        characters.add(OneOfTwo.ofU(pythraTree));
-                        break;
                     default:
                         throw new IllegalArgumentException("Unsupported type: " + type);
                 }
@@ -101,7 +97,7 @@ public class CharacterTree {
     }
 
     @Nonnull
-    public List<List<Character>> getAllCharacters(@Nullable Game game, boolean stackEchos, boolean stackMiis, boolean stackSheikZelda, boolean stackZssSamus, boolean stackPythra) {
+    public List<List<Character>> getAllCharacters(@Nullable Game game, boolean stackEchos, boolean stackMiis, boolean stackSheikZelda, boolean stackZssSamus) {
         List<List<Character>> allCharacters = new ArrayList<>();
 
         for (OneOfTwo<Character, CharacterTree> element : characters) {
@@ -112,14 +108,13 @@ public class CharacterTree {
                 if ((stackEchos && tree.getType() == CharacterTree.CollectionType.ECHOS)
                         || (stackMiis && tree.getType() == CharacterTree.CollectionType.MIIS)
                         || (stackSheikZelda && tree.getType() == CharacterTree.CollectionType.SHEIK_ZELDA)
-                        || (stackZssSamus && tree.getType() == CharacterTree.CollectionType.ZSS_SAMUS)
-                        || (stackPythra && tree.getType() == CollectionType.PYRA_MYTHRA)) {
+                        || (stackZssSamus && tree.getType() == CharacterTree.CollectionType.ZSS_SAMUS)) {
                     // Stacking
                     List<Character> stacked = tree.getAllCharacters(game);
                     if (!stacked.isEmpty()) allCharacters.add(stacked);
                 } else {
                     // Recursively add
-                    List<List<Character>> recursiveChars = tree.getAllCharacters(game, stackEchos, stackMiis, stackSheikZelda, stackZssSamus, stackPythra);
+                    List<List<Character>> recursiveChars = tree.getAllCharacters(game, stackEchos, stackMiis, stackSheikZelda, stackZssSamus);
                     allCharacters.addAll(recursiveChars);
                 }
             });
@@ -144,7 +139,6 @@ public class CharacterTree {
         ECHOS,
         SHEIK_ZELDA,
         ZSS_SAMUS,
-        PYRA_MYTHRA,
     }
 
     public enum Game {

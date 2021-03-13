@@ -138,19 +138,19 @@ public class CharacterCommand implements Command {
         // we might have "z air" as moveName and return "z air" here but I don't care too much
         if ((length == 4 || length == 5) && name.endsWith("air")) {
             char firstChar = name.charAt(0);
-            String expandedCharacter = firstChar == 'z' ? "z" : expandMoveCharacterNBFDZ(name.charAt(0));
+            String expandedCharacter = firstChar == 'z' ? "z" : expandMoveCharacterNBFD(name.charAt(0));
             if (expandedCharacter != null) return String.format("%s air", expandedCharacter);
         }
 
         // ftilt|f tilt|etc.
         if ((length == 5 || length == 6) && name.endsWith("tilt")) {
-            String expandedCharacter = expandMoveCharacterNBFDZ(name.charAt(0));
+            String expandedCharacter = expandMoveCharacterNBFD(name.charAt(0));
             if (expandedCharacter != null) return String.format("%s tilt", expandedCharacter);
         }
 
         // fsmash|f smash|etc.
         if ((length == 6 || length == 7) && name.endsWith("smash")) {
-            String expandedCharacter = expandMoveCharacterNBFDZ(name.charAt(0));
+            String expandedCharacter = expandMoveCharacterNBFD(name.charAt(0));
             if (expandedCharacter != null) return String.format("%s smash", expandedCharacter);
         }
 
@@ -186,7 +186,7 @@ public class CharacterCommand implements Command {
     }
 
     @Nullable
-    private String expandMoveCharacterNBFDZ(char character) {
+    private String expandMoveCharacterNBFD(char character) {
         switch (character) {
             case 'n':
                 return "neutral";

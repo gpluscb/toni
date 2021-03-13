@@ -44,33 +44,20 @@ public class CharacterCommand implements Command {
             return;
         }
 
-        String moveName;
-        Short id = null;
-        if (argNum == 1) {
-            String characterName = ctx.getArgsFrom(0).toLowerCase();
-            id = characters.stream().filter(c -> c.getAltNames().contains(characterName)).map(CharacterTree.Character::getId).filter(Objects::nonNull).findAny().orElse(null);
-            moveName = null;
-        } else {
-            // Find longest string of arguments that is also a character name
-            int characterArgNum = 0;
-            for (int i = 1; i <= argNum; i++) {
-                String characterName = ctx.getArgsRange(0, i).toLowerCase();
-                Short id_ = characters.stream().filter(c -> c.getAltNames().contains(characterName)).map(CharacterTree.Character::getId).filter(Objects::nonNull).findAny().orElse(null);
+        // T: id, U: response in case Id is not found
+        OneOfTwo<Pair<Short, String>, String> idAndMoveNameOrResponse = findCharacterIdAndMoveNameOrResponse(ctx);
 
-                if (id_ == null) continue;
-
-                id = id_;
-                characterArgNum = i;
-            }
-
-            // Rest of arguments will be interpreted as move name
-            moveName = characterArgNum < argNum ? ctx.getArgsFrom(characterArgNum).toLowerCase() : null;
-        }
-
-        if (id == null) {
-            ctx.reply("I couldn't find anything for that input, sorry.").queue();
+        if (idAndMoveNameOrResponse.isU()) {
+            // We know because of the isU
+            ctx.reply(idAndMoveNameOrResponse.getUOrThrow()).queue();
             return;
         }
+
+        // We know because of the isU
+        Pair<Short, String> idAndMoveName = idAndMoveNameOrResponse.getTOrThrow();
+        short id = idAndMoveName.getT();
+        @Nullable
+        String moveName = idAndMoveName.getU();
 
         ctx.getChannel().sendTyping().queue();
 
@@ -92,6 +79,45 @@ public class CharacterCommand implements Command {
                 ctx.reply("Ouch, an error. This one's really bad, sorry. I'll send a report to my dev. If it keeps happening you might want to provide them with some context too.").queue();
             }
         }));
+    }
+
+    /**
+     * @return T: Pair of id and move name. Note that move name may be null. U: Reason why we couldn't find anything.
+     */
+    @Nonnull
+    private OneOfTwo<Pair<Short, String>, String> findCharacterIdAndMoveNameOrResponse(@Nonnull CommandContext ctx) {
+        int characterArgNum = 0;
+        OneOfTwo<Short, String> id = OneOfTwo.ofU("I couldn't find anything for that input, sorry");
+        int argNum = ctx.getArgNum();
+        for (int i = 1; i <= argNum; i++) {
+            String characterName = ctx.getArgsRange(0, i).toLowerCase();
+
+            OneOfTwo<Short, Optional<String>> id_ = characters.stream().filter(c -> c.getAltNames().contains(characterName))
+                    .<OneOfTwo<Short, Optional<String>>>map(c -> {
+                        Short id__ = c.getId();
+                        return id__ == null ?
+                                OneOfTwo.ofU(Optional.of("This character by itself doesn't have a page on ultimateframedata, but sub-characters probably do!" +
+                                        " So try for example `Charizard` instead of `Pokémon Trainer`."))
+                                : OneOfTwo.ofT(id__);
+                    })
+                    .findAny().orElse(OneOfTwo.ofU(Optional.empty()));
+
+            if (id_.isU()) {
+                Optional<String> response = id_.getUOrThrow();
+                if (response.isPresent()) return OneOfTwo.ofU(response.get());
+                // Else we haven't found anything
+                continue;
+            }
+
+            // We know we found an id here, so let's store it for now in case we won't find anything better later
+            id = OneOfTwo.ofT(id_.getTOrThrow());
+            characterArgNum = i;
+        }
+
+        // Rest of the args will be move name
+        String moveName = characterArgNum < argNum ? ctx.getArgsFrom(characterArgNum).toLowerCase() : null;
+
+        return id.mapT(id_ -> new Pair<>(id_, moveName));
     }
 
     @Nullable

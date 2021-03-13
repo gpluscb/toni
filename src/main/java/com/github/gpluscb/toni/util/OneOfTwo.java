@@ -73,4 +73,16 @@ public class OneOfTwo<T, U> {
     public Optional<U> getU() {
         return Optional.ofNullable(u);
     }
+
+    @Nonnull
+    public T getTOrThrow() {
+        if (t != null) return t;
+        throw new IllegalStateException("Called getTOrThrow when this is U");
+    }
+
+    @Nonnull
+    public U getUOrThrow() {
+        if (u != null) return u;
+        throw new IllegalStateException("Called getUOrThrow when this is T");
+    }
 }

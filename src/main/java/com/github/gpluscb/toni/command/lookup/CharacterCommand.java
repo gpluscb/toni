@@ -316,8 +316,7 @@ public class CharacterCommand implements Command {
 
             sectionPage = CharacterData.MoveSection.NORMALS;
             movePage = 0;
-            // TODO: Make it show by default again after finishing normaliseMoveName
-            hitboxPage = -1;
+            hitboxPage = 0;
 
             displayCouldNotFindMove = startMoveRequested && startMove == null;
 
@@ -331,7 +330,7 @@ public class CharacterCommand implements Command {
         public synchronized Message nextSection() {
             sectionPage = sectionPage.next();
             movePage = 0;
-            hitboxPage = -1;
+            hitboxPage = 0;
             return getCurrent();
         }
 
@@ -339,14 +338,14 @@ public class CharacterCommand implements Command {
         public synchronized Message prevSection() {
             sectionPage = sectionPage.prev();
             movePage = 0;
-            hitboxPage = -1;
+            hitboxPage = 0;
             return getCurrent();
         }
 
         @Nonnull
         public synchronized Message nextMove() {
             movePage = (movePage + 1) % sectionPage.getMoveData(data).size();
-            hitboxPage = -1;
+            hitboxPage = 0;
             return getCurrent();
         }
 
@@ -354,7 +353,7 @@ public class CharacterCommand implements Command {
         public synchronized Message prevMove() {
             movePage--;
             if (movePage < 0) movePage = sectionPage.getMoveData(data).size() - 1;
-            hitboxPage = -1;
+            hitboxPage = 0;
             return getCurrent();
         }
 

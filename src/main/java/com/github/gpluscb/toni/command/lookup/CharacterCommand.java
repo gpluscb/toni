@@ -112,7 +112,7 @@ public class CharacterCommand implements Command {
                     if (moveNameLowercase.contains(name)) return new PairNonnull<>(section, i);
 
                     // Indirect match -> don't return just yet
-                    if (normalisedName != null && moveNameLowercase.contains(normalisedName))
+                    if (moveNameLowercase.contains(normalisedName))
                         foundMove = new PairNonnull<>(section, i);
                 }
             }
@@ -121,7 +121,7 @@ public class CharacterCommand implements Command {
         return foundMove;
     }
 
-    @Nullable
+    @Nonnull
     private String normaliseMoveName(@Nonnull String moveName) {
         // General replacements
         String name = moveName.replaceAll("\\baerial\\b", "air")
@@ -157,7 +157,7 @@ public class CharacterCommand implements Command {
         // Other special cases
         if (name.equals("forward b")) return "side b";
 
-        return null;
+        return name;
     }
 
     private void sendReply(@Nonnull CommandContext ctx, @Nullable CharacterData data, @Nullable PairNonnull<CharacterData.MoveSection, Integer> startMove, boolean startMoveRequested) {

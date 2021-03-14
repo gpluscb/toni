@@ -19,11 +19,9 @@ import java.util.concurrent.ThreadFactory;
 public class UltimateframedataClient {
     @Nonnull
     private final UltimateframedataService service;
-    @Nonnull
-    private final Executor futureExecutor;
 
     public UltimateframedataClient() {
-        futureExecutor = Executors.newCachedThreadPool(new ThreadFactory() {
+        Executor futureExecutor = Executors.newCachedThreadPool(new ThreadFactory() {
             int i;
 
             @Override
@@ -39,6 +37,7 @@ public class UltimateframedataClient {
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl("http://127.0.0.1:8080/")
                 .addConverterFactory(GsonConverterFactory.create(gson))
+                .callbackExecutor(futureExecutor)
                 .build();
 
         service = retrofit.create(UltimateframedataService.class);
@@ -62,6 +61,6 @@ public class UltimateframedataClient {
             }
         }));
 
-        return ret.thenApplyAsync(r -> r, futureExecutor);
+        return ret;
     }
 }

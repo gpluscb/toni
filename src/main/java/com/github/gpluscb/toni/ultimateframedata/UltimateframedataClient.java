@@ -21,7 +21,7 @@ public class UltimateframedataClient {
     private final UltimateframedataService service;
 
     public UltimateframedataClient() {
-        Executor futureExecutor = Executors.newCachedThreadPool(new ThreadFactory() {
+        Executor callbackExecutor = Executors.newCachedThreadPool(new ThreadFactory() {
             int i;
 
             @Override
@@ -37,7 +37,7 @@ public class UltimateframedataClient {
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl("http://127.0.0.1:8080/")
                 .addConverterFactory(GsonConverterFactory.create(gson))
-                .callbackExecutor(futureExecutor)
+                .callbackExecutor(callbackExecutor)
                 .build();
 
         service = retrofit.create(UltimateframedataService.class);

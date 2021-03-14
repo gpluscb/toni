@@ -26,7 +26,7 @@ public class UltimateframedataClient {
 
             @Override
             public Thread newThread(@Nonnull Runnable runnable) {
-                return new Thread(runnable, String.format("UltimateframedataClient [%d] Futures-Thread", i));
+                return new Thread(runnable, String.format("UltimateframedataClient [%d] Callback-Thread", i));
             }
         });
 

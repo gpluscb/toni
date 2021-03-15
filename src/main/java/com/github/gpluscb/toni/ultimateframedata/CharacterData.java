@@ -172,6 +172,8 @@ public class CharacterData {
                     return "Grab";
                 case DODGES:
                     return "Dodge";
+                case MISC:
+                    return "Misc";
                 default:
                     throw new IllegalStateException("Nothing matches");
             }

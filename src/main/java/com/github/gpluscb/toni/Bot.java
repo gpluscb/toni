@@ -20,6 +20,8 @@ import com.github.gpluscb.toni.command.help.PrivacyCommand;
 import com.github.gpluscb.toni.command.lookup.CharacterCommand;
 import com.github.gpluscb.toni.command.lookup.SmashdataCommand;
 import com.github.gpluscb.toni.command.lookup.TournamentCommand;
+import com.github.gpluscb.toni.dbots.DBotsClient;
+import com.github.gpluscb.toni.routines.PostGuildRoutine;
 import com.github.gpluscb.toni.smashdata.SmashdataManager;
 import com.github.gpluscb.toni.smashgg.GGManager;
 import com.github.gpluscb.toni.ultimateframedata.UltimateframedataClient;
@@ -66,6 +68,8 @@ public class Bot {
     private final ShardManager shardManager;
     @Nonnull
     private final GGManager ggManager;
+    @Nonnull
+    private final PostGuildRoutine postGuildRoutine;
     /*@Nonnull
     private final ListenerManager challongeManager;
     @Nonnull
@@ -123,14 +127,14 @@ public class Bot {
 			throw e;
 		}*/
 
-        log.trace("Building UltimateframedataClient");
-        UltimateframedataClient ufdClient = new UltimateframedataClient();
-
         // Avoid unintentional pings.
         MessageAction.setDefaultMentions(Collections.emptyList());
         MessageAction.setDefaultMentionRepliedUser(false);
         // Avoid too long request queue
         RestAction.setDefaultTimeout(30, TimeUnit.SECONDS);
+
+        log.trace("Building UltimateframedataClient");
+        UltimateframedataClient ufdClient = new UltimateframedataClient();
 
         log.trace("Building EventWaiter");
         waiterPool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "EventWaiterPool [0 / 1] Waiter-Thread"));
@@ -169,7 +173,7 @@ public class Bot {
 			waiterPool.shutdownNow();
 			throw e;
 		}*/
-        
+
         log.trace("Loading characters");
         CharacterTree characterTree;
         try (Reader file = new FileReader(cfg.getCharactersFileLocation())) {
@@ -209,6 +213,12 @@ public class Bot {
 
         log.trace("Enabling discord appender");
         DiscordAppenderImpl.setShardManager(shardManager);
+
+        log.trace("Creating DBotsClient");
+        DBotsClient dBotsClient = new DBotsClient(cfg.getDbotsToken(), 698889469532569671L); // FIXME: hardcoded
+
+        log.trace("Starting post stats routine");
+        postGuildRoutine = new PostGuildRoutine(dBotsClient, shardManager);
 
         log.info("Bot construction complete");
     }
@@ -270,6 +280,7 @@ public class Bot {
         ggManager.shutdown();
         shardManager.shutdown();
         dispatcher.shutdown();
+        postGuildRoutine.shutdown();
         try {
             smashdata.shutdown();
         } catch (SQLException e) {

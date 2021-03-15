@@ -199,6 +199,22 @@ public class CharacterCommand implements Command {
         return name.equals(moveName) ? null : name;
     }
 
+    @Nullable
+    private String expandMoveCharacterNBFD(char character) {
+        switch (character) {
+            case 'n':
+                return "neutral";
+            case 'f':
+                return "forward";
+            case 'b':
+                return "back";
+            case 'd':
+                return "down";
+            default:
+                return null;
+        }
+    }
+
     private void sendReply(@Nonnull CommandContext ctx, @Nullable CharacterData data, @Nullable PairNonnull<CharacterData.MoveSection, Integer> startMove, boolean startMoveRequested) {
         if (data == null) {
             log.error("Valid character requested, but not found by ufd service.");
@@ -222,22 +238,6 @@ public class CharacterCommand implements Command {
                 .build();
 
         menu.displayReplying(ctx.getMessage());
-    }
-
-    @Nullable
-    private String expandMoveCharacterNBFD(char character) {
-        switch (character) {
-            case 'n':
-                return "neutral";
-            case 'f':
-                return "forward";
-            case 'b':
-                return "back";
-            case 'd':
-                return "down";
-            default:
-                return null;
-        }
     }
 
     /**

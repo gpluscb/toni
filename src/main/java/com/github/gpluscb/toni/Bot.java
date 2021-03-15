@@ -43,6 +43,7 @@ import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.discordbots.api.client.DiscordBotListAPI;
 
 import javax.annotation.Nonnull;
 import javax.security.auth.login.LoginException;
@@ -217,8 +218,14 @@ public class Bot {
         log.trace("Creating DBotsClient");
         DBotsClient dBotsClient = new DBotsClient(cfg.getDbotsToken(), 698889469532569671L); // FIXME: hardcoded
 
+        log.trace("Creating TopGGClient");
+        DiscordBotListAPI topggClient = new DiscordBotListAPI.Builder()
+                .token(cfg.getTopggToken())
+                .botId(String.valueOf(698889469532569671L)) // FIXME: hardcoded
+                .build();
+
         log.trace("Starting post stats routine");
-        postGuildRoutine = new PostGuildRoutine(dBotsClient, shardManager);
+        postGuildRoutine = new PostGuildRoutine(dBotsClient, topggClient, shardManager);
 
         log.info("Bot construction complete");
     }

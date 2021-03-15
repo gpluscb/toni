@@ -120,6 +120,7 @@ public class CharacterCommand implements Command {
         return id.mapT(id_ -> new Pair<>(id_, moveName));
     }
 
+    // TODO: Respect Misc
     @Nullable
     private PairNonnull<CharacterData.MoveSection, Integer> findMove(@Nonnull CharacterData data, @Nonnull String name) {
         String normalisedName = normaliseMoveName(name);
@@ -241,67 +242,125 @@ public class CharacterCommand implements Command {
     }
 
     /**
-     * @param hitboxPage -1 means don't show
+     * @param hitboxPageAndMove -1 for hitbox page means don't show
      */
     @Nonnull
-    private EmbedBuilder applyMove(@Nonnull EmbedBuilder embed, @Nonnull CharacterData data, @Nonnull CharacterData.MoveSection section, int hitboxPage, @Nonnull CharacterData.MoveData move) {
-        String moveName = move.getMoveName();
-        if (moveName == null) moveName = "Some Move";
-        embed.setTitle(String.format("%s - %s - %s", MiscUtil.capitalizeFirst(data.getName()), section.displayName(), moveName), data.getUfdUrl());
+    private EmbedBuilder applyMove(@Nonnull EmbedBuilder embed, @Nonnull CharacterData data, @Nonnull CharacterData.MoveSection section, @Nullable PairNonnull<Integer, CharacterData.MoveData> hitboxPageAndMove) {
+        if (hitboxPageAndMove == null) {
+            embed.setTitle(String.format("%s - %s", MiscUtil.capitalizeFirst(data.getName()), section.displayName()));
+        } else {
+            CharacterData.MoveData move = hitboxPageAndMove.getU();
+            String moveName = move.getMoveName();
+            if (moveName == null) moveName = "Some Move";
+            embed.setTitle(String.format("%s - %s - %s", MiscUtil.capitalizeFirst(data.getName()), section.displayName(), moveName), data.getUfdUrl());
+        }
 
         List<EmbedUtil.InlineField> fields = new ArrayList<>();
 
-        String startup = move.getStartup();
-        if (startup != null) fields.add(new EmbedUtil.InlineField("Startup", startup));
+        if (section == CharacterData.MoveSection.MISC) {
+            CharacterData.StatsData stats = data.getMiscData().getStats();
 
-        String totalFrames = move.getTotalFrames();
-        if (totalFrames != null) fields.add(new EmbedUtil.InlineField("Total Frames", totalFrames));
+            if (stats != null) {
+                String weight = stats.getWeight();
+                if (weight != null) fields.add(new EmbedUtil.InlineField("Weight", weight));
 
-        String landingLag = move.getLandingLag();
-        if (landingLag != null) fields.add(new EmbedUtil.InlineField("Landing Lag", landingLag));
+                String gravity = stats.getGravity();
+                if (gravity != null) fields.add(new EmbedUtil.InlineField("Gravity", gravity));
 
-        String notes = move.getNotes();
-        if (notes != null) fields.add(new EmbedUtil.InlineField("Notes", notes));
+                String runSpeed = stats.getRunSpeed();
+                if (runSpeed != null) fields.add(new EmbedUtil.InlineField("Run Speed", runSpeed));
 
-        String baseDamage = move.getBaseDamage();
-        if (baseDamage != null) fields.add(new EmbedUtil.InlineField("Base Damage", baseDamage));
+                String initialDash = stats.getInitialDash();
+                if (initialDash != null) fields.add(new EmbedUtil.InlineField("Initial Dash", initialDash));
 
-        String shieldLag = move.getShieldLag();
-        if (shieldLag != null) fields.add(new EmbedUtil.InlineField("Shield Lag", shieldLag));
+                String airSpeed = stats.getAirSpeed();
+                if (airSpeed != null) fields.add(new EmbedUtil.InlineField("Air Speed", airSpeed));
 
-        String shieldStun = move.getShieldStun();
-        if (shieldStun != null) fields.add(new EmbedUtil.InlineField("Shield Stun", shieldStun));
+                String totalAirAcceleration = stats.getTotalAirAcceleration();
+                if (totalAirAcceleration != null)
+                    fields.add(new EmbedUtil.InlineField("Total Air Acceleration", totalAirAcceleration));
 
-        String advantage = move.getAdvantage();
-        if (advantage != null) fields.add(new EmbedUtil.InlineField("Frame Advantage", advantage));
+                String shFhShffFhffFrames = stats.getShFhShffFhffFrames();
+                if (shFhShffFhffFrames != null)
+                    fields.add(new EmbedUtil.InlineField("SH / FH / SHFF / FHFF Frames", shFhShffFhffFrames));
 
-        String activeFrames = move.getActiveFrames();
-        if (activeFrames != null) fields.add(new EmbedUtil.InlineField("Active Frames", activeFrames));
+                String fallSpeedFastFallSpeed = stats.getFallSpeedFastFallSpeed();
+                if (fallSpeedFastFallSpeed != null)
+                    fields.add(new EmbedUtil.InlineField("Fall Speed / Fast Fall Speed", fallSpeedFastFallSpeed));
 
-        String whichHitbox = move.getWhichHitbox();
-        if (whichHitbox != null) fields.add(new EmbedUtil.InlineField("Info about which hitbox?", whichHitbox));
+                List<String> oosOptions = stats.getOosOptions();
+                if (!oosOptions.isEmpty())
+                    fields.add(new EmbedUtil.InlineField("Out Of Shield options", oosOptions.get(0)));
+                for (int i = 1; i < oosOptions.size(); i++)
+                    fields.add(new EmbedUtil.InlineField("", oosOptions.get(i)));
 
-        List<CharacterData.HitboxData> hitboxes = move.getHitboxes();
-        int hitboxesSize = hitboxes.size();
+                String shieldGrab = stats.getShieldGrab();
+                if (shieldGrab != null) fields.add(new EmbedUtil.InlineField("Shield Grab", shieldGrab));
 
-        String hitboxNote;
+                String shieldDrop = stats.getShieldDrop();
+                if (shieldDrop != null) fields.add(new EmbedUtil.InlineField("Shield Drop", shieldDrop));
 
-        if (hitboxesSize == 0) {
-            hitboxNote = "No hitbox images available";
-        } else {
-            String noteWithoutName = String.format("%s/%d (Use %s)", hitboxPage < 0 ? "-" : hitboxPage + 1, hitboxesSize, Constants.FRAME);
-
-            if (hitboxPage < 0) hitboxNote = noteWithoutName;
-            else {
-                CharacterData.HitboxData hitbox = hitboxes.get(hitboxPage);
-
-                String name = hitbox.getName();
-                hitboxNote = name == null ? noteWithoutName : String.format("%s | %s", name, noteWithoutName);
-                embed.setImage(hitbox.getUrl());
+                String jumpSquat = stats.getJumpSquat();
+                if (jumpSquat != null) fields.add(new EmbedUtil.InlineField("Jump Squat", jumpSquat));
             }
         }
 
-        fields.add(new EmbedUtil.InlineField("Shown hitbox", hitboxNote));
+        if (hitboxPageAndMove != null) {
+            int hitboxPage = hitboxPageAndMove.getT();
+            CharacterData.MoveData move = hitboxPageAndMove.getU();
+
+            String startup = move.getStartup();
+            if (startup != null) fields.add(new EmbedUtil.InlineField("Startup", startup));
+
+            String totalFrames = move.getTotalFrames();
+            if (totalFrames != null) fields.add(new EmbedUtil.InlineField("Total Frames", totalFrames));
+
+            String landingLag = move.getLandingLag();
+            if (landingLag != null) fields.add(new EmbedUtil.InlineField("Landing Lag", landingLag));
+
+            String notes = move.getNotes();
+            if (notes != null) fields.add(new EmbedUtil.InlineField("Notes", notes));
+
+            String baseDamage = move.getBaseDamage();
+            if (baseDamage != null) fields.add(new EmbedUtil.InlineField("Base Damage", baseDamage));
+
+            String shieldLag = move.getShieldLag();
+            if (shieldLag != null) fields.add(new EmbedUtil.InlineField("Shield Lag", shieldLag));
+
+            String shieldStun = move.getShieldStun();
+            if (shieldStun != null) fields.add(new EmbedUtil.InlineField("Shield Stun", shieldStun));
+
+            String advantage = move.getAdvantage();
+            if (advantage != null) fields.add(new EmbedUtil.InlineField("Frame Advantage", advantage));
+
+            String activeFrames = move.getActiveFrames();
+            if (activeFrames != null) fields.add(new EmbedUtil.InlineField("Active Frames", activeFrames));
+
+            String whichHitbox = move.getWhichHitbox();
+            if (whichHitbox != null) fields.add(new EmbedUtil.InlineField("Info about which hitbox?", whichHitbox));
+
+            List<CharacterData.HitboxData> hitboxes = move.getHitboxes();
+            int hitboxesSize = hitboxes.size();
+
+            String hitboxNote;
+
+            if (hitboxesSize == 0) {
+                hitboxNote = "No hitbox images available";
+            } else {
+                String noteWithoutName = String.format("%s/%d (Use %s)", hitboxPage < 0 ? "-" : hitboxPage + 1, hitboxesSize, Constants.FRAME);
+
+                if (hitboxPage < 0) hitboxNote = noteWithoutName;
+                else {
+                    CharacterData.HitboxData hitbox = hitboxes.get(hitboxPage);
+
+                    String name = hitbox.getName();
+                    hitboxNote = name == null ? noteWithoutName : String.format("%s | %s", name, noteWithoutName);
+                    embed.setImage(hitbox.getUrl());
+                }
+            }
+
+            fields.add(new EmbedUtil.InlineField("Shown hitbox", hitboxNote));
+        }
 
         embed.appendDescription(EmbedUtil.parseInlineFields(fields));
 
@@ -398,7 +457,8 @@ public class CharacterCommand implements Command {
 
         @Nonnull
         public synchronized Message nextHitbox() {
-            int hitboxUrlsSize = sectionPage.getMoveData(data).get(movePage).getHitboxes().size();
+            List<CharacterData.MoveData> moves = sectionPage.getMoveData(data);
+            int hitboxUrlsSize = moves.isEmpty() ? 0 : moves.get(movePage).getHitboxes().size();
             hitboxPage++;
             if (hitboxPage >= hitboxUrlsSize) hitboxPage = -1;
             return getCurrent();
@@ -414,9 +474,10 @@ public class CharacterCommand implements Command {
                     displayCouldNotFindMove = false;
                 }
 
-                CharacterData.MoveData move = sectionPage.getMoveData(data).get(movePage);
+                List<CharacterData.MoveData> moves = sectionPage.getMoveData(data);
+                PairNonnull<Integer, CharacterData.MoveData> hitboxPageAndMove = moves.isEmpty() ? null : new PairNonnull<>(hitboxPage, moves.get(movePage));
 
-                applyMove(embed, data, sectionPage, hitboxPage, move);
+                applyMove(embed, data, sectionPage, hitboxPageAndMove);
 
                 return new MessageBuilder().setEmbed(embed.build()).build();
             } catch (Exception e) {

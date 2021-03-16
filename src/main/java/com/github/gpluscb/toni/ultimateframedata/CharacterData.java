@@ -56,6 +56,8 @@ public class CharacterData {
                 return grabs;
             case DODGES:
                 return dodges;
+            case MISC:
+                return miscData.getMoves();
             default:
                 throw new IllegalStateException("Nothing matches");
         }

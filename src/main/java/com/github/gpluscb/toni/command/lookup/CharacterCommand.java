@@ -171,6 +171,7 @@ public class CharacterCommand implements Command {
                 .replaceAll("up(wards?)?", "up ")
                 .replaceAll("miscellaneous", "misc")
                 .replaceAll("get ?up", "getup ")
+                .replaceAll("ledge", "ledge ")
                 // remove double spaces
                 .replaceAll(" +", " ")
                 // and remove leading and trailing spaces

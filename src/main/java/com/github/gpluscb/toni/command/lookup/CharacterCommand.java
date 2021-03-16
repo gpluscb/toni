@@ -247,7 +247,7 @@ public class CharacterCommand implements Command {
     @Nonnull
     private EmbedBuilder applyMove(@Nonnull EmbedBuilder embed, @Nonnull CharacterData data, @Nonnull CharacterData.MoveSection section, @Nullable PairNonnull<Integer, CharacterData.MoveData> hitboxPageAndMove) {
         if (hitboxPageAndMove == null) {
-            embed.setTitle(String.format("%s - %s", MiscUtil.capitalizeFirst(data.getName()), section.displayName()));
+            embed.setTitle(String.format("%s - %s", MiscUtil.capitalizeFirst(data.getName()), section.displayName()), data.getUfdUrl());
         } else {
             CharacterData.MoveData move = hitboxPageAndMove.getU();
             String moveName = move.getMoveName();
@@ -257,7 +257,8 @@ public class CharacterCommand implements Command {
 
         List<EmbedUtil.InlineField> fields = new ArrayList<>();
 
-        if (section == CharacterData.MoveSection.MISC) {
+        if (hitboxPageAndMove == null) {
+            // This only happens in misc section
             CharacterData.StatsData stats = data.getMiscData().getStats();
 
             if (stats != null) {
@@ -303,9 +304,7 @@ public class CharacterCommand implements Command {
                 String jumpSquat = stats.getJumpSquat();
                 if (jumpSquat != null) fields.add(new EmbedUtil.InlineField("Jump Squat", jumpSquat));
             }
-        }
-
-        if (hitboxPageAndMove != null) {
+        } else {
             int hitboxPage = hitboxPageAndMove.getT();
             CharacterData.MoveData move = hitboxPageAndMove.getU();
 
@@ -403,6 +402,7 @@ public class CharacterCommand implements Command {
 
         @Nonnull
         private CharacterData.MoveSection sectionPage;
+        // For misc, movePage == misc moves length means display misc info
         private int movePage;
         private int hitboxPage;
 
@@ -442,15 +442,17 @@ public class CharacterCommand implements Command {
 
         @Nonnull
         public synchronized Message nextMove() {
-            movePage = (movePage + 1) % sectionPage.getMoveData(data).size();
+            int moveLength = sectionPage.getMoveData(data).size() + (sectionPage == CharacterData.MoveSection.MISC ? 1 : 0);
+            movePage = (movePage + 1) % moveLength;
             hitboxPage = 0;
             return getCurrent();
         }
 
         @Nonnull
         public synchronized Message prevMove() {
+            int moveLength = sectionPage.getMoveData(data).size() + (sectionPage == CharacterData.MoveSection.MISC ? 1 : 0);
             movePage--;
-            if (movePage < 0) movePage = sectionPage.getMoveData(data).size() - 1;
+            if (movePage < 0) movePage = moveLength - 1;
             hitboxPage = 0;
             return getCurrent();
         }
@@ -458,7 +460,8 @@ public class CharacterCommand implements Command {
         @Nonnull
         public synchronized Message nextHitbox() {
             List<CharacterData.MoveData> moves = sectionPage.getMoveData(data);
-            int hitboxUrlsSize = moves.isEmpty() ? 0 : moves.get(movePage).getHitboxes().size();
+            boolean isMiscPage = movePage >= moves.size();
+            int hitboxUrlsSize = isMiscPage ? 0 : moves.get(movePage).getHitboxes().size();
             hitboxPage++;
             if (hitboxPage >= hitboxUrlsSize) hitboxPage = -1;
             return getCurrent();
@@ -475,7 +478,8 @@ public class CharacterCommand implements Command {
                 }
 
                 List<CharacterData.MoveData> moves = sectionPage.getMoveData(data);
-                PairNonnull<Integer, CharacterData.MoveData> hitboxPageAndMove = moves.isEmpty() ? null : new PairNonnull<>(hitboxPage, moves.get(movePage));
+                boolean isMiscPage = movePage >= moves.size();
+                PairNonnull<Integer, CharacterData.MoveData> hitboxPageAndMove = isMiscPage ? null : new PairNonnull<>(hitboxPage, moves.get(movePage));
 
                 applyMove(embed, data, sectionPage, hitboxPageAndMove);
 

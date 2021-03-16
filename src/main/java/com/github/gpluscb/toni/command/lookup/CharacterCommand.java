@@ -120,10 +120,13 @@ public class CharacterCommand implements Command {
         return id.mapT(id_ -> new Pair<>(id_, moveName));
     }
 
-    // TODO: Respect Misc
     @Nullable
     private PairNonnull<CharacterData.MoveSection, Integer> findMove(@Nonnull CharacterData data, @Nonnull String name) {
         String normalisedName = normaliseMoveName(name);
+
+        // Special case for just misc
+        if ((normalisedName == null ? name : normalisedName).equals("misc"))
+            return new PairNonnull<>(CharacterData.MoveSection.MISC, data.getMiscData().getMoves().size());
 
         PairNonnull<CharacterData.MoveSection, Integer> foundMove = null;
 
@@ -166,6 +169,8 @@ public class CharacterCommand implements Command {
                 .replaceAll("back(wards?)?", "back ")
                 .replaceAll("down(wards?)?", "down ")
                 .replaceAll("up(wards?)?", "up ")
+                .replaceAll("miscellaneous", "misc")
+                .replaceAll("get ?up", "getup ")
                 // remove double spaces
                 .replaceAll(" +", " ")
                 // and remove leading and trailing spaces

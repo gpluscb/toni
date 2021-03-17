@@ -180,6 +180,26 @@ public class CharacterData {
                     throw new IllegalStateException("Nothing matches");
             }
         }
+
+        @Nonnull
+        public String sectionHtmlId() {
+            switch (this) {
+                case NORMALS:
+                    return "groundattacks";
+                case AERIALS:
+                    return "aerialattacks";
+                case SPECIALS:
+                    return "specialattacks";
+                case GRABS:
+                    return "grabs";
+                case DODGES:
+                    return "dodges";
+                case MISC:
+                    return "misc";
+                default:
+                    throw new IllegalStateException("Nothing matches");
+            }
+        }
     }
 
     public static class MoveData {

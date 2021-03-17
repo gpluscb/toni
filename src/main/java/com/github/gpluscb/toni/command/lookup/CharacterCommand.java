@@ -252,13 +252,17 @@ public class CharacterCommand implements Command {
      */
     @Nonnull
     private EmbedBuilder applyMove(@Nonnull EmbedBuilder embed, @Nonnull CharacterData data, @Nonnull CharacterData.MoveSection section, @Nullable PairNonnull<Integer, CharacterData.MoveData> hitboxPageAndMove) {
+        String url = String.format("%s#%s", data.getUfdUrl(), section.sectionHtmlId());
+        String nameCapitalized = MiscUtil.capitalizeFirst(data.getName());
+        String sectionName = section.displayName();
+
         if (hitboxPageAndMove == null) {
-            embed.setTitle(String.format("%s - %s", MiscUtil.capitalizeFirst(data.getName()), section.displayName()), data.getUfdUrl());
+            embed.setTitle(String.format("%s - %s", nameCapitalized, sectionName), url);
         } else {
             CharacterData.MoveData move = hitboxPageAndMove.getU();
             String moveName = move.getMoveName();
             if (moveName == null) moveName = "Some Move";
-            embed.setTitle(String.format("%s - %s - %s", MiscUtil.capitalizeFirst(data.getName()), section.displayName(), moveName), data.getUfdUrl());
+            embed.setTitle(String.format("%s - %s - %s", nameCapitalized, sectionName, moveName), url);
         }
 
         List<EmbedUtil.InlineField> fields = new ArrayList<>();

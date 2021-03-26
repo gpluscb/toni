@@ -20,6 +20,7 @@ import com.github.gpluscb.toni.command.help.PrivacyCommand;
 import com.github.gpluscb.toni.command.lookup.CharacterCommand;
 import com.github.gpluscb.toni.command.lookup.SmashdataCommand;
 import com.github.gpluscb.toni.command.lookup.TournamentCommand;
+import com.github.gpluscb.toni.command.matchmaking.AvailableCommand;
 import com.github.gpluscb.toni.command.matchmaking.UnrankedConfigCommand;
 import com.github.gpluscb.toni.matchmaking.UnrankedMatchmakingManager;
 import com.github.gpluscb.toni.smashdata.SmashdataManager;
@@ -282,6 +283,7 @@ public class Bot {
 
         List<Command> matchmakingCommands = new ArrayList<>();
         matchmakingCommands.add(new UnrankedConfigCommand(unrankedManager));
+        matchmakingCommands.add(new AvailableCommand(unrankedManager));
         commands.add(new CommandCategory("matchmaking", "Commands for unranked matchmaking", matchmakingCommands));
 
         return commands;

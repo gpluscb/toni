@@ -37,6 +37,9 @@ public class UnrankedMatchmakingManager {
         return new UnrankedGuildMatchmakingConfig(lfgRoleId, channelId);
     }
 
+    /**
+     * @return true if changes were made (the row didn't already exist)
+     */
     public boolean storeMatchmakingConfig(long guildId, @Nonnull UnrankedGuildMatchmakingConfig config) throws SQLException {
         PreparedStatement statement = connection
                 .prepareStatement("INSERT INTO unranked_matchmaking_configs (guild_id, lfg_role_id, channel_id) VALUES (?, ?, ?) ON CONFLICT (guild_id) DO NOTHING");

@@ -23,7 +23,7 @@ public class UnrankedMatchmakingManager {
         UnrankedGuildMatchmakingConfig cached = matchmakingConfigCache.get(guildId);
         if (cached != null) return cached;
 
-        PreparedStatement statement = connection.prepareStatement("SELECT lfg_role_id, channel_id FROM matchmaking_configs WHERE guild_id = ?");
+        PreparedStatement statement = connection.prepareStatement("SELECT lfg_role_id, channel_id FROM unranked_matchmaking_configs WHERE guild_id = ?");
         statement.setQueryTimeout(10);
 
         statement.setLong(1, guildId);

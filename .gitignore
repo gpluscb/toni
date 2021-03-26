@@ -75,3 +75,6 @@ fabric.properties
 **/logs
 .gradle
 build
+**/toni_state.db
+**/dataSources.xml
+**/sqldialects.xml

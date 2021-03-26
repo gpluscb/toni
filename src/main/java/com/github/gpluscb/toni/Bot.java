@@ -20,6 +20,8 @@ import com.github.gpluscb.toni.command.help.PrivacyCommand;
 import com.github.gpluscb.toni.command.lookup.CharacterCommand;
 import com.github.gpluscb.toni.command.lookup.SmashdataCommand;
 import com.github.gpluscb.toni.command.lookup.TournamentCommand;
+import com.github.gpluscb.toni.command.matchmaking.UnrankedConfigCommand;
+import com.github.gpluscb.toni.matchmaking.UnrankedMatchmakingManager;
 import com.github.gpluscb.toni.smashdata.SmashdataManager;
 import com.github.gpluscb.toni.smashgg.GGManager;
 import com.github.gpluscb.toni.ultimateframedata.UltimateframedataClient;
@@ -74,6 +76,8 @@ public class Bot {
     private final RetrofitRestClient client;*/ // TODO: CHALLONGE FEATURES ON HOLD
     @Nonnull
     private final SmashdataManager smashdata;
+    @Nonnull
+    private final UnrankedMatchmakingManager unrankedManager;
     @Nonnull
     private final ScheduledExecutorService waiterPool;
 
@@ -169,7 +173,7 @@ public class Bot {
 			waiterPool.shutdownNow();
 			throw e;
 		}*/
-        
+
         log.trace("Loading characters");
         CharacterTree characterTree;
         try (Reader file = new FileReader(cfg.getCharactersFileLocation())) {
@@ -191,6 +195,20 @@ public class Bot {
             smashdata = new SmashdataManager(cfg.getSmashdataDbLocation());
         } catch (SQLException e) {
             log.error("Exception while loading smashdata - shutting down", e);
+            ggManager.shutdown();
+            shardManager.shutdown();
+            // challongeManager.shutdown();
+            // listener.shutdown();
+            // client.close();
+            waiterPool.shutdownNow();
+            throw e;
+        }
+
+        log.trace("Loading unranked manager");
+        try {
+            unrankedManager = new UnrankedMatchmakingManager(cfg.getStateDbLocation());
+        } catch (SQLException e) {
+            log.error("Exception while loading unranked manager - shutting down", e);
             ggManager.shutdown();
             shardManager.shutdown();
             // challongeManager.shutdown();
@@ -261,6 +279,10 @@ public class Bot {
         // lookupCommands.add(new SubscribeCommand(challonge, listener));
         // lookupCommands.add(new UnsubscribeCommand(challonge, listener));
         commands.add(new CommandCategory("lookup", "Lookup commands for other websites", lookupCommands));
+
+        List<Command> matchmakingCommands = new ArrayList<>();
+        matchmakingCommands.add(new UnrankedConfigCommand(unrankedManager));
+        commands.add(new CommandCategory("matchmaking", "Commands for unranked matchmaking", matchmakingCommands));
 
         return commands;
     }

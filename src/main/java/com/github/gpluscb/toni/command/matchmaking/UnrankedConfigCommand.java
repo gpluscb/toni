@@ -4,6 +4,7 @@ import com.github.gpluscb.toni.command.Command;
 import com.github.gpluscb.toni.command.CommandContext;
 import com.github.gpluscb.toni.matchmaking.UnrankedMatchmakingManager;
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.TextChannel;
@@ -26,6 +27,7 @@ public class UnrankedConfigCommand implements Command {
 
     @Override
     public void execute(@Nonnull CommandContext ctx) {
+        // TODO: I feel like this is still bad ux, maybe there should be a setup variant but like this it's unintuitive
         if (!ctx.getEvent().isFromGuild()) {
             ctx.reply("This command only works in servers, I won't set up matchmaking in our DMs.").queue();
             return;
@@ -34,6 +36,7 @@ public class UnrankedConfigCommand implements Command {
         // We know the member is not null because we're in a guild
         Member member = ctx.getMember();
         // TODO: Is this too restrictive?
+        //noinspection ConstantConditions
         if (!(member.hasPermission(ctx.getEvent().getTextChannel(), Permission.MANAGE_CHANNEL) && member.hasPermission(Permission.MANAGE_ROLES))) {
             ctx.reply("I don't trust you... you need to have both Manage Channel and Manage Roles permission to use this.").queue();
             return;
@@ -63,6 +66,11 @@ public class UnrankedConfigCommand implements Command {
         Role role = ctx.getRoleMentionArg(0);
         if (role == null) {
             ctx.reply("The first argument must be a mention of a role in this server.").queue();
+            return;
+        }
+
+        if (!role.isMentionable()) {
+            ctx.reply("The role you provided is not mentionable, that doesn't make too much sense if I should ping it.").queue();
             return;
         }
 
@@ -148,9 +156,24 @@ public class UnrankedConfigCommand implements Command {
             return;
         }
 
+        // TODO: dupe code, maybe check role method
+        if (!role.isMentionable()) {
+            ctx.reply("The role you provided is not mentionable, that doesn't make too much sense if I should ping it.").queue();
+            return;
+        }
+
+        Guild guild = ctx.getEvent().getGuild();
+
+        Member selfMember = guild.getSelfMember();
+        if (!(selfMember.canInteract(role) && selfMember.hasPermission(Permission.MANAGE_ROLES))) {
+            ctx.reply("I won't be able to assign this role to people." +
+                    " Please make sure I have permission to manage roles, and that the role is lower than my highest role.").queue();
+            return;
+        }
+
         long roleId = role.getIdLong();
 
-        long guildId = ctx.getEvent().getGuild().getIdLong();
+        long guildId = guild.getIdLong();
 
         try {
             boolean wasPresent = manager.updateMatchmakingRole(guildId, roleId);

@@ -30,9 +30,13 @@ public class UnrankedMatchmakingManager {
 
         ResultSet rs = statement.executeQuery();
 
+        if (rs.isClosed()) return null;
+
         long lfgRoleId = rs.getLong("lfg_role_id");
         Long channelId = rs.getLong("channel_id");
         if (rs.wasNull()) channelId = null;
+
+        statement.close();
 
         return new UnrankedGuildMatchmakingConfig(lfgRoleId, channelId);
     }
@@ -58,6 +62,8 @@ public class UnrankedMatchmakingManager {
             matchmakingConfigCache.put(guildId, config);
         }
 
+        statement.close();
+
         return affected;
     }
 
@@ -81,6 +87,8 @@ public class UnrankedMatchmakingManager {
             matchmakingConfigCache.put(guildId, config);
         }
 
+        statement.close();
+
         return affected;
     }
 
@@ -102,6 +110,8 @@ public class UnrankedMatchmakingManager {
             if (cachedConfig != null)
                 matchmakingConfigCache.put(guildId, new UnrankedGuildMatchmakingConfig(lfgRoleId, cachedConfig.getChannelId()));
         }
+
+        statement.close();
 
         return affected;
     }
@@ -126,6 +136,8 @@ public class UnrankedMatchmakingManager {
                 matchmakingConfigCache.put(guildId, new UnrankedGuildMatchmakingConfig(cachedConfig.getLfgRoleId(), channelId));
         }
 
+        statement.close();
+
         return affected;
     }
 
@@ -140,10 +152,16 @@ public class UnrankedMatchmakingManager {
 
         boolean affected = statement.executeUpdate() >= 1;
 
+        statement.close();
+
         // About race condition: We are fine with too little in cache
         matchmakingConfigCache.remove(guildId);
 
         return affected;
+    }
+
+    public void shutdown() throws SQLException {
+        connection.close();
     }
 
     public static class UnrankedGuildMatchmakingConfig {

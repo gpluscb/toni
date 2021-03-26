@@ -299,6 +299,12 @@ public class Bot {
         } catch (SQLException e) {
             log.catching(e);
         }
+
+        try {
+            unrankedManager.shutdown();
+        } catch (SQLException e) {
+            log.catching(e);
+        }
 		
 		/*challongeManager.shutdown();
 		try {

@@ -38,6 +38,8 @@ public class SmashdataManager {
         rs.next();
         String pgruRaw = rs.getString("by_id");
 
+        pgruStatement.close();
+
         JsonObject pgruJson = JsonParser.parseString(pgruRaw).getAsJsonObject();
 
         Map<String, Integer> pgru = new HashMap<>();
@@ -89,6 +91,8 @@ public class SmashdataManager {
             PlayerData data = new PlayerData(id, tag, prefixes, social, country, state, region, characters, ranking);
             results.add(data);
         }
+
+        statement.close();
 
         return results;
     }

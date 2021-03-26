@@ -4,6 +4,7 @@ import com.github.gpluscb.toni.command.Command;
 import com.github.gpluscb.toni.command.CommandContext;
 import com.github.gpluscb.toni.matchmaking.UnrankedMatchmakingManager;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.exceptions.HierarchyException;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
@@ -59,12 +60,22 @@ public class AvailableCommand implements Command {
                 return;
             }
 
-            try {
-                // We know member isn't null because this is in a guild.
-                //noinspection ConstantConditions
-                guild.addRoleToMember(ctx.getMember(), role).flatMap(v -> ctx.reply("I have successfully given you the role.")).queue();
-            } catch (InsufficientPermissionException | HierarchyException e) {
-                ctx.reply("I couldn't give you the role because I lack permissions. Mods might be able to fix that.").queue();
+            Member member = ctx.getMember();
+
+            // We know member isn't null because this is in a guild.
+            //noinspection ConstantConditions
+            if (member.getRoles().contains(role)) {
+                try {
+                    guild.removeRoleFromMember(ctx.getMember(), role).flatMap(v -> ctx.reply("I have successfully removed the role.")).queue();
+                } catch (InsufficientPermissionException | HierarchyException e) {
+                    ctx.reply("I couldn't remove the role because I lack permissions. Mods might be able to fix that.").queue();
+                }
+            } else {
+                try {
+                    guild.addRoleToMember(ctx.getMember(), role).flatMap(v -> ctx.reply("I have successfully given you the role. Use this command again to remove it.")).queue();
+                } catch (InsufficientPermissionException | HierarchyException e) {
+                    ctx.reply("I couldn't give you the role because I lack permissions. Mods might be able to fix that.").queue();
+                }
             }
         } catch (SQLException e) {
             log.catching(e);

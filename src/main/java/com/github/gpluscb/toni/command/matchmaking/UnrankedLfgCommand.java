@@ -8,6 +8,7 @@ import com.github.gpluscb.toni.util.FailLogger;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import org.apache.logging.log4j.LogManager;
@@ -20,7 +21,6 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-// TODO: Message Manage permission
 public class UnrankedLfgCommand implements Command {
     private static final Logger log = LogManager.getLogger(UnrankedLfgCommand.class);
 
@@ -87,10 +87,14 @@ public class UnrankedLfgCommand implements Command {
             ctx.reply(String.format("%s, %s is looking for a game for %s. React with %s to accept.",
                     MiscUtil.mentionRole(roleId), MiscUtil.mentionUser(userId), MiscUtil.durationToString(duration), Constants.FENCER))
                     .mentionRoles(roleId).mentionUsers(userId).queue(msg -> {
-                msg.addReaction(Constants.FENCER).queue();
+                TextChannel textChannel = msg.getTextChannel();
+
+                if (textChannel.getGuild().getSelfMember().hasPermission(msg.getTextChannel(), Permission.MESSAGE_ADD_REACTION))
+                    msg.addReaction(Constants.FENCER).queue();
+
                 JDA jda = msg.getJDA();
                 long msgId = msg.getIdLong();
-                long channelId = msg.getChannel().getIdLong();
+                long channelId = textChannel.getIdLong();
 
                 AtomicBoolean wasCancelled = new AtomicBoolean(false);
 
@@ -132,11 +136,14 @@ public class UnrankedLfgCommand implements Command {
                         " If you want me to disable the reaction on the original message, react with %s within three minutes.",
                 MiscUtil.mentionUser(userId), MiscUtil.mentionUser(challengerId), Constants.CHECK_MARK))
                 .mentionUsers(userId, challengerId).queue(msg -> {
+            TextChannel textChannel = msg.getTextChannel();
             long msgId = msg.getIdLong();
-            long channelId = msg.getChannel().getIdLong();
+            long channelId = textChannel.getIdLong();
             JDA jda = msg.getJDA();
 
-            msg.addReaction(Constants.CHECK_MARK).queue();
+            if (textChannel.getGuild().getSelfMember().hasPermission(textChannel, Permission.MESSAGE_ADD_REACTION))
+                msg.addReaction(Constants.CHECK_MARK).queue();
+
             waiter.waitForEvent(
                     MessageReactionAddEvent.class,
                     e -> checkConfirmReaction(e, userId),
@@ -165,7 +172,7 @@ public class UnrankedLfgCommand implements Command {
 
         channel.editMessageById(originalMessageId, String.format("%s, %s was looking for a game, but they found someone.",
                 MiscUtil.mentionRole(roleId), MiscUtil.mentionUser(userId))).mentionRoles(roleId).mentionUsers(userId).queue();
-        channel.clearReactionsById(originalMessageId, Constants.FENCER).queue();
+        MiscUtil.clearReactionsOrRemoveOwnReaction(channel, originalMessageId, Constants.FENCER).queue();
 
         channel.editMessageById(messageId, String.format("%s, %s wants to play with you.", MiscUtil.mentionUser(userId), MiscUtil.mentionUser(challengerId)))
                 .mentionUsers(userId, challengerId).queue();
@@ -174,13 +181,13 @@ public class UnrankedLfgCommand implements Command {
     private void executeConfirmTimeout(@Nonnull TextChannel channel, long messageId, long userId, long challengerId) {
         channel.editMessageById(messageId, String.format("%s, %s wants to play with you.", MiscUtil.mentionUser(userId), MiscUtil.mentionUser(challengerId)))
                 .mentionUsers(userId, challengerId).queue();
-        channel.clearReactionsById(messageId, Constants.FENCER).queue();
+        MiscUtil.clearReactionsOrRemoveOwnReaction(channel, messageId, Constants.FENCER).queue();
     }
 
     private void executeMatchmakingReactionTimeout(@Nonnull TextChannel channel, long messageId, long userId, long roleId) {
         channel.editMessageById(messageId, String.format("%s, %s was looking for a game.",
                 MiscUtil.mentionRole(roleId), MiscUtil.mentionUser(userId))).mentionRoles(roleId).mentionUsers(userId).queue();
-        channel.clearReactionsById(messageId, Constants.FENCER).queue();
+        MiscUtil.clearReactionsOrRemoveOwnReaction(channel, messageId, Constants.FENCER).queue();
     }
 
     @Nonnull

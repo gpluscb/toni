@@ -1,6 +1,9 @@
 package com.github.gpluscb.toni.util;
 
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.requests.RestAction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -46,6 +49,17 @@ public class MiscUtil {
             default:
                 return null;
         }
+    }
+
+    @Nonnull
+    public static RestAction<Void> clearReactionsOrRemoveOwnReaction(@Nonnull MessageChannel channel, long messageId, @Nonnull String reaction) {
+        if (channel instanceof TextChannel) {
+            TextChannel textChannel = (TextChannel) channel;
+            if (textChannel.getGuild().getSelfMember().hasPermission(textChannel, Permission.MESSAGE_MANAGE))
+                return textChannel.clearReactionsById(messageId, reaction);
+        }
+
+        return channel.removeReactionById(messageId, reaction);
     }
 
     @Nonnull

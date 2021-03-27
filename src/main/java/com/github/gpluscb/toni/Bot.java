@@ -22,7 +22,7 @@ import com.github.gpluscb.toni.command.lookup.SmashdataCommand;
 import com.github.gpluscb.toni.command.lookup.TournamentCommand;
 import com.github.gpluscb.toni.command.matchmaking.AvailableCommand;
 import com.github.gpluscb.toni.command.matchmaking.UnrankedConfigCommand;
-import com.github.gpluscb.toni.matchmaking.UnrankedMatchmakingManager;
+import com.github.gpluscb.toni.matchmaking.UnrankedManager;
 import com.github.gpluscb.toni.smashdata.SmashdataManager;
 import com.github.gpluscb.toni.smashgg.GGManager;
 import com.github.gpluscb.toni.ultimateframedata.UltimateframedataClient;
@@ -78,7 +78,7 @@ public class Bot {
     @Nonnull
     private final SmashdataManager smashdata;
     @Nonnull
-    private final UnrankedMatchmakingManager unrankedManager;
+    private final UnrankedManager unrankedManager;
     @Nonnull
     private final ScheduledExecutorService waiterPool;
 
@@ -207,7 +207,7 @@ public class Bot {
 
         log.trace("Loading unranked manager");
         try {
-            unrankedManager = new UnrankedMatchmakingManager(cfg.getStateDbLocation());
+            unrankedManager = new UnrankedManager(cfg.getStateDbLocation());
         } catch (SQLException e) {
             log.error("Exception while loading unranked manager - shutting down", e);
             ggManager.shutdown();

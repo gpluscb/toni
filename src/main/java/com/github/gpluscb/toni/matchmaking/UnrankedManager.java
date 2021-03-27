@@ -7,20 +7,20 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public class UnrankedMatchmakingManager {
+public class UnrankedManager {
     @Nonnull
     private final Connection connection;
     @Nonnull
-    private final Map<Long, UnrankedGuildMatchmakingConfig> matchmakingConfigCache;
+    private final Map<Long, MatchmakingConfig> matchmakingConfigCache;
 
-    public UnrankedMatchmakingManager(@Nonnull String dbLocation) throws SQLException {
+    public UnrankedManager(@Nonnull String dbLocation) throws SQLException {
         connection = DriverManager.getConnection("jdbc:sqlite:" + dbLocation);
         matchmakingConfigCache = Collections.synchronizedMap(new HashMap<>());
     }
 
     @Nullable
-    public UnrankedGuildMatchmakingConfig loadMatchmakingConfig(long guildId) throws SQLException {
-        UnrankedGuildMatchmakingConfig cached = matchmakingConfigCache.get(guildId);
+    public MatchmakingConfig loadMatchmakingConfig(long guildId) throws SQLException {
+        MatchmakingConfig cached = matchmakingConfigCache.get(guildId);
         if (cached != null) return cached;
 
         PreparedStatement statement = connection.prepareStatement("SELECT lfg_role_id, channel_id FROM unranked_matchmaking_configs WHERE guild_id = ?");
@@ -38,13 +38,13 @@ public class UnrankedMatchmakingManager {
 
         statement.close();
 
-        return new UnrankedGuildMatchmakingConfig(lfgRoleId, channelId);
+        return new MatchmakingConfig(lfgRoleId, channelId);
     }
 
     /**
      * @return true if changes were made (the row didn't already exist)
      */
-    public boolean storeMatchmakingConfig(long guildId, @Nonnull UnrankedGuildMatchmakingConfig config) throws SQLException {
+    public boolean storeMatchmakingConfig(long guildId, @Nonnull MatchmakingConfig config) throws SQLException {
         PreparedStatement statement = connection
                 .prepareStatement("INSERT INTO unranked_matchmaking_configs (guild_id, lfg_role_id, channel_id) VALUES (?, ?, ?) ON CONFLICT (guild_id) DO NOTHING");
         statement.setQueryTimeout(10);
@@ -70,7 +70,7 @@ public class UnrankedMatchmakingManager {
     /**
      * @return true if a row was affected
      */
-    public boolean updateMatchmakingConfig(long guildId, @Nonnull UnrankedGuildMatchmakingConfig config) throws SQLException {
+    public boolean updateMatchmakingConfig(long guildId, @Nonnull MatchmakingConfig config) throws SQLException {
         PreparedStatement statement = connection.prepareStatement("UPDATE unranked_matchmaking_configs SET lfg_role_id = ?, channel_id = ? WHERE guild_id = ?");
         statement.setQueryTimeout(10);
 
@@ -106,9 +106,9 @@ public class UnrankedMatchmakingManager {
         synchronized (matchmakingConfigCache) {
             affected = statement.executeUpdate() >= 1;
 
-            UnrankedGuildMatchmakingConfig cachedConfig = matchmakingConfigCache.get(guildId);
+            MatchmakingConfig cachedConfig = matchmakingConfigCache.get(guildId);
             if (cachedConfig != null)
-                matchmakingConfigCache.put(guildId, new UnrankedGuildMatchmakingConfig(lfgRoleId, cachedConfig.getChannelId()));
+                matchmakingConfigCache.put(guildId, new MatchmakingConfig(lfgRoleId, cachedConfig.getChannelId()));
         }
 
         statement.close();
@@ -131,9 +131,9 @@ public class UnrankedMatchmakingManager {
         synchronized (matchmakingConfigCache) {
             affected = statement.executeUpdate() >= 1;
 
-            UnrankedGuildMatchmakingConfig cachedConfig = matchmakingConfigCache.get(guildId);
+            MatchmakingConfig cachedConfig = matchmakingConfigCache.get(guildId);
             if (cachedConfig != null)
-                matchmakingConfigCache.put(guildId, new UnrankedGuildMatchmakingConfig(cachedConfig.getLfgRoleId(), channelId));
+                matchmakingConfigCache.put(guildId, new MatchmakingConfig(cachedConfig.getLfgRoleId(), channelId));
         }
 
         statement.close();
@@ -164,12 +164,12 @@ public class UnrankedMatchmakingManager {
         connection.close();
     }
 
-    public static class UnrankedGuildMatchmakingConfig {
+    public static class MatchmakingConfig {
         private final long lfgRoleId;
         @Nullable
         private final Long channelId;
 
-        public UnrankedGuildMatchmakingConfig(long lfgRoleId, @Nullable Long channelId) {
+        public MatchmakingConfig(long lfgRoleId, @Nullable Long channelId) {
             this.lfgRoleId = lfgRoleId;
             this.channelId = channelId;
         }

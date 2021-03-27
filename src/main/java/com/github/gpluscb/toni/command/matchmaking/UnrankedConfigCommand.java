@@ -2,7 +2,7 @@ package com.github.gpluscb.toni.command.matchmaking;
 
 import com.github.gpluscb.toni.command.Command;
 import com.github.gpluscb.toni.command.CommandContext;
-import com.github.gpluscb.toni.matchmaking.UnrankedMatchmakingManager;
+import com.github.gpluscb.toni.matchmaking.UnrankedManager;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
@@ -19,9 +19,9 @@ public class UnrankedConfigCommand implements Command {
     private static final Logger log = LogManager.getLogger(UnrankedConfigCommand.class);
 
     @Nonnull
-    private final UnrankedMatchmakingManager manager;
+    private final UnrankedManager manager;
 
-    public UnrankedConfigCommand(@Nonnull UnrankedMatchmakingManager manager) {
+    public UnrankedConfigCommand(@Nonnull UnrankedManager manager) {
         this.manager = manager;
     }
 
@@ -69,10 +69,7 @@ public class UnrankedConfigCommand implements Command {
             return;
         }
 
-        if (!role.isMentionable()) {
-            ctx.reply("The role you provided is not mentionable, that doesn't make too much sense if I should ping it.").queue();
-            return;
-        }
+        if (!checkRole(ctx, role)) return;
 
         long roleId = role.getIdLong();
 
@@ -88,8 +85,7 @@ public class UnrankedConfigCommand implements Command {
             channelId = channel.getIdLong();
         }
 
-        // TODO: This is an extremely simple line of code, maybe I should rethink the class naming here..
-        UnrankedMatchmakingManager.UnrankedGuildMatchmakingConfig config = new UnrankedMatchmakingManager.UnrankedGuildMatchmakingConfig(roleId, channelId);
+        UnrankedManager.MatchmakingConfig config = new UnrankedManager.MatchmakingConfig(roleId, channelId);
 
         try {
             boolean wasStored = manager.storeMatchmakingConfig(ctx.getEvent().getGuild().getIdLong(), config);
@@ -156,24 +152,11 @@ public class UnrankedConfigCommand implements Command {
             return;
         }
 
-        // TODO: dupe code, maybe check role method
-        if (!role.isMentionable()) {
-            ctx.reply("The role you provided is not mentionable, that doesn't make too much sense if I should ping it.").queue();
-            return;
-        }
-
-        Guild guild = ctx.getEvent().getGuild();
-
-        Member selfMember = guild.getSelfMember();
-        if (!(selfMember.canInteract(role) && selfMember.hasPermission(Permission.MANAGE_ROLES))) {
-            ctx.reply("I won't be able to assign this role to people." +
-                    " Please make sure I have permission to manage roles, and that the role is lower than my highest role.").queue();
-            return;
-        }
+        if (!checkRole(ctx, role)) return;
 
         long roleId = role.getIdLong();
 
-        long guildId = guild.getIdLong();
+        long guildId = ctx.getEvent().getGuild().getIdLong();
 
         try {
             boolean wasPresent = manager.updateMatchmakingRole(guildId, roleId);
@@ -184,7 +167,7 @@ public class UnrankedConfigCommand implements Command {
             }
 
             // If not present, create:
-            manager.storeMatchmakingConfig(guildId, new UnrankedMatchmakingManager.UnrankedGuildMatchmakingConfig(roleId, null));
+            manager.storeMatchmakingConfig(guildId, new UnrankedManager.MatchmakingConfig(roleId, null));
 
             ctx.reply("I have now set up unranked matchmaking with the given role." +
                     " If you want to restrict the matchmaking to a specific channel, use `toni, matchmakingcfg channel [channel mention]`").queue();
@@ -208,6 +191,24 @@ public class UnrankedConfigCommand implements Command {
             ctx.reply("Something went horribly wrong trying to talk to my database!" +
                     " Try again later, and if this keeps happening tell my dev. I've already told them about it, but it'll help if you can talk to them.").queue();
         }
+    }
+
+    private boolean checkRole(@Nonnull CommandContext ctx, @Nonnull Role role) {
+        if (!role.isMentionable()) {
+            ctx.reply("The role you provided is not mentionable, that doesn't make too much sense if I should ping it.").queue();
+            return false;
+        }
+
+        Guild guild = ctx.getEvent().getGuild();
+
+        Member selfMember = guild.getSelfMember();
+        if (!(selfMember.canInteract(role) && selfMember.hasPermission(Permission.MANAGE_ROLES))) {
+            ctx.reply("I won't be able to assign this role to people." +
+                    " Please make sure I have permission to manage roles, and that the role is lower than my highest role.").queue();
+            return false;
+        }
+
+        return true;
     }
 
     @Nonnull

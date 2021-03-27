@@ -2,7 +2,7 @@ package com.github.gpluscb.toni.command.matchmaking;
 
 import com.github.gpluscb.toni.command.Command;
 import com.github.gpluscb.toni.command.CommandContext;
-import com.github.gpluscb.toni.matchmaking.UnrankedMatchmakingManager;
+import com.github.gpluscb.toni.matchmaking.UnrankedManager;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
@@ -20,9 +20,9 @@ public class AvailableCommand implements Command {
     private static final Logger log = LogManager.getLogger(AvailableCommand.class);
 
     @Nonnull
-    private final UnrankedMatchmakingManager manager;
+    private final UnrankedManager manager;
 
-    public AvailableCommand(@Nonnull UnrankedMatchmakingManager manager) {
+    public AvailableCommand(@Nonnull UnrankedManager manager) {
         this.manager = manager;
     }
 
@@ -36,7 +36,7 @@ public class AvailableCommand implements Command {
         Guild guild = ctx.getEvent().getGuild();
         long guildId = guild.getIdLong();
         try {
-            UnrankedMatchmakingManager.UnrankedGuildMatchmakingConfig config = manager.loadMatchmakingConfig(guildId);
+            UnrankedManager.MatchmakingConfig config = manager.loadMatchmakingConfig(guildId);
             if (config == null) {
                 ctx.reply("Looks like matchmaking isn't set up in this server. Moderators can use the `unrankedcfg` command to set it up.").queue();
                 return;

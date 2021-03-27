@@ -75,7 +75,7 @@ public class UnrankedConfigCommand implements Command {
 
         Long channelId = null;
         if (argNum > 1) {
-            TextChannel channel = ctx.getChannelMentionArg(0);
+            TextChannel channel = ctx.getChannelMentionArg(1);
             if (channel == null) {
                 ctx.reply("The second argument must be a mention of a channel in this server." +
                         " If you don't want matchmaking to be restricted to a channel, just leave that blank.").queue();

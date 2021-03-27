@@ -55,6 +55,16 @@ public class MiscUtil {
     }
 
     @Nonnull
+    public static String mentionRole(long id) {
+        return String.format("<@&%d>", id);
+    }
+
+    @Nonnull
+    public static String mentionChannel(long id) {
+        return String.format("<#%d>", id);
+    }
+
+    @Nonnull
     public static String getPermName(@Nonnull Permission perm) {
         switch (perm) {
             case MESSAGE_EMBED_LINKS:

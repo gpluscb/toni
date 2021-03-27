@@ -35,4 +35,6 @@ public class Constants {
     public static final String FRAME = "\uD83C\uDF9E";
     @Nonnull
     public static final String CROSS_MARK = "\u274C";
+    @Nonnull
+    public static final String FENCER = "\uD83E\uDD3A";
 }

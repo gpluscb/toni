@@ -6,7 +6,11 @@ import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.time.Duration;
 import java.util.regex.Matcher;
+
+import static com.blueanvil.Duration_parseKt.toDuration;
+import static com.blueanvil.Duration_printKt.toHumanReadableString;
 
 public class MiscUtil {
     private static final Logger log = LogManager.getLogger(MiscUtil.class);
@@ -62,6 +66,17 @@ public class MiscUtil {
     @Nonnull
     public static String mentionChannel(long id) {
         return String.format("<#%d>", id);
+    }
+
+    @Nullable
+    public static Duration parseDuration(@Nonnull String input) {
+        // TODO: Is this kotlin library *really* the right call here??
+        return toDuration(input);
+    }
+
+    @Nonnull
+    public static String durationToString(@Nonnull Duration duration) {
+        return toHumanReadableString(duration);
     }
 
     @Nonnull

@@ -11,6 +11,7 @@ import org.apache.logging.log4j.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.sql.SQLException;
+import java.time.Duration;
 
 public class UnrankedLfgCommand implements Command {
     private static final Logger log = LogManager.getLogger(UnrankedLfgCommand.class);
@@ -42,9 +43,30 @@ public class UnrankedLfgCommand implements Command {
                 return;
             }
 
+            Duration duration;
+            if (ctx.getArgNum() > 0) {
+                duration = MiscUtil.parseDuration(ctx.getArgsFrom(0));
+                if (duration == null) {
+                    ctx.reply("The given duration was not a valid duration. An example duration is `1h 30m`.").queue();
+                    return;
+                }
+
+                if (duration.isNegative()) {
+                    ctx.reply("The duration must be positive, I can't time travel at this point in time unfortunately.").queue();
+                    return;
+                }
+
+                if (duration.compareTo(Duration.ofHours(5)) > 0) {
+                    ctx.reply("The maximum duration is 5h.").queue();
+                    return;
+                }
+            } else {
+                duration = Duration.ofHours(2);
+            }
+
             long userId = ctx.getAuthor().getIdLong();
             long roleId = config.getLfgRoleId();
-            ctx.reply(String.format("%s, %s is looking for a game. React with %s to accept.", MiscUtil.mentionRole(roleId), MiscUtil.mentionUser(userId), Constants.FENCER))
+            ctx.reply(String.format("%s, %s is looking for a game for %s. React with %s to accept.", MiscUtil.durationToString(duration), MiscUtil.mentionRole(roleId), MiscUtil.mentionUser(userId), Constants.FENCER))
                     .mentionRoles(roleId).mentionUsers(userId).queue();
         } catch (SQLException e) {
             log.catching(e);

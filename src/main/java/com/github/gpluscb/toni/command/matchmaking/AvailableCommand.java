@@ -3,6 +3,7 @@ package com.github.gpluscb.toni.command.matchmaking;
 import com.github.gpluscb.toni.command.Command;
 import com.github.gpluscb.toni.command.CommandContext;
 import com.github.gpluscb.toni.matchmaking.UnrankedManager;
+import com.github.gpluscb.toni.util.MiscUtil;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
@@ -14,6 +15,8 @@ import org.apache.logging.log4j.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.sql.SQLException;
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 public class AvailableCommand implements Command {
     @Nonnull
@@ -60,11 +63,37 @@ public class AvailableCommand implements Command {
                 return;
             }
 
+            Duration duration;
+            if (ctx.getArgNum() > 0) {
+                duration = MiscUtil.parseDuration(ctx.getArgsFrom(0));
+                if (duration == null) {
+                    ctx.reply("The given duration was not a valid duration. An example duration is `1h 30m`.").queue();
+                    return;
+                }
+
+                if (duration.isNegative()) {
+                    ctx.reply("The duration must be positive, I can't time travel at this point in time unfortunately.").queue();
+                    return;
+                }
+
+                if (duration.compareTo(Duration.ofHours(12)) > 0) {
+                    ctx.reply("The maximum duration is 12h.").queue();
+                    return;
+                }
+            } else {
+                duration = null;
+            }
+
             Member member = ctx.getMember();
 
             // We know member isn't null because this is in a guild.
             //noinspection ConstantConditions
             if (member.getRoles().contains(role)) {
+                if (duration != null) {
+                    ctx.reply("You already have the role. If you want me to remove the role, use this command again without a duration.").queue();
+                    return;
+                }
+
                 try {
                     guild.removeRoleFromMember(ctx.getMember(), role).flatMap(v -> ctx.reply("I have successfully removed the role.")).queue();
                 } catch (InsufficientPermissionException | HierarchyException e) {
@@ -72,7 +101,19 @@ public class AvailableCommand implements Command {
                 }
             } else {
                 try {
-                    guild.addRoleToMember(ctx.getMember(), role).flatMap(v -> ctx.reply("I have successfully given you the role. Use this command again to remove it.")).queue();
+                    guild.addRoleToMember(member, role).queue(v -> {
+                        StringBuilder reply = new StringBuilder("I have successfully given you the role");
+                        if (duration == null) {
+                            reply.append(". Use this command again to remove it.");
+                        } else {
+                            reply.append(String.format(" for %s." +
+                                    " Note that in case I reboot during that time, I won't be able to remove the role.", MiscUtil.durationToString(duration)));
+
+                            guild.removeRoleFromMember(member, role).queueAfter(duration.toMillis(), TimeUnit.MILLISECONDS);
+                        }
+
+                        ctx.reply(reply.toString()).queue();
+                    });
                 } catch (InsufficientPermissionException | HierarchyException e) {
                     ctx.reply("I couldn't give you the role because I lack permissions. Mods might be able to fix that.").queue();
                 }

@@ -36,5 +36,7 @@ public class Constants {
     @Nonnull
     public static final String CROSS_MARK = "\u274C";
     @Nonnull
+    public static final String CHECK_MARK = "\u2705";
+    @Nonnull
     public static final String FENCER = "\uD83E\uDD3A";
 }

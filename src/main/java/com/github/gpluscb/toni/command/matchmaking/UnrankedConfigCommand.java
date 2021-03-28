@@ -242,7 +242,7 @@ public class UnrankedConfigCommand implements Command {
     public String getDetailedHelp() {
         return "`unrankedconfig|unrankedcfg <ROLE> [CHANNEL]` Sets up matchmaking with the specified matchmaking role, optionally only in a specific channel.\n" +
                 "`unrankedconfig|unrankedcfg channel <CHANNEL|\"ALL\">`" +
-                " Sets a specific channel for the matchmaking configuration, or removes channel restrictions if the argument is `all`\n" +
+                " Sets a specific channel for the matchmaking configuration, or removes channel restrictions if the argument is `all`.\n" +
                 "`unrankedconfig|unrankedcfg role <ROLE>` Sets a matchmaking role.\n" +
                 "`unrankedconfig|unrankedcfg reset` Removes matchmaking from this server.";
     }

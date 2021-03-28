@@ -193,6 +193,8 @@ public class UnrankedConfigCommand implements Command {
         }
     }
 
+    // I don't like this warning I feel like it makes stuff less intuitive sometimes
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private boolean checkRole(@Nonnull CommandContext ctx, @Nonnull Role role) {
         if (!(role.getGuild().getSelfMember().hasPermission(Permission.MESSAGE_MENTION_EVERYONE) || role.isMentionable())) {
             ctx.reply("The role you provided is not mentionable, but I need to be able to ping it.").queue();

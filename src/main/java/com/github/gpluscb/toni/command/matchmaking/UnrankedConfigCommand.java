@@ -234,7 +234,7 @@ public class UnrankedConfigCommand implements Command {
     @Nullable
     @Override
     public String getShortHelp() {
-        return "Helps you configure unranked matchmaking. Usage: `unrankedconfig|unrankedcfg <OPTIONS>`. For more info, see `toni, help unrankedcfg`.";
+        return "Helps you configure unranked matchmaking. For more info on usage, see `toni, help unrankedconfig`.";
     }
 
     @Nullable

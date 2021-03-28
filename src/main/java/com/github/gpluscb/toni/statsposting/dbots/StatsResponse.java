@@ -1,4 +1,4 @@
-package com.github.gpluscb.toni.dbots;
+package com.github.gpluscb.toni.statsposting.dbots;
 
 public class StatsResponse {
     private final int shardCount;

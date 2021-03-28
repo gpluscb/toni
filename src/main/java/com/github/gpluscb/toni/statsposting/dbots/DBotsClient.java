@@ -1,9 +1,10 @@
-package com.github.gpluscb.toni.dbots;
+package com.github.gpluscb.toni.statsposting.dbots;
 
-import com.google.gson.FieldNamingPolicy;
+import com.github.gpluscb.toni.statsposting.BotListClient;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
+import okhttp3.OkHttpClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import retrofit2.Call;
@@ -18,7 +19,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
-public class DBotsClient {
+public class DBotsClient implements BotListClient<StatsResponse> {
     private static final Logger log = LogManager.getLogger(DBotsClient.class);
 
     @Nonnull
@@ -27,7 +28,7 @@ public class DBotsClient {
     @Nonnull
     private final DBotsService service;
 
-    public DBotsClient(@Nonnull String token, long id) {
+    public DBotsClient(@Nonnull String token, @Nonnull OkHttpClient client, long id) {
         this.token = token;
         this.id = id;
 
@@ -47,23 +48,21 @@ public class DBotsClient {
                 .baseUrl("https://discord.bots.gg/api/v1/")
                 .addConverterFactory(GsonConverterFactory.create(gson))
                 .callbackExecutor(callbackExecutor)
+                .client(client)
                 .build();
 
-        // FIXME: So this takes 5 minutes to shut down, maybe because we post?? Seems to be the good old OkHttp issue
-        // Idk how to get the OkHttp from this
-        // Maybe ditch retrofit completely and transition to just OkHttp? Should be good enough honestly.
-        // Alternatively wait on https://github.com/DV8FromTheWorld/JDA/pull/1512 that should fix it too
         service = retrofit.create(DBotsService.class);
     }
 
+    @Override
     @Nonnull
-    public CompletableFuture<StatsResponse> setStats(int guildCount) {
+    public CompletableFuture<StatsResponse> postStats(long guildCount) {
         JsonObject body = new JsonObject();
         body.addProperty("guildCount", guildCount);
 
         CompletableFuture<StatsResponse> ret = new CompletableFuture<>();
 
-        service.setStats(token, id, body).enqueue(new Callback<StatsResponse>() {
+        service.postStats(token, id, body).enqueue(new Callback<StatsResponse>() {
             @Override
             public void onResponse(@Nonnull Call<StatsResponse> call, @Nonnull Response<StatsResponse> response) {
                 if (response.isSuccessful()) ret.complete(response.body());

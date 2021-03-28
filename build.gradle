@@ -24,8 +24,6 @@ dependencies {
 
     implementation group: 'com.jagrosh', name: 'jda-utilities', version: '3.0.4'
 
-    implementation group: 'org.discordbots', name: 'DBL-Java-Library', version: '2.0.1'
-
     implementation group: 'com.github.gpluscb', name: 'gg-java', version: '1.0.0-SNAPSHOT'
 
     implementation group: 'org.apache.commons', name: 'commons-text', version: '1.8'

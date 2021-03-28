@@ -213,17 +213,19 @@ public class Bot {
         List<CommandCategory> commands = loadCommands(ufdClient, waiter, dmWaiter, /*challonge, listener, */characterTree, cfg);
         dispatcher = new CommandDispatcher(commands);
 
-        CommandListener commandListener = new CommandListener(dmWaiter, dispatcher, cfg.getBotId());
+        long botId = cfg.getBotId();
+
+        CommandListener commandListener = new CommandListener(dmWaiter, dispatcher, botId);
         shardManager.addEventListener(commandListener);
 
         log.trace("Enabling discord appender");
         DiscordAppenderImpl.setShardManager(shardManager);
 
         log.trace("Creating DBotsClient");
-        DBotsClient dBotsClient = new DBotsClient(cfg.getDbotsToken(), okHttp, 698889469532569671L); // FIXME: hardcoded
+        DBotsClient dBotsClient = new DBotsClient(cfg.getDbotsToken(), okHttp, botId);
 
         log.trace("Creating TopGGClient");
-        TopggClient topggClient = new TopggClient(cfg.getTopggToken(), okHttp, 698889469532569671L); // FIXME: hardcoded
+        TopggClient topggClient = new TopggClient(cfg.getTopggToken(), okHttp, botId);
 
         log.trace("Starting post stats routine");
         postGuildRoutine = new PostGuildRoutine(dBotsClient, topggClient, shardManager);

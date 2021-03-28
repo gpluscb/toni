@@ -22,7 +22,6 @@ public class PostGuildRoutine {
         executer.scheduleAtFixedRate(() -> {
             // We are in far fewer than 2 million guilds, so the cast is safe.
             int guildCount = (int) shardManager.getGuildCache().size();
-            guildCount = 39;// FIXME: hardcoded
             dBotsClient.postStats(guildCount).whenComplete((r, t) -> {
                 if (t != null) log.catching(t);
                 else

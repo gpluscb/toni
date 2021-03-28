@@ -199,12 +199,14 @@ public class UnrankedLfgCommand implements Command {
     @Nullable
     @Override
     public String getShortHelp() {
-        return null;
+        return "Pings the matchmaking role and lets you know if someone wants to play for a given duration. Usage: `unranked [DURATION]`";
     }
 
     @Nullable
     @Override
     public String getDetailedHelp() {
-        return null;
+        return "`unranked|lfg [DURATION (default 2h)]`\n" +
+                "Pings the matchmaking role and asks players to react if they want to play. Notifies you when they react within the given duration." +
+                " The duration must be given in the format `Xh Xm Xs Xms`, and it has to be between 10m and 5h.";
     }
 }

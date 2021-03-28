@@ -42,7 +42,7 @@ public class UnrankedConfigCommand implements Command {
             return;
         }
 
-        String variant = ctx.getArg(0);
+        String variant = ctx.getArg(0).toLowerCase();
 
         switch (variant) {
             case "channel":
@@ -194,8 +194,8 @@ public class UnrankedConfigCommand implements Command {
     }
 
     private boolean checkRole(@Nonnull CommandContext ctx, @Nonnull Role role) {
-        if (!role.isMentionable()) {
-            ctx.reply("The role you provided is not mentionable, that doesn't make too much sense if I should ping it.").queue();
+        if (!(role.getGuild().getSelfMember().hasPermission(Permission.MESSAGE_MENTION_EVERYONE) || role.isMentionable())) {
+            ctx.reply("The role you provided is not mentionable, but I need to be able to ping it.").queue();
             return false;
         }
 
@@ -220,12 +220,16 @@ public class UnrankedConfigCommand implements Command {
     @Nullable
     @Override
     public String getShortHelp() {
-        return "Helps you set up unranked matchmaking. Usage: `unrankedcfg `"; // TODO: Usage
+        return "Helps you configure unranked matchmaking. Usage: `unrankedconfig|unrankedcfg <OPTIONS>`. For more info, see `toni, help unrankedcfg`.";
     }
 
     @Nullable
     @Override
     public String getDetailedHelp() {
-        return null; // TODO
+        return "`unrankedconfig|unrankedcfg <ROLE> [CHANNEL]` Sets up matchmaking with the specified matchmaking role, optionally only in a specific channel.\n" +
+                "`unrankedconfig|unrankedcfg channel <CHANNEL|\"ALL\">`" +
+                " Sets a specific channel for the matchmaking configuration, or removes channel restrictions if the argument is `all`\n" +
+                "`unrankedconfig|unrankedcfg role <ROLE>` Sets a matchmaking role.\n" +
+                "`unrankedconfig|unrankedcfg reset` Removes matchmaking from this server.";
     }
 }

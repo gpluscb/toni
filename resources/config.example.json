@@ -3,6 +3,8 @@
   "ggToken": "smash.ggToken",
   "challongeUsername": "challongeUsername",
   "challongeToken": "challongeToken",
+  "dbotsToken": "discord.bots.ggToken",
+  "topggToken": "top.ggToken",
   "botId": 1234567,
   "inviteUrl": "https://discordapp.com/api/oauth2/authorize?client_id=BOT_ID&permissions=0&scope=bot",
   "supportServer": "https://discord.gg/invite_code",

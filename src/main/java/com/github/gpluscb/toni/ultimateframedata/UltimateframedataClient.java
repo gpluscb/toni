@@ -4,6 +4,7 @@ import com.github.gpluscb.toni.util.FailLogger;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import okhttp3.OkHttpClient;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -20,7 +21,7 @@ public class UltimateframedataClient {
     @Nonnull
     private final UltimateframedataService service;
 
-    public UltimateframedataClient() {
+    public UltimateframedataClient(@Nonnull OkHttpClient client) {
         Executor callbackExecutor = Executors.newCachedThreadPool(new ThreadFactory() {
             int i;
 
@@ -38,6 +39,7 @@ public class UltimateframedataClient {
                 .baseUrl("http://127.0.0.1:8080/")
                 .addConverterFactory(GsonConverterFactory.create(gson))
                 .callbackExecutor(callbackExecutor)
+                .client(client)
                 .build();
 
         service = retrofit.create(UltimateframedataService.class);

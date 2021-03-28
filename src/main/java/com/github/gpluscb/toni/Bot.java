@@ -20,8 +20,11 @@ import com.github.gpluscb.toni.command.help.PrivacyCommand;
 import com.github.gpluscb.toni.command.lookup.CharacterCommand;
 import com.github.gpluscb.toni.command.lookup.SmashdataCommand;
 import com.github.gpluscb.toni.command.lookup.TournamentCommand;
+import com.github.gpluscb.toni.statsposting.dbots.DBotsClient;
+import com.github.gpluscb.toni.statsposting.PostGuildRoutine;
 import com.github.gpluscb.toni.smashdata.SmashdataManager;
 import com.github.gpluscb.toni.smashgg.GGManager;
+import com.github.gpluscb.toni.statsposting.topgg.TopggClient;
 import com.github.gpluscb.toni.ultimateframedata.UltimateframedataClient;
 import com.github.gpluscb.toni.util.CharacterTree;
 import com.github.gpluscb.toni.util.DMChoiceWaiter;
@@ -39,6 +42,7 @@ import net.dv8tion.jda.api.sharding.ShardManager;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
+import okhttp3.OkHttpClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -66,6 +70,8 @@ public class Bot {
     private final ShardManager shardManager;
     @Nonnull
     private final GGManager ggManager;
+    @Nonnull
+    private final PostGuildRoutine postGuildRoutine;
     /*@Nonnull
     private final ListenerManager challongeManager;
     @Nonnull
@@ -105,8 +111,11 @@ public class Bot {
             throw e;
         }
 
+        log.trace("Creating OkHttp client");
+        OkHttpClient okHttp = new OkHttpClient.Builder().build();
+
         log.trace("Building GGManager");
-        ggManager = new GGManager(GGClient.builder(cfg.getGGToken()).build(), stopwords);
+        ggManager = new GGManager(GGClient.builder(cfg.getGGToken()).client(okHttp).build(), stopwords);
 
 		/*log.trace("Building ListenerManager");
 		client = new RetrofitRestClient();
@@ -123,14 +132,14 @@ public class Bot {
 			throw e;
 		}*/
 
-        log.trace("Building UltimateframedataClient");
-        UltimateframedataClient ufdClient = new UltimateframedataClient();
-
         // Avoid unintentional pings.
         MessageAction.setDefaultMentions(Collections.emptyList());
         MessageAction.setDefaultMentionRepliedUser(false);
         // Avoid too long request queue
         RestAction.setDefaultTimeout(30, TimeUnit.SECONDS);
+
+        log.trace("Building UltimateframedataClient");
+        UltimateframedataClient ufdClient = new UltimateframedataClient(okHttp);
 
         log.trace("Building EventWaiter");
         waiterPool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "EventWaiterPool [0 / 1] Waiter-Thread"));
@@ -169,7 +178,7 @@ public class Bot {
 			waiterPool.shutdownNow();
 			throw e;
 		}*/
-        
+
         log.trace("Loading characters");
         CharacterTree characterTree;
         try (Reader file = new FileReader(cfg.getCharactersFileLocation())) {
@@ -204,11 +213,22 @@ public class Bot {
         List<CommandCategory> commands = loadCommands(ufdClient, waiter, dmWaiter, /*challonge, listener, */characterTree, cfg);
         dispatcher = new CommandDispatcher(commands);
 
-        CommandListener commandListener = new CommandListener(dmWaiter, dispatcher, cfg.getBotId());
+        long botId = cfg.getBotId();
+
+        CommandListener commandListener = new CommandListener(dmWaiter, dispatcher, botId);
         shardManager.addEventListener(commandListener);
 
         log.trace("Enabling discord appender");
         DiscordAppenderImpl.setShardManager(shardManager);
+
+        log.trace("Creating DBotsClient");
+        DBotsClient dBotsClient = new DBotsClient(cfg.getDbotsToken(), okHttp, botId);
+
+        log.trace("Creating TopGGClient");
+        TopggClient topggClient = new TopggClient(cfg.getTopggToken(), okHttp, botId);
+
+        log.trace("Starting post stats routine");
+        postGuildRoutine = new PostGuildRoutine(dBotsClient, topggClient, shardManager);
 
         log.info("Bot construction complete");
     }
@@ -270,12 +290,13 @@ public class Bot {
         ggManager.shutdown();
         shardManager.shutdown();
         dispatcher.shutdown();
+        postGuildRoutine.shutdown();
         try {
             smashdata.shutdown();
         } catch (SQLException e) {
             log.catching(e);
         }
-		
+
 		/*challongeManager.shutdown();
 		try {
 			listener.shutdown();

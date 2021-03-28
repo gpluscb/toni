@@ -27,15 +27,14 @@ public class UnrankedConfigCommand implements Command {
 
     @Override
     public void execute(@Nonnull CommandContext ctx) {
-        // TODO: I feel like this is still bad ux, maybe there should be a setup variant but like this it's unintuitive
         if (!ctx.getEvent().isFromGuild()) {
             ctx.reply("This command only works in servers, I won't set up matchmaking in our DMs.").queue();
             return;
         }
 
-        // We know the member is not null because we're in a guild
         Member member = ctx.getMember();
         // TODO: Is this too restrictive?
+        // We know the member is not null because we're in a guild
         //noinspection ConstantConditions
         if (!(member.hasPermission(ctx.getEvent().getTextChannel(), Permission.MANAGE_CHANNEL) && member.hasPermission(Permission.MANAGE_ROLES))) {
             ctx.reply("I don't trust you... you need to have both Manage Channel and Manage Roles permission to use this.").queue();
@@ -88,13 +87,26 @@ public class UnrankedConfigCommand implements Command {
         UnrankedManager.MatchmakingConfig config = new UnrankedManager.MatchmakingConfig(roleId, channelId);
 
         try {
+            // TODO: You know maybe it would be nice to have an upsert here
+            long guildId = ctx.getEvent().getGuild().getIdLong();
             boolean wasStored = manager.storeMatchmakingConfig(ctx.getEvent().getGuild().getIdLong(), config);
 
-            String message = wasStored ? "Success! You are now set up with matchmaking."
-                    : "Matchmaking was already set up." +
-                    " If you want to change the role or channel, use `toni, unrankedcfg role <role>` and `toni, unrankedcfg channel <channel|all>`.";
+            if (wasStored) {
+                ctx.reply("Success! You are now set up with matchmaking.").queue();
+                return;
+            }
 
-            ctx.reply(message).queue();
+            // Matchmaking already existed here
+            boolean wasUpdated = manager.updateMatchmakingConfig(guildId, config);
+            if (wasUpdated) {
+                ctx.reply("I have now changed the matchmaking configuration.").queue();
+                return;
+            }
+
+            log.warn("Configuration was not stored and later was not updated. Guild: {}", guildId);
+            ctx.reply("This is a bit weird, it looks like matchmaking was already set up, but wasn't any more when I looked a few milliseconds later..." +
+                    " If this doesn't fix itself when you use the command again, please tell my dev. I've already told them about it," +
+                    " but you can give them some context too.").queue();
         } catch (SQLException e) {
             log.catching(e);
             ctx.reply("Oh no! Something went wrong talking to the database." +

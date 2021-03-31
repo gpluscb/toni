@@ -15,6 +15,7 @@ public class Config {
     private final String dbotsToken;
     @Nonnull
     private final String topggToken;
+    private final boolean mockBotLists;
     @Nonnull
     private final String inviteUrl;
     private final long botId;
@@ -32,13 +33,14 @@ public class Config {
     @Nonnull
     private final String charactersFileLocation;
 
-    public Config(@Nonnull String ggToken, @Nonnull String discordToken, @Nonnull String challongeUsername, @Nonnull String challongeToken, @Nonnull String dbotsToken, @Nonnull String topggToken, @Nonnull String inviteUrl, long botId, @Nonnull String supportServer, @Nonnull String twitterHandle, long devId, @Nonnull String stopwordListLocation, @Nonnull String stateDbLocation, @Nonnull String smashdataDbLocation, @Nonnull String charactersFileLocation) {
+    public Config(@Nonnull String ggToken, @Nonnull String discordToken, @Nonnull String challongeUsername, @Nonnull String challongeToken, @Nonnull String dbotsToken, @Nonnull String topggToken, boolean mockBotLists, @Nonnull String inviteUrl, long botId, @Nonnull String supportServer, @Nonnull String twitterHandle, long devId, @Nonnull String stopwordListLocation, @Nonnull String stateDbLocation, @Nonnull String smashdataDbLocation, @Nonnull String charactersFileLocation) {
         this.ggToken = ggToken;
         this.discordToken = discordToken;
         this.challongeUsername = challongeUsername;
         this.challongeToken = challongeToken;
         this.dbotsToken = dbotsToken;
         this.topggToken = topggToken;
+        this.mockBotLists = mockBotLists;
         this.botId = botId;
         this.inviteUrl = inviteUrl;
         this.supportServer = supportServer;
@@ -138,5 +140,9 @@ public class Config {
     @Nonnull
     public String getTopggToken() {
         return topggToken;
+    }
+
+    public boolean isMockBotLists() {
+        return mockBotLists;
     }
 }

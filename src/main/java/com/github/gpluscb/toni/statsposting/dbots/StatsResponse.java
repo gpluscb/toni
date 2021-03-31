@@ -2,9 +2,9 @@ package com.github.gpluscb.toni.statsposting.dbots;
 
 public class StatsResponse {
     private final int shardCount;
-    private final int guildCount;
+    private final long guildCount;
 
-    public StatsResponse(int shardCount, int guildCount) {
+    public StatsResponse(int shardCount, long guildCount) {
         this.shardCount = shardCount;
         this.guildCount = guildCount;
     }
@@ -13,7 +13,7 @@ public class StatsResponse {
         return shardCount;
     }
 
-    public int getGuildCount() {
+    public long getGuildCount() {
         return guildCount;
     }
 }

@@ -20,11 +20,15 @@ import com.github.gpluscb.toni.command.help.PrivacyCommand;
 import com.github.gpluscb.toni.command.lookup.CharacterCommand;
 import com.github.gpluscb.toni.command.lookup.SmashdataCommand;
 import com.github.gpluscb.toni.command.lookup.TournamentCommand;
+import com.github.gpluscb.toni.statsposting.BotListClient;
 import com.github.gpluscb.toni.statsposting.dbots.DBotsClient;
 import com.github.gpluscb.toni.statsposting.PostGuildRoutine;
 import com.github.gpluscb.toni.smashdata.SmashdataManager;
 import com.github.gpluscb.toni.smashgg.GGManager;
+import com.github.gpluscb.toni.statsposting.dbots.DBotsClientMock;
+import com.github.gpluscb.toni.statsposting.dbots.StatsResponse;
 import com.github.gpluscb.toni.statsposting.topgg.TopggClient;
+import com.github.gpluscb.toni.statsposting.topgg.TopggClientMock;
 import com.github.gpluscb.toni.ultimateframedata.UltimateframedataClient;
 import com.github.gpluscb.toni.util.CharacterTree;
 import com.github.gpluscb.toni.util.DMChoiceWaiter;
@@ -47,6 +51,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.security.auth.login.LoginException;
 import java.io.*;
 import java.nio.file.FileSystems;
@@ -221,14 +226,29 @@ public class Bot {
         log.trace("Enabling discord appender");
         DiscordAppenderImpl.setShardManager(shardManager);
 
-        log.trace("Creating DBotsClient");
-        DBotsClient dBotsClient = new DBotsClient(cfg.getDbotsToken(), okHttp, botId);
+        boolean mockBotLists = cfg.isMockBotLists();
+        BotListClient<StatsResponse> dBotsClient;
+        if (mockBotLists) {
+            log.trace("Creating DBotsClientMock");
+            dBotsClient = new DBotsClientMock();
+        } else {
+            log.trace("Creating DBotsClient");
+            dBotsClient = new DBotsClient(cfg.getDbotsToken(), okHttp, botId);
+        }
 
-        log.trace("Creating TopGGClient");
-        TopggClient topggClient = new TopggClient(cfg.getTopggToken(), okHttp, botId);
+        BotListClient<Void> topggClient;
+        if (mockBotLists) {
+            log.trace("Creating TopggClientMock");
+            topggClient = new TopggClientMock();
+        } else {
+            log.trace("Creating TopggClient");
+            topggClient = new TopggClient(cfg.getTopggToken(), okHttp, botId);
+        }
 
         log.trace("Starting post stats routine");
         postGuildRoutine = new PostGuildRoutine(dBotsClient, topggClient, shardManager);
+
+        shardManager.addEventListener(postGuildRoutine);
 
         log.info("Bot construction complete");
     }

@@ -12,6 +12,11 @@ public class Config {
     @Nonnull
     private final String challongeToken;
     @Nonnull
+    private final String dbotsToken;
+    @Nonnull
+    private final String topggToken;
+    private final boolean mockBotLists;
+    @Nonnull
     private final String inviteUrl;
     private final long botId;
     @Nonnull
@@ -28,11 +33,14 @@ public class Config {
     @Nonnull
     private final String charactersFileLocation;
 
-    public Config(@Nonnull String ggToken, @Nonnull String discordToken, @Nonnull String challongeUsername, @Nonnull String challongeToken, @Nonnull String inviteUrl, long botId, @Nonnull String supportServer, @Nonnull String twitterHandle, long devId, @Nonnull String stopwordListLocation, @Nonnull String stateDbLocation, @Nonnull String smashdataDbLocation, @Nonnull String charactersFileLocation) {
+    public Config(@Nonnull String ggToken, @Nonnull String discordToken, @Nonnull String challongeUsername, @Nonnull String challongeToken, @Nonnull String dbotsToken, @Nonnull String topggToken, boolean mockBotLists, @Nonnull String inviteUrl, long botId, @Nonnull String supportServer, @Nonnull String twitterHandle, long devId, @Nonnull String stopwordListLocation, @Nonnull String stateDbLocation, @Nonnull String smashdataDbLocation, @Nonnull String charactersFileLocation) {
         this.ggToken = ggToken;
         this.discordToken = discordToken;
         this.challongeUsername = challongeUsername;
         this.challongeToken = challongeToken;
+        this.dbotsToken = dbotsToken;
+        this.topggToken = topggToken;
+        this.mockBotLists = mockBotLists;
         this.botId = botId;
         this.inviteUrl = inviteUrl;
         this.supportServer = supportServer;
@@ -50,6 +58,8 @@ public class Config {
         if (challongeUsername == null) throw new IllegalStateException("challongeUsername may not be null");
         if (challongeToken == null) throw new IllegalStateException("challongeToken may not be null");
         if (discordToken == null) throw new IllegalStateException("discordToken may not be null");
+        if (dbotsToken == null) throw new IllegalStateException("dbotsToken may not be null");
+        if (topggToken == null) throw new IllegalStateException("topggToken may not be null");
         if (inviteUrl == null) throw new IllegalStateException("inviteUrl may not be null");
         if (supportServer == null) throw new IllegalStateException("supportServer may not be null");
         if (twitterHandle == null) throw new IllegalStateException("twitterHandle may not be null");
@@ -120,5 +130,19 @@ public class Config {
     @Nonnull
     public String getStopwordListLocation() {
         return stopwordListLocation;
+    }
+
+    @Nonnull
+    public String getDbotsToken() {
+        return dbotsToken;
+    }
+
+    @Nonnull
+    public String getTopggToken() {
+        return topggToken;
+    }
+
+    public boolean isMockBotLists() {
+        return mockBotLists;
     }
 }

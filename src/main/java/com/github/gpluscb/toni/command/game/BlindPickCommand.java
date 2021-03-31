@@ -119,7 +119,7 @@ public class BlindPickCommand implements Command {
     @Nullable
     @Override
     public String getShortHelp() {
-        return "Helps you do a (double) blind pick. Usage: `blind [USER 1] <USERS...>`";
+        return "Helps you do a (double) blind pick. Usage: `blind <USERS...>`";
     }
 
     @Nullable

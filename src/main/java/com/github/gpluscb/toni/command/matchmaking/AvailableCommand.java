@@ -16,6 +16,9 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 public class AvailableCommand implements Command {
@@ -25,8 +28,12 @@ public class AvailableCommand implements Command {
     @Nonnull
     private final UnrankedManager manager;
 
+    @Nonnull
+    private final Map<Long, ScheduledFuture<?>> scheduledRoleRemovals;
+
     public AvailableCommand(@Nonnull UnrankedManager manager) {
         this.manager = manager;
+        scheduledRoleRemovals = new HashMap<>();
     }
 
     @Override
@@ -85,9 +92,10 @@ public class AvailableCommand implements Command {
             }
 
             Member member = ctx.getMember();
-
             // We know member isn't null because this is in a guild.
             //noinspection ConstantConditions
+            long id = member.getIdLong();
+
             if (member.getRoles().contains(role)) {
                 if (duration != null) {
                     ctx.reply("You already have the role. If you want me to remove the role, use this command again without a duration.").queue();
@@ -95,11 +103,27 @@ public class AvailableCommand implements Command {
                 }
 
                 try {
+                    synchronized (scheduledRoleRemovals) {
+                        ScheduledFuture<?> future = scheduledRoleRemovals.get(id);
+                        if (future != null) future.cancel(false);
+                        scheduledRoleRemovals.remove(id);
+                    }
+
                     guild.removeRoleFromMember(ctx.getMember(), role).flatMap(v -> ctx.reply("I have successfully removed the role.")).queue();
                 } catch (InsufficientPermissionException | HierarchyException e) {
                     ctx.reply("I couldn't remove the role because I lack permissions. Mods might be able to fix that.").queue();
                 }
             } else {
+                synchronized (scheduledRoleRemovals) {
+                    ScheduledFuture<?> future = scheduledRoleRemovals.get(id);
+
+                    // We don't have the role, but we have role removal scheduled
+                    // Maybe it was removed by a moderator?
+                    // Either way, let's just silently cancel the scheduled role removal.
+                    if (future != null) future.cancel(false);
+                    scheduledRoleRemovals.remove(id);
+                }
+
                 try {
                     guild.addRoleToMember(member, role).queue(v -> {
                         StringBuilder reply = new StringBuilder("I have successfully given you the role");
@@ -109,7 +133,16 @@ public class AvailableCommand implements Command {
                             reply.append(String.format(" for %s." +
                                     " Note that in case I reboot during that time, I won't be able to remove the role.", MiscUtil.durationToString(duration)));
 
-                            guild.removeRoleFromMember(member, role).queueAfter(duration.toMillis(), TimeUnit.MILLISECONDS);
+                            ScheduledFuture<?> future = guild.removeRoleFromMember(member, role)
+                                    .queueAfter(duration.toMillis(), TimeUnit.MILLISECONDS, v_ -> {
+                                        synchronized (scheduledRoleRemovals) {
+                                            scheduledRoleRemovals.remove(id);
+                                        }
+                                    });
+
+                            synchronized (scheduledRoleRemovals) {
+                                scheduledRoleRemovals.put(id, future);
+                            }
                         }
 
                         ctx.reply(reply.toString()).queue();

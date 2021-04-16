@@ -165,6 +165,7 @@ public class Bot {
                     .setChunkingFilter(ChunkingFilter.NONE)
                     .addEventListeners(waiter)
                     .setActivity(Activity.listening("Help: \"Toni, Help\""))
+                    .setUseShutdownNow(true)
                     .build();
         } catch (LoginException e) {
             log.error("LoginException - shutting down", e);

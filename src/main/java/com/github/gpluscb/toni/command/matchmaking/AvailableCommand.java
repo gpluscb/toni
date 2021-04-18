@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.exceptions.HierarchyException;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
+import net.dv8tion.jda.api.requests.RestAction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -134,10 +135,13 @@ public class AvailableCommand implements Command {
                                     " Note that in case I reboot during that time, I won't be able to remove the role.", MiscUtil.durationToString(duration)));
 
                             ScheduledFuture<?> future = guild.removeRoleFromMember(member, role)
-                                    .queueAfter(duration.toMillis(), TimeUnit.MILLISECONDS, v_ -> {
+                                    .mapToResult()
+                                    .queueAfter(duration.toMillis(), TimeUnit.MILLISECONDS, result -> {
                                         synchronized (scheduledRoleRemovals) {
                                             scheduledRoleRemovals.remove(id);
                                         }
+
+                                        result.onFailure(RestAction.getDefaultFailure());
                                     });
 
                             synchronized (scheduledRoleRemovals) {

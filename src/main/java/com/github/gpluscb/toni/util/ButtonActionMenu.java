@@ -190,7 +190,7 @@ public class ButtonActionMenu extends Menu {
             if (waiter == null) throw new IllegalStateException("Waiter must be set");
             if (start == null) throw new IllegalStateException("Start must be set");
             if (!super.users.isEmpty())
-                throw new IllegalStateException("You likely tried to use addUsers(User...). User addUsers(Long...) instead.");
+                throw new IllegalStateException("You likely tried to use addUsers(User...). Use addUsers(Long...) instead.");
 
             if (timeoutAction == null) {
                 timeoutAction = FailLogger.logFail((channel, id) -> {

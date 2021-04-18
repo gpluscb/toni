@@ -32,6 +32,6 @@ Replace [config.example.json](src/main/resources/config.example.json) with an ac
 
 ## Screenshots
 
-![UFD command](https://i.imgur.com/LDFBgli.png)\
+![UFD command](https://imgur.com/hC3WvwH.png)\
 ![Smashdata command](https://i.imgur.com/RQChnao.png)\
 ![Random character command](https://i.imgur.com/rC9fh3j.png)

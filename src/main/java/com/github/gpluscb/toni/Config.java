@@ -23,6 +23,8 @@ public class Config {
     private final String supportServer;
     @Nonnull
     private final String twitterHandle;
+    @Nonnull
+    private final String github;
     private final long devId;
     @Nonnull
     private final String stopwordListLocation;
@@ -33,7 +35,7 @@ public class Config {
     @Nonnull
     private final String charactersFileLocation;
 
-    public Config(@Nonnull String ggToken, @Nonnull String discordToken, @Nonnull String challongeUsername, @Nonnull String challongeToken, @Nonnull String dbotsToken, @Nonnull String topggToken, boolean mockBotLists, @Nonnull String inviteUrl, long botId, @Nonnull String supportServer, @Nonnull String twitterHandle, long devId, @Nonnull String stopwordListLocation, @Nonnull String stateDbLocation, @Nonnull String smashdataDbLocation, @Nonnull String charactersFileLocation) {
+    public Config(@Nonnull String ggToken, @Nonnull String discordToken, @Nonnull String challongeUsername, @Nonnull String challongeToken, @Nonnull String dbotsToken, @Nonnull String topggToken, boolean mockBotLists, @Nonnull String inviteUrl, long botId, @Nonnull String supportServer, @Nonnull String twitterHandle, @Nonnull String github, long devId, @Nonnull String stopwordListLocation, @Nonnull String stateDbLocation, @Nonnull String smashdataDbLocation, @Nonnull String charactersFileLocation) {
         this.ggToken = ggToken;
         this.discordToken = discordToken;
         this.challongeUsername = challongeUsername;
@@ -45,6 +47,7 @@ public class Config {
         this.inviteUrl = inviteUrl;
         this.supportServer = supportServer;
         this.twitterHandle = twitterHandle;
+        this.github = github;
         this.devId = devId;
         this.stopwordListLocation = stopwordListLocation;
         this.stateDbLocation = stateDbLocation;
@@ -144,5 +147,10 @@ public class Config {
 
     public boolean isMockBotLists() {
         return mockBotLists;
+    }
+
+    @Nonnull
+    public String getGithub() {
+        return github;
     }
 }

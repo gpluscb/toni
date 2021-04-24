@@ -22,14 +22,19 @@ public class HelpCommand implements Command {
     private final String inviteUrl;
     @Nonnull
     private final String twitterHandle;
+    @Nonnull
+    private final String github;
     private final long devId;
+    private final long botId;
 
-    public HelpCommand(@Nonnull List<CommandCategory> commands, @Nonnull String supportServer, @Nonnull String inviteUrl, @Nonnull String twitterHandle, long devId) {
+    public HelpCommand(@Nonnull List<CommandCategory> commands, @Nonnull String supportServer, @Nonnull String inviteUrl, @Nonnull String twitterHandle, @Nonnull String github, long devId, long botId) {
         this.commands = commands;
         this.supportServer = supportServer;
         this.inviteUrl = inviteUrl;
         this.twitterHandle = twitterHandle;
+        this.github = github;
         this.devId = devId;
+        this.botId = botId;
     }
 
     @Override
@@ -92,10 +97,9 @@ public class HelpCommand implements Command {
 
         builder.setDescription("My prefixes are `!t`, `noti` and `toni`, but you can mention me instead too.\n")
                 .appendDescription("`|` means \"or\", `[brackets]` mean \"optional\", and `...` means that an argument is allowed to have spaces. ")
-                .appendDescription("If you want to use spaces in other arguments, you will have to wrap that argument in quotation marks (e.g. \"arg ument\").\n")
+                .appendDescription("If you want to use spaces in other arguments, you will have to wrap that argument in quotation marks (e.g. \"this is all one argument\").\n")
                 .appendDescription("Use `Toni, help [CATEGORY]` for more info on specific command categories.\n")
-                .appendDescription("I am still in a *very* early state. So if you have any questions, problems, bugs, or suggestions, **please** tell my dev about that ")
-                .appendDescription("(but please also understand that they live in the central-european time zone and may have uni or other stuff going on as well).\n")
+                .appendDescription("I am still in an early state. So if you have any questions, problems, bugs, or suggestions, **please** tell my dev about that.\n")
                 .appendDescription(String.format("• You can DM them directly if you have common servers: <@%d>%n", devId))
                 .appendDescription(String.format("• You can go to [my support server](%s)%n", supportServer))
                 .appendDescription(String.format("• You can @ or dm me on Twitter, I promise you only the highest quality of tweets: [@%s](https://twitter.com/%1$s)%n", twitterHandle))
@@ -108,6 +112,9 @@ public class HelpCommand implements Command {
                 .collect(Collectors.toList());
         String parsedFields = EmbedUtil.parseInlineFields(helpFields);
         builder.addField("Command categories", parsedFields, false);
+
+        builder.addField("", String.format("[vote for me on top.gg](https://top.gg/bot/%d)", botId), true);
+        builder.addField("", String.format("[check out my github](%s)", github), true);
 
         ctx.reply(builder.build()).queue();
     }

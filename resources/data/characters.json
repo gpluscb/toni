@@ -557,6 +557,7 @@
     "alt_names": [
       "pac man",
       "pac-man",
+      "pacman",
       "pac"
     ],
     "emote_id": 736674480897916981,
@@ -600,7 +601,8 @@
     "name": "Mega Man",
     "alt_names": [
       "mega man",
-      "mega-man"
+      "mega-man",
+      "megaman"
     ],
     "emote_id": 736674481065558016,
     "guild": 736625420467699763,
@@ -922,6 +924,7 @@
         "name": "Dark Pit",
         "alt_names": [
           "dark pit",
+          "darkpit",
           "edgy pit"
         ],
         "emote_id": 736674479597682790,
@@ -997,6 +1000,7 @@
             "name": "Dark Samus",
             "alt_names": [
               "dark samus",
+              "darksamus",
               "edgy samus",
               "dark spamus",
               "edgy spamus",

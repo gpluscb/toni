@@ -163,6 +163,7 @@ public class RandomCharacterCommand implements Command {
                 "`random brawl [TREAT SHEIK/ZELDA AS ONE? (true(default)|false)] [TREAT SAMUS/ZSS AS ONE? (true(default)|false)]`\n" +
                 "`random 4 [TREAT MIIS AS ONE? (true|false(default))]`\n" +
                 "`random ult [TREAT MIIS AS ONE? (true|false(default))] [TREAT ECHOES AS ONE? (true|false(default))]`\n" +
-                "Selects a random character from the roster of a smash game.";
+                "Selects a random character from the roster of a smash game.\n" +
+                "Aliases: `random`, `randomchar`, `randomcharacter`";
     }
 }

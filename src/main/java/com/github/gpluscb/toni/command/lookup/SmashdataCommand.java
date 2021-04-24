@@ -155,9 +155,10 @@ public class SmashdataCommand implements Command {
     @Nullable
     @Override
     public String getDetailedHelp() {
-        return "`smashdata|player|smasher|data <TAG...>`\n" +
+        return "`smashdata <TAG...>`\n" +
                 "Looks up a smash ultimate player by their tag using data from [smashdata.gg](https://smashdata.gg).\n" +
-                String.format("If there are multiple smashers matching the given tag, use the %s/%s to cycle through them.", Constants.ARROW_BACKWARD, Constants.ARROW_FORWARD);
+                String.format("If there are multiple smashers matching the given tag, use the %s/%s to cycle through them.%n", Constants.ARROW_BACKWARD, Constants.ARROW_FORWARD) +
+                "Aliases: `smashdata`, `player`, `smasher`, `data`";
     }
 
     private class PlayerEmbedPaginator {

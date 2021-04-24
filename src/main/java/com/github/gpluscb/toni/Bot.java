@@ -301,7 +301,7 @@ public class Bot {
         commands.add(new CommandCategory(null, null, adminCommands));
 
         List<Command> infoCommands = new ArrayList<>();
-        infoCommands.add(new HelpCommand(commands, supportServer, inviteUrl, twitterHandle, devId));
+        infoCommands.add(new HelpCommand(commands, supportServer, inviteUrl, twitterHandle, cfg.getGithub(), devId, cfg.getBotId()));
         infoCommands.add(new PrivacyCommand(supportServer, twitterHandle, devId));
         infoCommands.add(new PingCommand());
         commands.add(new CommandCategory("info", "Bot information commands", infoCommands));

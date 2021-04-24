@@ -385,7 +385,7 @@ public class CharacterCommand implements Command {
     @Nonnull
     @Override
     public String[] getAliases() {
-        return new String[]{"character", "char", "ufd", "moves", "move", "hitboxes"};
+        return new String[]{"character", "char", "ufd", "moves", "move", "hitboxes", "hitbox"};
     }
 
     @Nullable
@@ -397,11 +397,12 @@ public class CharacterCommand implements Command {
     @Nullable
     @Override
     public String getDetailedHelp() {
-        return "`char[acter]|ufd|move[s]|hitboxes <CHARACTER NAME...> [MOVE NAME...]`\n" +
+        return "`character <CHARACTER NAME...> [MOVE NAME...]`\n" +
                 "Looks up the moves of a character on [ultimateframedata.com](https://ultimateframedata.com).\n" +
                 String.format("Use the %s/%s reactions to cycle through move categories%n", Constants.ARROW_DOUBLE_BACKWARD, Constants.ARROW_DOUBLE_FORWARD) +
                 String.format("Use the %s/%s reactions to cycle through moves within one category%n", Constants.ARROW_BACKWARD, Constants.ARROW_FORWARD) +
-                String.format("If one move has multiple hitbox images, use the %s reaction to cycle through them.", Constants.FRAME);
+                String.format("If one move has multiple hitbox images, use the %s reaction to cycle through them.%n", Constants.FRAME) +
+                "Aliases: `character`, `char`, `ufd`, `move`, `moves`, `hitboxes`, `hitbox`";
     }
 
     private class MovesEmbedPaginator {

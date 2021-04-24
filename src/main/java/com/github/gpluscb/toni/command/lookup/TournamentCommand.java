@@ -388,10 +388,11 @@ public class TournamentCommand implements Command {
     @Nullable
     @Override
     public String getDetailedHelp() {
-        return "`tournament[s]|tourney[s] <SEARCH TERM...>`\n" +
+        return "`tournament <SEARCH TERM...>`\n" +
                 "Searches for tournaments on [smash.gg](https://smash.gg) by their name, id, or slug (end of url).\n" +
                 String.format("If there are multiple tournaments matching the given term, use the %s/%s reactions to cycle through them.%n", Constants.ARROW_BACKWARD, Constants.ARROW_FORWARD) +
-                String.format("Use the %s/%s reactions to cycle through events in a tournament.", Constants.ARROW_DOWNWARD, Constants.ARROW_UPWARD);
+                String.format("Use the %s/%s reactions to cycle through events in a tournament.%n", Constants.ARROW_DOWNWARD, Constants.ARROW_UPWARD) +
+                "Aliases: `tournaments`, `tournament`, `tourney`, `tourneys`";
     }
 
     private class TournamentEmbedPaginator {

@@ -41,10 +41,10 @@ public class DMChoiceWaiter {
         waiter.waitForEvent(PrivateMessageReceivedEvent.class,
                 e -> element.attemptChoice(e.getAuthor().getIdLong(), e),
                 e -> removeElement(element),
-                timeout, unit, () -> {
+                timeout, unit, FailLogger.logFail(() -> { // This is the only thing that will be executed on not JDA-WS thread. So exceptions may get swallowed
                     if (timeoutAction != null) timeoutAction.accept(element.getIncompleteResults());
                     removeElement(element);
-                });
+                }));
 
         return true;
     }

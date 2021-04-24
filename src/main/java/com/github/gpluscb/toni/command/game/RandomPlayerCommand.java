@@ -58,7 +58,8 @@ public class RandomPlayerCommand implements Command {
     @Nullable
     @Override
     public String getDetailedHelp() {
-        return "`randomplayer|chooseplayer|choose <CHOICES...>`\n" +
-                "Picks a random choice out of the given choices. Useful if you don't want to play rock paper scissors for example.";
+        return "`choose <CHOICES...>`\n" +
+                "Picks a random choice out of the given choices. Useful if you don't want to play rock paper scissors for example.\n" +
+                "Aliases: `choose`, `randomplayer`, `chooseplayer`";
     }
 }

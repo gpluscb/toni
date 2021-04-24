@@ -75,3 +75,6 @@ fabric.properties
 **/logs
 .gradle
 build
+.idea/dataSources.xml
+identifier.sqlite
+.idea/sqldialects.xml

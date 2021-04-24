@@ -77,7 +77,7 @@ public class RockPaperScissorsCommand implements Command {
                     : String.format("%s won!", intOutcome > 0 ? user1Mention : user2Mention);
 
             ctx.reply(String.format("It has been decided! %s chose %s, and %s chose %s. That means %s", user1Mention, choice1.getName(), user2Mention, choice2.getName(), outcome)).mentionUsers(user1, user2).queue();
-        }, 3, TimeUnit.MINUTES, FailLogger.logFail(map -> { // Only timeoutAction on non-WS thread, so this wouldn't log otherwise
+        }, 3, TimeUnit.MINUTES, map -> {
             // TODO: Variable naming
             StringBuilder lazyIdiots = new StringBuilder();
             RPS choice1 = map.get(user1);
@@ -89,7 +89,7 @@ public class RockPaperScissorsCommand implements Command {
             if (choice2 == null) lazyIdiots.append(user2Mention);
 
             ctx.reply(String.format("The three (3) minutes are done. Not all of you have given me your choice. Shame on you, %s!", lazyIdiots.toString())).mentionUsers(user1, user2).queue();
-        }));
+        });
 
         if (worked) // TODO: Trusts that this message will go through. Not that big an issue, but still iffy. Optimally you would have something to cancel the thing?
             ctx.reply(String.format("Alrighty! %s and %s, please send me a DM with your choice now. You have three (3) minutes!", user1Mention, user2Mention)).mentionUsers(user1, user2).queue();

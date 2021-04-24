@@ -97,12 +97,12 @@ public class BlindPickCommand implements Command {
             }).collect(Collectors.joining("\n"));
 
             ctx.reply(String.format("The characters have been decided:%n%n%s", choices)).mentionUsers(userMentionsArray).queue();
-        }, 3, TimeUnit.MINUTES, FailLogger.logFail(map -> { // This is the only thing that will be executed on not JDA-WS thread. So exceptions may get swallowed
+        }, 3, TimeUnit.MINUTES, map -> {
             // TODO: Variable naming
             String lazyIdiots = users.stream().filter(Predicate.not(map::containsKey)).map(MiscUtil::mentionUser).collect(Collectors.joining(", "));
 
             ctx.reply(String.format("The three (3) minutes are done. Not all of you have given me your characters. Shame on you, %s!", lazyIdiots)).mentionUsers(userMentionsArray).queue();
-        }));
+        });
 
         if (worked) // TODO: Trusts that this message will go through. Not that big an issue, but still iffy.
             ctx.reply(String.format("Alright, %s, please send me a DM with your character choice now. You have three (3) minutes!", userMentions)).mentionUsers(userMentionsArray).queue();

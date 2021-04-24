@@ -75,12 +75,15 @@ public class ButtonActionMenu extends Menu {
         long messageId = message.getIdLong();
         long channelId = message.getChannel().getIdLong();
         JDA jda = message.getJDA();
-        waiter.waitForEvent(MessageReactionAddEvent.class, e -> checkReaction(e, messageId), this::handleMessageReactionAdd, timeout, unit, () -> {
-            MessageChannel channel = jda.getTextChannelById(channelId);
-            if (channel == null) channel = jda.getPrivateChannelById(channelId);
-            timeoutAction.accept(channel, messageId);
-            if (channel == null) log.warn("MessageChannel for timeoutAction not in cache for timeoutAction");
-        });
+        waiter.waitForEvent(MessageReactionAddEvent.class,
+                e -> checkReaction(e, messageId),
+                this::handleMessageReactionAdd,
+                timeout, unit, FailLogger.logFail(() -> { // This is the only thing that will be executed on not JDA-WS thread. So exceptions may get swallowed
+                    MessageChannel channel = jda.getTextChannelById(channelId);
+                    if (channel == null) channel = jda.getPrivateChannelById(channelId);
+                    timeoutAction.accept(channel, messageId);
+                    if (channel == null) log.warn("MessageChannel for timeoutAction not in cache for timeoutAction");
+                }));
     }
 
     private boolean isValidUser(long user) {
@@ -193,7 +196,7 @@ public class ButtonActionMenu extends Menu {
                 throw new IllegalStateException("You likely tried to use addUsers(User...). User addUsers(Long...) instead.");
 
             if (timeoutAction == null) {
-                timeoutAction = FailLogger.logFail((channel, id) -> {
+                timeoutAction = (channel, id) -> {
                     if (channel == null) return;
                     if (channel instanceof TextChannel) {
                         TextChannel textChannel = (TextChannel) channel;
@@ -203,7 +206,7 @@ public class ButtonActionMenu extends Menu {
                         for (String button : buttonActions.keySet()) channel.removeReactionById(id, button).queue();
                         if (deletionButton != null) channel.removeReactionById(id, deletionButton).queue();
                     }
-                });
+                };
             }
 
             return new ButtonActionMenu(waiter, users, timeout, unit, buttonActions, start, deletionButton, timeoutAction);

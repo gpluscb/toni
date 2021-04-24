@@ -37,11 +37,12 @@ public class PingCommand implements Command {
     @Nullable
     @Override
     public String getDetailedHelp() {
-        return "`ping|rtt`\n" +
+        return "`ping`\n" +
                 "Gives you my ping (\"round trip time\" for Discord, basically my reaction time). The average reaction time of a human is ~250ms, let's see if I can beat that.\n" +
                 "Keep in mind that for some commands I need to crunch some numbers and even look at other web services, " +
                 "so I might take a bit longer to respond than my ping would suggest (I also have to respect Discords rate limits *yikes*).\n" +
                 "**Keep in mind that this might yield inaccurate results during leap seconds!**\n" +
-                "*(Idea of repeating 'o's stolen from [Lewdcario's FloofBot](https://www.patreon.com/lewdcario) with no permission and no shame (Floof's a really really good bot for the smash community and you should check it out))*";
+                "*(Idea of repeating 'o's stolen from [Lewdcario's FloofBot](https://www.patreon.com/lewdcario) with no permission and no shame (Floof's a really really good bot for the smash community and you should check it out))*\n" +
+                "Aliases: `ping`, `rtt`";
     }
 }

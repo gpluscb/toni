@@ -112,10 +112,11 @@ public class RockPaperScissorsCommand implements Command {
     @Nullable
     @Override
     public String getDetailedHelp() {
-        return "`rps|rockpaperscissors [PLAYER 1 (default: message author)] <PLAYER 2>`\n" +
+        return "`rps [PLAYER 1 (default: message author)] <PLAYER 2>`\n" +
                 "Helps you play the world famous game of [rock paper scissors](https://en.wikipedia.org/wiki/Rock_paper_scissors). " +
                 "After performing the command, both participants will have to DM me. " +
-                "So you might have to unblock me (but what kind of monster would have me blocked in the first place?)";
+                "So you might have to unblock me (but what kind of monster would have me blocked in the first place?)\n" +
+                "Aliases: `rockpaperscissors`, `rps`";
     }
 
     private enum RPS {

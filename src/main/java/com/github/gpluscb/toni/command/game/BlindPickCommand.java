@@ -125,9 +125,10 @@ public class BlindPickCommand implements Command {
     @Nullable
     @Override
     public String getDetailedHelp() {
-        return "`[double]blind[pick] <USERS...>`\n" +
+        return "`doubleblind <USERS...>`\n" +
                 "Assists you in doing a [blind pick](https://gist.github.com/gpluscb/559f00e750854b46c0a71827e094ab3e). " +
                 "After performing the command, everyone who participates in the blind pick will have to DM me. " +
-                "So you might have to unblock me (but what kind of monster would have me blocked in the first place?)";
+                "So you might have to unblock me (but what kind of monster would have me blocked in the first place?)\n" +
+                "Aliases: `doubleblind`, `blindpick`, `blind`";
     }
 }

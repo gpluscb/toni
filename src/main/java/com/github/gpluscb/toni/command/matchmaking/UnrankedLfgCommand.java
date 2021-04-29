@@ -206,8 +206,10 @@ public class UnrankedLfgCommand implements Command {
     @Nullable
     @Override
     public String getDetailedHelp() {
-        return "`unranked|lfg [DURATION (default 2h)]`\n" +
+        return "`lfg [DURATION (default 2h)]`\n" +
                 "Pings the matchmaking role and asks players to react if they want to play. Notifies you when they react within the given duration." +
-                " The duration must be given in the format `Xh Xm Xs Xms`, and it has to be between 10m and 5h.";
+                " The duration must be given in the format `Xh Xm Xs Xms`, and it has to be between 10m and 5h.\n" +
+                "Use this command again with no arguments if you want to cancel it.\n" + // TODO: <- this
+                "Aliases: `lfg`, `unranked`";
     }
 }

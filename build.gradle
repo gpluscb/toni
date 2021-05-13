@@ -11,6 +11,10 @@ version '1.0.7'
 sourceCompatibility = 1.8
 
 repositories {
+    maven {
+        name 'm2-dv8tion'
+        url 'https://m2.dv8tion.net/releases'
+    }
     mavenCentral()
     jcenter()
     maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
@@ -18,7 +22,7 @@ repositories {
 }
 
 dependencies {
-    implementation(group: 'net.dv8tion', name: 'JDA', version: '4.2.0_262') {
+    implementation(group: 'net.dv8tion', name: 'JDA', version: '4.2.1_262') {
         exclude module: 'opus-java'
     }
 

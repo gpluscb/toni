@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.requests.RestAction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.time.Duration;
@@ -52,6 +53,7 @@ public class MiscUtil {
     }
 
     @Nonnull
+    @CheckReturnValue
     public static RestAction<Void> clearReactionsOrRemoveOwnReaction(@Nonnull MessageChannel channel, long messageId, @Nonnull String reaction) {
         if (channel instanceof TextChannel) {
             TextChannel textChannel = (TextChannel) channel;

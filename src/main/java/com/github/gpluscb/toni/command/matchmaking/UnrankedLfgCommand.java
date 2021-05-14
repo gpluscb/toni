@@ -9,6 +9,7 @@ import com.github.gpluscb.toni.util.MiscUtil;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import org.apache.logging.log4j.LogManager;
@@ -85,13 +86,15 @@ public class UnrankedLfgCommand implements Command {
 
             long userId = ctx.getAuthor().getIdLong();
             long roleId = config.getLfgRoleId();
-            ctx.reply(String.format("%s, %s is looking for a game for %s. React with %s to accept.",
-                    MiscUtil.mentionRole(roleId), MiscUtil.mentionUser(userId), MiscUtil.durationToString(duration), Constants.FENCER))
+            ctx.reply(String.format("%s, %s is looking for a game for %s. React with %s to accept. %2$s, you can react with %s to cancel.",
+                    MiscUtil.mentionRole(roleId), MiscUtil.mentionUser(userId), MiscUtil.durationToString(duration), Constants.FENCER, Constants.CROSS_MARK))
                     .mentionRoles(roleId).mentionUsers(userId).queue(msg -> {
                 TextChannel textChannel = msg.getTextChannel();
 
-                if (textChannel.getGuild().getSelfMember().hasPermission(msg.getTextChannel(), Permission.MESSAGE_ADD_REACTION))
+                if (textChannel.getGuild().getSelfMember().hasPermission(msg.getTextChannel(), Permission.MESSAGE_ADD_REACTION)) {
                     msg.addReaction(Constants.FENCER).queue();
+                    msg.addReaction(Constants.CROSS_MARK).queue();
+                }
 
                 JDA jda = msg.getJDA();
                 long msgId = msg.getIdLong();
@@ -121,19 +124,37 @@ public class UnrankedLfgCommand implements Command {
         if (wasCancelled.get()) return false;
         long eventUserId = e.getUserIdLong();
         if (eventUserId == botId) return false;
-        if (!e.getReactionEmote().getName().equals(Constants.FENCER)) return false;
-        if (eventUserId == userId) {
-            e.getChannel().sendMessage("If you are trying to play with yourself, that's ok too. But there's no need to ping matchmaking for that my friend.").queue();
-            return false;
+        String reactionName = e.getReactionEmote().getName();
+
+        if (reactionName.equals(Constants.FENCER)) {
+            if (eventUserId == userId) {
+                e.getChannel().sendMessage("If you are trying to play with yourself, that's ok too. But there's no need to ping matchmaking for that my friend.").queue();
+                return false;
+            }
+
+            return true;
         }
-        return true;
+
+        return reactionName.equals(Constants.CROSS_MARK);
     }
 
     private void executeMatchmakingReaction(@Nonnull MessageReactionAddEvent event, long roleId, long userId, @Nonnull AtomicBoolean wasCancelled) {
+        String reactionName = event.getReactionEmote().getName();
+        MessageChannel originalChannel = event.getChannel();
+
         long challengerId = event.getUserIdLong();
         long originalMessageId = event.getMessageIdLong();
 
-        event.getChannel().sendMessage(String.format("%s, %s wants to play with you." +
+        if (reactionName.equals(Constants.CROSS_MARK)) {
+            wasCancelled.set(true);
+            event.getChannel().editMessageById(originalMessageId, String.format("%s, %s was looking for a game, but cancelled their search.",
+                    MiscUtil.mentionRole(roleId), MiscUtil.mentionUser(userId))).queue();
+
+            MiscUtil.clearReactionsOrRemoveOwnReaction(originalChannel, originalMessageId, Constants.CROSS_MARK).queue();
+            return;
+        }
+
+        originalChannel.sendMessage(String.format("%s, %s wants to play with you." +
                         " If you want me to disable the reaction on the original message, react with %s within three minutes.",
                 MiscUtil.mentionUser(userId), MiscUtil.mentionUser(challengerId), Constants.CHECK_MARK))
                 .mentionUsers(userId, challengerId).queue(msg -> {
@@ -209,7 +230,6 @@ public class UnrankedLfgCommand implements Command {
         return "`lfg [DURATION (default 2h)]`\n" +
                 "Pings the matchmaking role and asks players to react if they want to play. Notifies you when they react within the given duration." +
                 " The duration must be given in the format `Xh Xm Xs Xms`, and it has to be between 10m and 5h.\n" +
-                "Use this command again with no arguments if you want to cancel it.\n" + // TODO: <- this
                 "Aliases: `lfg`, `unranked`";
     }
 }

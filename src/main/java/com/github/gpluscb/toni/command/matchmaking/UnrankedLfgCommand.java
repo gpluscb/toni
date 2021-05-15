@@ -43,7 +43,6 @@ public class UnrankedLfgCommand implements Command {
             ctx.reply("This command only works in servers. There is only us two in our DMs. And it's nice that you want to play with me, but sorry I don't have hands.").queue();
             return;
         }
-        // TODO: Make it cancellable
 
         try {
             UnrankedManager.MatchmakingConfig config = manager.loadMatchmakingConfig(ctx.getEvent().getGuild().getIdLong());

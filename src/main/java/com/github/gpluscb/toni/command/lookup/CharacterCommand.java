@@ -87,7 +87,8 @@ public class CharacterCommand implements Command {
     @Nonnull
     private OneOfTwo<Pair<Short, String>, String> findCharacterIdAndMoveNameOrResponse(@Nonnull CommandContext ctx) {
         int characterArgNum = 0;
-        OneOfTwo<Short, String> id = OneOfTwo.ofU("I couldn't find anything for that input, sorry");
+        OneOfTwo<Short, String> id = OneOfTwo.ofU("I don't know that character, sorry. " +
+                "Note that I only know the English names.");
         int argNum = ctx.getArgNum();
         for (int i = 1; i <= argNum; i++) {
             String characterName = ctx.getArgsRange(0, i).toLowerCase();

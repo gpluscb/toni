@@ -110,13 +110,16 @@ public class TournamentCommand implements Command {
     }
 
     @Nonnull
-    private EmbedBuilder applyOneTournament(@Nonnull EmbedBuilder builder, @Nonnull TournamentResponse tournament) {
+    private EmbedBuilder applyOneTournament(@Nonnull EmbedBuilder builder, @Nonnull TournamentResponse tournament, @Nullable PairNonnull<Integer, Integer> idxOutOfSize) {
         // id shortSlug slug name hashtag venueAddress venueName startAt endAt registrationClosesAt isOnline numAttendees primaryContact primaryContactType url(relative:false) images{width height ratio url} links{facebook discord} events{slug name}
         StringResponse nameResponse = tournament.getName();
         String name = nameResponse == null ? "[not named]" : nameResponse.getValue();
+        String title = idxOutOfSize != null ?
+                String.format("(%d/%d) %s", idxOutOfSize.getT(), idxOutOfSize.getU(), name)
+                : name;
         StringResponse urlResponse = tournament.getUrl();
 
-        builder.setTitle(name, urlResponse == null ? null : urlResponse.getValue());
+        builder.setTitle(title, urlResponse == null ? null : urlResponse.getValue());
 
         List<ImageResponse> images = tournament.getImages();
         if (images != null)
@@ -474,10 +477,13 @@ public class TournamentCommand implements Command {
 
                 Pair<TournamentResponse, List<EventResponse>> pair = tournaments.get(tournamentPage);
                 TournamentResponse tournament = pair.getT();
+                PairNonnull<Integer, Integer> idxOutOfSize = tournaments.size() > 1 ?
+                        new PairNonnull<>(tournamentPage + 1, tournaments.size())
+                        : null;
 
                 Message message;
                 if (eventPage == 0)
-                    message = new MessageBuilder().setEmbed(applyOneTournament(embed, tournament).build()).build();
+                    message = new MessageBuilder().setEmbed(applyOneTournament(embed, tournament, idxOutOfSize).build()).build();
                 else {
                     int eventIndex = eventPage - 1;
                     EventResponse event = pair.getU().get(eventIndex);

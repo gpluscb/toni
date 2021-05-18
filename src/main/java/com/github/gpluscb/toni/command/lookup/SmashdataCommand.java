@@ -86,8 +86,13 @@ public class SmashdataCommand implements Command {
     }
 
     @Nonnull
-    private EmbedBuilder applyData(@Nonnull EmbedBuilder builder, @Nonnull SmashdataManager.PlayerData data) {
-        builder.setTitle(String.format("Smasher: %s", data.getTag()));
+    private EmbedBuilder applyData(@Nonnull EmbedBuilder builder, @Nonnull List<SmashdataManager.PlayerData> players, int idx) {
+        SmashdataManager.PlayerData data = players.get(idx);
+        String title = players.size() > 1 ?
+                String.format("(%d/%d) Smasher: %s", idx + 1, players.size(), data.getTag())
+                : String.format("Smasher: %s", data.getTag());
+
+        builder.setTitle(title);
 
         List<EmbedUtil.InlineField> fields = new ArrayList<>();
 
@@ -196,9 +201,7 @@ public class SmashdataCommand implements Command {
             try {
                 EmbedBuilder embed = new EmbedBuilder(template);
 
-                SmashdataManager.PlayerData data = results.get(resultPage);
-
-                applyData(embed, data);
+                applyData(embed, results, resultPage);
 
                 return new MessageBuilder().setEmbed(embed.build()).build();
             } catch (Exception e) {

@@ -55,6 +55,44 @@ public class SmashdataCommand implements Command {
         try {
             List<SmashdataManager.PlayerData> results = smashdata.loadSmashdataByTag(requestedTag);
 
+            Comparator<SmashdataManager.PlayerData> comp = (a, b) -> {
+                // Find the higher ranked player
+                Integer aPgru = a.getPgru();
+                Integer bPgru = b.getPgru();
+                if (aPgru != null) {
+                    if (bPgru == null) return 1;
+                    else return -Integer.compare(aPgru, bPgru);
+                } else if (bPgru != null) {
+                    return -1;
+                }
+
+                // Find player with socials
+                int aSocial = a.getSocial().getTwitter().size();
+                int bSocial = b.getSocial().getTwitter().size();
+                if (aSocial != bSocial) return Integer.compare(aSocial, bSocial);
+
+                // Find player with higher character count
+                int aCount = a.getCharacters().values().stream().mapToInt(c -> c).sum();
+                int bCount = b.getCharacters().values().stream().mapToInt(c -> c).sum();
+                if (aCount != bCount) return Integer.compare(aCount, bCount);
+
+                int aTotalData = 0;
+                if (a.getState() != null && !a.getState().isEmpty()) aTotalData++;
+                if (a.getCountry() != null && !a.getCountry().isEmpty()) aTotalData++;
+                if (!a.getPrefixes().isEmpty()) aTotalData++;
+                if (a.getRegion() != null && !a.getRegion().isEmpty()) aTotalData++;
+
+                int bTotalData = 0;
+                if (b.getState() != null && !b.getState().isEmpty()) bTotalData++;
+                if (b.getCountry() != null && !b.getCountry().isEmpty()) bTotalData++;
+                if (!b.getPrefixes().isEmpty()) bTotalData++;
+                if (b.getRegion() != null && !b.getRegion().isEmpty()) bTotalData++;
+
+                return Integer.compare(aTotalData, bTotalData);
+            };
+
+            results.sort(comp.reversed());
+
             sendReply(ctx, results);
         } catch (SQLException e) {
             ctx.reply("Something with the database for the players is broken :( I will notify my dev, but you can give them some context too if you want to.").queue();

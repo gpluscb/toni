@@ -72,15 +72,17 @@ public class SmashdataCommand implements Command {
         Member member = ctx.getEvent().getMember();
 
         PlayerEmbedPaginator pages = new PlayerEmbedPaginator(EmbedUtil.getPreparedSmashdata(member, author).build(), results);
-        ButtonActionMenu menu = new ButtonActionMenu.Builder()
+        ButtonActionMenu.Builder menuBuilder = new ButtonActionMenu.Builder()
                 .setEventWaiter(waiter)
                 .addUsers(author.getIdLong())
-                .registerButton(Constants.ARROW_BACKWARD, pages::prevResult)
-                .registerButton(Constants.ARROW_FORWARD, pages::nextResult)
-                .setStart(pages.getCurrent())
-                .build();
+                .setStart(pages.getCurrent());
 
-        menu.displayReplying(ctx.getMessage());
+        if (results.size() > 1) {
+            menuBuilder.registerButton(Constants.ARROW_BACKWARD, pages::prevResult)
+                    .registerButton(Constants.ARROW_FORWARD, pages::nextResult);
+        }
+
+        menuBuilder.build().displayReplying(ctx.getMessage());
     }
 
     @Nonnull

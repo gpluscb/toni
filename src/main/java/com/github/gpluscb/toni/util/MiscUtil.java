@@ -14,8 +14,6 @@ import java.time.Duration;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.blueanvil.Duration_printKt.toHumanReadableString;
-
 public class MiscUtil {
     private static final Logger log = LogManager.getLogger(MiscUtil.class);
 
@@ -116,7 +114,25 @@ public class MiscUtil {
 
     @Nonnull
     public static String durationToString(@Nonnull Duration duration) {
-        return toHumanReadableString(duration);
+        StringBuilder builder = new StringBuilder();
+
+        long hours = duration.toHours();
+        duration = duration.minusHours(hours);
+        long minutes = duration.toMinutes();
+        duration = duration.minusMinutes(minutes);
+        long seconds = duration.getSeconds();
+
+        if (hours > 0) builder.append(hours).append('h');
+        if (minutes > 0) {
+            if (builder.length() > 0) builder.append(' ');
+            builder.append(minutes).append('m');
+        }
+        if (seconds > 0) {
+            if (builder.length() > 0) builder.append(' ');
+            builder.append(seconds).append('s');
+        }
+
+        return builder.toString();
     }
 
     @Nonnull

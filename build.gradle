@@ -49,8 +49,6 @@ dependencies {
 
     implementation group: 'at.stefangeyer.challonge.serializer', name: 'gson', version: '2.1.0'
     implementation group: 'at.stefangeyer.challonge.rest', name: 'retrofit', version: '2.1.0'
-
-    implementation group: 'com.github.blueanvil', name: 'kotlin-duration-string', version: '1.0'
 }
 
 compileJava.options.encoding = 'UTF-8'

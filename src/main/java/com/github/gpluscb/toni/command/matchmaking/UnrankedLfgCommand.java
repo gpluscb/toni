@@ -22,6 +22,7 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+// TODO: Think of when exactly what reaction needs to be removed, and what needs to be cancelled
 public class UnrankedLfgCommand implements Command {
     private static final Logger log = LogManager.getLogger(UnrankedLfgCommand.class);
 

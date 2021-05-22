@@ -79,11 +79,6 @@ public class AvailableCommand implements Command {
                     return;
                 }
 
-                if (duration.isNegative()) {
-                    ctx.reply("The duration must be positive, I can't time travel at this point in time unfortunately.").queue();
-                    return;
-                }
-
                 if (duration.compareTo(Duration.ofHours(12)) > 0) {
                     ctx.reply("The maximum duration is 12h.").queue();
                     return;

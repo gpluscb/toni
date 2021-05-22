@@ -85,6 +85,9 @@ public class MiscUtil {
         return String.format("<#%d>", id);
     }
 
+    /**
+     * @return Non-negative duration
+     */
     @Nullable
     public static Duration parseDuration(@Nonnull String input) {
         if (input.isEmpty()) return null;

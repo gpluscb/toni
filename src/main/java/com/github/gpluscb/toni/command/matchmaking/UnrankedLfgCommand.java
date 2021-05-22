@@ -66,11 +66,6 @@ public class UnrankedLfgCommand implements Command {
                     return;
                 }
 
-                if (duration.isNegative()) {
-                    ctx.reply("The duration must be positive, I can't time travel at this point in time unfortunately.").queue();
-                    return;
-                }
-
                 if (duration.compareTo(Duration.ofHours(5)) > 0) {
                     ctx.reply("The maximum duration is 5h.").queue();
                     return;

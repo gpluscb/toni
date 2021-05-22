@@ -147,7 +147,9 @@ public class UnrankedLfgCommand implements Command {
         if (reactionName.equals(Constants.CROSS_MARK)) {
             wasCancelled.set(true);
             event.getChannel().editMessageById(originalMessageId, String.format("%s, %s was looking for a game, but cancelled their search.",
-                    MiscUtil.mentionRole(roleId), MiscUtil.mentionUser(userId))).queue();
+                    MiscUtil.mentionRole(roleId), MiscUtil.mentionUser(userId)))
+                    .mentionRoles(roleId).mentionUsers(userId)
+                    .queue();
 
             MiscUtil.clearReactionsOrRemoveOwnReaction(originalChannel, originalMessageId, Constants.CROSS_MARK).queue();
             return;
@@ -228,7 +230,7 @@ public class UnrankedLfgCommand implements Command {
     public String getDetailedHelp() {
         return "`lfg [DURATION (default 2h)]`\n" +
                 "Pings the matchmaking role and asks players to react if they want to play. Notifies you when they react within the given duration." +
-                " The duration must be given in the format `Xh Xm Xs Xms`, and it has to be between 10m and 5h.\n" +
+                " The duration can have the format `Xh Xm Xs`, and it has to be between 10m and 5h.\n" +
                 "Aliases: `lfg`, `unranked`";
     }
 }

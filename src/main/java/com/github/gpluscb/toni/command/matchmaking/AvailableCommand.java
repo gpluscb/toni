@@ -179,7 +179,7 @@ public class AvailableCommand implements Command {
     public String getDetailedHelp() {
         return "`available [DURATION]`\n" +
                 "Gives you the matchmaking role for the given duration, or permanently if you don't specify a duration." +
-                " The duration must be given in the format `Xh Xm Xs Xms`, and it can't be longer than 12h." +
+                " The duration can have the format `Xh Xm Xs`, and it can't be longer than 12h." +
                 " Note that I won't remove the role if I shut down during that time."; // TODO: Maybe fix that? That sounds so painful to fix tho.
     }
 }

@@ -12,12 +12,15 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.time.Duration;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import static com.blueanvil.Duration_parseKt.toDuration;
 import static com.blueanvil.Duration_printKt.toHumanReadableString;
 
 public class MiscUtil {
     private static final Logger log = LogManager.getLogger(MiscUtil.class);
+
+    private static final Pattern durationPatternPrimary = Pattern.compile("(?:(\\d+):)?(\\d+):(\\d+)");
+    private static final Pattern durationPatternAlternate = Pattern.compile("(?:(\\d+)h)? *(?:(\\d+)m(?:in)?)? *(?:(\\d+)s(?:ec)?)?");
 
     /**
      * @return Null if this is not a digit emoji
@@ -86,8 +89,29 @@ public class MiscUtil {
 
     @Nullable
     public static Duration parseDuration(@Nonnull String input) {
-        // TODO: Is this kotlin library *really* the right call here??
-        return toDuration(input);
+        if (input.isEmpty()) return null;
+
+        Matcher matcher = durationPatternPrimary.matcher(input);
+        if (!matcher.matches()) matcher = durationPatternAlternate.matcher(input);
+        if (!matcher.matches()) return null;
+
+        String matchedHours = matcher.group(1);
+        String matchedMinutes = matcher.group(2);
+        String matchedSeconds = matcher.group(3);
+
+        try {
+            // Since input is not empty, at least one of these should not be null
+            long hours = matchedHours == null ? 0 : Long.parseLong(matchedHours);
+            long minutes = matchedMinutes == null ? 0 : Long.parseLong(matchedMinutes);
+            long seconds = matchedSeconds == null ? 0 : Long.parseLong(matchedSeconds);
+
+            return Duration.ofHours(hours)
+                    .plusMinutes(minutes)
+                    .plusSeconds(seconds);
+        } catch (NumberFormatException e) {
+            log.warn("NumberFormatException when parsing duration: is it out of bounds for long? input: {}, error: {}", input, e);
+            return null;
+        }
     }
 
     @Nonnull

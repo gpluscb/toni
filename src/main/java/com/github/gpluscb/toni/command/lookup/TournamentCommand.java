@@ -77,9 +77,9 @@ public class TournamentCommand implements Command {
         List<GGError> errors = errorResponse.getErrors();
         if (e != null) log.catching(e);
         else if (errors != null)
-            log.error("QueryResponse had errors, full response: " + errorResponse.getResponseRoot().toString());
+            log.error("QueryResponse had errors, full response: " + errorResponse.getResponseRoot());
         else
-            log.error("response.onError executed but neither exception nor errors field found, full response: " + errorResponse.getResponseRoot().toString());
+            log.error("response.onError executed but neither exception nor errors field found, full response: " + errorResponse.getResponseRoot());
 
         ctx.reply("An error during the parsing of the response smash.gg sent me... I'll go annoy my dev. If this happens consistently, go give them some context too.").queue();
     }
@@ -94,27 +94,32 @@ public class TournamentCommand implements Command {
         Member member = ctx.getEvent().getMember();
 
         TournamentEmbedPaginator pages = new TournamentEmbedPaginator(EmbedUtil.getPreparedGG(member, author).build(), tournaments);
-        ButtonActionMenu menu = new ButtonActionMenu.Builder()
+        ButtonActionMenu.Builder menuBuilder = new ButtonActionMenu.Builder()
                 .setEventWaiter(waiter)
                 .addUsers(author.getIdLong())
-                .registerButton(Constants.ARROW_BACKWARD, pages::nextTournament)
-                .registerButton(Constants.ARROW_FORWARD, pages::prevTournament)
                 .registerButton(Constants.ARROW_DOWNWARD, pages::nextEvent)
                 .registerButton(Constants.ARROW_UPWARD, pages::prevEvent)
-                .setStart(pages.getCurrent())
-                .build();
+                .setStart(pages.getCurrent());
 
-        menu.displayReplying(ctx.getMessage());
+        if (tournaments.size() > 1) {
+            menuBuilder.registerButton(Constants.ARROW_BACKWARD, pages::nextTournament)
+                    .registerButton(Constants.ARROW_FORWARD, pages::prevTournament);
+        }
+
+        menuBuilder.build().displayReplying(ctx.getMessage());
     }
 
     @Nonnull
-    private EmbedBuilder applyOneTournament(@Nonnull EmbedBuilder builder, @Nonnull TournamentResponse tournament) {
+    private EmbedBuilder applyOneTournament(@Nonnull EmbedBuilder builder, @Nonnull TournamentResponse tournament, @Nullable PairNonnull<Integer, Integer> idxOutOfSize) {
         // id shortSlug slug name hashtag venueAddress venueName startAt endAt registrationClosesAt isOnline numAttendees primaryContact primaryContactType url(relative:false) images{width height ratio url} links{facebook discord} events{slug name}
         StringResponse nameResponse = tournament.getName();
         String name = nameResponse == null ? "[not named]" : nameResponse.getValue();
+        String title = idxOutOfSize != null ?
+                String.format("(%d/%d) %s", idxOutOfSize.getT(), idxOutOfSize.getU(), name)
+                : name;
         StringResponse urlResponse = tournament.getUrl();
 
-        builder.setTitle(name, urlResponse == null ? null : urlResponse.getValue());
+        builder.setTitle(title, urlResponse == null ? null : urlResponse.getValue());
 
         List<ImageResponse> images = tournament.getImages();
         if (images != null)
@@ -472,10 +477,13 @@ public class TournamentCommand implements Command {
 
                 Pair<TournamentResponse, List<EventResponse>> pair = tournaments.get(tournamentPage);
                 TournamentResponse tournament = pair.getT();
+                PairNonnull<Integer, Integer> idxOutOfSize = tournaments.size() > 1 ?
+                        new PairNonnull<>(tournamentPage + 1, tournaments.size())
+                        : null;
 
                 Message message;
                 if (eventPage == 0)
-                    message = new MessageBuilder().setEmbed(applyOneTournament(embed, tournament).build()).build();
+                    message = new MessageBuilder().setEmbed(applyOneTournament(embed, tournament, idxOutOfSize).build()).build();
                 else {
                     int eventIndex = eventPage - 1;
                     EventResponse event = pair.getU().get(eventIndex);

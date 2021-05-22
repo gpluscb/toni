@@ -55,6 +55,44 @@ public class SmashdataCommand implements Command {
         try {
             List<SmashdataManager.PlayerData> results = smashdata.loadSmashdataByTag(requestedTag);
 
+            Comparator<SmashdataManager.PlayerData> comp = (a, b) -> {
+                // Find the higher ranked player
+                Integer aPgru = a.getPgru();
+                Integer bPgru = b.getPgru();
+                if (aPgru != null) {
+                    if (bPgru == null) return 1;
+                    else return -Integer.compare(aPgru, bPgru);
+                } else if (bPgru != null) {
+                    return -1;
+                }
+
+                // Find player with socials
+                int aSocial = a.getSocial().getTwitter().size();
+                int bSocial = b.getSocial().getTwitter().size();
+                if (aSocial != bSocial) return Integer.compare(aSocial, bSocial);
+
+                // Find player with higher character count
+                int aCount = a.getCharacters().values().stream().mapToInt(c -> c).sum();
+                int bCount = b.getCharacters().values().stream().mapToInt(c -> c).sum();
+                if (aCount != bCount) return Integer.compare(aCount, bCount);
+
+                int aTotalData = 0;
+                if (a.getState() != null && !a.getState().isEmpty()) aTotalData++;
+                if (a.getCountry() != null && !a.getCountry().isEmpty()) aTotalData++;
+                if (!a.getPrefixes().isEmpty()) aTotalData++;
+                if (a.getRegion() != null && !a.getRegion().isEmpty()) aTotalData++;
+
+                int bTotalData = 0;
+                if (b.getState() != null && !b.getState().isEmpty()) bTotalData++;
+                if (b.getCountry() != null && !b.getCountry().isEmpty()) bTotalData++;
+                if (!b.getPrefixes().isEmpty()) bTotalData++;
+                if (b.getRegion() != null && !b.getRegion().isEmpty()) bTotalData++;
+
+                return Integer.compare(aTotalData, bTotalData);
+            };
+
+            results.sort(comp.reversed());
+
             sendReply(ctx, results);
         } catch (SQLException e) {
             ctx.reply("Something with the database for the players is broken :( I will notify my dev, but you can give them some context too if you want to.").queue();
@@ -72,20 +110,27 @@ public class SmashdataCommand implements Command {
         Member member = ctx.getEvent().getMember();
 
         PlayerEmbedPaginator pages = new PlayerEmbedPaginator(EmbedUtil.getPreparedSmashdata(member, author).build(), results);
-        ButtonActionMenu menu = new ButtonActionMenu.Builder()
+        ButtonActionMenu.Builder menuBuilder = new ButtonActionMenu.Builder()
                 .setEventWaiter(waiter)
                 .addUsers(author.getIdLong())
-                .registerButton(Constants.ARROW_BACKWARD, pages::prevResult)
-                .registerButton(Constants.ARROW_FORWARD, pages::nextResult)
-                .setStart(pages.getCurrent())
-                .build();
+                .setStart(pages.getCurrent());
 
-        menu.displayReplying(ctx.getMessage());
+        if (results.size() > 1) {
+            menuBuilder.registerButton(Constants.ARROW_BACKWARD, pages::prevResult)
+                    .registerButton(Constants.ARROW_FORWARD, pages::nextResult);
+        }
+
+        menuBuilder.build().displayReplying(ctx.getMessage());
     }
 
     @Nonnull
-    private EmbedBuilder applyData(@Nonnull EmbedBuilder builder, @Nonnull SmashdataManager.PlayerData data) {
-        builder.setTitle(String.format("Smasher: %s", data.getTag()));
+    private EmbedBuilder applyData(@Nonnull EmbedBuilder builder, @Nonnull List<SmashdataManager.PlayerData> players, int idx) {
+        SmashdataManager.PlayerData data = players.get(idx);
+        String title = players.size() > 1 ?
+                String.format("(%d/%d) Smasher: %s", idx + 1, players.size(), data.getTag())
+                : String.format("Smasher: %s", data.getTag());
+
+        builder.setTitle(title);
 
         List<EmbedUtil.InlineField> fields = new ArrayList<>();
 
@@ -194,9 +239,7 @@ public class SmashdataCommand implements Command {
             try {
                 EmbedBuilder embed = new EmbedBuilder(template);
 
-                SmashdataManager.PlayerData data = results.get(resultPage);
-
-                applyData(embed, data);
+                applyData(embed, results, resultPage);
 
                 return new MessageBuilder().setEmbed(embed.build()).build();
             } catch (Exception e) {

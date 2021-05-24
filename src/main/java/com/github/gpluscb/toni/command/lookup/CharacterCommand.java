@@ -13,6 +13,7 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -437,7 +438,7 @@ public class CharacterCommand implements Command {
         }
 
         @Nonnull
-        public synchronized Message nextSection() {
+        public synchronized Message nextSection(@Nonnull MessageReactionAddEvent e) {
             sectionPage = sectionPage.next();
             movePage = 0;
             hitboxPage = 0;
@@ -445,7 +446,7 @@ public class CharacterCommand implements Command {
         }
 
         @Nonnull
-        public synchronized Message prevSection() {
+        public synchronized Message prevSection(@Nonnull MessageReactionAddEvent e) {
             sectionPage = sectionPage.prev();
             movePage = 0;
             hitboxPage = 0;
@@ -453,7 +454,7 @@ public class CharacterCommand implements Command {
         }
 
         @Nonnull
-        public synchronized Message nextMove() {
+        public synchronized Message nextMove(@Nonnull MessageReactionAddEvent e) {
             int moveLength = sectionPage.getMoveData(data).size() + (sectionPage == CharacterData.MoveSection.MISC ? 1 : 0);
             movePage = (movePage + 1) % moveLength;
             hitboxPage = 0;
@@ -461,7 +462,7 @@ public class CharacterCommand implements Command {
         }
 
         @Nonnull
-        public synchronized Message prevMove() {
+        public synchronized Message prevMove(@Nonnull MessageReactionAddEvent e) {
             int moveLength = sectionPage.getMoveData(data).size() + (sectionPage == CharacterData.MoveSection.MISC ? 1 : 0);
             movePage--;
             if (movePage < 0) movePage = moveLength - 1;
@@ -470,7 +471,7 @@ public class CharacterCommand implements Command {
         }
 
         @Nonnull
-        public synchronized Message nextHitbox() {
+        public synchronized Message nextHitbox(@Nonnull MessageReactionAddEvent e) {
             List<CharacterData.MoveData> moves = sectionPage.getMoveData(data);
             boolean isMiscPage = movePage >= moves.size();
             int hitboxUrlsSize = isMiscPage ? 0 : moves.get(movePage).getHitboxes().size();

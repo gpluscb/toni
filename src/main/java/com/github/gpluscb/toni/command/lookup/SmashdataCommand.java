@@ -15,6 +15,7 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -222,13 +223,13 @@ public class SmashdataCommand implements Command {
         }
 
         @Nonnull
-        public synchronized Message nextResult() {
+        public synchronized Message nextResult(@Nonnull MessageReactionAddEvent e) {
             resultPage = (resultPage + 1) % results.size();
             return getCurrent();
         }
 
         @Nonnull
-        public synchronized Message prevResult() {
+        public synchronized Message prevResult(@Nonnull MessageReactionAddEvent e) {
             resultPage--;
             if (resultPage < 0) resultPage = results.size() - 1;
             return getCurrent();

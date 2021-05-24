@@ -18,7 +18,8 @@ import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
-import java.util.function.Supplier;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * We override the validation to only allow specific users in users.
@@ -30,7 +31,7 @@ public class ButtonActionMenu extends Menu {
     private final Set<Long> users;
 
     @Nonnull
-    private final Map<String, Supplier<Message>> buttonActions;
+    private final Map<String, Function<MessageReactionAddEvent, Message>> buttonActions;
     @Nonnull
     private final Message start;
     @Nullable
@@ -38,7 +39,7 @@ public class ButtonActionMenu extends Menu {
     @Nonnull
     private final BiConsumer<MessageChannel, Long> timeoutAction;
 
-    public ButtonActionMenu(@Nonnull EventWaiter waiter, @Nonnull Set<Long> users, long timeout, @Nonnull TimeUnit unit, @Nonnull Map<String, Supplier<Message>> buttonActions, @Nonnull Message start, @Nullable String deletionButton, @Nonnull BiConsumer<MessageChannel, Long> timeoutAction) {
+    public ButtonActionMenu(@Nonnull EventWaiter waiter, @Nonnull Set<Long> users, long timeout, @Nonnull TimeUnit unit, @Nonnull Map<String, Function<MessageReactionAddEvent, Message>> buttonActions, @Nonnull Message start, @Nullable String deletionButton, @Nonnull BiConsumer<MessageChannel, Long> timeoutAction) {
         super(waiter, Collections.emptySet(), Collections.emptySet(), timeout, unit);
         this.users = users;
         this.buttonActions = buttonActions;
@@ -63,9 +64,13 @@ public class ButtonActionMenu extends Menu {
 
     private void init(@Nonnull Message message) {
         if (!message.isFromGuild() || message.getGuild().getSelfMember().hasPermission(message.getTextChannel(), Permission.MESSAGE_ADD_REACTION)) {
-            buttonActions.keySet().forEach(e -> message.addReaction(e).queue());
-            buttonActions.keySet().stream().map(message::addReaction).forEach(RestAction::queue);
-            if (deletionButton != null) message.addReaction(deletionButton).queue();
+            List<RestAction<Void>> reactionAdds = buttonActions.keySet().stream().map(message::addReaction).collect(Collectors.toList());
+            if (deletionButton != null) reactionAdds.add(message.addReaction(deletionButton));
+
+            if (!reactionAdds.isEmpty()) {
+                RestAction.allOf(reactionAdds).queue(v -> awaitEvents(message));
+                return;
+            }
         }
 
         awaitEvents(message);
@@ -87,7 +92,7 @@ public class ButtonActionMenu extends Menu {
     }
 
     private boolean isValidUser(long user) {
-        return users.contains(user);
+        return users.isEmpty() || users.contains(user);
     }
 
     private boolean checkReaction(@Nonnull MessageReactionAddEvent e, long messageId) {
@@ -113,14 +118,15 @@ public class ButtonActionMenu extends Menu {
             else log.warn("User was null despite event being from guild. Not removing reaction");
         }
 
-        channel.editMessageById(messageId, buttonActions.get(reactionName).get()).queue(this::awaitEvents);
+        Message edited = buttonActions.get(reactionName).apply(e);
+        if (edited != null) channel.editMessageById(messageId, edited).queue(this::awaitEvents);
     }
 
     public static class Builder extends Menu.Builder<Builder, ButtonActionMenu> {
         @Nonnull
         private final Set<Long> users;
         @Nonnull
-        private final Map<String, Supplier<Message>> buttonActions;
+        private final Map<String, Function<MessageReactionAddEvent, Message>> buttonActions;
         @Nullable
         private Message start;
         @Nullable
@@ -140,6 +146,8 @@ public class ButtonActionMenu extends Menu {
 
         /**
          * USE THIS METHOD INSTEAD
+         * <p>
+         * If the user list ends up empty, everyone can use it
          */
         @Nonnull
         public Builder addUsers(Long... users) {
@@ -148,10 +156,11 @@ public class ButtonActionMenu extends Menu {
         }
 
         /**
+         * @param action If action returns null, the message is not edited
          * @throws IllegalArgumentException if reaction is already registered
          */
         @Nonnull
-        public synchronized Builder registerButton(@Nonnull String reaction, @Nonnull Supplier<Message> action) {
+        public synchronized Builder registerButton(@Nonnull String reaction, @Nonnull Function<MessageReactionAddEvent, Message> action) {
             if (buttonActions.containsKey(reaction)) throw new IllegalArgumentException("Reaction already registered");
             buttonActions.put(reaction, action);
             return this;

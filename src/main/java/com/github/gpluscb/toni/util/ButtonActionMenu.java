@@ -34,6 +34,7 @@ public class ButtonActionMenu extends Menu {
     private final Map<String, Function<MessageReactionAddEvent, Message>> buttonActions;
     @Nonnull
     private final Message start;
+    long botId;
     @Nullable
     private final String deletionButton;
     @Nonnull
@@ -64,13 +65,8 @@ public class ButtonActionMenu extends Menu {
 
     private void init(@Nonnull Message message) {
         if (!message.isFromGuild() || message.getGuild().getSelfMember().hasPermission(message.getTextChannel(), Permission.MESSAGE_ADD_REACTION)) {
-            List<RestAction<Void>> reactionAdds = buttonActions.keySet().stream().map(message::addReaction).collect(Collectors.toList());
-            if (deletionButton != null) reactionAdds.add(message.addReaction(deletionButton));
-
-            if (!reactionAdds.isEmpty()) {
-                RestAction.allOf(reactionAdds).queue(v -> awaitEvents(message));
-                return;
-            }
+            buttonActions.keySet().stream().map(message::addReaction).forEach(RestAction::queue);
+            if (deletionButton != null) message.addReaction(deletionButton).queue();
         }
 
         awaitEvents(message);
@@ -97,6 +93,7 @@ public class ButtonActionMenu extends Menu {
 
     private boolean checkReaction(@Nonnull MessageReactionAddEvent e, long messageId) {
         if (e.getMessageIdLong() != messageId) return false;
+        if (e.getUserIdLong() == botId) return false;
 
         String reactionName = e.getReactionEmote().getName();
         return (buttonActions.containsKey(reactionName) || reactionName.equals(deletionButton)) && isValidUser(e.getUserIdLong());

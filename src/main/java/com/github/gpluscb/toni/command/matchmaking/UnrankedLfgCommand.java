@@ -22,7 +22,6 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-// TODO: Think of when exactly what reaction needs to be removed, and what needs to be cancelled
 public class UnrankedLfgCommand implements Command {
     private static final Logger log = LogManager.getLogger(UnrankedLfgCommand.class);
 
@@ -147,10 +146,11 @@ public class UnrankedLfgCommand implements Command {
                     .mentionRoles(roleId).mentionUsers(userId)
                     .queue();
 
-            MiscUtil.clearReactionsOrRemoveOwnReaction(originalChannel, originalMessageId, Constants.CROSS_MARK).queue();
+            MiscUtil.clearReactionsOrRemoveOwnReactions(originalChannel, originalMessageId, Constants.CROSS_MARK, Constants.FENCER).queue();
             return;
         }
 
+        // TODO: Should we keep that "if you want me to disable" stuff to just the main message?
         originalChannel.sendMessage(String.format("%s, %s wants to play with you." +
                         " If you want me to disable the reaction on the original message, react with %s within three minutes.",
                 MiscUtil.mentionUser(userId), MiscUtil.mentionUser(challengerId), Constants.CHECK_MARK))
@@ -168,7 +168,7 @@ public class UnrankedLfgCommand implements Command {
                     e -> checkConfirmReaction(e, userId),
                     e -> {
                         TextChannel channel = jda.getTextChannelById(channelId);
-                        if (channel == null) log.warn("TextChannel for timeout action not in cache - {}", channelId);
+                        if (channel == null) log.warn("TextChannel for matchmaking reaction not in cache - {}", channelId);
                         else
                             executeConfirmReaction(channel, msgId, originalMessageId, roleId, userId, challengerId, wasCancelled);
                     },
@@ -191,7 +191,8 @@ public class UnrankedLfgCommand implements Command {
 
         channel.editMessageById(originalMessageId, String.format("%s, %s was looking for a game, but they found someone.",
                 MiscUtil.mentionRole(roleId), MiscUtil.mentionUser(userId))).mentionRoles(roleId).mentionUsers(userId).queue();
-        MiscUtil.clearReactionsOrRemoveOwnReaction(channel, originalMessageId, Constants.FENCER).queue();
+        MiscUtil.clearReactionsOrRemoveOwnReactions(channel, originalMessageId, Constants.CROSS_MARK, Constants.FENCER).queue();
+        MiscUtil.clearReactionsOrRemoveOwnReactions(channel, messageId, Constants.CHECK_MARK).queue();
 
         channel.editMessageById(messageId, String.format("%s, %s wants to play with you.", MiscUtil.mentionUser(userId), MiscUtil.mentionUser(challengerId)))
                 .mentionUsers(userId, challengerId).queue();
@@ -200,13 +201,13 @@ public class UnrankedLfgCommand implements Command {
     private void executeConfirmTimeout(@Nonnull TextChannel channel, long messageId, long userId, long challengerId) {
         channel.editMessageById(messageId, String.format("%s, %s wants to play with you.", MiscUtil.mentionUser(userId), MiscUtil.mentionUser(challengerId)))
                 .mentionUsers(userId, challengerId).queue();
-        MiscUtil.clearReactionsOrRemoveOwnReaction(channel, messageId, Constants.FENCER).queue();
+        MiscUtil.clearReactionsOrRemoveOwnReactions(channel, messageId, Constants.CROSS_MARK, Constants.FENCER).queue();
     }
 
     private void executeMatchmakingReactionTimeout(@Nonnull TextChannel channel, long messageId, long userId, long roleId) {
         channel.editMessageById(messageId, String.format("%s, %s was looking for a game.",
                 MiscUtil.mentionRole(roleId), MiscUtil.mentionUser(userId))).mentionRoles(roleId).mentionUsers(userId).queue();
-        MiscUtil.clearReactionsOrRemoveOwnReaction(channel, messageId, Constants.FENCER).queue();
+        MiscUtil.clearReactionsOrRemoveOwnReactions(channel, messageId, Constants.CROSS_MARK, Constants.FENCER).queue();
     }
 
     @Nonnull

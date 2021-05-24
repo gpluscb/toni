@@ -11,8 +11,10 @@ import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class MiscUtil {
     private static final Logger log = LogManager.getLogger(MiscUtil.class);
@@ -55,14 +57,17 @@ public class MiscUtil {
 
     @Nonnull
     @CheckReturnValue
-    public static RestAction<Void> clearReactionsOrRemoveOwnReaction(@Nonnull MessageChannel channel, long messageId, @Nonnull String reaction) {
+    public static RestAction<Void> clearReactionsOrRemoveOwnReactions(@Nonnull MessageChannel channel, long messageId, @Nonnull String... reactions) {
         if (channel instanceof TextChannel) {
             TextChannel textChannel = (TextChannel) channel;
             if (textChannel.getGuild().getSelfMember().hasPermission(textChannel, Permission.MESSAGE_MANAGE))
-                return textChannel.clearReactionsById(messageId, reaction);
+                return textChannel.clearReactionsById(messageId);
         }
 
-        return channel.removeReactionById(messageId, reaction);
+        return RestAction.allOf(
+                Arrays.stream(reactions).map(r -> channel.removeReactionById(messageId, r))
+                        .collect(Collectors.toList())
+        ).map(v -> null);
     }
 
     @Nonnull

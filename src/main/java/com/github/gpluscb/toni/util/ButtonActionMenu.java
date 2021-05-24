@@ -17,6 +17,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -33,7 +34,11 @@ public class ButtonActionMenu extends Menu {
     private final Map<String, Function<MessageReactionAddEvent, Message>> buttonActions;
     @Nonnull
     private final Message start;
-    long botId;
+    /**
+     * Inner is null until we're ready
+     */
+    @Nonnull
+    private final AtomicReference<Long> botId;
     @Nullable
     private final String deletionButton;
     @Nonnull
@@ -44,6 +49,7 @@ public class ButtonActionMenu extends Menu {
         this.users = users;
         this.buttonActions = buttonActions;
         this.start = start;
+        botId = new AtomicReference<>(null);
         this.deletionButton = deletionButton;
         this.timeoutAction = timeoutAction;
     }
@@ -63,6 +69,8 @@ public class ButtonActionMenu extends Menu {
     }
 
     private void init(@Nonnull Message message) {
+        botId.set(message.getAuthor().getIdLong());
+
         if (!message.isFromGuild() || message.getGuild().getSelfMember().hasPermission(message.getTextChannel(), Permission.MESSAGE_ADD_REACTION)) {
             buttonActions.keySet().stream().map(message::addReaction).forEach(RestAction::queue);
             if (deletionButton != null) message.addReaction(deletionButton).queue();
@@ -72,9 +80,10 @@ public class ButtonActionMenu extends Menu {
     }
 
     private void awaitEvents(@Nonnull Message message) {
-        long messageId = message.getIdLong();
-        long channelId = message.getChannel().getIdLong();
-        JDA jda = message.getJDA();
+        awaitEvents(message.getJDA(), message.getIdLong(), message.getChannel().getIdLong());
+    }
+
+    private void awaitEvents(@Nonnull JDA jda, long messageId, long channelId) {
         waiter.waitForEvent(MessageReactionAddEvent.class,
                 e -> checkReaction(e, messageId),
                 this::handleMessageReactionAdd,
@@ -87,15 +96,17 @@ public class ButtonActionMenu extends Menu {
     }
 
     private boolean isValidUser(long user) {
-        return users.isEmpty() || users.contains(user);
+        Long botIdLong = botId.get();
+        // If null, we're not ready yet
+        return botIdLong != null && botIdLong != user && (users.isEmpty() || users.contains(user));
     }
 
     private boolean checkReaction(@Nonnull MessageReactionAddEvent e, long messageId) {
         if (e.getMessageIdLong() != messageId) return false;
-        if (e.getUserIdLong() == botId) return false;
+        if (!isValidUser(e.getUserIdLong())) return false;
 
         String reactionName = e.getReactionEmote().getName();
-        return (buttonActions.containsKey(reactionName) || reactionName.equals(deletionButton)) && isValidUser(e.getUserIdLong());
+        return buttonActions.containsKey(reactionName) || reactionName.equals(deletionButton);
     }
 
     private void handleMessageReactionAdd(@Nonnull MessageReactionAddEvent e) {
@@ -116,6 +127,7 @@ public class ButtonActionMenu extends Menu {
 
         Message edited = buttonActions.get(reactionName).apply(e);
         if (edited != null) channel.editMessageById(messageId, edited).queue(this::awaitEvents);
+        else awaitEvents(e.getJDA(), messageId, channel.getIdLong());
     }
 
     public static class Builder extends Menu.Builder<Builder, ButtonActionMenu> {

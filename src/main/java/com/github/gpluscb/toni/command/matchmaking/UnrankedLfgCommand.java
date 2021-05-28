@@ -5,12 +5,9 @@ import com.github.gpluscb.toni.command.CommandContext;
 import com.github.gpluscb.toni.matchmaking.UnrankedManager;
 import com.github.gpluscb.toni.util.*;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
-import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
-import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
-import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -19,10 +16,10 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.time.Duration;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-// TODO: Don't allow multiple lfgs at the same time
 public class UnrankedLfgCommand implements Command {
     private static final Logger log = LogManager.getLogger(UnrankedLfgCommand.class);
 
@@ -32,10 +29,14 @@ public class UnrankedLfgCommand implements Command {
     private final EventWaiter waiter;
     private final long botId;
 
+    @Nonnull
+    private final Set<Long> currentlyLfg;
+
     public UnrankedLfgCommand(@Nonnull UnrankedManager manager, @Nonnull EventWaiter waiter, long botId) {
         this.manager = manager;
         this.waiter = waiter;
         this.botId = botId;
+        currentlyLfg = new HashSet<>();
     }
 
     @Override
@@ -89,6 +90,15 @@ public class UnrankedLfgCommand implements Command {
         long userId = ctx.getAuthor().getIdLong();
         long roleId = config.getLfgRoleId();
 
+        synchronized (currentlyLfg) {
+            if (currentlyLfg.contains(userId)) {
+                ctx.reply("You are already looking for a game. If you believe this is a bug, contact my dev.").queue();
+                return;
+            }
+
+            currentlyLfg.add(userId);
+        }
+
         Message start = new MessageBuilder(String.format("%s, %s is looking for a game for %s. React with %s to accept. %2$s, you can react with %s to cancel.",
                 MiscUtil.mentionRole(roleId), MiscUtil.mentionUser(userId), MiscUtil.durationToString(duration), Constants.FENCER, Constants.CROSS_MARK))
                 .mentionRoles(roleId).mentionUsers(userId).build();
@@ -129,32 +139,39 @@ public class UnrankedLfgCommand implements Command {
     }
 
     private class ReactionHandler {
-        @Nonnull
-        private final AtomicBoolean isCancelled;
         private final long originalAuthorId;
         private final long matchmakingRoleId;
 
+        @Nonnull
+        private final Set<Long> currentlyChallenging;
+
         private ReactionHandler(long originalAuthorId, long matchmakingRoleId) {
-            this.isCancelled = new AtomicBoolean(false);
             this.originalAuthorId = originalAuthorId;
             this.matchmakingRoleId = matchmakingRoleId;
+            currentlyChallenging = new HashSet<>();
         }
 
-        // TODO: Don't allow someone to challenge twice
         @Nullable
         public Message fightReaction(@Nonnull MessageReactionAddEvent e) {
-            if (isCancelled.get()) return null;
-            long eventUserId = e.getUserIdLong();
-            if (eventUserId == botId) return null;
-
-            if (eventUserId == originalAuthorId) {
+            synchronized (currentlyLfg) {
+                // Was it cancelled?
+                if (!currentlyLfg.contains(originalAuthorId)) return null;
+            }
+            long challengerId = e.getUserIdLong();
+            if (challengerId == botId) return null;
+            if (challengerId == originalAuthorId) {
                 e.getChannel().sendMessage("If you are trying to play with yourself, that's ok too. But there's no need to ping matchmaking for that my friend.").queue();
                 return null;
             }
 
+            synchronized (currentlyChallenging) {
+                if (currentlyChallenging.contains(challengerId)) return null;
+
+                currentlyChallenging.add(challengerId);
+            }
+
             MessageChannel originalChannel = e.getChannel();
 
-            long challengerId = e.getUserIdLong();
             long originalMessageId = e.getMessageIdLong();
 
             Message start = new MessageBuilder(String.format("%s, %s wants to play with you." +
@@ -183,7 +200,10 @@ public class UnrankedLfgCommand implements Command {
         public Message cancelReaction(@Nonnull MessageReactionAddEvent e) {
             if (e.getUserIdLong() != originalAuthorId) return null;
 
-            isCancelled.set(true);
+            synchronized (currentlyLfg) {
+                // This is the Object variant, not index
+                currentlyLfg.remove(originalAuthorId);
+            }
 
             MiscUtil.clearReactionsOrRemoveOwnReactions(e.getChannel(), e.getMessageIdLong(), Constants.CROSS_MARK, Constants.FENCER).queue();
 
@@ -193,7 +213,12 @@ public class UnrankedLfgCommand implements Command {
         }
 
         public void timeout(@Nullable MessageChannel channel, long messageId) {
-            if (channel != null && !isCancelled.get()) {
+            synchronized (currentlyLfg) {
+                // This is the Object variant, not index
+                currentlyLfg.remove(originalAuthorId);
+            }
+
+            if (channel != null) {
                 channel.editMessageById(messageId, String.format("%s, %s was looking for a game.",
                         MiscUtil.mentionRole(matchmakingRoleId), MiscUtil.mentionUser(originalAuthorId)))
                         .mentionRoles(matchmakingRoleId).mentionUsers(originalAuthorId)
@@ -216,7 +241,10 @@ public class UnrankedLfgCommand implements Command {
                 MessageChannel channel = e.getChannel();
                 long messageId = e.getMessageIdLong();
 
-                isCancelled.set(true);
+                synchronized (currentlyLfg) {
+                    // This is the Object variant, not index
+                    currentlyLfg.remove(originalAuthorId);
+                }
 
                 channel.editMessageById(originalMessageId, String.format("%s, %s was looking for a game, but they found someone.",
                         MiscUtil.mentionRole(matchmakingRoleId), MiscUtil.mentionUser(originalAuthorId)))

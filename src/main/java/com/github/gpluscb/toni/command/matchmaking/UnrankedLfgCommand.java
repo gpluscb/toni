@@ -30,13 +30,13 @@ public class UnrankedLfgCommand implements Command {
     private final long botId;
 
     @Nonnull
-    private final Set<Long> currentlyLfg;
+    private final Set<PairNonnull<Long, Long>> currentlyLfgPerGuild;
 
     public UnrankedLfgCommand(@Nonnull UnrankedManager manager, @Nonnull EventWaiter waiter, long botId) {
         this.manager = manager;
         this.waiter = waiter;
         this.botId = botId;
-        currentlyLfg = new HashSet<>();
+        currentlyLfgPerGuild = new HashSet<>();
     }
 
     @Override
@@ -87,23 +87,24 @@ public class UnrankedLfgCommand implements Command {
             duration = Duration.ofHours(2);
         }
 
+        long guildId = ctx.getEvent().getGuild().getIdLong();
         long userId = ctx.getAuthor().getIdLong();
         long roleId = config.getLfgRoleId();
 
-        synchronized (currentlyLfg) {
-            if (currentlyLfg.contains(userId)) {
+        synchronized (currentlyLfgPerGuild) {
+            if (currentlyLfgPerGuild.contains(new PairNonnull<>(guildId, userId))) {
                 ctx.reply("You are already looking for a game. If you believe this is a bug, contact my dev.").queue();
                 return;
             }
 
-            currentlyLfg.add(userId);
+            currentlyLfgPerGuild.add(new PairNonnull<>(guildId, userId));
         }
 
         Message start = new MessageBuilder(String.format("%s, %s is looking for a game for %s. React with %s to accept. %2$s, you can react with %s to cancel.",
                 MiscUtil.mentionRole(roleId), MiscUtil.mentionUser(userId), MiscUtil.durationToString(duration), Constants.FENCER, Constants.CROSS_MARK))
                 .mentionRoles(roleId).mentionUsers(userId).build();
 
-        ReactionHandler handler = new ReactionHandler(userId, roleId);
+        ReactionHandler handler = new ReactionHandler(guildId, userId, roleId);
         ButtonActionMenu menu = new ButtonActionMenu.Builder()
                 .setEventWaiter(waiter)
                 .setDeletionButton(null)
@@ -139,13 +140,15 @@ public class UnrankedLfgCommand implements Command {
     }
 
     private class ReactionHandler {
+        private final long guildId;
         private final long originalAuthorId;
         private final long matchmakingRoleId;
 
         @Nonnull
         private final Set<Long> currentlyChallenging;
 
-        private ReactionHandler(long originalAuthorId, long matchmakingRoleId) {
+        private ReactionHandler(long guildId, long originalAuthorId, long matchmakingRoleId) {
+            this.guildId = guildId;
             this.originalAuthorId = originalAuthorId;
             this.matchmakingRoleId = matchmakingRoleId;
             currentlyChallenging = new HashSet<>();
@@ -153,10 +156,11 @@ public class UnrankedLfgCommand implements Command {
 
         @Nullable
         public Message fightReaction(@Nonnull MessageReactionAddEvent e) {
-            synchronized (currentlyLfg) {
+            synchronized (currentlyLfgPerGuild) {
                 // Was it cancelled?
-                if (!currentlyLfg.contains(originalAuthorId)) return null;
+                if (!currentlyLfgPerGuild.contains(new PairNonnull<>(guildId, originalAuthorId))) return null;
             }
+
             long challengerId = e.getUserIdLong();
             if (challengerId == botId) return null;
             if (challengerId == originalAuthorId) {
@@ -200,9 +204,8 @@ public class UnrankedLfgCommand implements Command {
         public Message cancelReaction(@Nonnull MessageReactionAddEvent e) {
             if (e.getUserIdLong() != originalAuthorId) return null;
 
-            synchronized (currentlyLfg) {
-                // This is the Object variant, not index
-                currentlyLfg.remove(originalAuthorId);
+            synchronized (currentlyLfgPerGuild) {
+                currentlyLfgPerGuild.remove(new PairNonnull<>(guildId, originalAuthorId));
             }
 
             MiscUtil.clearReactionsOrRemoveOwnReactions(e.getChannel(), e.getMessageIdLong(), Constants.CROSS_MARK, Constants.FENCER).queue();
@@ -213,9 +216,8 @@ public class UnrankedLfgCommand implements Command {
         }
 
         public void timeout(@Nullable MessageChannel channel, long messageId) {
-            synchronized (currentlyLfg) {
-                // This is the Object variant, not index
-                currentlyLfg.remove(originalAuthorId);
+            synchronized (currentlyLfgPerGuild) {
+                currentlyLfgPerGuild.remove(new PairNonnull<>(guildId, originalAuthorId));
             }
 
             if (channel != null) {
@@ -241,9 +243,9 @@ public class UnrankedLfgCommand implements Command {
                 MessageChannel channel = e.getChannel();
                 long messageId = e.getMessageIdLong();
 
-                synchronized (currentlyLfg) {
+                synchronized (currentlyLfgPerGuild) {
                     // This is the Object variant, not index
-                    currentlyLfg.remove(originalAuthorId);
+                    currentlyLfgPerGuild.remove(new PairNonnull<>(guildId, originalAuthorId));
                 }
 
                 channel.editMessageById(originalMessageId, String.format("%s, %s was looking for a game, but they found someone.",

@@ -55,7 +55,7 @@ public class ButtonActionMenu extends Menu {
     }
 
     @Override
-    public void display(MessageChannel channel) {
+    public void display(@Nonnull MessageChannel channel) {
         channel.sendMessage(start).queue(this::init);
     }
 
@@ -63,8 +63,12 @@ public class ButtonActionMenu extends Menu {
         reference.reply(start).queue(this::init);
     }
 
+    public void displayReplying(@Nonnull MessageChannel channel, long messageId) {
+        channel.sendMessage(start).referenceById(messageId).queue(this::init);
+    }
+
     @Override
-    public void display(Message message) {
+    public void display(@Nonnull Message message) {
         message.editMessage(start).queue(this::init);
     }
 

@@ -106,28 +106,6 @@ public class UnrankedLfgCommand implements Command {
         menu.displayReplying(ctx.getMessage());
     }
 
-    private boolean checkConfirmReaction(@Nonnull MessageReactionAddEvent e, long userId) {
-        return e.getUserIdLong() == userId && e.getReactionEmote().getName().equals(Constants.CHECK_MARK);
-    }
-
-    private void executeConfirmReaction(@Nonnull TextChannel channel, long messageId, long originalMessageId, long roleId, long userId, long challengerId, @Nonnull AtomicBoolean wasCancelled) {
-        wasCancelled.set(true);
-
-        channel.editMessageById(originalMessageId, String.format("%s, %s was looking for a game, but they found someone.",
-                MiscUtil.mentionRole(roleId), MiscUtil.mentionUser(userId))).mentionRoles(roleId).mentionUsers(userId).queue();
-        MiscUtil.clearReactionsOrRemoveOwnReactions(channel, originalMessageId, Constants.CROSS_MARK, Constants.FENCER).queue();
-        MiscUtil.clearReactionsOrRemoveOwnReactions(channel, messageId, Constants.CHECK_MARK).queue();
-
-        channel.editMessageById(messageId, String.format("%s, %s wants to play with you.", MiscUtil.mentionUser(userId), MiscUtil.mentionUser(challengerId)))
-                .mentionUsers(userId, challengerId).queue();
-    }
-
-    private void executeConfirmTimeout(@Nonnull TextChannel channel, long messageId, long userId, long challengerId) {
-        channel.editMessageById(messageId, String.format("%s, %s wants to play with you.", MiscUtil.mentionUser(userId), MiscUtil.mentionUser(challengerId)))
-                .mentionUsers(userId, challengerId).queue();
-        MiscUtil.clearReactionsOrRemoveOwnReactions(channel, messageId, Constants.CROSS_MARK, Constants.FENCER).queue();
-    }
-
     @Nonnull
     @Override
     public String[] getAliases() {
@@ -178,38 +156,24 @@ public class UnrankedLfgCommand implements Command {
             long challengerId = e.getUserIdLong();
             long originalMessageId = e.getMessageIdLong();
 
-            // TODO: Should we keep that "if you want me to disable" stuff to just the main message?
-            originalChannel.sendMessage(String.format("%s, %s wants to play with you." +
+            Message start = new MessageBuilder(String.format("%s, %s wants to play with you." +
                             " If you want me to disable the reaction on the original message, react with %s within three minutes.",
                     MiscUtil.mentionUser(originalAuthorId), MiscUtil.mentionUser(challengerId), Constants.CHECK_MARK))
-                    .mentionUsers(originalAuthorId, challengerId).queue(msg -> {
-                TextChannel textChannel = msg.getTextChannel();
-                long msgId = msg.getIdLong();
-                long channelId = textChannel.getIdLong();
-                JDA jda = msg.getJDA();
+                    .mentionUsers(originalAuthorId, challengerId).build();
 
-                if (textChannel.getGuild().getSelfMember().hasPermission(textChannel, Permission.MESSAGE_ADD_REACTION))
-                    msg.addReaction(Constants.CHECK_MARK).queue();
+            // TODO: Should we keep that "if you want me to disable" stuff to just the main message?
+            DisableReactionHandler handler = new DisableReactionHandler(originalMessageId, challengerId);
+            ButtonActionMenu menu = new ButtonActionMenu.Builder()
+                    .setEventWaiter(waiter)
+                    .setDeletionButton(null)
+                    .registerButton(Constants.CHECK_MARK, handler::confirmReaction)
+                    .setStart(start)
+                    .addUsers(originalAuthorId)
+                    .setTimeout(3, TimeUnit.MINUTES)
+                    .setTimeoutAction(handler::timeout)
+                    .build();
 
-                waiter.waitForEvent(
-                        MessageReactionAddEvent.class,
-                        event -> checkConfirmReaction(event, originalAuthorId),
-                        event -> {
-                            TextChannel channel = jda.getTextChannelById(channelId);
-                            if (channel == null)
-                                log.warn("TextChannel for matchmaking reaction not in cache - {}", channelId);
-                            else
-                                executeConfirmReaction(channel, msgId, originalMessageId, matchmakingRoleId, originalAuthorId, challengerId, isCancelled);
-                        },
-                        3, TimeUnit.MINUTES,
-                        FailLogger.logFail(() -> {
-                            TextChannel channel = jda.getTextChannelById(channelId);
-                            if (channel == null)
-                                log.warn("TextChannel for timeout action not in cache - {}", channelId);
-                            else executeConfirmTimeout(channel, msgId, originalAuthorId, challengerId);
-                        })
-                );
-            });
+            menu.displayReplying(originalChannel, originalMessageId);
 
             return null;
         }
@@ -233,6 +197,42 @@ public class UnrankedLfgCommand implements Command {
                         MiscUtil.mentionRole(matchmakingRoleId), MiscUtil.mentionUser(originalAuthorId)))
                         .mentionRoles(matchmakingRoleId).mentionUsers(originalAuthorId)
                         .queue();
+                MiscUtil.clearReactionsOrRemoveOwnReactions(channel, messageId, Constants.CROSS_MARK, Constants.FENCER).queue();
+            }
+        }
+
+        private class DisableReactionHandler {
+            private final long originalMessageId;
+            private final long challengerId;
+
+            private DisableReactionHandler(long originalMessageId, long challengerId) {
+                this.originalMessageId = originalMessageId;
+                this.challengerId = challengerId;
+            }
+
+            @Nullable
+            public Message confirmReaction(@Nonnull MessageReactionAddEvent e) {
+                MessageChannel channel = e.getChannel();
+                long messageId = e.getMessageIdLong();
+
+                isCancelled.set(true);
+
+                channel.editMessageById(originalMessageId, String.format("%s, %s was looking for a game, but they found someone.",
+                        MiscUtil.mentionRole(matchmakingRoleId), MiscUtil.mentionUser(originalAuthorId)))
+                        .mentionRoles(matchmakingRoleId).mentionUsers(originalAuthorId)
+                        .queue();
+                MiscUtil.clearReactionsOrRemoveOwnReactions(channel, originalMessageId, Constants.CROSS_MARK, Constants.FENCER).queue();
+                MiscUtil.clearReactionsOrRemoveOwnReactions(channel, messageId, Constants.CHECK_MARK).queue();
+
+                return new MessageBuilder(String.format("%s, %s wants to play with you.", MiscUtil.mentionUser(originalAuthorId), MiscUtil.mentionUser(challengerId)))
+                        .mentionUsers(originalAuthorId, challengerId).build();
+            }
+
+            public void timeout(@Nullable MessageChannel channel, long messageId) {
+                if (channel == null) return;
+
+                channel.editMessageById(messageId, String.format("%s, %s wants to play with you.", MiscUtil.mentionUser(originalAuthorId), MiscUtil.mentionUser(challengerId)))
+                        .mentionUsers(originalAuthorId, challengerId).queue();
                 MiscUtil.clearReactionsOrRemoveOwnReactions(channel, messageId, Constants.CROSS_MARK, Constants.FENCER).queue();
             }
         }

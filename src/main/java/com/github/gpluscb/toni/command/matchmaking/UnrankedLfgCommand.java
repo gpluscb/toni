@@ -100,6 +100,7 @@ public class UnrankedLfgCommand implements Command {
                 .registerButton(Constants.FENCER, handler::fightReaction)
                 .registerButton(Constants.CROSS_MARK, handler::cancelReaction)
                 .setStart(start)
+                .setTimeout(duration.getSeconds(), TimeUnit.SECONDS)
                 .setTimeoutAction(handler::timeout)
                 .build();
 

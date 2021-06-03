@@ -53,7 +53,10 @@ public class ButtonActionMenu extends Menu {
     }
 
     public void displayReplying(Message reference) {
-        reference.reply(start).queue(this::init);
+        if (reference.isFromGuild() && !reference.getGuild().getSelfMember().hasPermission(reference.getTextChannel(), Permission.MESSAGE_HISTORY))
+            reference.getTextChannel().sendMessage(start).queue(this::init);
+        else
+            reference.reply(start).queue(this::init);
     }
 
     @Override
@@ -62,7 +65,7 @@ public class ButtonActionMenu extends Menu {
     }
 
     private void init(@Nonnull Message message) {
-        if (!message.isFromGuild() || message.getGuild().getSelfMember().hasPermission(message.getTextChannel(), Permission.MESSAGE_ADD_REACTION)) {
+        if (!message.isFromGuild() || message.getGuild().getSelfMember().hasPermission(message.getTextChannel(), Permission.MESSAGE_ADD_REACTION, Permission.MESSAGE_HISTORY)) {
             buttonActions.keySet().forEach(e -> message.addReaction(e).queue());
             buttonActions.keySet().stream().map(message::addReaction).forEach(RestAction::queue);
             if (deletionButton != null) message.addReaction(deletionButton).queue();

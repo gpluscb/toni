@@ -2,6 +2,7 @@ package com.github.gpluscb.toni.command;
 
 import com.github.gpluscb.toni.util.StringTokenizer;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -38,32 +39,39 @@ public class CommandContext {
 
     /**
      * Assumes perms
+     * Except it works around missing MESSAGE_HISTORY
      */
     @Nonnull
     @CheckReturnValue
     public MessageAction reply(@Nonnull Message message) {
-        log.debug("Reply: {}", message.getContentRaw());
-        return getMessage().reply(message);
+        String content = message.getContentRaw();
+        log.debug("Reply: {}", content.isEmpty() ? message.getEmbeds() : content);
+
+        MessageReceivedEvent e = getEvent();
+        if (e.isFromGuild() && !e.getGuild().getSelfMember().hasPermission(e.getTextChannel(), Permission.MESSAGE_HISTORY))
+            return e.getTextChannel().sendMessage(message);
+        else
+            return getMessage().reply(message);
     }
 
     /**
      * Assumes perms
+     * Except it works around missing MESSAGE_HISTORY
      */
     @Nonnull
     @CheckReturnValue
     public MessageAction reply(@Nonnull String message) {
-        log.debug("Reply: {}", message);
-        return getMessage().reply(message);
+        return reply(new MessageBuilder(message).build());
     }
 
     /**
      * Assumes perms
+     * Except it works around missing MESSAGE_HISTORY
      */
     @Nonnull
     @CheckReturnValue
     public MessageAction reply(@Nonnull MessageEmbed embed) {
-        log.debug("Reply: {}", embed);
-        return getMessage().reply(embed);
+        return reply(new MessageBuilder().setEmbed(embed).build());
     }
 
     public boolean memberHasBotAdminPermission() {

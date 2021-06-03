@@ -60,11 +60,20 @@ public class ButtonActionMenu extends Menu {
     }
 
     public void displayReplying(Message reference) {
-        reference.reply(start).queue(this::init);
+        displayReplying(reference.getChannel(), reference.getIdLong());
     }
 
     public void displayReplying(@Nonnull MessageChannel channel, long messageId) {
-        channel.sendMessage(start).referenceById(messageId).queue(this::init);
+        boolean hasPerms = true;
+        if (channel instanceof TextChannel) {
+            TextChannel textChannel = (TextChannel) channel;
+            hasPerms = textChannel.getGuild().getSelfMember().hasPermission(textChannel, Permission.MESSAGE_HISTORY);
+        }
+
+        if (hasPerms)
+            channel.sendMessage(start).referenceById(messageId).queue(this::init);
+        else
+            channel.sendMessage(start).queue(this::init);
     }
 
     @Override
@@ -75,7 +84,7 @@ public class ButtonActionMenu extends Menu {
     private void init(@Nonnull Message message) {
         botId.set(message.getAuthor().getIdLong());
 
-        if (!message.isFromGuild() || message.getGuild().getSelfMember().hasPermission(message.getTextChannel(), Permission.MESSAGE_ADD_REACTION)) {
+        if (!message.isFromGuild() || message.getGuild().getSelfMember().hasPermission(message.getTextChannel(), Permission.MESSAGE_ADD_REACTION, Permission.MESSAGE_HISTORY)) {
             buttonActions.keySet().stream().map(message::addReaction).forEach(RestAction::queue);
             if (deletionButton != null) message.addReaction(deletionButton).queue();
         }

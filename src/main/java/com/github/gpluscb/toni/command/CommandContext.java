@@ -74,10 +74,12 @@ public class CommandContext {
         return reply(new MessageBuilder().setEmbed(embed).build());
     }
 
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public boolean memberHasBotAdminPermission() {
         return event.getAuthor().getIdLong() == 107565973652938752L;
     }
 
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public boolean memberHasManageChannelsPermission() {
         Member member = event.getMember();
         if (member == null) throw new IllegalStateException("This event is not from a server.");

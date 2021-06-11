@@ -92,7 +92,6 @@ public class HelpCommand implements Command {
     }
 
     private void generalHelp(@Nonnull CommandContext ctx) {
-        // TODO: Shill top.gg voting maybe?
         EmbedBuilder builder = EmbedUtil.getPrepared(ctx.getMember(), ctx.getAuthor()).setTitle("Toni's general help");
 
         builder.setDescription("My prefixes are `!t`, `noti` and `toni`, but you can mention me instead too.\n")

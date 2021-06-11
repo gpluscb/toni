@@ -37,7 +37,7 @@ public class UnrankedConfigCommand implements Command {
         // We know the member is not null because we're in a guild
         //noinspection ConstantConditions
         if (!(member.hasPermission(ctx.getEvent().getTextChannel(), Permission.MANAGE_CHANNEL) && member.hasPermission(Permission.MANAGE_ROLES))) {
-            ctx.reply("I don't trust you... you need to have both Manage Channel and Manage Roles permission to use this.").queue();
+            ctx.reply("I don't trust you... you need to have both the Manage Channel and Manage Roles permission to use this.").queue();
             return;
         }
 

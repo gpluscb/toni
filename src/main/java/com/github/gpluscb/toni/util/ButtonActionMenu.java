@@ -18,7 +18,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -38,11 +37,6 @@ public class ButtonActionMenu extends Menu {
     private final Map<String, Function<ButtonClickEvent, Message>> buttonActions;
     @Nonnull
     private final Message start;
-    /**
-     * Inner is null until we're ready
-     */
-    @Nonnull
-    private final AtomicReference<Long> botId;
     @Nullable
     private final Button deletionButton;
     @Nonnull
@@ -67,7 +61,6 @@ public class ButtonActionMenu extends Menu {
                 .collect(Collectors.toMap(PairNonnull::getT, PairNonnull::getU));
 
         this.start = start;
-        botId = new AtomicReference<>(null);
         this.deletionButton = deletionButton;
         this.timeoutAction = timeoutAction;
     }
@@ -103,10 +96,7 @@ public class ButtonActionMenu extends Menu {
         Set<Button> buttons = new HashSet<>(buttonsToAdd);
         if (deletionButton != null) buttons.add(deletionButton);
 
-        messageAction.setActionRow(buttons).queue(message -> {
-            botId.set(message.getAuthor().getIdLong());
-            awaitEvents(message);
-        });
+        messageAction.setActionRow(buttons).queue(this::awaitEvents);
     }
 
     private void awaitEvents(@Nonnull Message message) {
@@ -126,9 +116,7 @@ public class ButtonActionMenu extends Menu {
     }
 
     private boolean isValidUser(long user) {
-        Long botIdLong = botId.get();
-        // If null, we're not ready yet
-        return botIdLong != null && botIdLong != user && (users.isEmpty() || users.contains(user));
+        return users.isEmpty() || users.contains(user);
     }
 
     private boolean checkButtonClick(@Nonnull ButtonClickEvent e, long messageId) {
@@ -141,8 +129,6 @@ public class ButtonActionMenu extends Menu {
     }
 
     private void handleButtonClick(@Nonnull ButtonClickEvent e) {
-        e.deferEdit().queue();
-
         String buttonId = e.getComponentId();
 
         long messageId = e.getMessageIdLong();

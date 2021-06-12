@@ -325,7 +325,7 @@ public class Bot {
         List<Command> matchmakingCommands = new ArrayList<>();
         matchmakingCommands.add(new UnrankedConfigCommand(unrankedManager));
         matchmakingCommands.add(new AvailableCommand(unrankedManager));
-        matchmakingCommands.add(new UnrankedLfgCommand(unrankedManager, waiter, cfg.getBotId()));
+        matchmakingCommands.add(new UnrankedLfgCommand(unrankedManager, waiter));
         commands.add(new CommandCategory("matchmaking", "Commands for unranked matchmaking", matchmakingCommands));
 
         return commands;

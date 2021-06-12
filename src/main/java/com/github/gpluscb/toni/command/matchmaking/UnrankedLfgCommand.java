@@ -161,8 +161,6 @@ public class UnrankedLfgCommand implements Command {
                 if (!currentlyLfgPerGuild.contains(new PairNonnull<>(guildId, originalAuthorId))) return null;
             }
 
-            e.deferEdit().queue();
-
             long challengerId = e.getUser().getIdLong();
             if (challengerId == originalAuthorId) {
                 e.getChannel().sendMessage("If you are trying to play with yourself, that's ok too. But there's no need to ping matchmaking for that my friend.").queue();
@@ -174,6 +172,8 @@ public class UnrankedLfgCommand implements Command {
 
                 currentlyChallenging.add(challengerId);
             }
+
+            e.deferEdit().queue();
 
             MessageChannel originalChannel = e.getChannel();
 

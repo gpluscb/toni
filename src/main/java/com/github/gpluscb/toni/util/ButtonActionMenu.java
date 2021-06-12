@@ -93,7 +93,7 @@ public class ButtonActionMenu extends Menu {
     }
 
     private void init(@Nonnull MessageAction messageAction) {
-        Set<Button> buttons = new HashSet<>(buttonsToAdd);
+        Set<Button> buttons = new LinkedHashSet<>(buttonsToAdd); // Preserve order
         if (deletionButton != null) buttons.add(deletionButton);
 
         messageAction.setActionRow(buttons).queue(this::awaitEvents);
@@ -230,7 +230,7 @@ public class ButtonActionMenu extends Menu {
                     if (channel == null) return;
 
                     channel.retrieveMessageById(id)
-                            .flatMap(m -> m.editMessage(m).setActionRow())
+                            .flatMap(m -> m.editMessage(m).setActionRows())
                             .queue();
                 };
             }

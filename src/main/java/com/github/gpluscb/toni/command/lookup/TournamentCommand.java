@@ -95,7 +95,7 @@ public class TournamentCommand implements Command {
         Member member = ctx.getEvent().getMember();
 
         TournamentEmbedPaginator pages = new TournamentEmbedPaginator(EmbedUtil.getPreparedGG(member, author).build(), tournaments);
-        ButtonActionMenu.Builder menuBuilder = new ButtonActionMenu.Builder()
+        ReactionActionMenu.Builder menuBuilder = new ReactionActionMenu.Builder()
                 .setEventWaiter(waiter)
                 .addUsers(author.getIdLong())
                 .registerButton(Constants.ARROW_DOWNWARD, pages::nextEvent)

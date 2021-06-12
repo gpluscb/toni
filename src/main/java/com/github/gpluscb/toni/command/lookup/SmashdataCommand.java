@@ -3,10 +3,10 @@ package com.github.gpluscb.toni.command.lookup;
 import com.github.gpluscb.toni.command.Command;
 import com.github.gpluscb.toni.command.CommandContext;
 import com.github.gpluscb.toni.smashdata.SmashdataManager;
-import com.github.gpluscb.toni.util.ButtonActionMenu;
 import com.github.gpluscb.toni.util.Constants;
 import com.github.gpluscb.toni.util.EmbedUtil;
 import com.github.gpluscb.toni.util.MiscUtil;
+import com.github.gpluscb.toni.util.ReactionActionMenu;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
@@ -111,7 +111,7 @@ public class SmashdataCommand implements Command {
         Member member = ctx.getEvent().getMember();
 
         PlayerEmbedPaginator pages = new PlayerEmbedPaginator(EmbedUtil.getPreparedSmashdata(member, author).build(), results);
-        ButtonActionMenu.Builder menuBuilder = new ButtonActionMenu.Builder()
+        ReactionActionMenu.Builder menuBuilder = new ReactionActionMenu.Builder()
                 .setEventWaiter(waiter)
                 .addUsers(author.getIdLong())
                 .setStart(pages.getCurrent());

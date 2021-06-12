@@ -7,10 +7,9 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
-import net.dv8tion.jda.api.interactions.components.Button;
-import net.dv8tion.jda.api.interactions.components.ButtonStyle;
-import net.dv8tion.jda.api.requests.restaction.MessageAction;
+import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
+import net.dv8tion.jda.api.requests.RestAction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -21,21 +20,18 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * We override the validation to only allow specific users in users.
  */
-public class ButtonActionMenu_ extends Menu {
-    private static final Logger log = LogManager.getLogger(ButtonActionMenu_.class);
+public class ReactionActionMenu extends Menu {
+    private static final Logger log = LogManager.getLogger(ReactionActionMenu.class);
 
     @Nonnull
     private final Set<Long> users;
 
     @Nonnull
-    private final Set<Button> buttonsToAdd;
-    @Nonnull
-    private final Map<String, Function<ButtonClickEvent, Message>> buttonActions;
+    private final Map<String, Function<MessageReactionAddEvent, Message>> buttonActions;
     @Nonnull
     private final Message start;
     /**
@@ -44,28 +40,14 @@ public class ButtonActionMenu_ extends Menu {
     @Nonnull
     private final AtomicReference<Long> botId;
     @Nullable
-    private final Button deletionButton;
+    private final String deletionButton;
     @Nonnull
     private final BiConsumer<MessageChannel, Long> timeoutAction;
 
-    public ButtonActionMenu_(@Nonnull EventWaiter waiter, @Nonnull Set<Long> users, long timeout, @Nonnull TimeUnit unit, @Nonnull Map<Button, Function<ButtonClickEvent, Message>> buttonActions, @Nonnull Message start, @Nullable Button deletionButton, @Nonnull BiConsumer<MessageChannel, Long> timeoutAction) {
+    public ReactionActionMenu(@Nonnull EventWaiter waiter, @Nonnull Set<Long> users, long timeout, @Nonnull TimeUnit unit, @Nonnull Map<String, Function<MessageReactionAddEvent, Message>> buttonActions, @Nonnull Message start, @Nullable String deletionButton, @Nonnull BiConsumer<MessageChannel, Long> timeoutAction) {
         super(waiter, Collections.emptySet(), Collections.emptySet(), timeout, unit);
         this.users = users;
-
-        buttonsToAdd = new HashSet<>(buttonActions.keySet());
-        if (deletionButton != null) buttonsToAdd.add(deletionButton);
-
-        if (buttonsToAdd.stream().anyMatch(button -> button.getStyle() == ButtonStyle.LINK))
-            throw new IllegalStateException("Buttons may not be link buttons");
-
-        // e.getKey.getId() cannot return null here since we don't allow link buttons
-        //noinspection ConstantConditions
-        this.buttonActions = buttonActions
-                .entrySet()
-                .stream()
-                .map(e -> new PairNonnull<>(e.getKey().getId(), e.getValue()))
-                .collect(Collectors.toMap(PairNonnull::getT, PairNonnull::getU));
-
+        this.buttonActions = buttonActions;
         this.start = start;
         botId = new AtomicReference<>(null);
         this.deletionButton = deletionButton;
@@ -74,7 +56,7 @@ public class ButtonActionMenu_ extends Menu {
 
     @Override
     public void display(@Nonnull MessageChannel channel) {
-        init(channel.sendMessage(start));
+        channel.sendMessage(start).queue(this::init);
     }
 
     public void displayReplying(Message reference) {
@@ -89,24 +71,25 @@ public class ButtonActionMenu_ extends Menu {
         }
 
         if (hasPerms)
-            init(channel.sendMessage(start).referenceById(messageId));
+            channel.sendMessage(start).referenceById(messageId).queue(this::init);
         else
-            init(channel.sendMessage(start));
+            channel.sendMessage(start).queue(this::init);
     }
 
     @Override
     public void display(@Nonnull Message message) {
-        init(message.editMessage(start));
+        message.editMessage(start).queue(this::init);
     }
 
-    private void init(@Nonnull MessageAction messageAction) {
-        Set<Button> buttons = new HashSet<>(buttonsToAdd);
-        if (deletionButton != null) buttons.add(deletionButton);
+    private void init(@Nonnull Message message) {
+        botId.set(message.getAuthor().getIdLong());
 
-        messageAction.setActionRow(buttons).queue(message -> {
-            botId.set(message.getAuthor().getIdLong());
-            awaitEvents(message);
-        });
+        if (!message.isFromGuild() || message.getGuild().getSelfMember().hasPermission(message.getTextChannel(), Permission.MESSAGE_ADD_REACTION, Permission.MESSAGE_HISTORY)) {
+            buttonActions.keySet().stream().map(message::addReaction).forEach(RestAction::queue);
+            if (deletionButton != null) message.addReaction(deletionButton).queue();
+        }
+
+        awaitEvents(message);
     }
 
     private void awaitEvents(@Nonnull Message message) {
@@ -114,9 +97,9 @@ public class ButtonActionMenu_ extends Menu {
     }
 
     private void awaitEvents(@Nonnull JDA jda, long messageId, long channelId) {
-        waiter.waitForEvent(ButtonClickEvent.class,
-                e -> checkButtonClick(e, messageId),
-                this::handleButtonClick,
+        waiter.waitForEvent(MessageReactionAddEvent.class,
+                e -> checkReaction(e, messageId),
+                this::handleMessageReactionAdd,
                 timeout, unit, FailLogger.logFail(() -> { // This is the only thing that will be executed on not JDA-WS thread. So exceptions may get swallowed
                     MessageChannel channel = jda.getTextChannelById(channelId);
                     if (channel == null) channel = jda.getPrivateChannelById(channelId);
@@ -131,41 +114,44 @@ public class ButtonActionMenu_ extends Menu {
         return botIdLong != null && botIdLong != user && (users.isEmpty() || users.contains(user));
     }
 
-    private boolean checkButtonClick(@Nonnull ButtonClickEvent e, long messageId) {
+    private boolean checkReaction(@Nonnull MessageReactionAddEvent e, long messageId) {
         if (e.getMessageIdLong() != messageId) return false;
-        if (!isValidUser(e.getUser().getIdLong())) return false;
+        if (!isValidUser(e.getUserIdLong())) return false;
 
-        String buttonId = e.getComponentId();
-        return buttonActions.containsKey(buttonId) ||
-                (deletionButton != null && buttonId.equals(deletionButton.getId()));
+        String reactionName = e.getReactionEmote().getName();
+        return buttonActions.containsKey(reactionName) || reactionName.equals(deletionButton);
     }
 
-    private void handleButtonClick(@Nonnull ButtonClickEvent e) {
-        e.deferEdit().queue();
-
-        String buttonId = e.getComponentId();
+    private void handleMessageReactionAdd(@Nonnull MessageReactionAddEvent e) {
+        String reactionName = e.getReactionEmote().getName();
 
         long messageId = e.getMessageIdLong();
         MessageChannel channel = e.getChannel();
-        if (deletionButton != null && buttonId.equals(deletionButton.getId())) {
+        if (reactionName.equals(deletionButton)) {
             channel.deleteMessageById(e.getMessageId()).queue();
             return;
         }
 
-        Message edited = buttonActions.get(buttonId).apply(e);
+        if (e.isFromGuild() && e.getGuild().getSelfMember().hasPermission(e.getTextChannel(), Permission.MESSAGE_MANAGE)) {
+            User user = e.getUser();
+            if (user != null) e.getReaction().removeReaction(user).queue();
+            else log.warn("User was null despite event being from guild. Not removing reaction");
+        }
+
+        Message edited = buttonActions.get(reactionName).apply(e);
         if (edited != null) channel.editMessageById(messageId, edited).queue(this::awaitEvents);
         else awaitEvents(e.getJDA(), messageId, channel.getIdLong());
     }
 
-    public static class Builder extends Menu.Builder<Builder, ButtonActionMenu_> {
+    public static class Builder extends Menu.Builder<Builder, ReactionActionMenu> {
         @Nonnull
         private final Set<Long> users;
         @Nonnull
-        private final Map<Button, Function<ButtonClickEvent, Message>> buttonActions;
+        private final Map<String, Function<MessageReactionAddEvent, Message>> buttonActions;
         @Nullable
         private Message start;
         @Nullable
-        private Button deletionButton;
+        private String deletionButton;
         @Nullable
         private BiConsumer<MessageChannel, Long> timeoutAction;
 
@@ -175,7 +161,7 @@ public class ButtonActionMenu_ extends Menu {
         public Builder() {
             users = new HashSet<>();
             buttonActions = new LinkedHashMap<>(); // Preserve order
-            deletionButton = Button.danger("delete", Constants.CROSS_MARK);
+            deletionButton = Constants.CROSS_MARK;
             setTimeout(20, TimeUnit.MINUTES);
         }
 
@@ -192,12 +178,12 @@ public class ButtonActionMenu_ extends Menu {
 
         /**
          * @param action If action returns null, the message is not edited
-         * @throws IllegalArgumentException if button is already registered
+         * @throws IllegalArgumentException if reaction is already registered
          */
         @Nonnull
-        public synchronized Builder registerButton(@Nonnull Button button, @Nonnull Function<ButtonClickEvent, Message> action) {
-            if (buttonActions.containsKey(button)) throw new IllegalArgumentException("Button already registered");
-            buttonActions.put(button, action);
+        public synchronized Builder registerButton(@Nonnull String reaction, @Nonnull Function<MessageReactionAddEvent, Message> action) {
+            if (buttonActions.containsKey(reaction)) throw new IllegalArgumentException("Reaction already registered");
+            buttonActions.put(reaction, action);
             return this;
         }
 
@@ -212,7 +198,7 @@ public class ButtonActionMenu_ extends Menu {
          * {@code null} is none, not default
          */
         @Nonnull
-        public Builder setDeletionButton(@Nullable Button deletionButton) {
+        public Builder setDeletionButton(@Nullable String deletionButton) {
             this.deletionButton = deletionButton;
             return this;
         }
@@ -233,7 +219,7 @@ public class ButtonActionMenu_ extends Menu {
          */
         @Nonnull
         @Override
-        public synchronized ButtonActionMenu_ build() {
+        public synchronized ReactionActionMenu build() {
             if (waiter == null) throw new IllegalStateException("Waiter must be set");
             if (start == null) throw new IllegalStateException("Start must be set");
             if (!super.users.isEmpty())
@@ -242,14 +228,18 @@ public class ButtonActionMenu_ extends Menu {
             if (timeoutAction == null) {
                 timeoutAction = (channel, id) -> {
                     if (channel == null) return;
-
-                    channel.retrieveMessageById(id)
-                            .flatMap(m -> m.editMessage(m).setActionRow())
-                            .queue();
+                    if (channel instanceof TextChannel) {
+                        TextChannel textChannel = (TextChannel) channel;
+                        if (textChannel.getGuild().getSelfMember().hasPermission(textChannel, Permission.MESSAGE_MANAGE))
+                            textChannel.clearReactionsById(id).queue();
+                    } else {
+                        for (String button : buttonActions.keySet()) channel.removeReactionById(id, button).queue();
+                        if (deletionButton != null) channel.removeReactionById(id, deletionButton).queue();
+                    }
                 };
             }
 
-            return new ButtonActionMenu_(waiter, users, timeout, unit, buttonActions, start, deletionButton, timeoutAction);
+            return new ReactionActionMenu(waiter, users, timeout, unit, buttonActions, start, deletionButton, timeoutAction);
         }
     }
 }

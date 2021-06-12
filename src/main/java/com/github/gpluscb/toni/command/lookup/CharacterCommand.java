@@ -235,7 +235,7 @@ public class CharacterCommand implements Command {
         Member member = ctx.getEvent().getMember();
 
         MovesEmbedPaginator pages = new MovesEmbedPaginator(EmbedUtil.getPreparedUFD(member, author).build(), data, startMove, startMoveRequested);
-        ButtonActionMenu menu = new ButtonActionMenu.Builder()
+        ReactionActionMenu menu = new ReactionActionMenu.Builder()
                 .setEventWaiter(waiter)
                 .addUsers(author.getIdLong())
                 .registerButton(Constants.ARROW_DOUBLE_BACKWARD, pages::prevSection)

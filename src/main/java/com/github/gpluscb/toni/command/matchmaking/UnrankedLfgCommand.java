@@ -105,7 +105,7 @@ public class UnrankedLfgCommand implements Command {
                 .mentionRoles(roleId).mentionUsers(userId).build();
 
         ReactionHandler handler = new ReactionHandler(guildId, userId, roleId);
-        ButtonActionMenu menu = new ButtonActionMenu.Builder()
+        ReactionActionMenu menu = new ReactionActionMenu.Builder()
                 .setEventWaiter(waiter)
                 .setDeletionButton(null)
                 .registerButton(Constants.FENCER, handler::fightReaction)
@@ -185,7 +185,7 @@ public class UnrankedLfgCommand implements Command {
 
             // TODO: Should we keep that "if you want me to disable" stuff to just the main message?
             DisableReactionHandler handler = new DisableReactionHandler(originalMessageId, challengerId);
-            ButtonActionMenu menu = new ButtonActionMenu.Builder()
+            ReactionActionMenu menu = new ReactionActionMenu.Builder()
                     .setEventWaiter(waiter)
                     .setDeletionButton(null)
                     .registerButton(Constants.CHECK_MARK, handler::confirmReaction)

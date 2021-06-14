@@ -36,6 +36,11 @@ public class UnrankedConfigCommand implements Command {
             return;
         }
 
+        if (ctx.getArgNum() <= 0) {
+            ctx.reply("Too few arguments. For help check out `toni, help unrankedcfg`.").queue();
+            return;
+        }
+
         Member member = ctx.getMember();
         // TODO: Is this too restrictive?
         // We know the member is not null because we're in a guild

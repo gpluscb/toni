@@ -20,6 +20,7 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -94,7 +95,7 @@ public class TournamentCommand implements Command {
         Member member = ctx.getEvent().getMember();
 
         TournamentEmbedPaginator pages = new TournamentEmbedPaginator(EmbedUtil.getPreparedGG(member, author).build(), tournaments);
-        ButtonActionMenu.Builder menuBuilder = new ButtonActionMenu.Builder()
+        ReactionActionMenu.Builder menuBuilder = new ReactionActionMenu.Builder()
                 .setEventWaiter(waiter)
                 .addUsers(author.getIdLong())
                 .registerButton(Constants.ARROW_DOWNWARD, pages::nextEvent)
@@ -440,14 +441,14 @@ public class TournamentCommand implements Command {
         }
 
         @Nonnull
-        public synchronized Message nextTournament() {
+        public synchronized Message nextTournament(@Nonnull MessageReactionAddEvent e) {
             tournamentPage = (tournamentPage + 1) % tournaments.size();
             eventPage = 0;
             return getCurrent();
         }
 
         @Nonnull
-        public synchronized Message prevTournament() {
+        public synchronized Message prevTournament(@Nonnull MessageReactionAddEvent e) {
             tournamentPage--;
             if (tournamentPage < 0) tournamentPage = tournaments.size() - 1;
             eventPage = 0;
@@ -455,13 +456,13 @@ public class TournamentCommand implements Command {
         }
 
         @Nonnull
-        public synchronized Message nextEvent() {
+        public synchronized Message nextEvent(@Nonnull MessageReactionAddEvent e) {
             eventPage = (eventPage + 1) % (tournaments.get(tournamentPage).getU().size() + 1);
             return getCurrent();
         }
 
         @Nonnull
-        public synchronized Message prevEvent() {
+        public synchronized Message prevEvent(@Nonnull MessageReactionAddEvent e) {
             eventPage--;
             if (eventPage < 0) eventPage = tournaments.get(tournamentPage).getU().size();
             return getCurrent();

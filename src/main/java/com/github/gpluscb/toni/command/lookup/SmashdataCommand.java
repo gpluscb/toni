@@ -3,10 +3,10 @@ package com.github.gpluscb.toni.command.lookup;
 import com.github.gpluscb.toni.command.Command;
 import com.github.gpluscb.toni.command.CommandContext;
 import com.github.gpluscb.toni.smashdata.SmashdataManager;
-import com.github.gpluscb.toni.util.ButtonActionMenu;
 import com.github.gpluscb.toni.util.Constants;
 import com.github.gpluscb.toni.util.EmbedUtil;
 import com.github.gpluscb.toni.util.MiscUtil;
+import com.github.gpluscb.toni.util.ReactionActionMenu;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
@@ -15,6 +15,7 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -110,7 +111,7 @@ public class SmashdataCommand implements Command {
         Member member = ctx.getEvent().getMember();
 
         PlayerEmbedPaginator pages = new PlayerEmbedPaginator(EmbedUtil.getPreparedSmashdata(member, author).build(), results);
-        ButtonActionMenu.Builder menuBuilder = new ButtonActionMenu.Builder()
+        ReactionActionMenu.Builder menuBuilder = new ReactionActionMenu.Builder()
                 .setEventWaiter(waiter)
                 .addUsers(author.getIdLong())
                 .setStart(pages.getCurrent());
@@ -222,13 +223,13 @@ public class SmashdataCommand implements Command {
         }
 
         @Nonnull
-        public synchronized Message nextResult() {
+        public synchronized Message nextResult(@Nonnull MessageReactionAddEvent e) {
             resultPage = (resultPage + 1) % results.size();
             return getCurrent();
         }
 
         @Nonnull
-        public synchronized Message prevResult() {
+        public synchronized Message prevResult(@Nonnull MessageReactionAddEvent e) {
             resultPage--;
             if (resultPage < 0) resultPage = results.size() - 1;
             return getCurrent();

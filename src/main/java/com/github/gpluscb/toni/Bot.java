@@ -23,6 +23,10 @@ import com.github.gpluscb.toni.command.lookup.TournamentCommand;
 import com.github.gpluscb.toni.statsposting.BotListClient;
 import com.github.gpluscb.toni.statsposting.dbots.DBotsClient;
 import com.github.gpluscb.toni.statsposting.PostGuildRoutine;
+import com.github.gpluscb.toni.command.matchmaking.AvailableCommand;
+import com.github.gpluscb.toni.command.matchmaking.UnrankedConfigCommand;
+import com.github.gpluscb.toni.command.matchmaking.UnrankedLfgCommand;
+import com.github.gpluscb.toni.matchmaking.UnrankedManager;
 import com.github.gpluscb.toni.smashdata.SmashdataManager;
 import com.github.gpluscb.toni.smashgg.GGManager;
 import com.github.gpluscb.toni.statsposting.dbots.DBotsClientMock;
@@ -84,6 +88,8 @@ public class Bot {
     private final RetrofitRestClient client;*/ // TODO: CHALLONGE FEATURES ON HOLD
     @Nonnull
     private final SmashdataManager smashdata;
+    @Nonnull
+    private final UnrankedManager unrankedManager;
     @Nonnull
     private final ScheduledExecutorService waiterPool;
 
@@ -159,6 +165,7 @@ public class Bot {
                     .setChunkingFilter(ChunkingFilter.NONE)
                     .addEventListeners(waiter)
                     .setActivity(Activity.listening("Help: \"Toni, Help\""))
+                    .setUseShutdownNow(true)
                     .build();
         } catch (LoginException e) {
             log.error("LoginException - shutting down", e);
@@ -204,6 +211,20 @@ public class Bot {
             smashdata = new SmashdataManager(cfg.getSmashdataDbLocation());
         } catch (SQLException e) {
             log.error("Exception while loading smashdata - shutting down", e);
+            ggManager.shutdown();
+            shardManager.shutdown();
+            // challongeManager.shutdown();
+            // listener.shutdown();
+            // client.close();
+            waiterPool.shutdownNow();
+            throw e;
+        }
+
+        log.trace("Loading unranked manager");
+        try {
+            unrankedManager = new UnrankedManager(cfg.getStateDbLocation());
+        } catch (SQLException e) {
+            log.error("Exception while loading unranked manager - shutting down", e);
             ggManager.shutdown();
             shardManager.shutdown();
             // challongeManager.shutdown();
@@ -301,6 +322,12 @@ public class Bot {
         // lookupCommands.add(new UnsubscribeCommand(challonge, listener));
         commands.add(new CommandCategory("lookup", "Lookup commands for other websites", lookupCommands));
 
+        List<Command> matchmakingCommands = new ArrayList<>();
+        matchmakingCommands.add(new UnrankedConfigCommand(supportServer, unrankedManager));
+        matchmakingCommands.add(new AvailableCommand(supportServer, unrankedManager));
+        matchmakingCommands.add(new UnrankedLfgCommand(supportServer, unrankedManager, waiter));
+        commands.add(new CommandCategory("unranked", "**[BETA]** Commands for unranked matchmaking", matchmakingCommands));
+
         return commands;
     }
 
@@ -312,6 +339,12 @@ public class Bot {
         postGuildRoutine.shutdown();
         try {
             smashdata.shutdown();
+        } catch (SQLException e) {
+            log.catching(e);
+        }
+
+        try {
+            unrankedManager.shutdown();
         } catch (SQLException e) {
             log.catching(e);
         }

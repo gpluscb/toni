@@ -6,6 +6,7 @@ import com.github.gpluscb.toni.command.CommandContext;
 import com.github.gpluscb.toni.util.EmbedUtil;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.interactions.components.Button;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -92,7 +93,6 @@ public class HelpCommand implements Command {
     }
 
     private void generalHelp(@Nonnull CommandContext ctx) {
-        // TODO: Shill top.gg voting maybe?
         EmbedBuilder builder = EmbedUtil.getPrepared(ctx.getMember(), ctx.getAuthor()).setTitle("Toni's general help");
 
         builder.setDescription("My prefixes are `!t`, `noti` and `toni`, but you can mention me instead too.\n")
@@ -113,16 +113,20 @@ public class HelpCommand implements Command {
         String parsedFields = EmbedUtil.parseInlineFields(helpFields);
         builder.addField("Command categories", parsedFields, false);
 
-        builder.addField("", String.format("[vote for me on top.gg](https://top.gg/bot/%d)", botId), true);
-        builder.addField("", String.format("[check out my github](%s)", github), true);
+        Button topGGButton = Button.link(String.format("https://top.gg/bot/%d", botId), "Vote for me");
+        Button githubButton = Button.link(github, "Source code");
+        Button inviteButton = Button.link(inviteUrl, "Invite me");
+        Button supportButton = Button.link(supportServer, "Support server");
 
-        ctx.reply(builder.build()).queue();
+        ctx.reply(builder.build())
+                .setActionRow(topGGButton, githubButton, inviteButton, supportButton)
+                .queue();
     }
 
     @Nonnull
     @Override
     public Permission[] getRequiredBotPerms() {
-        return new Permission[] {Permission.MESSAGE_EMBED_LINKS};
+        return new Permission[]{Permission.MESSAGE_EMBED_LINKS};
     }
 
     @Nonnull

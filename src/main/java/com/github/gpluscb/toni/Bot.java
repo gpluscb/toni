@@ -309,7 +309,7 @@ public class Bot {
         List<Command> gameCommands = new ArrayList<>();
         gameCommands.add(new RandomCharacterCommand(characterTree));
         gameCommands.add(new RandomPlayerCommand());
-        gameCommands.add(new RockPaperScissorsCommand(dmWaiter));
+        gameCommands.add(new RockPaperScissorsCommand(waiter));
         gameCommands.add(new BlindPickCommand(dmWaiter, characterTree));
         commands.add(new CommandCategory("game", "Smash Bros. utility commands", gameCommands));
 

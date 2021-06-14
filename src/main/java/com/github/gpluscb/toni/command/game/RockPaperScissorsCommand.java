@@ -2,23 +2,27 @@ package com.github.gpluscb.toni.command.game;
 
 import com.github.gpluscb.toni.command.Command;
 import com.github.gpluscb.toni.command.CommandContext;
-import com.github.gpluscb.toni.util.DMChoiceWaiter;
-import com.github.gpluscb.toni.util.FailLogger;
+import com.github.gpluscb.toni.util.ButtonActionMenu;
+import com.github.gpluscb.toni.util.Constants;
+import com.github.gpluscb.toni.util.MiscUtil;
+import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
+import net.dv8tion.jda.api.MessageBuilder;
+import net.dv8tion.jda.api.entities.Emoji;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
+import net.dv8tion.jda.api.interactions.components.Button;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 public class RockPaperScissorsCommand implements Command {
     @Nonnull
-    private final DMChoiceWaiter waiter;
+    private final EventWaiter waiter;
 
-    public RockPaperScissorsCommand(@Nonnull DMChoiceWaiter waiter) {
+    public RockPaperScissorsCommand(@Nonnull EventWaiter waiter) {
         this.waiter = waiter;
     }
 
@@ -53,48 +57,26 @@ public class RockPaperScissorsCommand implements Command {
         String user1Mention = user1User.getAsMention();
         String user2Mention = user2User.getAsMention();
 
-        // TODO: Avoid too many mentions somehow -> could potentially be a vector for ping spams
-        List<Long> users = new ArrayList<>();
-        users.add(user1);
-        users.add(user2);
+        Message start = new MessageBuilder(String.format("Alrighty! %s and %s, please click on the button of your choice now. " +
+                "You have three (3) minutes!", user1Mention, user2Mention))
+                .mentionUsers(user1, user2)
+                .build();
 
-        boolean worked = waiter.waitForDMChoice(users, true, e -> {
-            Message message = e.getMessage();
-            String choice = message.getContentRaw();
+        RPSHandler handler = new RPSHandler(user1, user2);
 
-            RPS rpsChoice = RPS.fromString(choice);
-            if (rpsChoice == null)
-                message.reply("What is that supposed to mean? I only know rock, paper, and scissors.").queue();
-            else message.reply("Noted!").queue();
+        ButtonActionMenu menu = new ButtonActionMenu.Builder()
+                .setEventWaiter(waiter)
+                .setDeletionButton(null)
+                .addUsers(user1, user2)
+                .registerButton(Button.secondary("rock", Emoji.fromUnicode(Constants.ROCK)), handler::rockButton)
+                .registerButton(Button.secondary("paper", Emoji.fromUnicode(Constants.PAPER)), handler::paperButton)
+                .registerButton(Button.secondary("scissors", Emoji.fromUnicode(Constants.SCISSORS)), handler::scissorsButton)
+                .setStart(start)
+                .setTimeout(3, TimeUnit.MINUTES)
+                .setTimeoutAction(handler::timeout)
+                .build();
 
-            return Optional.ofNullable(rpsChoice);
-        }, map -> {
-            RPS choice1 = map.get(user1);
-            RPS choice2 = map.get(user2);
-
-            int intOutcome = RPS.determineOutcome(choice1, choice2);
-            String outcome = intOutcome == 0 ? "It's a tie!"
-                    : String.format("%s won!", intOutcome > 0 ? user1Mention : user2Mention);
-
-            ctx.reply(String.format("It has been decided! %s chose %s, and %s chose %s. That means %s", user1Mention, choice1.getName(), user2Mention, choice2.getName(), outcome)).mentionUsers(user1, user2).queue();
-        }, 3, TimeUnit.MINUTES, map -> {
-            // TODO: Variable naming
-            StringBuilder lazyIdiots = new StringBuilder();
-            RPS choice1 = map.get(user1);
-            RPS choice2 = map.get(user2);
-            if (choice1 == null) {
-                lazyIdiots.append(user1Mention);
-                if (choice2 == null) lazyIdiots.append(" and ");
-            }
-            if (choice2 == null) lazyIdiots.append(user2Mention);
-
-            ctx.reply(String.format("The three (3) minutes are done. Not all of you have given me your choice. Shame on you, %s!", lazyIdiots.toString())).mentionUsers(user1, user2).queue();
-        });
-
-        if (worked) // TODO: Trusts that this message will go through. Not that big an issue, but still iffy. Optimally you would have something to cancel the thing?
-            ctx.reply(String.format("Alrighty! %s and %s, please send me a DM with your choice now. You have three (3) minutes!", user1Mention, user2Mention)).mentionUsers(user1, user2).queue();
-        else
-            ctx.reply("Some of you ppl are already doing a DM thing with me. If I let you do rock paper scissors, I won't know what you want to tell me in DMs!").queue();
+        menu.displayReplying(ctx.getMessage());
     }
 
     @Nonnull
@@ -119,6 +101,91 @@ public class RockPaperScissorsCommand implements Command {
                 "Aliases: `rockpaperscissors`, `rps`";
     }
 
+    private static class RPSHandler {
+        private boolean finished;
+        private final long user1;
+        private final long user2;
+        @Nullable
+        private RPS choice1;
+        @Nullable
+        private RPS choice2;
+
+        private RPSHandler(long user1, long user2) {
+            finished = false;
+            this.user1 = user1;
+            this.user2 = user2;
+        }
+
+        @Nullable
+        public synchronized Message rockButton(@Nonnull ButtonClickEvent e) {
+            choose(e, e.getUser().getIdLong() == user1, RPS.ROCK);
+            return null;
+        }
+
+        @Nullable
+        public synchronized Message paperButton(@Nonnull ButtonClickEvent e) {
+            choose(e, e.getUser().getIdLong() == user1, RPS.PAPER);
+            return null;
+        }
+
+        @Nullable
+        public synchronized Message scissorsButton(@Nonnull ButtonClickEvent e) {
+            choose(e, e.getUser().getIdLong() == user1, RPS.SCISSORS);
+            return null;
+        }
+
+        private synchronized void choose(@Nonnull ButtonClickEvent e, boolean isUser1, @Nonnull RPS choice) {
+            if (finished) return;
+
+            if ((isUser1 && choice1 != null) || (!isUser1 && choice2 != null)) {
+                e.reply("You have already chosen, and you must learn to live with that choice!")
+                        .setEphemeral(true).queue();
+                return;
+            }
+
+            if (isUser1) choice1 = choice;
+            else choice2 = choice;
+
+            if (choice1 != null && choice2 != null) {
+                String user1Mention = MiscUtil.mentionUser(user1);
+                String user2Mention = MiscUtil.mentionUser(user2);
+
+                int intOutcome = RPS.determineOutcome(choice1, choice2);
+                String outcome = intOutcome == 0 ? "It's a tie!"
+                        : String.format("%s won!", intOutcome > 0 ? user1Mention : user2Mention);
+
+                e.reply(String.format("It has been decided! %s chose %s, and %s chose %s. That means %s",
+                        user1Mention, choice1.getName(), user2Mention, choice2.getName(), outcome))
+                        .mentionUsers(user1, user2)
+                        .queue();
+
+                Message originalMessage = e.getMessage();
+                // This is only null for interactions on ephemeral messages
+                //noinspection ConstantConditions
+                originalMessage.editMessage(originalMessage).setActionRows().queue();
+
+                finished = true;
+            } else {
+                e.reply("I have noted your choice...").setEphemeral(true).queue();
+            }
+        }
+
+        public synchronized void timeout(@Nullable MessageChannel channel, long messageId) {
+            if (channel == null) return;
+
+            // TODO: Variable naming
+            StringBuilder lazyIdiots = new StringBuilder();
+            if (choice1 == null) {
+                lazyIdiots.append(MiscUtil.mentionUser(user1));
+                if (choice2 == null) lazyIdiots.append(" and ");
+            }
+            if (choice2 == null) lazyIdiots.append(MiscUtil.mentionUser(user2));
+
+            channel.sendMessage(String.format("The three (3) minutes are done. Not all of you have given me your choice. Shame on you, %s!", lazyIdiots)).mentionUsers(user1, user2)
+                    .queue();
+        }
+    }
+
     private enum RPS {
         ROCK,
         PAPER,
@@ -128,13 +195,13 @@ public class RockPaperScissorsCommand implements Command {
         private String getName() {
             switch (this) {
                 case ROCK:
-                    return "rock";
+                    return Constants.ROCK + "(rock)";
                 case PAPER:
-                    return "paper";
+                    return Constants.PAPER + "(paper)";
                 case SCISSORS:
-                    return "scissors";
+                    return Constants.SCISSORS + "(scissors)";
                 default:
-                    return null;
+                    throw new IllegalStateException("Enum switch failed");
             }
         }
 
@@ -154,24 +221,6 @@ public class RockPaperScissorsCommand implements Command {
                     return b == ROCK ? -1 : 1;
             }
             return 0;
-        }
-
-        @Nullable
-        public static RPS fromString(@Nonnull String string) {
-            switch (string.toLowerCase()) {
-                case "rock":
-                case "r":
-                    return ROCK;
-                case "paper":
-                case "p":
-                    return PAPER;
-                case "scissors":
-                case "scissor":
-                case "s":
-                    return SCISSORS;
-                default:
-                    return null;
-            }
         }
     }
 }

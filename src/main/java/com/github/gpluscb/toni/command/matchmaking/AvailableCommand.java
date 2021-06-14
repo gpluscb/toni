@@ -27,12 +27,16 @@ public class AvailableCommand implements Command {
     private static final Logger log = LogManager.getLogger(AvailableCommand.class);
 
     @Nonnull
+    private final String supportServer;
+
+    @Nonnull
     private final UnrankedManager manager;
 
     @Nonnull
     private final Map<Long, ScheduledFuture<?>> scheduledRoleRemovals;
 
-    public AvailableCommand(@Nonnull UnrankedManager manager) {
+    public AvailableCommand(@Nonnull String supportServer, @Nonnull UnrankedManager manager) {
+        this.supportServer = supportServer;
         this.manager = manager;
         scheduledRoleRemovals = new HashMap<>();
     }
@@ -166,7 +170,7 @@ public class AvailableCommand implements Command {
     @Nullable
     @Override
     public String getShortHelp() {
-        return "Gives you the matchmaking role for a given amount of time. Usage: `available [DURATION]`";
+        return "**[BETA]** Gives you the matchmaking role for a given amount of time. Usage: `available [DURATION]`";
     }
 
     @Nullable
@@ -175,6 +179,7 @@ public class AvailableCommand implements Command {
         return "`available [DURATION]`\n" +
                 "Gives you the matchmaking role for the given duration, or permanently if you don't specify a duration." +
                 " The duration can have the format `Xh Xm Xs`, and it can't be longer than 12h." +
-                " Note that I can't remember to remove the role if I shut down during that time."; // TODO: Maybe fix that? That sounds so painful to fix tho.
+                " Note that I can't remember to remove the role if I shut down during that time.\n" + // TODO: Maybe fix that? That sounds so painful to fix tho.
+                String.format("This command is in **BETA**. If you have feedback, bugs, or other issues, please go to [my support server](%s).", supportServer);
     }
 }

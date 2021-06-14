@@ -26,6 +26,9 @@ public class UnrankedLfgCommand implements Command {
     private static final Logger log = LogManager.getLogger(UnrankedLfgCommand.class);
 
     @Nonnull
+    private final String supportServer;
+
+    @Nonnull
     private final UnrankedManager manager;
     @Nonnull
     private final EventWaiter waiter;
@@ -33,7 +36,8 @@ public class UnrankedLfgCommand implements Command {
     @Nonnull
     private final Set<PairNonnull<Long, Long>> currentlyLfgPerGuild;
 
-    public UnrankedLfgCommand(@Nonnull UnrankedManager manager, @Nonnull EventWaiter waiter) {
+    public UnrankedLfgCommand(@Nonnull String supportServer, @Nonnull UnrankedManager manager, @Nonnull EventWaiter waiter) {
+        this.supportServer = supportServer;
         this.manager = manager;
         this.waiter = waiter;
         currentlyLfgPerGuild = new HashSet<>();
@@ -127,7 +131,7 @@ public class UnrankedLfgCommand implements Command {
     @Nullable
     @Override
     public String getShortHelp() {
-        return "Pings the matchmaking role and lets you know if someone wants to play for a given duration. Usage: `unranked [DURATION]`";
+        return "**[BETA]** Pings the matchmaking role and lets you know if someone wants to play for a given duration. Usage: `unranked [DURATION]`";
     }
 
     @Nullable
@@ -136,7 +140,8 @@ public class UnrankedLfgCommand implements Command {
         return "`lfg [DURATION (default 2h)]`\n" +
                 "Pings the matchmaking role and asks players to react if they want to play. Notifies you when they react within the given duration." +
                 " The duration can have the format `Xh Xm Xs`, and it has to be between 10m and 5h.\n" +
-                "Aliases: `lfg`, `unranked`, `fight`, `fite`";
+                "Aliases: `lfg`, `unranked`, `fight`, `fite`\n" +
+                String.format("This command is in **BETA**. If you have feedback, bugs, or other issues, please go to [my support server](%s).", supportServer);
     }
 
     private class ButtonHandler {

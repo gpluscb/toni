@@ -19,9 +19,13 @@ public class UnrankedConfigCommand implements Command {
     private static final Logger log = LogManager.getLogger(UnrankedConfigCommand.class);
 
     @Nonnull
+    private final String supportServer;
+
+    @Nonnull
     private final UnrankedManager manager;
 
-    public UnrankedConfigCommand(@Nonnull UnrankedManager manager) {
+    public UnrankedConfigCommand(@Nonnull String supportServer, @Nonnull UnrankedManager manager) {
+        this.supportServer = supportServer;
         this.manager = manager;
     }
 
@@ -234,7 +238,7 @@ public class UnrankedConfigCommand implements Command {
     @Nullable
     @Override
     public String getShortHelp() {
-        return "Helps you configure unranked matchmaking. For more info on usage, see `toni, help unrankedconfig`.";
+        return "**[BETA]** Helps you configure unranked matchmaking. For more info on usage, see `toni, help unrankedconfig`.";
     }
 
     @Nullable
@@ -245,6 +249,7 @@ public class UnrankedConfigCommand implements Command {
                 " Sets a specific channel for the matchmaking configuration, or removes channel restrictions if the argument is `all`.\n" +
                 "`unrankedconfig role <ROLE>` Sets a matchmaking role.\n" +
                 "`unrankedconfig reset` Removes matchmaking from this server.\n" +
-                "Aliases: `unrankedconfig`, `unrankedcfg`";
+                "Aliases: `unrankedconfig`, `unrankedcfg`\n" +
+                String.format("This command is in **BETA**. If you have feedback, bugs, or other issues, please go to [my support server](%s).", supportServer);
     }
 }

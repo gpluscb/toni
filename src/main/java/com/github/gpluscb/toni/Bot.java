@@ -323,10 +323,10 @@ public class Bot {
         commands.add(new CommandCategory("lookup", "Lookup commands for other websites", lookupCommands));
 
         List<Command> matchmakingCommands = new ArrayList<>();
-        matchmakingCommands.add(new UnrankedConfigCommand(unrankedManager));
-        matchmakingCommands.add(new AvailableCommand(unrankedManager));
-        matchmakingCommands.add(new UnrankedLfgCommand(unrankedManager, waiter));
-        commands.add(new CommandCategory("matchmaking", "Commands for unranked matchmaking", matchmakingCommands));
+        matchmakingCommands.add(new UnrankedConfigCommand(supportServer, unrankedManager));
+        matchmakingCommands.add(new AvailableCommand(supportServer, unrankedManager));
+        matchmakingCommands.add(new UnrankedLfgCommand(supportServer, unrankedManager, waiter));
+        commands.add(new CommandCategory("unranked", "**[BETA]** Commands for unranked matchmaking", matchmakingCommands));
 
         return commands;
     }

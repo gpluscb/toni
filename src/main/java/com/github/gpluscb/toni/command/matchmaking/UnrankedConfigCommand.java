@@ -37,7 +37,7 @@ public class UnrankedConfigCommand implements Command {
         }
 
         if (ctx.getArgNum() <= 0) {
-            ctx.reply("Too few arguments. For help check out `toni, help unrankedcfg`.").queue();
+            ctx.reply("Too few arguments. For help, check out `toni, help unrankedcfg`.").queue();
             return;
         }
 

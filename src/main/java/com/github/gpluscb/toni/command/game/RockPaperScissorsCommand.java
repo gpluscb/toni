@@ -183,6 +183,8 @@ public class RockPaperScissorsCommand implements Command {
 
             channel.sendMessage(String.format("The three (3) minutes are done. Not all of you have given me your choice. Shame on you, %s!", lazyIdiots)).mentionUsers(user1, user2)
                     .queue();
+
+            channel.retrieveMessageById(messageId).flatMap(m -> m.editMessage(m).setActionRows()).queue();
         }
     }
 

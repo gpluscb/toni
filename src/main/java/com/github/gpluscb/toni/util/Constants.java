@@ -39,4 +39,10 @@ public class Constants {
     public static final String CHECK_MARK = "\u2705";
     @Nonnull
     public static final String FENCER = "\uD83E\uDD3A";
+    @Nonnull
+    public static final String ROCK = "\uD83E\uDEA8";
+    @Nonnull
+    public static final String PAPER = "\uD83D\uDCC4";
+    @Nonnull
+    public static final String SCISSORS = "\u2702\uFE0F";
 }

@@ -8,7 +8,8 @@
       "banjo and kazooie",
       "banjo kazooie",
       "banjo-kazooie",
-      "banjo"
+      "banjo",
+      "banjokazooie"
     ],
     "emote_id": 736674479102754817,
     "guild": 736625420467699763,
@@ -66,7 +67,8 @@
     "name": "Bowser Jr.",
     "alt_names": [
       "bowser jr.",
-      "bowser jr"
+      "bowser jr",
+      "bowserjr"
     ],
     "emote_id": 736674479589163028,
     "guild": 736625420467699763,
@@ -81,7 +83,8 @@
     "name": "Diddy Kong",
     "alt_names": [
       "diddy kong",
-      "diddy"
+      "diddy",
+      "diddykong"
     ],
     "emote_id": 736674479685632051,
     "guild": 736625420467699763,
@@ -98,7 +101,8 @@
     "alt_names": [
       "captain falcon",
       "falcon",
-      "cap"
+      "cap",
+      "captainfalcon"
     ],
     "emote_id": 736674479748415598,
     "guild": 736625420467699763,
@@ -147,7 +151,8 @@
       "dr. mario",
       "dr.mario",
       "dr mario",
-      "doc"
+      "doc",
+      "drmario"
     ],
     "emote_id": 736674479932965005,
     "guild": 736625420467699763,
@@ -165,7 +170,8 @@
       "king dedede",
       "dedede",
       "ddd",
-      "d3"
+      "d3",
+      "kingdedede"
     ],
     "emote_id": 736674479970844703,
     "guild": 736625420467699763,
@@ -199,7 +205,8 @@
     "name": "Donkey Kong",
     "alt_names": [
       "donkey kong",
-      "dk"
+      "dk",
+      "donkeykong"
     ],
     "emote_id": 736674480029565049,
     "guild": 736625420467699763,
@@ -217,7 +224,9 @@
     "name": "Duck Hunt",
     "alt_names": [
       "duck hunt",
-      "duck hunt duo"
+      "duck hunt duo",
+      "duckhunt",
+      "duckuntduo"
     ],
     "emote_id": 736674480054730873,
     "guild": 736625420467699763,
@@ -290,7 +299,9 @@
       "g & w",
       "game and watch",
       "game & watch",
-      "game&watch"
+      "game&watch",
+      "gameandwatch",
+      "mrgameandwatch"
     ],
     "emote_id": 736674480201400410,
     "guild": 736625420467699763,
@@ -307,7 +318,9 @@
     "name": "Ice Climbers",
     "alt_names": [
       "ice climbers",
-      "ics"
+      "ics",
+      "icies",
+      "iceclimbers"
     ],
     "emote_id": 736674480390406155,
     "guild": 736625420467699763,
@@ -370,7 +383,9 @@
       "king k. rool",
       "king k rool",
       "k rool",
-      "k-rool"
+      "k-rool",
+      "kingkrool",
+      "krool"
     ],
     "emote_id": 736674480700522617,
     "guild": 736625420467699763,
@@ -454,7 +469,8 @@
         "alt_names": [
           "mii gunner",
           "gunner",
-          "mii-gunner"
+          "mii-gunner",
+          "miigunner"
         ],
         "emote_id": 736674480759242783,
         "guild": 736625420467699763,
@@ -470,7 +486,8 @@
         "alt_names": [
           "mii brawler",
           "brawler",
-          "mii-brawler"
+          "mii-brawler",
+          "miibrawler"
         ],
         "emote_id": 736674481120084041,
         "guild": 736625420467699763,
@@ -489,7 +506,9 @@
           "swordfighter",
           "swordsfighter",
           "mii-swordfighter",
-          "mii-swordsfighter"
+          "mii-swordsfighter",
+          "miiswordfighter",
+          "miiswordsfighter"
         ],
         "emote_id": 736674481317085189,
         "guild": 736625420467699763,
@@ -855,7 +874,8 @@
       "pt",
       "trainer",
       "pokemon-trainer",
-      "pokémon-trainer"
+      "pokémon-trainer",
+      "pokemontrainer"
     ],
     "emote_id": 736674759898824704,
     "guild": 736625517154926623,
@@ -926,7 +946,8 @@
         "alt_names": [
           "dark pit",
           "darkpit",
-          "edgy pit"
+          "edgy pit",
+          "edgypit"
         ],
         "emote_id": 736674479597682790,
         "guild": 736625420467699763,
@@ -946,7 +967,9 @@
       "rosalina",
       "rosaluma",
       "rosa",
-      "rosalina & luma"
+      "rosalina & luma",
+      "rosalina&luma",
+      "rosalinaandluma"
     ],
     "emote_id": 736674760016003176,
     "guild": 736625517154926623,
@@ -1027,6 +1050,8 @@
         "alt_names": [
           "zero suit samus",
           "zero suit",
+          "zerosuitsamus",
+          "zerosuit",
           "zss"
         ],
         "emote_id": 736674760682897419,
@@ -1079,7 +1104,8 @@
     "alt_names": [
       "terry",
       "bogard",
-      "terry bogard"
+      "terry bogard",
+      "terrybogard"
     ],
     "emote_id": 736674760318255245,
     "guild": 736625517154926623,
@@ -1202,7 +1228,9 @@
     "alt_names": [
       "toon link",
       "tl",
-      "tink"
+      "tink",
+      "tlink",
+      "toonlink"
     ],
     "emote_id": 736674760473182280,
     "guild": 736625517154926623,
@@ -1221,7 +1249,9 @@
       "wii fit",
       "wii",
       "fit",
-      "trainer"
+      "trainer",
+      "wiifit",
+      "wiifittrainer"
     ],
     "emote_id": 736674760544616499,
     "guild": 736625517154926623,
@@ -1267,7 +1297,9 @@
     "id": 72,
     "name": "Wario",
     "alt_names": [
-      "wario"
+      "wario",
+      "wah",
+      "wah!"
     ],
     "emote_id": 736674760708325457,
     "guild": 736625517154926623,
@@ -1316,7 +1348,8 @@
       "yl",
       "yink",
       "yonk",
-      "ylink"
+      "ylink",
+      "younglink"
     ],
     "emote_id": 736674760930361384,
     "guild": 736625517154926623,

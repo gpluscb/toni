@@ -38,7 +38,7 @@ public class TopggClient implements BotListClient<Void> {
 
             @Override
             public Thread newThread(@Nonnull Runnable runnable) {
-                return new Thread(runnable, String.format("TopggClient [%d] Callback-Thread", i));
+                return new Thread(runnable, String.format("TopggClient [%d] Callback-Thread", i++));
             }
         });
 

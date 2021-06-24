@@ -37,7 +37,7 @@ public class DBotsClient implements BotListClient<StatsResponse> {
 
             @Override
             public Thread newThread(@Nonnull Runnable runnable) {
-                return new Thread(runnable, String.format("DBotsClient [%d] Callback-Thread", i));
+                return new Thread(runnable, String.format("DBotsClient [%d] Callback-Thread", i++));
             }
         });
 

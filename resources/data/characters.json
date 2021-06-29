@@ -1526,5 +1526,19 @@
     "guild": 736625517154926623,
     "games": [
     ]
+  },
+  {
+    "type": "character",
+    "id": null,
+    "name": "Kazuya",
+    "alt_names": [
+      "kazuya",
+      "shoto"
+    ],
+    "emote_id": 859457906729943041,
+    "guild": 736625517154926623,
+    "games": [
+      "ult"
+    ]
   }
 ]

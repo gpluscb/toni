@@ -22,7 +22,7 @@ repositories {
 }
 
 dependencies {
-    implementation(group: 'net.dv8tion', name: 'JDA', version: '4.3.0_283') {
+    implementation(group: 'net.dv8tion', name: 'JDA', version: '4.3.0_286') {
         exclude module: 'opus-java'
     }
 

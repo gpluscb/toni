@@ -10,26 +10,14 @@ public class CharacterData {
     @Nonnull
     private final String name;
     @Nonnull
-    private final List<MoveData> normals;
-    @Nonnull
-    private final List<MoveData> aerials;
-    @Nonnull
-    private final List<MoveData> specials;
-    @Nonnull
-    private final List<MoveData> grabs;
-    @Nonnull
-    private final List<MoveData> dodges;
+    private final List<MoveSection> moveSections;
     @Nonnull
     private final MiscData miscData;
 
-    public CharacterData(@Nonnull String ufdUrl, @Nonnull String name, @Nonnull List<MoveData> normals, @Nonnull List<MoveData> aerials, @Nonnull List<MoveData> specials, @Nonnull List<MoveData> grabs, @Nonnull List<MoveData> dodges, @Nonnull MiscData miscData) {
+    public CharacterData(@Nonnull String ufdUrl, @Nonnull String name, @Nonnull List<MoveSection> moveSections, @Nonnull MiscData miscData) {
         this.ufdUrl = ufdUrl;
         this.name = name;
-        this.normals = normals;
-        this.aerials = aerials;
-        this.specials = specials;
-        this.grabs = grabs;
-        this.dodges = dodges;
+        this.moveSections = moveSections;
         this.miscData = miscData;
     }
 
@@ -44,48 +32,8 @@ public class CharacterData {
     }
 
     @Nonnull
-    public List<MoveData> getMoves(@Nonnull MoveSection section) {
-        switch (section) {
-            case NORMALS:
-                return normals;
-            case AERIALS:
-                return aerials;
-            case SPECIALS:
-                return specials;
-            case GRABS:
-                return grabs;
-            case DODGES:
-                return dodges;
-            case MISC:
-                return miscData.getMoves();
-            default:
-                throw new IllegalStateException("Nothing matches");
-        }
-    }
-
-    @Nonnull
-    public List<MoveData> getNormals() {
-        return normals;
-    }
-
-    @Nonnull
-    public List<MoveData> getAerials() {
-        return aerials;
-    }
-
-    @Nonnull
-    public List<MoveData> getSpecials() {
-        return specials;
-    }
-
-    @Nonnull
-    public List<MoveData> getGrabs() {
-        return grabs;
-    }
-
-    @Nonnull
-    public List<MoveData> getDodges() {
-        return dodges;
+    public List<MoveSection> getMoveSections() {
+        return moveSections;
     }
 
     @Nonnull
@@ -93,112 +41,33 @@ public class CharacterData {
         return miscData;
     }
 
-    public enum MoveSection {
-        NORMALS,
-        AERIALS,
-        SPECIALS,
-        GRABS,
-        DODGES,
-        MISC;
-
+    public static class MoveSection {
         @Nonnull
-        public MoveSection next() {
-            switch (this) {
-                case NORMALS:
-                    return AERIALS;
-                case AERIALS:
-                    return SPECIALS;
-                case SPECIALS:
-                    return GRABS;
-                case GRABS:
-                    return DODGES;
-                case DODGES:
-                    return MISC;
-                case MISC:
-                    return NORMALS;
-                default:
-                    throw new IllegalStateException("Nothing matches");
-            }
+        private final String sectionName;
+        @Nonnull
+        private final String htmlId;
+        @Nonnull
+        private final List<MoveData> moves;
+
+        public MoveSection(@Nonnull String sectionName, @Nonnull String htmlId, @Nonnull List<MoveData> moves) {
+            this.sectionName = sectionName;
+            this.htmlId = htmlId;
+            this.moves = moves;
         }
 
         @Nonnull
-        public MoveSection prev() {
-            switch (this) {
-                case NORMALS:
-                    return MISC;
-                case AERIALS:
-                    return NORMALS;
-                case SPECIALS:
-                    return AERIALS;
-                case GRABS:
-                    return SPECIALS;
-                case DODGES:
-                    return GRABS;
-                case MISC:
-                    return DODGES;
-                default:
-                    throw new IllegalStateException("Nothing matches");
-            }
+        public String getSectionName() {
+            return sectionName;
         }
 
         @Nonnull
-        public List<CharacterData.MoveData> getMoveData(@Nonnull CharacterData data) {
-            switch (this) {
-                case NORMALS:
-                    return data.getNormals();
-                case AERIALS:
-                    return data.getAerials();
-                case SPECIALS:
-                    return data.getSpecials();
-                case GRABS:
-                    return data.getGrabs();
-                case DODGES:
-                    return data.getDodges();
-                case MISC:
-                    return data.getMiscData().getMoves();
-                default:
-                    throw new IllegalStateException("Nothing matches");
-            }
+        public String getHtmlId() {
+            return htmlId;
         }
 
         @Nonnull
-        public String displayName() {
-            switch (this) {
-                case NORMALS:
-                    return "Ground Move";
-                case AERIALS:
-                    return "Aerial";
-                case SPECIALS:
-                    return "Special";
-                case GRABS:
-                    return "Grab";
-                case DODGES:
-                    return "Dodge";
-                case MISC:
-                    return "Misc";
-                default:
-                    throw new IllegalStateException("Nothing matches");
-            }
-        }
-
-        @Nonnull
-        public String sectionHtmlId() {
-            switch (this) {
-                case NORMALS:
-                    return "groundattacks";
-                case AERIALS:
-                    return "aerialattacks";
-                case SPECIALS:
-                    return "specialattacks";
-                case GRABS:
-                    return "grabs";
-                case DODGES:
-                    return "dodges";
-                case MISC:
-                    return "misc";
-                default:
-                    throw new IllegalStateException("Nothing matches");
-            }
+        public List<MoveData> getMoves() {
+            return moves;
         }
     }
 
@@ -331,10 +200,13 @@ public class CharacterData {
         private final StatsData stats;
         @Nonnull
         private final List<MoveData> moves;
+        @Nonnull
+        private final String htmlId;
 
-        public MiscData(@Nullable StatsData stats, @Nonnull List<MoveData> moves) {
+        public MiscData(@Nullable StatsData stats, @Nonnull List<MoveData> moves, @Nonnull String htmlId) {
             this.stats = stats;
             this.moves = moves;
+            this.htmlId = htmlId;
         }
 
         @Nullable
@@ -345,6 +217,11 @@ public class CharacterData {
         @Nonnull
         public List<MoveData> getMoves() {
             return moves;
+        }
+
+        @Nonnull
+        public String getHtmlId() {
+            return htmlId;
         }
     }
 
@@ -403,7 +280,7 @@ public class CharacterData {
         }
 
         @Nullable
-        public String getValkSpeed() {
+        public String getWalkSpeed() {
             return valkSpeed;
         }
 

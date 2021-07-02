@@ -72,7 +72,7 @@ public class CharacterCommand implements Command {
                 }
 
                 boolean startMoveRequested = moveName != null;
-                PairNonnull<CharacterData.MoveSection, Integer> startMove = startMoveRequested ? findMove(response, moveName) : null;
+                PairNonnull<Integer, Integer> startMove = startMoveRequested ? findMove(response, moveName) : null;
 
                 sendReply(ctx, response, startMove, startMoveRequested);
             } catch (Exception e) {
@@ -122,31 +122,35 @@ public class CharacterCommand implements Command {
         return id.mapT(id_ -> new Pair<>(id_, moveName));
     }
 
+    /**
+     * @return First is MoveSection idx, second is move idx. If first is -1, it's misc
+     */
     @Nullable
-    private PairNonnull<CharacterData.MoveSection, Integer> findMove(@Nonnull CharacterData data, @Nonnull String name) {
+    private PairNonnull<Integer, Integer> findMove(@Nonnull CharacterData data, @Nonnull String name) {
         String normalisedName = normaliseMoveName(name);
 
         // Special case for just misc
         if ((normalisedName == null ? name : normalisedName).equals("misc"))
-            return new PairNonnull<>(CharacterData.MoveSection.MISC, data.getMiscData().getMoves().size());
+            return new PairNonnull<>(-1, -1);
 
-        PairNonnull<CharacterData.MoveSection, Integer> foundMove = null;
+        PairNonnull<Integer, Integer> foundMove = null;
 
-        for (CharacterData.MoveSection section : CharacterData.MoveSection.values()) {
-            List<CharacterData.MoveData> moves = data.getMoves(section);
-            for (int i = 0; i < moves.size(); i++) {
-                String moveName = moves.get(i).getMoveName();
+        List<CharacterData.MoveSection> sections = data.getMoveSections();
+        for (int i = 0; i < sections.size(); i++) {
+            List<CharacterData.MoveData> moves = sections.get(i).getMoves();
+            for (int j = 0; j < moves.size(); j++) {
+                String moveName = moves.get(j).getMoveName();
 
                 if (moveName != null) {
                     String moveNameLowercase = moveName.toLowerCase();
 
                     // Direct match -> return early
-                    if (moveNameLowercase.contains(name)) return new PairNonnull<>(section, i);
+                    if (moveNameLowercase.contains(name)) return new PairNonnull<>(i, j);
 
                     // Indirect match -> don't return just yet, we might find a direct match later
                     // Only check for the first move we find indirectly, otherwise "neutral air" will find "neutral air dodge"
                     if (normalisedName != null && foundMove == null && moveNameLowercase.contains(normalisedName))
-                        foundMove = new PairNonnull<>(section, i);
+                        foundMove = new PairNonnull<>(i, j);
                 }
             }
         }
@@ -224,7 +228,7 @@ public class CharacterCommand implements Command {
         }
     }
 
-    private void sendReply(@Nonnull CommandContext ctx, @Nullable CharacterData data, @Nullable PairNonnull<CharacterData.MoveSection, Integer> startMove, boolean startMoveRequested) {
+    private void sendReply(@Nonnull CommandContext ctx, @Nullable CharacterData data, @Nullable PairNonnull<Integer, Integer> startMove, boolean startMoveRequested) {
         if (data == null) {
             log.error("Valid character requested, but not found by ufd service.");
             ctx.reply("Oh this is a bug. I was sure my buddy program would know about that character but it didn't. I'll tell my dev about it, but you can give them some context too.").queue();
@@ -253,17 +257,17 @@ public class CharacterCommand implements Command {
      * @param hitboxPageAndMove -1 for hitbox page means don't show
      */
     @Nonnull
-    private EmbedBuilder applyMove(@Nonnull EmbedBuilder embed, @Nonnull CharacterData data, @Nonnull CharacterData.MoveSection section, @Nullable PairNonnull<Integer, CharacterData.MoveData> hitboxPageAndMove) {
-        String url = String.format("%s#%s", data.getUfdUrl(), section.sectionHtmlId());
+    private EmbedBuilder applyMove(@Nonnull EmbedBuilder embed, @Nonnull CharacterData data, @Nonnull OneOfTwo<CharacterData.MoveSection, CharacterData.MiscData> section, @Nullable PairNonnull<Integer, CharacterData.MoveData> hitboxPageAndMove) {
+        String url = String.format("%s#%s", data.getUfdUrl(), section.map(CharacterData.MoveSection::getHtmlId, CharacterData.MiscData::getHtmlId));
         String nameCapitalized = MiscUtil.capitalizeFirst(data.getName());
-        String sectionName = section.displayName();
+        String sectionName = section.map(CharacterData.MoveSection::getSectionName, u -> "Misc");
 
         if (hitboxPageAndMove == null) {
             embed.setTitle(String.format("%s - %s", nameCapitalized, sectionName), url);
         } else {
             CharacterData.MoveData move = hitboxPageAndMove.getU();
             String moveName = move.getMoveName();
-            if (moveName == null) moveName = "Some Move";
+            if (moveName == null) moveName = "Some Unnamed Move";
             embed.setTitle(String.format("%s - %s - %s", nameCapitalized, sectionName, moveName), url);
         }
 
@@ -282,6 +286,9 @@ public class CharacterCommand implements Command {
 
                 String runSpeed = stats.getRunSpeed();
                 if (runSpeed != null) fields.add(new EmbedUtil.InlineField("Run Speed", runSpeed));
+
+                String walkSpeed = stats.getWalkSpeed();
+                if (walkSpeed != null) fields.add(new EmbedUtil.InlineField("Walk Speed", walkSpeed));
 
                 String initialDash = stats.getInitialDash();
                 if (initialDash != null) fields.add(new EmbedUtil.InlineField("Initial Dash", initialDash));
@@ -413,19 +420,19 @@ public class CharacterCommand implements Command {
         @Nonnull
         private final CharacterData data;
 
-        @Nonnull
-        private CharacterData.MoveSection sectionPage;
-        // For misc, movePage == misc moves length means display misc info
+        // Misc: -1
+        private int sectionPage;
+        // For misc, -1 means display misc info
         private int movePage;
         private int hitboxPage;
 
         private boolean displayCouldNotFindMove;
 
-        public MovesEmbedPaginator(@Nonnull MessageEmbed template, @Nonnull CharacterData data, @Nullable PairNonnull<CharacterData.MoveSection, Integer> startMove, boolean startMoveRequested) {
+        public MovesEmbedPaginator(@Nonnull MessageEmbed template, @Nonnull CharacterData data, @Nullable PairNonnull<Integer, Integer> startMove, boolean startMoveRequested) {
             this.template = template;
             this.data = data;
 
-            sectionPage = CharacterData.MoveSection.NORMALS;
+            sectionPage = 0;
             movePage = 0;
             hitboxPage = 0;
 
@@ -439,45 +446,62 @@ public class CharacterCommand implements Command {
 
         @Nonnull
         public synchronized Message nextSection(@Nonnull MessageReactionAddEvent e) {
-            sectionPage = sectionPage.next();
-            movePage = 0;
+            sectionPage++;
+            if (sectionPage >= data.getMoveSections().size()) {
+                sectionPage = -1;
+                movePage = -1;
+            } else movePage = 0;
             hitboxPage = 0;
             return getCurrent();
         }
 
         @Nonnull
         public synchronized Message prevSection(@Nonnull MessageReactionAddEvent e) {
-            sectionPage = sectionPage.prev();
-            movePage = 0;
+            sectionPage--;
+            if (sectionPage < -1) sectionPage = data.getMoveSections().size() - 1;
+            movePage = sectionPage == -1 ? -1 : 0;
             hitboxPage = 0;
             return getCurrent();
         }
 
         @Nonnull
         public synchronized Message nextMove(@Nonnull MessageReactionAddEvent e) {
-            int moveLength = sectionPage.getMoveData(data).size() + (sectionPage == CharacterData.MoveSection.MISC ? 1 : 0);
-            movePage = (movePage + 1) % moveLength;
+            int moveLength = getCurrentMoves().size();
+            movePage++;
+            if (movePage >= moveLength) movePage = sectionPage == -1 ? -1 : 0;
             hitboxPage = 0;
             return getCurrent();
         }
 
         @Nonnull
         public synchronized Message prevMove(@Nonnull MessageReactionAddEvent e) {
-            int moveLength = sectionPage.getMoveData(data).size() + (sectionPage == CharacterData.MoveSection.MISC ? 1 : 0);
+            int moveLength = getCurrentMoves().size();
             movePage--;
-            if (movePage < 0) movePage = moveLength - 1;
+            if (movePage < (sectionPage == -1 ? -1 : 0)) movePage = moveLength - 1;
             hitboxPage = 0;
             return getCurrent();
         }
 
         @Nonnull
         public synchronized Message nextHitbox(@Nonnull MessageReactionAddEvent e) {
-            List<CharacterData.MoveData> moves = sectionPage.getMoveData(data);
-            boolean isMiscPage = movePage >= moves.size();
+            List<CharacterData.MoveData> moves = getCurrentMoves();
+            boolean isMiscPage = movePage == -1;
             int hitboxUrlsSize = isMiscPage ? 0 : moves.get(movePage).getHitboxes().size();
             hitboxPage++;
             if (hitboxPage >= hitboxUrlsSize) hitboxPage = -1;
             return getCurrent();
+        }
+
+        @Nonnull
+        private OneOfTwo<CharacterData.MoveSection, CharacterData.MiscData> getCurrentSection() {
+            return sectionPage == -1 ?
+                    OneOfTwo.ofU(data.getMiscData())
+                    : OneOfTwo.ofT(data.getMoveSections().get(sectionPage));
+        }
+
+        @Nonnull
+        private List<CharacterData.MoveData> getCurrentMoves() {
+            return getCurrentSection().map(CharacterData.MoveSection::getMoves, CharacterData.MiscData::getMoves);
         }
 
         @Nonnull
@@ -490,13 +514,13 @@ public class CharacterCommand implements Command {
                     displayCouldNotFindMove = false;
                 }
 
-                List<CharacterData.MoveData> moves = sectionPage.getMoveData(data);
-                boolean isMiscPage = movePage >= moves.size();
+                List<CharacterData.MoveData> moves = getCurrentMoves();
+                boolean isMiscPage = movePage == -1;
                 PairNonnull<Integer, CharacterData.MoveData> hitboxPageAndMove = isMiscPage ? null : new PairNonnull<>(hitboxPage, moves.get(movePage));
 
-                applyMove(embed, data, sectionPage, hitboxPageAndMove);
+                applyMove(embed, data, getCurrentSection(), hitboxPageAndMove);
 
-                return new MessageBuilder().setEmbed(embed.build()).build();
+                return new MessageBuilder().setEmbeds(embed.build()).build();
             } catch (Exception e) {
                 log.catching(e);
                 return new MessageBuilder("There was a severe unexpected problem with displaying the move data, I don't really know how that happened. I'll tell  my dev, you can go shoot them a message about this too if you want to.").build();

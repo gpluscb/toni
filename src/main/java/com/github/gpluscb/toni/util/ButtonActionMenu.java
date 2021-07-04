@@ -46,7 +46,7 @@ public class ButtonActionMenu extends Menu {
         super(waiter, Collections.emptySet(), Collections.emptySet(), timeout, unit);
         this.users = users;
 
-        buttonsToAdd = new LinkedHashSet<>(buttonActions.keySet()); // Preserve order
+        buttonsToAdd = buttonActions.keySet(); // Preserve order
         if (deletionButton != null) buttonsToAdd.add(deletionButton);
 
         if (buttonsToAdd.stream().anyMatch(button -> button.getStyle() == ButtonStyle.LINK))

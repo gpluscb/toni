@@ -7,7 +7,9 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
 import net.dv8tion.jda.api.events.interaction.SelectionMenuEvent;
+import net.dv8tion.jda.api.interactions.components.Button;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
 import net.dv8tion.jda.api.interactions.components.selections.SelectionMenu;
 import net.dv8tion.jda.api.requests.restaction.MessageAction;
@@ -15,6 +17,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
@@ -96,7 +99,7 @@ public class SelectionActionMenu extends Menu {
 
     private void awaitEvents(@Nonnull JDA jda, long messageId, long channelId) {
         waiter.waitForEvent(SelectionMenuEvent.class,
-                this::checkSelection,
+                e -> checkSelection(e, messageId),
                 this::handleSelection,
                 timeout, unit, FailLogger.logFail(() -> { // This is the only thing that will be executed on not JDA-WS thread. So exceptions may get swallowed
                     MessageChannel channel = jda.getTextChannelById(channelId);
@@ -106,8 +109,10 @@ public class SelectionActionMenu extends Menu {
                 }));
     }
 
-    private boolean checkSelection(@Nonnull SelectionMenuEvent e) {
-        return e.getComponentId().equals(id) && isValidUser(e.getUser().getIdLong());
+    private boolean checkSelection(@Nonnull SelectionMenuEvent e, long messageId) {
+        return e.getMessageIdLong() == messageId
+                && e.getComponentId().equals(id)
+                && isValidUser(e.getUser().getIdLong());
     }
 
     private void handleSelection(@Nonnull SelectionMenuEvent e) {
@@ -124,5 +129,114 @@ public class SelectionActionMenu extends Menu {
 
     private boolean isValidUser(long user) {
         return users.isEmpty() || users.contains(user);
+    }
+
+    public static class Builder extends Menu.Builder<SelectionActionMenu.Builder, SelectionActionMenu> {
+        @Nonnull
+        private final Set<Long> users;
+        @Nonnull
+        private final Map<SelectOption, Function<SelectionMenuEvent, Message>> selectionActions;
+        @Nullable
+        private Message start;
+        @Nullable
+        private String id;
+        @Nullable
+        private BiConsumer<MessageChannel, Long> timeoutAction;
+
+        /**
+         * Default timeout of 20 minutes
+         */
+        public Builder() {
+            users = new HashSet<>();
+            selectionActions = new LinkedHashMap<>(); // Preserve order
+            setTimeout(20, TimeUnit.MINUTES);
+        }
+
+        /**
+         * USE THIS METHOD INSTEAD
+         * <p>
+         * If the user list ends up empty, everyone can use it
+         */
+        @Nonnull
+        public SelectionActionMenu.Builder addUsers(Long... users) {
+            this.users.addAll(Arrays.asList(users));
+            return this;
+        }
+
+        /**
+         * @param action If action returns null, the message is not edited
+         * @throws IllegalArgumentException if option is already registered
+         */
+        @Nonnull
+        public synchronized SelectionActionMenu.Builder registerOption(@Nonnull SelectOption option, @Nonnull Function<SelectionMenuEvent, Message> action) {
+            if (selectionActions.containsKey(option)) throw new IllegalArgumentException("Option already registered");
+            selectionActions.put(option, action);
+            return this;
+        }
+
+        @Nonnull
+        public SelectionActionMenu.Builder setStart(@Nullable Message start) {
+            this.start = start;
+            return this;
+        }
+
+        /**
+         * Default: Random 5-character String
+         */
+        @Nonnull
+        public SelectionActionMenu.Builder setId(@Nullable String id) {
+            this.id = id;
+            return this;
+        }
+
+        /**
+         * MessageChannel may be null on timeout in weird cases
+         * <p>
+         * Default: look at source lol it's too long for docs: {@link #build()}
+         */
+        @Nonnull
+        public SelectionActionMenu.Builder setTimeoutAction(@Nullable BiConsumer<MessageChannel, Long> timeoutAction) {
+            this.timeoutAction = timeoutAction;
+            return this;
+        }
+
+        /**
+         * @throws IllegalStateException if waiter or start is not set, or if super.users contains stuff to prevent accidents
+         */
+        @Nonnull
+        @Override
+        public synchronized SelectionActionMenu build() {
+            if (waiter == null) throw new IllegalStateException("Waiter must be set");
+            if (start == null) throw new IllegalStateException("Start must be set");
+            if (!super.users.isEmpty())
+                throw new IllegalStateException("You likely tried to use addUsers(User...). Use addUsers(Long...) instead.");
+
+            if (timeoutAction == null) {
+                timeoutAction = (channel, id) -> {
+                    if (channel == null) return;
+
+                    channel.retrieveMessageById(id)
+                            .flatMap(m -> m.editMessage(m).setActionRows())
+                            .queue();
+                };
+            }
+
+            if (id == null) {
+                // Source: https://www.baeldung.com/java-random-string lol
+                int leftLimit = 97; // letter 'a'
+                int rightLimit = 122; // letter 'z'
+                int targetStringLength = 5;
+                Random random = new Random();
+
+                String generatedString = random.ints(leftLimit, rightLimit + 1)
+                        .limit(targetStringLength)
+                        .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+                        .toString();
+
+                System.out.println(generatedString);
+            }
+
+            return new SelectionActionMenu(waiter, users, timeout, unit, selectionActions, start, id, timeoutAction);
+        }
     }
 }

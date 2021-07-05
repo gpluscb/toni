@@ -360,7 +360,7 @@ public class CharacterCommand implements Command {
             if (hitboxesSize == 0) {
                 hitboxNote = "No hitbox images available";
             } else {
-                String noteWithoutName = String.format("%s/%d (Use %s)", hitboxPage < 0 ? "-" : hitboxPage + 1, hitboxesSize, Constants.FRAME);
+                String noteWithoutName = String.format("%s/%d", hitboxPage < 0 ? "-" : hitboxPage + 1, hitboxesSize);
 
                 if (hitboxPage < 0) hitboxNote = noteWithoutName;
                 else {

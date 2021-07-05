@@ -418,9 +418,7 @@ public class CharacterCommand implements Command {
     public String getDetailedHelp() {
         return "`character <CHARACTER NAME...> [MOVE NAME...]`\n" +
                 "Looks up the moves of a character on [ultimateframedata.com](https://ultimateframedata.com).\n" +
-                String.format("Use the %s/%s reactions to cycle through move categories%n", Constants.ARROW_DOUBLE_BACKWARD, Constants.ARROW_DOUBLE_FORWARD) +
-                String.format("Use the %s/%s reactions to cycle through moves within one category%n", Constants.ARROW_BACKWARD, Constants.ARROW_FORWARD) +
-                String.format("If one move has multiple hitbox images, use the %s reaction to cycle through them.%n", Constants.FRAME) +
+                "Use the drop-down menus to select the move section, move, and hitbox image.\n" +
                 "Aliases: `character`, `char`, `ufd`, `move`, `moves`, `hitboxes`, `hitbox`";
     }
 
@@ -633,7 +631,7 @@ public class CharacterCommand implements Command {
                 EmbedBuilder embed = new EmbedBuilder(template);
 
                 if (displayCouldNotFindMove) {
-                    embed.appendDescription("*I could not find the move you searched for. Use the reactions to navigate through them manually.*\n");
+                    embed.appendDescription("*I could not find the move you searched for. Use the drop-down menus to navigate through them manually.*\n");
                     displayCouldNotFindMove = false;
                 }
 

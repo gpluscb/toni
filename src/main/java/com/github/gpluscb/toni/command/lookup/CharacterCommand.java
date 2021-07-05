@@ -478,11 +478,16 @@ public class CharacterCommand implements Command {
         }
 
         private synchronized void init(@Nonnull MessageAction action) {
-            action.setActionRows(
-                    ActionRow.of(SelectionMenu.create(sectionMenuId).addOptions(currentSectionOptions()).build()),
-                    ActionRow.of(SelectionMenu.create(moveMenuId).addOptions(currentMoveOptions()).build()),
-                    ActionRow.of(SelectionMenu.create(hitboxMenuId).addOptions(currentHitboxOptions()).build())
-            ).queue(this::awaitEvents);
+            List<ActionRow> actionRows = new ArrayList<>(3);
+
+            actionRows.add(ActionRow.of(SelectionMenu.create(sectionMenuId).addOptions(currentSectionOptions()).build()));
+            actionRows.add(ActionRow.of(SelectionMenu.create(moveMenuId).addOptions(currentMoveOptions()).build()));
+
+            List<SelectOption> hitboxOptions = currentHitboxOptions();
+            if (!hitboxOptions.isEmpty())
+                actionRows.add(ActionRow.of(SelectionMenu.create(hitboxMenuId).addOptions(currentHitboxOptions()).build()));
+
+            action.setActionRows(actionRows).queue(this::awaitEvents);
         }
 
         private synchronized void awaitEvents(@Nonnull Message message) {

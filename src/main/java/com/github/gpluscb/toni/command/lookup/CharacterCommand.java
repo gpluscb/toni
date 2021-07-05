@@ -9,18 +9,18 @@ import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageEmbed;
-import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
+import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.events.interaction.SelectionMenuEvent;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
+import net.dv8tion.jda.api.interactions.components.selections.SelectionMenu;
+import net.dv8tion.jda.api.requests.restaction.MessageAction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class CharacterCommand implements Command {
     private static final Logger log = LogManager.getLogger(CharacterCommand.class);
@@ -236,6 +236,7 @@ public class CharacterCommand implements Command {
         User author = ctx.getAuthor();
         Member member = ctx.getEvent().getMember();
 
+        /*
         MovesEmbedPaginator pages = new MovesEmbedPaginator(EmbedUtil.getPreparedUFD(member, author).build(), data, startMove, startMoveRequested);
         ReactionActionMenu menu = new ReactionActionMenu.Builder()
                 .setEventWaiter(waiter)
@@ -248,25 +249,16 @@ public class CharacterCommand implements Command {
                 .setStart(pages.getCurrent())
                 .build();
 
-        SelectionActionMenu.Builder sectionSelectionMenuBuilder = new SelectionActionMenu.Builder()
-                .setEventWaiter(waiter)
-                .addUsers(author.getIdLong());
+        menu.displayReplying(ctx.getMessage());*/
 
-        List<CharacterData.MoveSection> sections = data.getMoveSections();
-        for (int i = 0; i < sections.size(); i++) {
-            int i_ = i; // I love Java!
-            sectionSelectionMenuBuilder.registerOption(
-                    SelectOption.of(sections.get(i).getSectionName(), String.valueOf(i)),
-                    e -> pages.onSectionSelect(i_)
-            );
-        }
-
-        sectionSelectionMenuBuilder.registerOption(
-                SelectOption.of("Misc", "-1"),
-                e -> pages.onSectionSelect(-1)
+        new CustomSelectionActionMenu(
+                EmbedUtil.getPreparedUFD(member, author).build(),
+                author.getIdLong(),
+                data,
+                ctx.getMessage(),
+                startMove,
+                startMoveRequested
         );
-
-        menu.displayReplying(ctx.getMessage());
     }
 
     /**
@@ -430,7 +422,226 @@ public class CharacterCommand implements Command {
                 "Aliases: `character`, `char`, `ufd`, `move`, `moves`, `hitboxes`, `hitbox`";
     }
 
-    private class MovesEmbedPaginator {
+    private class CustomSelectionActionMenu {
+        private static final String sectionMenuId = "section";
+        private static final String moveMenuId = "move";
+        private static final String hitboxMenuId = "hitbox";
+
+        @Nonnull
+        private final MessageEmbed template;
+
+        private final long user;
+        @Nullable
+        private Long messageId;
+
+        @Nonnull
+        private final CharacterData data;
+
+        private int sectionPage;
+        private int movePage;
+        private int hitboxPage;
+
+        private boolean displayCouldNotFindMove;
+
+        public CustomSelectionActionMenu(@Nonnull MessageEmbed template, long user, @Nonnull CharacterData data, @Nonnull Message reference, @Nullable PairNonnull<Integer, Integer> startMove, boolean startMoveRequested) {
+            this.user = user;
+            this.template = template;
+            messageId = null;
+            this.data = data;
+
+            sectionPage = 0;
+            movePage = 0;
+            hitboxPage = 0;
+
+            displayCouldNotFindMove = startMoveRequested && startMove == null;
+
+            if (startMove != null) {
+                sectionPage = startMove.getT();
+                movePage = startMove.getU();
+            }
+
+            boolean hasPerms = true;
+            MessageChannel channel = reference.getChannel();
+            if (channel instanceof TextChannel) {
+                TextChannel textChannel = (TextChannel) channel;
+                hasPerms = textChannel.getGuild().getSelfMember().hasPermission(textChannel, Permission.MESSAGE_HISTORY);
+            }
+
+            Message start = getCurrent();
+
+            if (hasPerms)
+                init(channel.sendMessage(start).referenceById(reference.getIdLong()));
+            else
+                init(channel.sendMessage(start));
+        }
+
+        private synchronized void init(@Nonnull MessageAction action) {
+            action.setActionRow(
+                    SelectionMenu.create(sectionMenuId).addOptions(currentSectionOptions()).build(),
+                    SelectionMenu.create(moveMenuId).addOptions(currentMoveOptions()).build(),
+                    SelectionMenu.create(hitboxMenuId).addOptions(currentHitboxOptions()).build()
+            ).queue(this::awaitEvents);
+        }
+
+        private synchronized void awaitEvents(@Nonnull Message message) {
+            messageId = message.getIdLong();
+            waiter.waitForEvent(SelectionMenuEvent.class,
+                    this::checkSelection,
+                    this::handleSelection,
+                    20, TimeUnit.MINUTES,
+                    FailLogger.logFail(this::timeout) // This might swallow exceptions otherwise
+            );
+        }
+
+        private boolean checkSelection(@Nonnull SelectionMenuEvent e) {
+            String id = e.getComponentId();
+            return messageId != null // Should never be null here but still
+                    && e.getMessageIdLong() == messageId
+                    && e.getUser().getIdLong() == user
+                    && (id.equals(sectionMenuId)
+                    || id.equals(moveMenuId)
+                    || id.equals(hitboxMenuId));
+        }
+
+        private void handleSelection(@Nonnull SelectionMenuEvent e) {
+            String id = e.getComponentId();
+            String value = e.getValues().get(0); // We require exactly one selection
+
+            try {
+                int valueInt = Integer.parseInt(value);
+
+                switch (id) {
+                    case sectionMenuId:
+                        sectionPage = valueInt;
+                        movePage = sectionPage == -1 ? -1 : 0;
+                        hitboxPage = 0;
+                        break;
+
+                    case moveMenuId:
+                        movePage = valueInt;
+                        hitboxPage = 0;
+                        break;
+
+                    case hitboxMenuId:
+                        hitboxPage = valueInt;
+                        break;
+
+                    default:
+                        log.error("Unknown selection menu id: {}", id);
+                        // We know because of the check that messageId is not null here
+                        //noinspection ConstantConditions
+                        e.getChannel().editMessageById(messageId, "This is a bug! Sorry, I just got very unexpected Data. I've told my dev about it, but you can give them some context too.")
+                                .override(true)
+                                .queue();
+                        return;
+                }
+
+                Message current = getCurrent();
+                // We know because of the check that messageId is not null here
+                //noinspection ConstantConditions
+                init(e.getChannel().editMessageById(messageId, current).setActionRows());
+            } catch (NumberFormatException ex) {
+                log.error("Non-Integer component value: {}", value);
+                // We know because of the check that messageId is not null here
+                //noinspection ConstantConditions
+                e.getChannel().editMessageById(messageId, "This is a bug! Sorry, I just got very unexpected Data. I've told my dev about it, but you can give them some context too.")
+                        .override(true)
+                        .queue();
+            }
+        }
+
+        private void timeout() {
+            // TODO
+        }
+
+        @Nonnull
+        private synchronized List<SelectOption> currentSectionOptions() {
+            List<CharacterData.MoveSection> sections = data.getMoveSections();
+            List<SelectOption> ret = new ArrayList<>(sections.size() + 1);
+
+            for (int i = 0; i < sections.size(); i++) {
+                CharacterData.MoveSection section = sections.get(i);
+                ret.add(SelectOption.of(section.getSectionName(), String.valueOf(i)).withDefault(i == sectionPage));
+            }
+
+            ret.add(SelectOption.of("Misc", "-1").withDefault(-1 == sectionPage));
+            return ret;
+        }
+
+        @Nonnull
+        private synchronized List<SelectOption> currentMoveOptions() {
+            List<CharacterData.MoveData> moves = getCurrentMoves();
+            List<SelectOption> ret = new ArrayList<>(moves.size());
+
+            for (int i = 0; i < moves.size(); i++) {
+                String moveName = moves.get(i).getMoveName();
+                ret.add(
+                        SelectOption.of(moveName == null ? "Unnamed Move (this is probably a bug)" : moveName, String.valueOf(i))
+                                .withDefault(i == movePage)
+                );
+            }
+
+            if (sectionPage == -1) ret.add(SelectOption.of("Misc Data", "-1").withDefault(-1 == movePage));
+
+            return ret;
+        }
+
+        @Nonnull
+        private synchronized List<SelectOption> currentHitboxOptions() {
+            if (movePage == -1) return Collections.emptyList(); // Misc Page
+
+            List<CharacterData.HitboxData> hitboxes = getCurrentMoves().get(movePage).getHitboxes();
+            List<SelectOption> ret = new ArrayList<>(hitboxes.size() + 1);
+            for (int i = 0; i < hitboxes.size(); i++) {
+                String hitboxName = hitboxes.get(i).getName();
+                ret.add(
+                        SelectOption.of(hitboxName == null ? String.format("Hitbox %d", i) : hitboxName, String.valueOf(i))
+                                .withDefault(i == hitboxPage)
+                );
+            }
+
+            ret.add(SelectOption.of("Hide", "-1").withDefault(-1 == hitboxPage));
+
+            return ret;
+        }
+
+        @Nonnull
+        private synchronized OneOfTwo<CharacterData.MoveSection, CharacterData.MiscData> getCurrentSection() {
+            return sectionPage == -1 ?
+                    OneOfTwo.ofU(data.getMiscData())
+                    : OneOfTwo.ofT(data.getMoveSections().get(sectionPage));
+        }
+
+        @Nonnull
+        private synchronized List<CharacterData.MoveData> getCurrentMoves() {
+            return getCurrentSection().map(CharacterData.MoveSection::getMoves, CharacterData.MiscData::getMoves);
+        }
+
+        @Nonnull
+        public synchronized Message getCurrent() {
+            try {
+                EmbedBuilder embed = new EmbedBuilder(template);
+
+                if (displayCouldNotFindMove) {
+                    embed.appendDescription("*I could not find the move you searched for. Use the reactions to navigate through them manually.*\n");
+                    displayCouldNotFindMove = false;
+                }
+
+                List<CharacterData.MoveData> moves = getCurrentMoves();
+                boolean isMiscPage = movePage == -1;
+                PairNonnull<Integer, CharacterData.MoveData> hitboxPageAndMove = isMiscPage ? null : new PairNonnull<>(hitboxPage, moves.get(movePage));
+
+                applyMove(embed, data, getCurrentSection(), hitboxPageAndMove);
+
+                return new MessageBuilder().setEmbeds(embed.build()).build();
+            } catch (Exception e) {
+                log.catching(e);
+                return new MessageBuilder("There was a severe unexpected problem with displaying the move data, I don't really know how that happened. I'll tell  my dev, you can go shoot them a message about this too if you want to.").build();
+            }
+        }
+    }
+
+/*    private class MovesEmbedPaginator {
         @Nonnull
         private final MessageEmbed template;
         @Nonnull
@@ -563,5 +774,5 @@ public class CharacterCommand implements Command {
                 return new MessageBuilder("There was a severe unexpected problem with displaying the move data, I don't really know how that happened. I'll tell  my dev, you can go shoot them a message about this too if you want to.").build();
             }
         }
-    }
+    }*/
 }

@@ -231,7 +231,7 @@ public class CharacterData {
         @Nullable
         private final String gravity;
         @Nullable
-        private final String valkSpeed;
+        private final String walkSpeed;
         @Nullable
         private final String runSpeed;
         @Nullable
@@ -253,10 +253,10 @@ public class CharacterData {
         @Nullable
         private final String jumpSquat;
 
-        public StatsData(@Nullable String weight, @Nullable String gravity, @Nullable String valkSpeed, @Nullable String runSpeed, @Nullable String initialDash, @Nullable String airSpeed, @Nullable String totalAirAcceleration, @Nullable String shFhShffFhffFrames, @Nullable String fallSpeedFastFallSpeed, @Nonnull List<String> oosOptions, @Nullable String shieldGrab, @Nullable String shieldDrop, @Nullable String jumpSquat) {
+        public StatsData(@Nullable String weight, @Nullable String gravity, @Nullable String walkSpeed, @Nullable String runSpeed, @Nullable String initialDash, @Nullable String airSpeed, @Nullable String totalAirAcceleration, @Nullable String shFhShffFhffFrames, @Nullable String fallSpeedFastFallSpeed, @Nonnull List<String> oosOptions, @Nullable String shieldGrab, @Nullable String shieldDrop, @Nullable String jumpSquat) {
             this.weight = weight;
             this.gravity = gravity;
-            this.valkSpeed = valkSpeed;
+            this.walkSpeed = walkSpeed;
             this.runSpeed = runSpeed;
             this.initialDash = initialDash;
             this.airSpeed = airSpeed;
@@ -281,7 +281,7 @@ public class CharacterData {
 
         @Nullable
         public String getWalkSpeed() {
-            return valkSpeed;
+            return walkSpeed;
         }
 
         @Nullable

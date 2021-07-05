@@ -584,11 +584,12 @@ public class CharacterCommand implements Command {
             List<CharacterData.HitboxData> hitboxes = getCurrentMoves().get(movePage).getHitboxes();
             if (hitboxes.isEmpty()) return Collections.emptyList();
 
-            List<SelectOption> ret = new ArrayList<>(hitboxes.size() + 1);
+            int hitboxSize = hitboxes.size();
+            List<SelectOption> ret = new ArrayList<>(hitboxSize + 1);
             for (int i = 0; i < hitboxes.size(); i++) {
                 String hitboxName = hitboxes.get(i).getName();
                 ret.add(
-                        SelectOption.of(hitboxName == null ? String.format("Hitbox %d", i + 1) : StringUtils.abbreviate(hitboxName, 25), String.valueOf(i))
+                        SelectOption.of(hitboxName == null ? String.format("Hitbox %d/%d", i + 1, hitboxSize) : StringUtils.abbreviate(hitboxName, 25), String.valueOf(i))
                                 .withDefault(i == hitboxPage)
                 );
             }

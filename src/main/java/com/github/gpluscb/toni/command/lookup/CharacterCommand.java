@@ -7,6 +7,7 @@ import com.github.gpluscb.toni.ultimateframedata.UltimateframedataClient;
 import com.github.gpluscb.toni.util.*;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
@@ -479,7 +480,7 @@ public class CharacterCommand implements Command {
                     this::checkSelection,
                     this::handleSelection,
                     20, TimeUnit.MINUTES,
-                    FailLogger.logFail(this::timeout) // This might swallow exceptions otherwise
+                    FailLogger.logFail(() -> timeout(message.getJDA(), message.getChannel().getIdLong())) // This might swallow exceptions otherwise
             );
         }
 
@@ -541,8 +542,17 @@ public class CharacterCommand implements Command {
             }
         }
 
-        private void timeout() {
-            // TODO
+        private void timeout(@Nonnull JDA jda, long messageChannel) {
+            MessageChannel channel = jda.getTextChannelById(messageChannel);
+            if (channel == null) channel = jda.getPrivateChannelById(messageChannel);
+            if (channel == null) {
+                log.warn("MessageChannel for timeoutAction not in cache for timeoutAction");
+                return;
+            }
+
+            // We know it is set before waiter waits
+            //noinspection ConstantConditions
+            channel.retrieveMessageById(messageId).flatMap(m -> m.editMessage(m).setActionRows()).queue();
         }
 
         @Nonnull

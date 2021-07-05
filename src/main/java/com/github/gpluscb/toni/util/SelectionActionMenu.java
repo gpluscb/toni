@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 /**
  * We override the validation to only allow specific users in users.
  */
-public class SelectionActionMenu extends Menu {
+public class SelectionActionMenu extends Menu { // TODO: Allow for multiple selections somehow?? Make it NestedSelectionActionMenu
     private static final Logger log = LogManager.getLogger(SelectionActionMenu.class);
 
     @Nonnull

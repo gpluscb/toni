@@ -14,6 +14,7 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
+import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -40,13 +41,10 @@ public class CharacterCommand implements Command {
     @Override
     public void execute(@Nonnull CommandContext ctx) {
         int argNum = ctx.getArgNum();
-        if (argNum == 0) {
-            ctx.reply("Too few arguments. I can't get you character data if I don't know what you're searching for. Use `help character` for help.").queue();
-            return;
-        }
-
         // T: id, U: response in case Id is not found
-        OneOfTwo<Pair<Short, String>, String> idAndMoveNameOrResponse = findCharacterIdAndMoveNameOrResponse(ctx);
+        OneOfTwo<Pair<Short, String>, String> idAndMoveNameOrResponse = argNum == 0 ?
+                OneOfTwo.ofT(new Pair<>((short) 20, null))
+                : findCharacterIdAndMoveNameOrResponse(ctx);
 
         if (idAndMoveNameOrResponse.isU()) {
             // We know because of the isU
@@ -250,6 +248,24 @@ public class CharacterCommand implements Command {
                 .setStart(pages.getCurrent())
                 .build();
 
+        SelectionActionMenu.Builder sectionSelectionMenuBuilder = new SelectionActionMenu.Builder()
+                .setEventWaiter(waiter)
+                .addUsers(author.getIdLong());
+
+        List<CharacterData.MoveSection> sections = data.getMoveSections();
+        for (int i = 0; i < sections.size(); i++) {
+            int i_ = i; // I love Java!
+            sectionSelectionMenuBuilder.registerOption(
+                    SelectOption.of(sections.get(i).getSectionName(), String.valueOf(i)),
+                    e -> pages.onSectionSelect(i_)
+            );
+        }
+
+        sectionSelectionMenuBuilder.registerOption(
+                SelectOption.of("Misc", "-1"),
+                e -> pages.onSectionSelect(-1)
+        );
+
         menu.displayReplying(ctx.getMessage());
     }
 
@@ -442,6 +458,27 @@ public class CharacterCommand implements Command {
                 sectionPage = startMove.getT();
                 movePage = startMove.getU();
             }
+        }
+
+        @Nonnull
+        public synchronized Message onSectionSelect(int sectionPage) {
+            this.sectionPage = sectionPage;
+            movePage = sectionPage == -1 ? -1 : 0;
+            hitboxPage = 0;
+            return getCurrent();
+        }
+
+        @Nonnull
+        public synchronized Message onMoveSelect(int movePage) {
+            this.movePage = movePage;
+            hitboxPage = 0;
+            return getCurrent();
+        }
+
+        @Nonnull
+        public synchronized Message onHitboxSelect(int hitboxPage) {
+            this.hitboxPage = hitboxPage;
+            return getCurrent();
         }
 
         @Nonnull

@@ -598,7 +598,7 @@ public class CharacterCommand implements Command {
             for (int i = 0; i < hitboxes.size(); i++) {
                 String hitboxName = hitboxes.get(i).getName();
                 ret.add(
-                        SelectOption.of(hitboxName == null ? String.format("Hitbox %d", i) : StringUtils.abbreviate(hitboxName, 25), String.valueOf(i))
+                        SelectOption.of(hitboxName == null ? String.format("Hitbox %d", i + 1) : StringUtils.abbreviate(hitboxName, 25), String.valueOf(i))
                                 .withDefault(i == hitboxPage)
                 );
             }

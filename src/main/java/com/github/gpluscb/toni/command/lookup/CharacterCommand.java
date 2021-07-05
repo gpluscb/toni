@@ -599,6 +599,8 @@ public class CharacterCommand implements Command {
             if (movePage == -1) return Collections.emptyList(); // Misc Page
 
             List<CharacterData.HitboxData> hitboxes = getCurrentMoves().get(movePage).getHitboxes();
+            if (hitboxes.isEmpty()) return Collections.emptyList();
+
             List<SelectOption> ret = new ArrayList<>(hitboxes.size() + 1);
             for (int i = 0; i < hitboxes.size(); i++) {
                 String hitboxName = hitboxes.get(i).getName();

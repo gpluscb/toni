@@ -11,6 +11,7 @@ import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.interaction.SelectionMenuEvent;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
 import net.dv8tion.jda.api.interactions.components.selections.SelectionMenu;
 import net.dv8tion.jda.api.requests.restaction.MessageAction;
@@ -476,10 +477,10 @@ public class CharacterCommand implements Command {
         }
 
         private synchronized void init(@Nonnull MessageAction action) {
-            action.setActionRow(
-                    SelectionMenu.create(sectionMenuId).addOptions(currentSectionOptions()).build(),
-                    SelectionMenu.create(moveMenuId).addOptions(currentMoveOptions()).build(),
-                    SelectionMenu.create(hitboxMenuId).addOptions(currentHitboxOptions()).build()
+            action.setActionRows(
+                    ActionRow.of(SelectionMenu.create(sectionMenuId).addOptions(currentSectionOptions()).build()),
+                    ActionRow.of(SelectionMenu.create(moveMenuId).addOptions(currentMoveOptions()).build()),
+                    ActionRow.of(SelectionMenu.create(hitboxMenuId).addOptions(currentHitboxOptions()).build())
             ).queue(this::awaitEvents);
         }
 
@@ -504,6 +505,7 @@ public class CharacterCommand implements Command {
         }
 
         private void handleSelection(@Nonnull SelectionMenuEvent e) {
+            e.deferEdit().queue();
             String id = e.getComponentId();
             String value = e.getValues().get(0); // We require exactly one selection
 

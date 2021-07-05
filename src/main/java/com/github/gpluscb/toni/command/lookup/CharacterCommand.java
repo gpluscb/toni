@@ -15,6 +15,7 @@ import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
 import net.dv8tion.jda.api.interactions.components.selections.SelectionMenu;
 import net.dv8tion.jda.api.requests.restaction.MessageAction;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -563,7 +564,7 @@ public class CharacterCommand implements Command {
 
             for (int i = 0; i < sections.size(); i++) {
                 CharacterData.MoveSection section = sections.get(i);
-                ret.add(SelectOption.of(section.getSectionName(), String.valueOf(i)).withDefault(i == sectionPage));
+                ret.add(SelectOption.of(StringUtils.abbreviate(section.getSectionName(), 25), String.valueOf(i)).withDefault(i == sectionPage));
             }
 
             ret.add(SelectOption.of("Misc", "-1").withDefault(-1 == sectionPage));
@@ -578,7 +579,7 @@ public class CharacterCommand implements Command {
             for (int i = 0; i < moves.size(); i++) {
                 String moveName = moves.get(i).getMoveName();
                 ret.add(
-                        SelectOption.of(moveName == null ? "Unnamed Move (this is probably a bug)" : moveName, String.valueOf(i))
+                        SelectOption.of(moveName == null ? "Unknown Move" : StringUtils.abbreviate(moveName, 25), String.valueOf(i))
                                 .withDefault(i == movePage)
                 );
             }
@@ -597,7 +598,7 @@ public class CharacterCommand implements Command {
             for (int i = 0; i < hitboxes.size(); i++) {
                 String hitboxName = hitboxes.get(i).getName();
                 ret.add(
-                        SelectOption.of(hitboxName == null ? String.format("Hitbox %d", i) : hitboxName, String.valueOf(i))
+                        SelectOption.of(hitboxName == null ? String.format("Hitbox %d", i) : StringUtils.abbreviate(hitboxName, 25), String.valueOf(i))
                                 .withDefault(i == hitboxPage)
                 );
             }

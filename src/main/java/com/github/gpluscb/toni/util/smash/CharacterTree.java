@@ -1,5 +1,6 @@
-package com.github.gpluscb.toni.util;
+package com.github.gpluscb.toni.util.smash;
 
+import com.github.gpluscb.toni.util.OneOfTwo;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -7,16 +8,15 @@ import com.google.gson.JsonObject;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class CharacterTree {
     @Nonnull
-    private final CharacterTree.CollectionType type;
+    private final CollectionType type;
 
     @Nonnull
     private final List<OneOfTwo<Character, CharacterTree>> characters;
 
-    private CharacterTree(@Nonnull CharacterTree.CollectionType type, @Nonnull List<OneOfTwo<Character, CharacterTree>> characters) {
+    private CharacterTree(@Nonnull CollectionType type, @Nonnull List<OneOfTwo<Character, CharacterTree>> characters) {
         this.type = type;
         this.characters = characters;
     }
@@ -26,11 +26,11 @@ public class CharacterTree {
      */
     @Nonnull
     public static CharacterTree fromJson(@Nonnull JsonArray json) {
-        return fromJson(CharacterTree.CollectionType.ROOT, json);
+        return fromJson(CollectionType.ROOT, json);
     }
 
     @Nonnull
-    private static CharacterTree fromJson(@Nonnull CharacterTree.CollectionType collectionType, @Nonnull JsonArray json) {
+    private static CharacterTree fromJson(@Nonnull CollectionType collectionType, @Nonnull JsonArray json) {
         List<OneOfTwo<Character, CharacterTree>> characters = new ArrayList<>();
 
         try {
@@ -45,19 +45,19 @@ public class CharacterTree {
                         characters.add(OneOfTwo.ofT(character));
                         break;
                     case "miis":
-                        CharacterTree miisTree = CharacterTree.fromJson(CharacterTree.CollectionType.MIIS, characterObject.get("characters").getAsJsonArray());
+                        CharacterTree miisTree = CharacterTree.fromJson(CollectionType.MIIS, characterObject.get("characters").getAsJsonArray());
                         characters.add(OneOfTwo.ofU(miisTree));
                         break;
                     case "echos":
-                        CharacterTree echosTree = CharacterTree.fromJson(CharacterTree.CollectionType.ECHOS, characterObject.get("characters").getAsJsonArray());
+                        CharacterTree echosTree = CharacterTree.fromJson(CollectionType.ECHOS, characterObject.get("characters").getAsJsonArray());
                         characters.add(OneOfTwo.ofU(echosTree));
                         break;
                     case "sheik/zelda":
-                        CharacterTree sheikZeldaTree = CharacterTree.fromJson(CharacterTree.CollectionType.SHEIK_ZELDA, characterObject.get("characters").getAsJsonArray());
+                        CharacterTree sheikZeldaTree = CharacterTree.fromJson(CollectionType.SHEIK_ZELDA, characterObject.get("characters").getAsJsonArray());
                         characters.add(OneOfTwo.ofU(sheikZeldaTree));
                         break;
                     case "zss/samus":
-                        CharacterTree zssSamusTree = CharacterTree.fromJson(CharacterTree.CollectionType.ZSS_SAMUS, characterObject.get("characters").getAsJsonArray());
+                        CharacterTree zssSamusTree = CharacterTree.fromJson(CollectionType.ZSS_SAMUS, characterObject.get("characters").getAsJsonArray());
                         characters.add(OneOfTwo.ofU(zssSamusTree));
                         break;
                     default:
@@ -105,10 +105,10 @@ public class CharacterTree {
                 if (game == null || character.getGames().contains(game))
                     allCharacters.add(Collections.singletonList(character));
             }).onU(tree -> {
-                if ((stackEchos && tree.getType() == CharacterTree.CollectionType.ECHOS)
-                        || (stackMiis && tree.getType() == CharacterTree.CollectionType.MIIS)
-                        || (stackSheikZelda && tree.getType() == CharacterTree.CollectionType.SHEIK_ZELDA)
-                        || (stackZssSamus && tree.getType() == CharacterTree.CollectionType.ZSS_SAMUS)) {
+                if ((stackEchos && tree.getType() == CollectionType.ECHOS)
+                        || (stackMiis && tree.getType() == CollectionType.MIIS)
+                        || (stackSheikZelda && tree.getType() == CollectionType.SHEIK_ZELDA)
+                        || (stackZssSamus && tree.getType() == CollectionType.ZSS_SAMUS)) {
                     // Stacking
                     List<Character> stacked = tree.getAllCharacters(game);
                     if (!stacked.isEmpty()) allCharacters.add(stacked);
@@ -124,7 +124,7 @@ public class CharacterTree {
     }
 
     @Nonnull
-    public CharacterTree.CollectionType getType() {
+    public CollectionType getType() {
         return type;
     }
 
@@ -161,84 +161,6 @@ public class CharacterTree {
                 if (Arrays.stream(game.gameNames).anyMatch(name::equalsIgnoreCase)) return game;
 
             return null;
-        }
-    }
-
-    public static class Character {
-        @Nullable
-        private final Short id;
-        @Nonnull
-        private final String name;
-        @Nonnull
-        private final List<String> altNames;
-        private final long emoteId;
-        private final long guildId;
-        @Nonnull
-        private final Set<Game> games;
-
-        private Character(@Nullable Short id, @Nonnull String name, @Nonnull List<String> altNames, long emoteId, long guildId, @Nonnull Set<Game> games) {
-            this.id = id;
-            this.name = name;
-            this.altNames = altNames;
-            this.emoteId = emoteId;
-            this.guildId = guildId;
-            this.games = games;
-        }
-
-        /**
-         * @throws IllegalArgumentException if the json is not as expected
-         */
-        @Nonnull
-        public static Character fromJson(@Nonnull JsonObject json) {
-            try {
-                JsonElement idJson = json.get("id");
-                Short id = idJson.isJsonNull() ? null : idJson.getAsShort();
-                String name = json.getAsJsonPrimitive("name").getAsString();
-                List<String> altNames = new ArrayList<>();
-                for (JsonElement element : json.getAsJsonArray("alt_names")) altNames.add(element.getAsString());
-                long emoteId = json.getAsJsonPrimitive("emote_id").getAsLong();
-                long guildId = json.getAsJsonPrimitive("guild").getAsLong();
-                Set<Game> games = new HashSet<>();
-                for (JsonElement element : json.getAsJsonArray("games")) {
-                    String game = element.getAsString();
-                    games.add(Game.getForName(game));
-                }
-
-                return new Character(id, name, altNames, emoteId, guildId, games);
-            } catch (Exception e) {
-                throw new IllegalArgumentException("Exception while applying json", e);
-            }
-        }
-
-        /**
-         * null for poketrainer
-         */
-        @Nullable
-        public Short getId() {
-            return id;
-        }
-
-        @Nonnull
-        public String getName() {
-            return name;
-        }
-
-        @Nonnull
-        public List<String> getAltNames() {
-            return altNames;
-        }
-
-        public long getEmoteId() {
-            return emoteId;
-        }
-
-        public long getGuildId() {
-            return guildId;
-        }
-
-        @Nonnull
-        public Set<Game> getGames() {
-            return games;
         }
     }
 }

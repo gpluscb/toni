@@ -34,7 +34,7 @@ import com.github.gpluscb.toni.statsposting.dbots.StatsResponse;
 import com.github.gpluscb.toni.statsposting.topgg.TopggClient;
 import com.github.gpluscb.toni.statsposting.topgg.TopggClientMock;
 import com.github.gpluscb.toni.ultimateframedata.UltimateframedataClient;
-import com.github.gpluscb.toni.util.CharacterTree;
+import com.github.gpluscb.toni.util.smash.CharacterTree;
 import com.github.gpluscb.toni.util.DMChoiceWaiter;
 import com.github.gpluscb.toni.util.DiscordAppenderImpl;
 import com.google.gson.Gson;

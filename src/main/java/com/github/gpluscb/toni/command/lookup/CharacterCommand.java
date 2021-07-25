@@ -5,6 +5,8 @@ import com.github.gpluscb.toni.command.CommandContext;
 import com.github.gpluscb.toni.ultimateframedata.CharacterData;
 import com.github.gpluscb.toni.ultimateframedata.UltimateframedataClient;
 import com.github.gpluscb.toni.util.*;
+import com.github.gpluscb.toni.util.smash.Character;
+import com.github.gpluscb.toni.util.smash.CharacterTree;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
@@ -33,7 +35,7 @@ public class CharacterCommand implements Command {
     @Nonnull
     private final EventWaiter waiter;
     @Nonnull
-    private final List<CharacterTree.Character> characters;
+    private final List<Character> characters;
 
     public CharacterCommand(@Nonnull UltimateframedataClient client, @Nonnull EventWaiter waiter, @Nonnull CharacterTree characters) {
         this.client = client;

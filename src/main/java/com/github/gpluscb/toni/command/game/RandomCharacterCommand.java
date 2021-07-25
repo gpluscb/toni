@@ -2,7 +2,8 @@ package com.github.gpluscb.toni.command.game;
 
 import com.github.gpluscb.toni.command.Command;
 import com.github.gpluscb.toni.command.CommandContext;
-import com.github.gpluscb.toni.util.CharacterTree;
+import com.github.gpluscb.toni.util.smash.Character;
+import com.github.gpluscb.toni.util.smash.CharacterTree;
 import com.github.gpluscb.toni.util.MiscUtil;
 
 import javax.annotation.Nonnull;
@@ -113,15 +114,15 @@ public class RandomCharacterCommand implements Command {
                 break;
         }
 
-        List<List<CharacterTree.Character>> possibleCharacters = characterTree.getAllCharacters(game, stackEchos, stackMiis, stackSheikZelda, stackZssSamus);
+        List<List<Character>> possibleCharacters = characterTree.getAllCharacters(game, stackEchos, stackMiis, stackSheikZelda, stackZssSamus);
         ThreadLocalRandom rng = ThreadLocalRandom.current();
         int rngIndex = rng.nextInt(possibleCharacters.size());
-        List<CharacterTree.Character> selectedCharacters = possibleCharacters.get(rngIndex);
+        List<Character> selectedCharacters = possibleCharacters.get(rngIndex);
 
         sendResponse(ctx, selectedCharacters);
     }
 
-    private void sendResponse(@Nonnull CommandContext ctx, @Nonnull List<CharacterTree.Character> selectedCharacters) {
+    private void sendResponse(@Nonnull CommandContext ctx, @Nonnull List<Character> selectedCharacters) {
         String emotes = selectedCharacters.stream()
                 .map(character -> String.format("%s(%s)", MiscUtil.mentionEmote(character.getEmoteId()), character.getName()))
                 .collect(Collectors.joining("/"));

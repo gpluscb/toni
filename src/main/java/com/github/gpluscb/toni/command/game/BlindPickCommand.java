@@ -2,9 +2,9 @@ package com.github.gpluscb.toni.command.game;
 
 import com.github.gpluscb.toni.command.Command;
 import com.github.gpluscb.toni.command.CommandContext;
-import com.github.gpluscb.toni.util.CharacterTree;
+import com.github.gpluscb.toni.util.smash.Character;
+import com.github.gpluscb.toni.util.smash.CharacterTree;
 import com.github.gpluscb.toni.util.DMChoiceWaiter;
-import com.github.gpluscb.toni.util.FailLogger;
 import com.github.gpluscb.toni.util.MiscUtil;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
@@ -23,7 +23,7 @@ public class BlindPickCommand implements Command {
     private final DMChoiceWaiter waiter;
 
     @Nonnull
-    private final List<CharacterTree.Character> characters;
+    private final List<Character> characters;
 
     @Nonnull
     private final List<Long> usersDoingBlindPick;
@@ -85,14 +85,14 @@ public class BlindPickCommand implements Command {
             Message message = e.getMessage();
             String choice = message.getContentRaw();
 
-            CharacterTree.Character character = characters.stream().filter(c -> c.getAltNames().contains(choice.toLowerCase())).findAny().orElse(null);
+            Character character = characters.stream().filter(c -> c.getAltNames().contains(choice.toLowerCase())).findAny().orElse(null);
             if (character == null) message.reply("I don't know that character.").queue();
             else message.reply("Accepted!").queue();
 
             return Optional.ofNullable(character);
         }, map -> {
             String choices = users.stream().map(u -> {
-                CharacterTree.Character c = map.get(u);
+                Character c = map.get(u);
                 return String.format("%s: %s(%s)", MiscUtil.mentionUser(u), MiscUtil.mentionEmote(c.getEmoteId()), c.getName());
             }).collect(Collectors.joining("\n"));
 

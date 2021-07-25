@@ -34,6 +34,10 @@ public class SmashSet {
         gameResults = new ArrayList<>();
         stageBanIdxHistory = new ArrayList<>();
         stageIdxHistory = new ArrayList<>();
+
+        Integer maximumFirstToWhatScore = ruleset.getMaximumFirstToWhatScore();
+        if (maximumFirstToWhatScore != null && firstToWhatScore > maximumFirstToWhatScore)
+            throw new IllegalArgumentException("The DSR variation of the ruleset combined with this stage list does not allow for a set this long");
     }
 
     public enum Player {
@@ -117,7 +121,8 @@ public class SmashSet {
                     }
                 }
 
-                if (stageIdx < 0) throw new IllegalStateException("No stage left after striking, the ruleset validation might be broken");
+                if (stageIdx < 0)
+                    throw new IllegalStateException("No stage left after striking, the ruleset validation might be broken");
                 stageIdxHistory.add(stageIdx);
 
                 invalidate();

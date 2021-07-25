@@ -1,6 +1,8 @@
 package com.github.gpluscb.toni.util.smash;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -14,6 +16,12 @@ public class Ruleset {
     private final List<Stage> counterpicks;
     @Nonnull
     private final DSRMode dsrMode;
+    /**
+     * Depends on the dsr setting, how many games can be played
+     * Null if there is no limit
+     */
+    @Nullable
+    private final Integer maximumFirstToWhatScore;
     private final int stageBans;
     private final int[] starterStrikePattern;
     private final boolean stageBeforeCharacter;
@@ -28,7 +36,31 @@ public class Ruleset {
         this.starterStrikePattern = starterStrikePattern;
         this.stageBeforeCharacter = stageBeforeCharacter;
 
-        // TODO: Validate
+        int stagesSize = starters.size() + counterpicks.size();
+        switch (dsrMode) {
+            case WINNERS_VARIATION:
+                maximumFirstToWhatScore = stagesSize;
+                break;
+            case GAME_RESTRICTED:
+                int maximumBestOf = stagesSize % 2 == 0 ?
+                        stagesSize - 1
+                        : stagesSize;
+                maximumFirstToWhatScore = (maximumBestOf + 1) / 2;
+                break;
+            case STAGE_DISMISSAL_RULE:
+                // TODO: This seems wrong I think
+                maximumFirstToWhatScore = stagesSize;
+                break;
+            default:
+                maximumFirstToWhatScore = null;
+                break;
+        }
+
+        // Validate
+        int startersSize = starters.size();
+        if (startersSize == 0) throw new IllegalArgumentException("There must be at least one starter stage");
+        if (stageBans >= stagesSize) throw new IllegalArgumentException("There must be fewer stage bans than stages");
+        if (Arrays.stream(starterStrikePattern).sum() != startersSize - 1) throw new IllegalArgumentException("The starter strike pattern must leave exactly one stage unstruck");
     }
 
     public long getId() {
@@ -78,12 +110,18 @@ public class Ruleset {
         return stageBeforeCharacter;
     }
 
+    @Nullable
+    public Integer getMaximumFirstToWhatScore() {
+        return maximumFirstToWhatScore;
+    }
+
     /**
      * <a href=https://www.ssbwiki.com/Dave%27s_Stupid_Rule>SSBWiki for DSR</a>
      */
     public enum DSRMode {
         NONE,
         MODIFIED_DSR,
+        GAME_RESTRICTED,
         WINNERS_VARIATION,
         STAGE_DISMISSAL_RULE,
     }

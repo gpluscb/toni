@@ -77,7 +77,7 @@ public class SmashSet {
     }
 
     @Nonnull
-    private <T extends SetState> T switchState(T state) {
+    private <T extends SetState> T switchState(@Nonnull T state) {
         this.state = state;
         return state;
     }

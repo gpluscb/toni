@@ -150,13 +150,13 @@ public class SmashSet {
         @Nullable
         public synchronized OneOfTwo<SetDoubleBlindState, SetInGameState> strikeStages(@Nonnull Set<Integer> stageStrikingIndizes) {
             checkValid();
-            // Sanity checks
+            // Verification checks
             int[] starterStrikePattern = ruleset.getStarterStrikePattern();
             int neededStrikeAmount = starterStrikePattern[stageStrikingIdxHistory.size()];
             if (neededStrikeAmount != stageStrikingIndizes.size())
                 throw new IllegalStateException(String.format("%d strikes were needed, %d given", neededStrikeAmount, stageStrikingIndizes.size()));
             if (stageStrikingIdxHistory.stream().flatMap(Collection::stream).anyMatch(stageStrikingIndizes::contains))
-                throw new IllegalStateException("One stage was already struck");
+                throw new IllegalStateException("A stage in stageStrikingIndizes was already struck");
 
             // Do the strike
             stageStrikingIdxHistory.add(stageStrikingIndizes);

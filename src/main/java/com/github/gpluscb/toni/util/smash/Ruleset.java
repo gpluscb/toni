@@ -25,8 +25,9 @@ public class Ruleset {
     private final int stageBans;
     private final int[] starterStrikePattern;
     private final boolean stageBeforeCharacter;
+    private final boolean blindPickBeforeStage;
 
-    public Ruleset(long id, @Nonnull String name, @Nonnull List<Stage> starters, @Nonnull List<Stage> counterpicks, @Nonnull DSRMode dsrMode, int stageBans, int[] starterStrikePattern, boolean stageBeforeCharacter) {
+    public Ruleset(long id, @Nonnull String name, @Nonnull List<Stage> starters, @Nonnull List<Stage> counterpicks, @Nonnull DSRMode dsrMode, int stageBans, int[] starterStrikePattern, boolean stageBeforeCharacter, boolean blindPickBeforeStage) {
         this.id = id;
         this.name = name;
         this.starters = starters;
@@ -35,6 +36,7 @@ public class Ruleset {
         this.stageBans = stageBans;
         this.starterStrikePattern = starterStrikePattern;
         this.stageBeforeCharacter = stageBeforeCharacter;
+        this.blindPickBeforeStage = blindPickBeforeStage;
 
         int stagesSize = starters.size() + counterpicks.size();
         switch (dsrMode) {
@@ -60,7 +62,8 @@ public class Ruleset {
         int startersSize = starters.size();
         if (startersSize == 0) throw new IllegalArgumentException("There must be at least one starter stage");
         if (stageBans >= stagesSize) throw new IllegalArgumentException("There must be fewer stage bans than stages");
-        if (Arrays.stream(starterStrikePattern).sum() != startersSize - 1) throw new IllegalArgumentException("The starter strike pattern must leave exactly one stage unstruck");
+        if (Arrays.stream(starterStrikePattern).sum() != startersSize - 1)
+            throw new IllegalArgumentException("The starter strike pattern must leave exactly one stage unstruck");
     }
 
     public long getId() {
@@ -106,13 +109,17 @@ public class Ruleset {
         return starterStrikePattern;
     }
 
-    public boolean getStageBeforeCharacter() {
-        return stageBeforeCharacter;
-    }
-
     @Nullable
     public Integer getMaximumFirstToWhatScore() {
         return maximumFirstToWhatScore;
+    }
+
+    public boolean isStageBeforeCharacter() {
+        return stageBeforeCharacter;
+    }
+
+    public boolean isBlindPickBeforeStage() {
+        return blindPickBeforeStage;
     }
 
     /**

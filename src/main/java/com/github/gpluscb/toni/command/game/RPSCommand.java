@@ -78,9 +78,7 @@ public class RPSCommand implements Command {
                     throw new IllegalStateException("Not all results covered");
             }
 
-            // Only null for ephemeral
-            //noinspection ConstantConditions
-            e.getMessage().reply(String.format("It has been decided! %s chose %s, and %s chose %s. That means %s",
+            e.reply(String.format("It has been decided! %s chose %s, and %s chose %s. That means %s",
                     user1Mention, result.getChoiceA().getDisplayName(), user2Mention, result.getChoiceB().getDisplayName(), outcome))
                     .mentionUsers(user1, user2)
                     .queue();

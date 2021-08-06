@@ -36,9 +36,11 @@ import com.github.gpluscb.toni.statsposting.dbots.StatsResponse;
 import com.github.gpluscb.toni.statsposting.topgg.TopggClient;
 import com.github.gpluscb.toni.statsposting.topgg.TopggClientMock;
 import com.github.gpluscb.toni.ultimateframedata.UltimateframedataClient;
+import com.github.gpluscb.toni.util.Rulesets;
 import com.github.gpluscb.toni.util.smash.CharacterTree;
 import com.github.gpluscb.toni.util.DMChoiceWaiter;
 import com.github.gpluscb.toni.util.DiscordAppenderImpl;
+import com.github.gpluscb.toni.util.smash.Ruleset;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
@@ -208,6 +210,22 @@ public class Bot {
             throw e;
         }
 
+        // TODO: Have this in the DB because custom rulesets??
+        log.trace("Loading rulesets");
+        List<Ruleset> rulesets;
+        try {
+            rulesets = loadRulesets(cfg.getRulesetsLocation());
+        } catch (Exception e) {
+            log.error("Exception while loading rulesets - shutting down", e);
+            ggManager.shutdown();
+            shardManager.shutdown();
+            // challongeManager.shutdown();
+            // listener.shutdown();
+            // client.close();
+            waiterPool.shutdownNow();
+            throw e;
+        }
+
         log.trace("Loading smashdata");
         try {
             smashdata = new SmashdataManager(cfg.getSmashdataDbLocation());
@@ -283,6 +301,17 @@ public class Bot {
             config.check();
 
             return config;
+        }
+    }
+
+    @Nonnull
+    private List<Ruleset> loadRulesets(@Nonnull String location) throws IOException {
+        try (Reader rulesetsFile = new FileReader(location)) {
+            Gson gson = new Gson();
+            Rulesets rulesets = gson.fromJson(rulesetsFile, Rulesets.class);
+            rulesets.check();
+
+            return rulesets.toRulesetList();
         }
     }
 

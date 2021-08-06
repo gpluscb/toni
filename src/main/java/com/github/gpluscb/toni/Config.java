@@ -33,9 +33,11 @@ public class Config {
     @Nonnull
     private final String smashdataDbLocation;
     @Nonnull
+    private final String rulesetsLocation;
+    @Nonnull
     private final String charactersFileLocation;
 
-    public Config(@Nonnull String ggToken, @Nonnull String discordToken, @Nonnull String challongeUsername, @Nonnull String challongeToken, @Nonnull String dbotsToken, @Nonnull String topggToken, boolean mockBotLists, @Nonnull String inviteUrl, long botId, @Nonnull String supportServer, @Nonnull String twitterHandle, @Nonnull String github, long devId, @Nonnull String stopwordListLocation, @Nonnull String stateDbLocation, @Nonnull String smashdataDbLocation, @Nonnull String charactersFileLocation) {
+    public Config(@Nonnull String ggToken, @Nonnull String discordToken, @Nonnull String challongeUsername, @Nonnull String challongeToken, @Nonnull String dbotsToken, @Nonnull String topggToken, boolean mockBotLists, @Nonnull String inviteUrl, long botId, @Nonnull String supportServer, @Nonnull String twitterHandle, @Nonnull String github, long devId, @Nonnull String stopwordListLocation, @Nonnull String stateDbLocation, @Nonnull String smashdataDbLocation, @Nonnull String rulesetsLocation, @Nonnull String charactersFileLocation) {
         this.ggToken = ggToken;
         this.discordToken = discordToken;
         this.challongeUsername = challongeUsername;
@@ -52,6 +54,7 @@ public class Config {
         this.stopwordListLocation = stopwordListLocation;
         this.stateDbLocation = stateDbLocation;
         this.smashdataDbLocation = smashdataDbLocation;
+        this.rulesetsLocation = rulesetsLocation;
         this.charactersFileLocation = charactersFileLocation;
     }
 
@@ -69,6 +72,7 @@ public class Config {
         if (stopwordListLocation == null) throw new IllegalStateException("stopwordListLocation may not be null");
         if (stateDbLocation == null) throw new IllegalStateException("stateDbLocation may not be null");
         if (smashdataDbLocation == null) throw new IllegalStateException("smashdataDbLocation may not be null");
+        if (rulesetsLocation == null) throw new IllegalStateException("rulesetsLocation may not be null");
         if (charactersFileLocation == null) throw new IllegalStateException("characterFileLocation may not be null");
     }
 
@@ -152,5 +156,10 @@ public class Config {
     @Nonnull
     public String getGithub() {
         return github;
+    }
+
+    @Nonnull
+    public String getRulesetsLocation() {
+        return rulesetsLocation;
     }
 }

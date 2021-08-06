@@ -15,5 +15,6 @@
   "stopwordListLocation": "/path/to/stopword/list.txt",
   "stateDbLocation": "/path/to/toni_state.db",
   "smashdataDbLocation": "/path/to/ultimate_player_database.db",
+  "rulesetsLocation": "/path/to/rulesets.json",
   "charactersFileLocation": "/path/to/characters_file.json"
 }

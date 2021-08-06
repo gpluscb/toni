@@ -1,0 +1,65 @@
+{
+  "stages": [
+    {
+      "stageId": 0,
+      "stageEmoteId": 0,
+      "name": "Battlefield"
+    },
+    {
+      "stageId": 1,
+      "stageEmoteId": 0,
+      "name": "Final Destination"
+    },
+    {
+      "stageId": 2,
+      "stageEmoteId": 0,
+      "name": "Pokémon Stadium 2"
+    },
+    {
+      "stageId": 3,
+      "stageEmoteId": 0,
+      "name": "Smashville"
+    },
+    {
+      "stageId": 4,
+      "stageEmoteId": 0,
+      "name": "Lylat Cruise"
+    },
+    {
+      "stageId": 5,
+      "stageEmoteId": 0,
+      "name": "Town & City"
+    },
+    {
+      "stageId": 6,
+      "stageEmoteId": 0,
+      "name": "Kalos Pokémon League"
+    }
+  ],
+  "rulesets": [
+    {
+      "rulesetId": 0,
+      "name": "Syndicate Ruleset",
+      "starterIds": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "counterpickIds": [
+        5,
+        6
+      ],
+      "dsrMode": "NONE",
+      "stageBans": 2,
+      "starterStrikePattern": [
+        1,
+        2,
+        1
+      ],
+      "stageBeforeCharacter": true,
+      "blindPickBeforeStage": true
+    }
+  ]
+}

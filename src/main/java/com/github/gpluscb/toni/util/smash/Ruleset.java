@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public class Ruleset {
-    private final long id;
+    private final int rulesetId;
     @Nonnull
     private final String name;
     @Nonnull
@@ -27,8 +27,8 @@ public class Ruleset {
     private final boolean stageBeforeCharacter;
     private final boolean blindPickBeforeStage;
 
-    public Ruleset(long id, @Nonnull String name, @Nonnull List<Stage> starters, @Nonnull List<Stage> counterpicks, @Nonnull DSRMode dsrMode, int stageBans, int[] starterStrikePattern, boolean stageBeforeCharacter, boolean blindPickBeforeStage) {
-        this.id = id;
+    public Ruleset(int rulesetId, @Nonnull String name, @Nonnull List<Stage> starters, @Nonnull List<Stage> counterpicks, @Nonnull DSRMode dsrMode, int stageBans, int[] starterStrikePattern, boolean stageBeforeCharacter, boolean blindPickBeforeStage) {
+        this.rulesetId = rulesetId;
         this.name = name;
         this.starters = starters;
         this.counterpicks = counterpicks;
@@ -66,8 +66,8 @@ public class Ruleset {
             throw new IllegalArgumentException("The starter strike pattern must leave exactly one stage unstruck");
     }
 
-    public long getId() {
-        return id;
+    public int getRulesetId() {
+        return rulesetId;
     }
 
     @Nonnull
@@ -130,6 +130,11 @@ public class Ruleset {
         MODIFIED_DSR,
         GAME_RESTRICTED,
         WINNERS_VARIATION,
-        STAGE_DISMISSAL_RULE,
+        STAGE_DISMISSAL_RULE;
+
+        @Nonnull
+        public static DSRMode fromId(int id) {
+            return DSRMode.values()[id];
+        }
     }
 }

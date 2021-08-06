@@ -133,22 +133,10 @@ public class RPSComponent {
             }
         }
 
-        // TODO: Fail the completablefuture
         public synchronized void timeout(@Nullable MessageChannel channel, long messageId) {
-            if (channel == null) return;
-
-            // TODO: Variable naming
-            StringBuilder lazyIdiots = new StringBuilder();
-            if (choice1 == null) {
-                lazyIdiots.append(MiscUtil.mentionUser(user1));
-                if (choice2 == null) lazyIdiots.append(" and ");
-            }
-            if (choice2 == null) lazyIdiots.append(MiscUtil.mentionUser(user2));
-
-            channel.sendMessage(String.format("The three (3) minutes are done. Not all of you have given me your choice. Shame on you, %s!", lazyIdiots)).mentionUsers(user1, user2)
-                    .queue();
-
-            channel.retrieveMessageById(messageId).flatMap(m -> m.editMessage(m).setActionRows()).queue();
+            RPSTimeoutException timeout = new RPSTimeoutException(choice1, choice2, channel, messageId);
+            finished = true;
+            outcomeFuture.completeExceptionally(timeout);
         }
     }
 
@@ -226,6 +214,74 @@ public class RPSComponent {
         @Nonnull
         public RPS getChoiceB() {
             return choiceB;
+        }
+    }
+
+    public static class RPSTimeoutException extends Exception {
+        @Nullable
+        private final RPS choiceA;
+        @Nullable
+        private final RPS choiceB;
+        @Nullable
+        private final MessageChannel channel;
+        private final long messageId;
+
+        public RPSTimeoutException(@Nullable RPS choiceA, @Nullable RPS choiceB, @Nullable MessageChannel channel, long messageId) {
+            this.choiceA = choiceA;
+            this.choiceB = choiceB;
+            this.channel = channel;
+            this.messageId = messageId;
+        }
+
+        public RPSTimeoutException(String message, @Nullable RPS choiceA, @Nullable RPS choiceB, @Nullable MessageChannel channel, long messageId) {
+            super(message);
+            this.choiceA = choiceA;
+            this.choiceB = choiceB;
+            this.channel = channel;
+            this.messageId = messageId;
+        }
+
+        public RPSTimeoutException(String message, Throwable cause, @Nullable RPS choiceA, @Nullable RPS choiceB, @Nullable MessageChannel channel, long messageId) {
+            super(message, cause);
+            this.choiceA = choiceA;
+            this.choiceB = choiceB;
+            this.channel = channel;
+            this.messageId = messageId;
+        }
+
+        public RPSTimeoutException(Throwable cause, @Nullable RPS choiceA, @Nullable RPS choiceB, @Nullable MessageChannel channel, long messageId) {
+            super(cause);
+            this.choiceA = choiceA;
+            this.choiceB = choiceB;
+            this.channel = channel;
+            this.messageId = messageId;
+        }
+
+        public RPSTimeoutException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace, @Nullable RPS choiceA, @Nullable RPS choiceB, @Nullable MessageChannel channel, long messageId) {
+            super(message, cause, enableSuppression, writableStackTrace);
+            this.choiceA = choiceA;
+            this.choiceB = choiceB;
+            this.channel = channel;
+            this.messageId = messageId;
+        }
+
+        @Nullable
+        public RPS getChoiceA() {
+            return choiceA;
+        }
+
+        @Nullable
+        public RPS getChoiceB() {
+            return choiceB;
+        }
+
+        @Nullable
+        public MessageChannel getChannel() {
+            return channel;
+        }
+
+        public long getMessageId() {
+            return messageId;
         }
     }
 }

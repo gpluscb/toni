@@ -10,10 +10,11 @@ import com.github.gpluscb.toni.command.admin.EvalCommand;
 import com.github.gpluscb.toni.command.admin.ShutdownCommand;
 import com.github.gpluscb.toni.command.admin.StatusCommand;
 import com.github.gpluscb.toni.command.admin.UpdateSmashdataCommand;
+import com.github.gpluscb.toni.command.components.RPSComponent;
 import com.github.gpluscb.toni.command.game.BlindPickCommand;
 import com.github.gpluscb.toni.command.game.RandomCharacterCommand;
 import com.github.gpluscb.toni.command.game.RandomPlayerCommand;
-import com.github.gpluscb.toni.command.game.RockPaperScissorsCommand;
+import com.github.gpluscb.toni.command.game.RPSCommand;
 import com.github.gpluscb.toni.command.help.HelpCommand;
 import com.github.gpluscb.toni.command.help.PingCommand;
 import com.github.gpluscb.toni.command.help.PrivacyCommand;
@@ -291,6 +292,8 @@ public class Bot {
         String inviteUrl = cfg.getInviteUrl();
         String twitterHandle = cfg.getTwitterHandle();
 
+        RPSComponent rps = new RPSComponent(waiter);
+
         List<CommandCategory> commands = new ArrayList<>();
 
         List<Command> adminCommands = new ArrayList<>();
@@ -309,7 +312,7 @@ public class Bot {
         List<Command> gameCommands = new ArrayList<>();
         gameCommands.add(new RandomCharacterCommand(characterTree));
         gameCommands.add(new RandomPlayerCommand());
-        gameCommands.add(new RockPaperScissorsCommand(waiter));
+        gameCommands.add(new RPSCommand(rps));
         gameCommands.add(new BlindPickCommand(dmWaiter, characterTree));
         commands.add(new CommandCategory("game", "Smash Bros. utility commands", gameCommands));
 

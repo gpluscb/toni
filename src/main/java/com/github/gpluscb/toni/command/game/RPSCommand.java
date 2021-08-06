@@ -2,28 +2,21 @@ package com.github.gpluscb.toni.command.game;
 
 import com.github.gpluscb.toni.command.Command;
 import com.github.gpluscb.toni.command.CommandContext;
-import com.github.gpluscb.toni.util.ButtonActionMenu;
-import com.github.gpluscb.toni.util.Constants;
-import com.github.gpluscb.toni.util.MiscUtil;
-import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
+import com.github.gpluscb.toni.command.components.RPSComponent;
 import net.dv8tion.jda.api.MessageBuilder;
-import net.dv8tion.jda.api.entities.Emoji;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
-import net.dv8tion.jda.api.interactions.components.Button;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.concurrent.TimeUnit;
 
-public class RockPaperScissorsCommand implements Command {
+public class RPSCommand implements Command {
     @Nonnull
-    private final EventWaiter waiter;
+    private final RPSComponent component;
 
-    public RockPaperScissorsCommand(@Nonnull EventWaiter waiter) {
-        this.waiter = waiter;
+    public RPSCommand(@Nonnull RPSComponent component) {
+        this.component = component;
     }
 
     @Override
@@ -62,21 +55,36 @@ public class RockPaperScissorsCommand implements Command {
                 .mentionUsers(user1, user2)
                 .build();
 
-        RPSHandler handler = new RPSHandler(user1, user2);
+        component.sendRPSReplying(ctx.getMessage(), start, user1, user2).whenComplete((pair, timeout) -> {
+            if (timeout != null) {
+                // TODO
+            }
 
-        ButtonActionMenu menu = new ButtonActionMenu.Builder()
-                .setEventWaiter(waiter)
-                .setDeletionButton(null)
-                .addUsers(user1, user2)
-                .registerButton(Button.secondary("rock", Emoji.fromUnicode(Constants.ROCK)), handler::rockButton)
-                .registerButton(Button.secondary("paper", Emoji.fromUnicode(Constants.PAPER)), handler::paperButton)
-                .registerButton(Button.secondary("scissors", Emoji.fromUnicode(Constants.SCISSORS)), handler::scissorsButton)
-                .setStart(start)
-                .setTimeout(3, TimeUnit.MINUTES)
-                .setTimeoutAction(handler::timeout)
-                .build();
+            RPSComponent.RPSResult result = pair.getT();
+            ButtonClickEvent e = pair.getU();
 
-        menu.displayReplying(ctx.getMessage());
+            String outcome;
+            switch (result.getWinner()) {
+                case Tie:
+                    outcome = "It's a tie!";
+                    break;
+                case A:
+                    outcome = String.format("%s won!", user1Mention);
+                    break;
+                case B:
+                    outcome = String.format("%s won!", user2Mention);
+                    break;
+                default:
+                    throw new IllegalStateException("Not all results covered");
+            }
+
+            // Only null for ephemeral
+            //noinspection ConstantConditions
+            e.getMessage().reply(String.format("It has been decided! %s chose %s, and %s chose %s. That means %s",
+                    user1Mention, result.getChoiceA().getDisplayName(), user2Mention, result.getChoiceB().getDisplayName(), outcome))
+                    .mentionUsers(user1, user2)
+                    .queue();
+        });
     }
 
     @Nonnull
@@ -100,7 +108,7 @@ public class RockPaperScissorsCommand implements Command {
                 "So you might have to unblock me (but what kind of monster would have me blocked in the first place?)\n" +
                 "Aliases: `rockpaperscissors`, `rps`";
     }
-
+/*
     private static class RPSHandler {
         private boolean finished;
         private final long user1;
@@ -211,7 +219,7 @@ public class RockPaperScissorsCommand implements Command {
          * 1: a wins
          * 0: tie
          * -1: b wins
-         */
+
         public static int determineOutcome(@Nonnull RPS a, @Nonnull RPS b) {
             if (a == b) return 0;
             switch (a) {
@@ -224,5 +232,5 @@ public class RockPaperScissorsCommand implements Command {
             }
             return 0;
         }
-    }
+    }*/
 }

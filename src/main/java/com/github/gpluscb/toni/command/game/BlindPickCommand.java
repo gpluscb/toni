@@ -2,36 +2,30 @@ package com.github.gpluscb.toni.command.game;
 
 import com.github.gpluscb.toni.command.Command;
 import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.components.BlindPickComponent;
 import com.github.gpluscb.toni.util.smash.Character;
-import com.github.gpluscb.toni.util.smash.CharacterTree;
-import com.github.gpluscb.toni.util.DMChoiceWaiter;
 import com.github.gpluscb.toni.util.MiscUtil;
-import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class BlindPickCommand implements Command {
-    @Nonnull
-    private final DMChoiceWaiter waiter;
+    private static final Logger log = LogManager.getLogger(BlindPickCommand.class);
 
     @Nonnull
-    private final List<Character> characters;
+    private final BlindPickComponent component;
 
-    @Nonnull
-    private final List<Long> usersDoingBlindPick;
-
-    public BlindPickCommand(@Nonnull DMChoiceWaiter waiter, @Nonnull CharacterTree characterTree) {
-        this.waiter = waiter;
-        this.characters = characterTree.getAllCharacters();
-        usersDoingBlindPick = new ArrayList<>();
+    public BlindPickCommand(@Nonnull BlindPickComponent component) {
+        this.component = component;
     }
 
     @Override
@@ -68,46 +62,43 @@ public class BlindPickCommand implements Command {
             return;
         }
 
-        synchronized (usersDoingBlindPick) {
-            if (usersDoingBlindPick.stream().anyMatch(users::contains)) {
-                ctx.reply("Some of you ppl are already doing another blind pick. I can't have people doing two blind picks at the same time!").queue();
-                return;
-            }
-
-            usersDoingBlindPick.addAll(users);
-        }
-
         // TODO: Avoid too many mentions somehow -> could potentially be a vector for ping spams
         String userMentions = users.stream().map(id -> String.format("<@%d>", id)).collect(Collectors.joining(", "));
         long[] userMentionsArray = users.stream().mapToLong(u -> u).toArray(); // TODO: Could be a bit more efficient, do the two streams in one pass...
 
-        boolean worked = waiter.waitForDMChoice(users, true, e -> {
-            Message message = e.getMessage();
-            String choice = message.getContentRaw();
+        CompletableFuture<Map<Long, Character>> blindPickResult = component.initiateBlindPick(users);
+        if (blindPickResult == null) { // TODO: Trusts that this message will go through. Not that big an issue, but still iffy.
+            ctx.reply("Some of you fools already have a DM thing going on with me. I can't have you do multiple of those at the same time. That's just too complicated for me!").queue();
+            return;
+        }
 
-            Character character = characters.stream().filter(c -> c.getAltNames().contains(choice.toLowerCase())).findAny().orElse(null);
-            if (character == null) message.reply("I don't know that character.").queue();
-            else message.reply("Accepted!").queue();
+        ctx.reply(String.format("Alright, %s, please send me a DM with your character choice now. You have three (3) minutes!", userMentions)).mentionUsers(userMentionsArray).queue();
 
-            return Optional.ofNullable(character);
-        }, map -> {
+        blindPickResult.whenComplete((map, timeout) -> {
+            if (timeout != null) {
+                if (!(timeout instanceof BlindPickComponent.BlindPickTimeoutException)) {
+                    log.error("Failed BlindPick completion not BlindPickTimeoutException", timeout);
+                    // TODO: Tell the user?
+                    return;
+                }
+
+                Map<Long, Character> timeoutMap = ((BlindPickComponent.BlindPickTimeoutException) timeout).getPicksSoFar();
+
+                // TODO: Variable naming
+                String lazyIdiots = users.stream().filter(Predicate.not(timeoutMap::containsKey)).map(MiscUtil::mentionUser).collect(Collectors.joining(", "));
+
+                ctx.reply(String.format("The three (3) minutes are done. Not all of you have given me your characters. Shame on you, %s!", lazyIdiots)).mentionUsers(userMentionsArray).queue();
+
+                return;
+            }
+
             String choices = users.stream().map(u -> {
                 Character c = map.get(u);
                 return String.format("%s: %s(%s)", MiscUtil.mentionUser(u), MiscUtil.mentionEmote(c.getEmoteId()), c.getName());
             }).collect(Collectors.joining("\n"));
 
             ctx.reply(String.format("The characters have been decided:%n%n%s", choices)).mentionUsers(userMentionsArray).queue();
-        }, 3, TimeUnit.MINUTES, map -> {
-            // TODO: Variable naming
-            String lazyIdiots = users.stream().filter(Predicate.not(map::containsKey)).map(MiscUtil::mentionUser).collect(Collectors.joining(", "));
-
-            ctx.reply(String.format("The three (3) minutes are done. Not all of you have given me your characters. Shame on you, %s!", lazyIdiots)).mentionUsers(userMentionsArray).queue();
         });
-
-        if (worked) // TODO: Trusts that this message will go through. Not that big an issue, but still iffy.
-            ctx.reply(String.format("Alright, %s, please send me a DM with your character choice now. You have three (3) minutes!", userMentions)).mentionUsers(userMentionsArray).queue();
-        else
-            ctx.reply("Some of you fools already have a DM thing going on with me. I can't have you do multiple of those at the same time. I'd lose my mind!").queue();
     }
 
     @Nonnull

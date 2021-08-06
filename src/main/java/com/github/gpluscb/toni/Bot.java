@@ -10,6 +10,7 @@ import com.github.gpluscb.toni.command.admin.EvalCommand;
 import com.github.gpluscb.toni.command.admin.ShutdownCommand;
 import com.github.gpluscb.toni.command.admin.StatusCommand;
 import com.github.gpluscb.toni.command.admin.UpdateSmashdataCommand;
+import com.github.gpluscb.toni.command.components.BlindPickComponent;
 import com.github.gpluscb.toni.command.components.RPSComponent;
 import com.github.gpluscb.toni.command.game.BlindPickCommand;
 import com.github.gpluscb.toni.command.game.RandomCharacterCommand;
@@ -292,7 +293,8 @@ public class Bot {
         String inviteUrl = cfg.getInviteUrl();
         String twitterHandle = cfg.getTwitterHandle();
 
-        RPSComponent rps = new RPSComponent(waiter);
+        RPSComponent rpsComponent = new RPSComponent(waiter);
+        BlindPickComponent blindPickComponent = new BlindPickComponent(dmWaiter, characterTree);
 
         List<CommandCategory> commands = new ArrayList<>();
 
@@ -312,8 +314,8 @@ public class Bot {
         List<Command> gameCommands = new ArrayList<>();
         gameCommands.add(new RandomCharacterCommand(characterTree));
         gameCommands.add(new RandomPlayerCommand());
-        gameCommands.add(new RPSCommand(rps));
-        gameCommands.add(new BlindPickCommand(dmWaiter, characterTree));
+        gameCommands.add(new RPSCommand(rpsComponent));
+        gameCommands.add(new BlindPickCommand(blindPickComponent));
         commands.add(new CommandCategory("game", "Smash Bros. utility commands", gameCommands));
 
         List<Command> lookupCommands = new ArrayList<>();

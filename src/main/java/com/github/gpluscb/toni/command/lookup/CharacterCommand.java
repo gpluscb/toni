@@ -25,6 +25,8 @@ import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+import static net.dv8tion.jda.api.interactions.components.selections.SelectOption.LABEL_MAX_LENGTH;
+
 public class CharacterCommand implements Command {
     private static final Logger log = LogManager.getLogger(CharacterCommand.class);
 
@@ -562,7 +564,7 @@ public class CharacterCommand implements Command {
 
             for (int i = 0; i < sections.size(); i++) {
                 CharacterData.MoveSection section = sections.get(i);
-                ret.add(SelectOption.of(StringUtils.abbreviate(section.getSectionName(), 25), String.valueOf(i)).withDefault(i == sectionPage));
+                ret.add(SelectOption.of(StringUtils.abbreviate(section.getSectionName(), LABEL_MAX_LENGTH), String.valueOf(i)).withDefault(i == sectionPage));
             }
 
             ret.add(SelectOption.of("Misc", "-1").withDefault(-1 == sectionPage));
@@ -577,7 +579,7 @@ public class CharacterCommand implements Command {
             for (int i = 0; i < moves.size(); i++) {
                 String moveName = moves.get(i).getMoveName();
                 ret.add(
-                        SelectOption.of(moveName == null ? "Unknown Move" : StringUtils.abbreviate(moveName, 25), String.valueOf(i))
+                        SelectOption.of(moveName == null ? "Unknown Move" : StringUtils.abbreviate(moveName, LABEL_MAX_LENGTH), String.valueOf(i))
                                 .withDefault(i == movePage)
                 );
             }
@@ -599,7 +601,7 @@ public class CharacterCommand implements Command {
             for (int i = 0; i < hitboxes.size(); i++) {
                 String hitboxName = hitboxes.get(i).getName();
                 ret.add(
-                        SelectOption.of(hitboxName == null ? String.format("Hitbox %d/%d", i + 1, hitboxSize) : StringUtils.abbreviate(hitboxName, 25), String.valueOf(i))
+                        SelectOption.of(hitboxName == null ? String.format("Hitbox %d/%d", i + 1, hitboxSize) : StringUtils.abbreviate(hitboxName, LABEL_MAX_LENGTH), String.valueOf(i))
                                 .withDefault(i == hitboxPage)
                 );
             }

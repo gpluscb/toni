@@ -12,10 +12,8 @@ import com.github.gpluscb.toni.command.admin.StatusCommand;
 import com.github.gpluscb.toni.command.admin.UpdateSmashdataCommand;
 import com.github.gpluscb.toni.command.components.BlindPickComponent;
 import com.github.gpluscb.toni.command.components.RPSComponent;
-import com.github.gpluscb.toni.command.game.BlindPickCommand;
-import com.github.gpluscb.toni.command.game.RandomCharacterCommand;
-import com.github.gpluscb.toni.command.game.RandomPlayerCommand;
-import com.github.gpluscb.toni.command.game.RPSCommand;
+import com.github.gpluscb.toni.command.components.StrikeStagesComponent;
+import com.github.gpluscb.toni.command.game.*;
 import com.github.gpluscb.toni.command.help.HelpCommand;
 import com.github.gpluscb.toni.command.help.PingCommand;
 import com.github.gpluscb.toni.command.help.PrivacyCommand;
@@ -255,7 +253,7 @@ public class Bot {
         }
 
         log.trace("Loading commands");
-        List<CommandCategory> commands = loadCommands(ufdClient, waiter, dmWaiter, /*challonge, listener, */characterTree, cfg);
+        List<CommandCategory> commands = loadCommands(ufdClient, waiter, dmWaiter, /*challonge, listener, */characterTree, rulesets, cfg);
         dispatcher = new CommandDispatcher(commands);
 
         long botId = cfg.getBotId();
@@ -316,7 +314,7 @@ public class Bot {
     }
 
     @Nonnull
-    private List<CommandCategory> loadCommands(@Nonnull UltimateframedataClient ufdClient, @Nonnull EventWaiter waiter, @Nonnull DMChoiceWaiter dmWaiter, /*@Nonnull ChallongeExtension challonge, @Nonnull TournamentListener listener, */@Nonnull CharacterTree characterTree, @Nonnull Config cfg) {
+    private List<CommandCategory> loadCommands(@Nonnull UltimateframedataClient ufdClient, @Nonnull EventWaiter waiter, @Nonnull DMChoiceWaiter dmWaiter, /*@Nonnull ChallongeExtension challonge, @Nonnull TournamentListener listener, */@Nonnull CharacterTree characterTree, @Nonnull List<Ruleset> rulesets, @Nonnull Config cfg) {
         String supportServer = cfg.getSupportServer();
         long devId = cfg.getDevId();
         String inviteUrl = cfg.getInviteUrl();
@@ -324,6 +322,7 @@ public class Bot {
 
         RPSComponent rpsComponent = new RPSComponent(waiter);
         BlindPickComponent blindPickComponent = new BlindPickComponent(dmWaiter, characterTree);
+        StrikeStagesComponent strikeStagesComponent = new StrikeStagesComponent(waiter);
 
         List<CommandCategory> commands = new ArrayList<>();
 
@@ -345,6 +344,7 @@ public class Bot {
         gameCommands.add(new RandomPlayerCommand());
         gameCommands.add(new RPSCommand(rpsComponent));
         gameCommands.add(new BlindPickCommand(blindPickComponent));
+        gameCommands.add(new StrikeStagesCommand(strikeStagesComponent, rulesets));
         commands.add(new CommandCategory("game", "Smash Bros. utility commands", gameCommands));
 
         List<Command> lookupCommands = new ArrayList<>();

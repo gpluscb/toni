@@ -104,6 +104,11 @@ public class SmashSet {
         protected void checkValid() {
             if (state != this) throw new IllegalStateException("SetState is not valid");
         }
+
+        @Nonnull
+        public SmashSet getSmashSet() {
+            return SmashSet.this;
+        }
     }
 
     public class SetRPSState extends SetState {

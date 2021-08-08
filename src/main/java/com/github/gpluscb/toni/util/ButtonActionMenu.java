@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 /**
  * We override the validation to only allow specific users in users.
  */
+// TODO: Way to disable the thing so it doesn't need more resources when we're done
 public class ButtonActionMenu extends Menu {
     private static final Logger log = LogManager.getLogger(ButtonActionMenu.class);
 

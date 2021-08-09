@@ -78,4 +78,5 @@ build
 **/toni_state.db
 **/dataSources.xml
 **/sqldialects.xml
+**/discord.xml
 identifier.sqlite

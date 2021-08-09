@@ -3,14 +3,25 @@ package com.github.gpluscb.toni.command.game;
 import com.github.gpluscb.toni.command.Command;
 import com.github.gpluscb.toni.command.CommandContext;
 import com.github.gpluscb.toni.command.components.StrikeStagesComponent;
+import com.github.gpluscb.toni.util.FailLogger;
+import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.smash.Ruleset;
+import com.github.gpluscb.toni.util.smash.Stage;
+import net.dv8tion.jda.api.MessageBuilder;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Set;
 
 public class StrikeStagesCommand implements Command {
+    private static final Logger log = LogManager.getLogger(StrikeStagesCommand.class);
+
     @Nonnull
     private final StrikeStagesComponent component;
     @Nonnull
@@ -23,6 +34,10 @@ public class StrikeStagesCommand implements Command {
 
     @Override
     public void execute(@Nonnull CommandContext ctx) {
+        // TODO: Ruleset selection (standard ruleset per server??)
+        // TODO: Full stage striking (includes RPS)
+
+        // TODO: Move this code to MiscUtil or sth like that (useful in RPS and probably in doubleblind as well)
         int argNum = ctx.getArgNum();
         if (ctx.getArgNum() < 1 || ctx.getArgNum() > 2) {
             ctx.reply("You must mention either one or two users.").queue();
@@ -49,12 +64,37 @@ public class StrikeStagesCommand implements Command {
             return;
         }
 
-        String user1Mention = user1User.getAsMention();
-        String user2Mention = user2User.getAsMention();
+        Ruleset ruleset = rulesets.get(0);
 
-        ctx.reply(String.format("Please strike stages. %s starts.", user1Mention))
-                .mentionUsers(user1)
-                .queue(m -> component.attachStageStriking(m, rulesets.get(0), user1, user2));
+        // TODO: Technically, rulesets with only one starter and 0 sized starterStrikePattern are legal
+        Message message = new MessageBuilder(
+                String.format("It is time to strike stages. %s, you begin by striking %d stages.",
+                        MiscUtil.mentionUser(user1),
+                        ruleset.getStarterStrikePattern()[0])
+        ).mentionUsers(user1).build();
+
+        component.sendStageStrikingReplying(ctx.getMessage(), message, ruleset, user1, user2).whenComplete(FailLogger.logFail((pair, timeout) -> {
+            if (timeout != null) {
+                // TODO
+                return;
+            }
+
+            List<Set<Integer>> strikes = pair.getT();
+            ButtonClickEvent e = pair.getU();
+
+            Stage resultingStage = ruleset.getStarters().stream()
+                    .filter(starter -> strikes.stream().noneMatch(struckStarters -> struckStarters.contains(starter.getStageId())))
+                    .findAny()
+                    .orElse(null);
+
+            if (resultingStage == null) {
+                log.error("All starters have been struck. Strikes: {}. Ruleset id: {}", strikes, ruleset.getRulesetId());
+                e.editMessage("Somehow you have struck all starters. This is a bug. I've told my dev about it but you should give them some context too.").queue();
+                return;
+            }
+
+            e.editMessage(String.format("You have struck to %s.", resultingStage.getName())).setActionRows().queue();
+        }));
     }
 
     @Nonnull
@@ -63,6 +103,7 @@ public class StrikeStagesCommand implements Command {
         return new String[]{"strike", "strikestarters"};
     }
 
+    // TODO
     @Nullable
     @Override
     public String getShortHelp() {

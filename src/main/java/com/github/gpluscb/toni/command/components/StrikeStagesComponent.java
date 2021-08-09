@@ -2,6 +2,7 @@ package com.github.gpluscb.toni.command.components;
 
 import com.github.gpluscb.toni.util.ButtonActionMenu;
 import com.github.gpluscb.toni.util.MiscUtil;
+import com.github.gpluscb.toni.util.PairNonnull;
 import com.github.gpluscb.toni.util.smash.Ruleset;
 import com.github.gpluscb.toni.util.smash.SmashSet;
 import com.github.gpluscb.toni.util.smash.Stage;
@@ -36,7 +37,27 @@ public class StrikeStagesComponent {
     }
 
     @Nonnull
-    public CompletableFuture<List<Set<Integer>>> attachStageStriking(@Nonnull Message message, @Nonnull Ruleset ruleset, long striker1, long striker2) {
+    public CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> sendStageStrikingReplying(@Nonnull Message reference, @Nonnull Message message, @Nonnull Ruleset ruleset, long striker1, long striker2) {
+        return sendStageStrikingReplying(reference, message, ruleset, striker1, striker2, null);
+    }
+
+    /**
+     * If you pass a set, you swear not to touch it until we are finished
+     */
+    @Nonnull
+    public CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> sendStageStrikingReplying(@Nonnull Message reference, @Nonnull Message message, @Nonnull Ruleset ruleset, long striker1, long striker2, @Nullable SmashSet.SetStarterStrikingState set) {
+        @SuppressWarnings("DuplicatedCode")
+        PairNonnull<CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>>, ButtonActionMenu> initPair = initStrikeStages(message, ruleset, striker1, striker2, set);
+        CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> stageStrikingResult = initPair.getT();
+        ButtonActionMenu menu = initPair.getU();
+
+        menu.displayReplying(reference);
+
+        return stageStrikingResult;
+    }
+
+    @Nonnull
+    public CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> attachStageStriking(@Nonnull Message message, @Nonnull Ruleset ruleset, long striker1, long striker2) {
         return attachStageStriking(message, ruleset, striker1, striker2, null);
     }
 
@@ -44,8 +65,19 @@ public class StrikeStagesComponent {
      * If you pass a set, you swear not to touch it until we are finished
      */
     @Nonnull
-    public CompletableFuture<List<Set<Integer>>> attachStageStriking(@Nonnull Message message, @Nonnull Ruleset ruleset, long striker1, long striker2, @Nullable SmashSet.SetStarterStrikingState set) {
-        CompletableFuture<List<Set<Integer>>> stageStrikingResult = new CompletableFuture<>();
+    public CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> attachStageStriking(@Nonnull Message message, @Nonnull Ruleset ruleset, long striker1, long striker2, @Nullable SmashSet.SetStarterStrikingState set) {
+        PairNonnull<CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>>, ButtonActionMenu> initPair = initStrikeStages(message, ruleset, striker1, striker2, set);
+        CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> stageStrikingResult = initPair.getT();
+        ButtonActionMenu menu = initPair.getU();
+
+        menu.display(message);
+
+        return stageStrikingResult;
+    }
+
+    @Nonnull
+    private PairNonnull<CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>>, ButtonActionMenu> initStrikeStages(@Nonnull Message message, @Nonnull Ruleset ruleset, long striker1, long striker2, @Nullable SmashSet.SetStarterStrikingState set) {
+        CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> stageStrikingResult = new CompletableFuture<>();
 
         StageStrikingHandler handler = new StageStrikingHandler(stageStrikingResult, ruleset, striker1, striker2, set);
 
@@ -66,14 +98,12 @@ public class StrikeStagesComponent {
 
         ButtonActionMenu menu = builder.build();
 
-        menu.display(message);
-
-        return stageStrikingResult;
+        return new PairNonnull<>(stageStrikingResult, menu);
     }
 
     private static class StageStrikingHandler {
         @Nonnull
-        private final CompletableFuture<List<Set<Integer>>> result;
+        private final CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> result;
         @Nonnull
         private final Ruleset ruleset;
         private final long striker1;
@@ -89,7 +119,7 @@ public class StrikeStagesComponent {
         private final List<Set<Integer>> strikes;
 
 
-        public StageStrikingHandler(@Nonnull CompletableFuture<List<Set<Integer>>> result, @Nonnull Ruleset ruleset, long striker1, long striker2, @Nullable SmashSet.SetStarterStrikingState set) {
+        public StageStrikingHandler(@Nonnull CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> result, @Nonnull Ruleset ruleset, long striker1, long striker2, @Nullable SmashSet.SetStarterStrikingState set) {
             this.result = result;
             this.ruleset = ruleset;
             this.striker1 = striker1;
@@ -103,19 +133,19 @@ public class StrikeStagesComponent {
             currentStrikeIdx = 0;
             currentStrikes = new LinkedHashSet<>();
             strikes = new ArrayList<>();
+            strikes.add(currentStrikes);
         }
 
         @Nullable
         public synchronized Message handleStrike(@Nonnull ButtonClickEvent e, int stageId) {
-            // TODO: I dislike that users have no control over how these messages look
-            e.deferEdit().queue();
-
+            // TODO: I dislike that users of this class have no control over how these messages look
             if (e.getUser().getIdLong() != currentStriker) {
                 e.reply("It's not your turn to strike right now!").setEphemeral(true).queue();
                 return null;
             }
 
-            if (strikes.stream().flatMap(Collection::stream).anyMatch(id -> id == stageId)) {
+            if (strikes.stream().anyMatch(struckStages -> struckStages.contains(stageId))) {
+                e.deferEdit().queue();
                 log.warn("Stage was double struck. Race condition or failure to set as disabled?");
                 return new MessageBuilder("That stage has already been struck. Please strike a different one.").build();
             }
@@ -126,19 +156,20 @@ public class StrikeStagesComponent {
             if (currentStrikes.size() == starterStrikePattern[currentStrikeIdx]) {
                 // If we didn't mess up this should always be ok (except someone else messed with the set)
                 if (set != null) set.strikeStages(currentStrikes);
-                strikes.add(currentStrikes);
 
                 if (strikes.size() == starterStrikePattern.length) {
-                    result.complete(strikes);
+                    result.complete(new PairNonnull<>(strikes, e));
 
                     return null; // TODO
                 }
 
                 currentStrikes = new HashSet<>();
+                strikes.add(currentStrikes);
                 currentStrikeIdx++;
                 currentStriker = currentStriker == striker1 ? striker2 : striker1; // Invert
             }
 
+            e.deferEdit().queue();
             MessageBuilder builder = new MessageBuilder();
             builder.appendFormat("%s, please strike %d stages from the list below.",
                     MiscUtil.mentionUser(currentStriker),
@@ -150,7 +181,7 @@ public class StrikeStagesComponent {
                             .map(starter -> Button.secondary(
                                     String.valueOf(starter.getStageId()),
                                     StringUtils.abbreviate(starter.getName(), LABEL_MAX_LENGTH)
-                                    ).withDisabled(strikes.stream().flatMap(Collection::stream).anyMatch(struckId -> starter.getStageId() == struckId))
+                                    ).withDisabled(strikes.stream().anyMatch(struckIds -> struckIds.contains(starter.getStageId())))
                             ).collect(Collectors.toList())
             ));
 

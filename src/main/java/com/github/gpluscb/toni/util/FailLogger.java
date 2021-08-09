@@ -12,6 +12,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+// TODO: Maaaybe replace with DefaultUncaughtExceptionHandler oops that exists
 public class FailLogger {
     private static final Logger log = LogManager.getLogger(FailLogger.class);
 

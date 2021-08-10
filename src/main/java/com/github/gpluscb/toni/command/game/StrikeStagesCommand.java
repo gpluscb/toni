@@ -6,7 +6,6 @@ import com.github.gpluscb.toni.command.components.StrikeStagesComponent;
 import com.github.gpluscb.toni.util.FailLogger;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
-import com.github.gpluscb.toni.util.PairNonnull;
 import com.github.gpluscb.toni.util.smash.Ruleset;
 import com.github.gpluscb.toni.util.smash.Stage;
 import net.dv8tion.jda.api.MessageBuilder;
@@ -36,10 +35,7 @@ public class StrikeStagesCommand implements Command {
 
     @Override
     public void execute(@Nonnull CommandContext ctx) {
-        // TODO: Ruleset selection (standard ruleset per server??)
-        // TODO: Full stage striking (includes RPS)
-
-        OneOfTwo<PairNonnull<Long, Long>, MiscUtil.TwoUserArgsErrorType> result = MiscUtil.getTwoUserArgs(ctx, true);
+        OneOfTwo<MiscUtil.OneOrTwoUserArgs, MiscUtil.TwoUserArgsErrorType> result = MiscUtil.getTwoUserArgs(ctx, true);
 
         MiscUtil.TwoUserArgsErrorType error = result.getU().orElse(null);
         if (error != null) {
@@ -64,11 +60,63 @@ public class StrikeStagesCommand implements Command {
             ctx.reply(reply).queue();
         }
 
-        PairNonnull<Long, Long> users = result.getTOrThrow();
-        long user1 = users.getT();
-        long user2 = users.getU();
+        MiscUtil.OneOrTwoUserArgs users = result.getTOrThrow();
+        long user1 = users.getUser1();
+        long user2 = users.getUser2();
+
+        int continuedArgsIdx = users.isTwoArgumentsGiven() ? 2 : 1;
+        int argNum = ctx.getArgNum();
 
         Ruleset ruleset = rulesets.get(0);
+        boolean doRPS = false;
+
+        if (argNum == continuedArgsIdx + 1) {
+            String eitherString = ctx.getArg(continuedArgsIdx);
+            Boolean doRPSNullable = MiscUtil.boolFromString(eitherString);
+            if (doRPSNullable == null) {
+                // TODO: Dupe code
+                try {
+                    int rulesetId = Integer.parseInt(eitherString);
+                    ruleset = rulesets.stream().filter(ruleset_ -> ruleset_.getRulesetId() == rulesetId).findAny().orElse(null);
+                    if (ruleset == null) {
+                        // TODO: Ruleset list command
+                        ctx.reply("The given ruleset id is invalid.").queue();
+                        return;
+                    }
+                } catch (NumberFormatException e) {
+                    ctx.reply("A given argument is invalid. It must either be a ruleset id, or true, or false. Use `toni, help strike` for details.").queue();
+                    return;
+                }
+            } else {
+                doRPS = doRPSNullable;
+            }
+        } else if (argNum == continuedArgsIdx + 2) {
+            String rulesetIdString = ctx.getArg(continuedArgsIdx);
+            try {
+                int rulesetId = Integer.parseInt(rulesetIdString);
+                ruleset = rulesets.stream().filter(ruleset_ -> ruleset_.getRulesetId() == rulesetId).findAny().orElse(null);
+                if (ruleset == null) {
+                    // TODO: Ruleset list command
+                    ctx.reply("The given ruleset id is invalid.").queue();
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                ctx.reply("The ruleset id must be an integer. Use `toni, help strike` for details.").queue();
+                return;
+            }
+
+            String doRPSString = ctx.getArg(continuedArgsIdx + 1);
+            Boolean doRPSNullable = MiscUtil.boolFromString(doRPSString);
+            if (doRPSNullable == null) {
+                ctx.reply("The indication whether to do RPS must be either `true` or `false`. Use `toni, help strike` for details.").queue();
+                return;
+            }
+
+            doRPS = doRPSNullable;
+        } else if (argNum > continuedArgsIdx + 2) {
+            ctx.reply("You gave too many arguments. Use `toni, help strike` for details.").queue();
+            return;
+        }
 
         int[] starterStrikePattern = ruleset.getStarterStrikePattern();
         if (starterStrikePattern.length == 0) {
@@ -85,7 +133,8 @@ public class StrikeStagesCommand implements Command {
                         firstStrike > 1 ? "s" : "")
         ).mentionUsers(user1).build();
 
-        component.sendStageStrikingReplying(ctx.getMessage(), message, ruleset, user1, user2).whenComplete(FailLogger.logFail((pair, timeout) -> {
+        Ruleset ruleset_ = ruleset;
+        component.sendStageStrikingReplying(ctx.getMessage(), message, ruleset, user1, user2, doRPS).whenComplete(FailLogger.logFail((pair, timeout) -> {
             if (timeout != null) {
                 if (!(timeout instanceof StrikeStagesComponent.StrikeStagesTimeoutException)) {
                     log.error("Failed StrikeStages completion not StrikeStagesTimeoutException", timeout);
@@ -110,13 +159,13 @@ public class StrikeStagesCommand implements Command {
             List<Set<Integer>> strikes = pair.getT();
             ButtonClickEvent e = pair.getU();
 
-            Stage resultingStage = ruleset.getStarters().stream()
+            Stage resultingStage = ruleset_.getStarters().stream()
                     .filter(starter -> strikes.stream().noneMatch(struckStarters -> struckStarters.contains(starter.getStageId())))
                     .findAny()
                     .orElse(null);
 
             if (resultingStage == null) {
-                log.error("All starters have been struck. Strikes: {}. Ruleset id: {}", strikes, ruleset.getRulesetId());
+                log.error("All starters have been struck. Strikes: {}. Ruleset id: {}", strikes, ruleset_.getRulesetId());
                 e.editMessage("Somehow you have struck all starters. This is a bug. I've told my dev about it but you should give them some context too.").queue();
                 return;
             }

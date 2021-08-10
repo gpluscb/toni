@@ -322,7 +322,7 @@ public class Bot {
 
         RPSComponent rpsComponent = new RPSComponent(waiter);
         BlindPickComponent blindPickComponent = new BlindPickComponent(dmWaiter, characterTree);
-        StrikeStagesComponent strikeStagesComponent = new StrikeStagesComponent(waiter);
+        StrikeStagesComponent strikeStagesComponent = new StrikeStagesComponent(rpsComponent, waiter);
 
         List<CommandCategory> commands = new ArrayList<>();
 

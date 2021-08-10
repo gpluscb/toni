@@ -45,18 +45,44 @@ public class MiscUtil {
         USER_1_EQUALS_USER_2,
     }
 
+    public static class OneOrTwoUserArgs {
+        private final long user1;
+        private final long user2;
+        private final boolean twoArgumentsGiven;
+
+        public OneOrTwoUserArgs(long user1, long user2, boolean twoArgumentsGiven) {
+            this.user1 = user1;
+            this.user2 = user2;
+            this.twoArgumentsGiven = twoArgumentsGiven;
+        }
+
+        public long getUser1() {
+            return user1;
+        }
+
+        public long getUser2() {
+            return user2;
+        }
+
+        public boolean isTwoArgumentsGiven() {
+            return twoArgumentsGiven;
+        }
+    }
+
     /**
      * Only useful if those one or two user mentions are <b>all</b> the arguments.
      * If there is one argument given user 2 will default to the author.
      */
+    // TODO: This needs an overhaul, probably should have List of users with minUsers and maxUsers and defaultAuthorIfMin or sth like that
     @Nonnull
-    public static OneOfTwo<PairNonnull<Long, Long>, TwoUserArgsErrorType> getTwoUserArgs(@Nonnull CommandContext ctx, boolean allowMoreArgs) {
+    public static OneOfTwo<OneOrTwoUserArgs, TwoUserArgsErrorType> getTwoUserArgs(@Nonnull CommandContext ctx, boolean allowMoreArgs) {
         int argNum = ctx.getArgNum();
         if (ctx.getArgNum() < 1 || (!allowMoreArgs && ctx.getArgNum() > 2))
             return OneOfTwo.ofU(TwoUserArgsErrorType.WRONG_NUMBER_ARGS);
 
         User user1User = ctx.getUserMentionArg(0);
-        User user2User = argNum == 2 ? ctx.getUserMentionArg(1) : ctx.getAuthor();
+        boolean twoArgumentsGiven = argNum >= 2;
+        User user2User = twoArgumentsGiven ? ctx.getUserMentionArg(1) : ctx.getAuthor();
         if (user1User == null || user2User == null)
             return OneOfTwo.ofU(TwoUserArgsErrorType.NOT_USER_MENTION_ARG);
 
@@ -70,7 +96,7 @@ public class MiscUtil {
         if (user1 == user2)
             return OneOfTwo.ofU(TwoUserArgsErrorType.USER_1_EQUALS_USER_2);
 
-        return OneOfTwo.ofT(new PairNonnull<>(user1, user2));
+        return OneOfTwo.ofT(new OneOrTwoUserArgs(user1, user2, twoArgumentsGiven));
     }
 
     @Nonnull

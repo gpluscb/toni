@@ -29,7 +29,7 @@ public class RPSCommand implements Command {
 
     @Override
     public void execute(@Nonnull CommandContext ctx) {
-        OneOfTwo<PairNonnull<Long, Long>, MiscUtil.TwoUserArgsErrorType> argResult = MiscUtil.getTwoUserArgs(ctx, false);
+        OneOfTwo<MiscUtil.OneOrTwoUserArgs, MiscUtil.TwoUserArgsErrorType> argResult = MiscUtil.getTwoUserArgs(ctx, false);
 
         MiscUtil.TwoUserArgsErrorType error = argResult.getU().orElse(null);
         if (error != null) {
@@ -54,9 +54,9 @@ public class RPSCommand implements Command {
             ctx.reply(reply).queue();
         }
 
-        PairNonnull<Long, Long> users = argResult.getTOrThrow();
-        long user1 = users.getT();
-        long user2 = users.getU();
+        MiscUtil.OneOrTwoUserArgs users = argResult.getTOrThrow();
+        long user1 = users.getUser1();
+        long user2 = users.getUser2();
 
         String user1Mention = MiscUtil.mentionUser(user1);
         String user2Mention = MiscUtil.mentionUser(user2);

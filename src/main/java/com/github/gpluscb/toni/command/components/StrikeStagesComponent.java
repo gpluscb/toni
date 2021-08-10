@@ -22,6 +22,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -31,24 +32,28 @@ public class StrikeStagesComponent {
     private static final Logger log = LogManager.getLogger(StrikeStagesComponent.class);
 
     @Nonnull
+    private final RPSComponent rpsComponent;
+    @Nonnull
     private final EventWaiter waiter;
 
-    public StrikeStagesComponent(@Nonnull EventWaiter waiter) {
+    public StrikeStagesComponent(@Nonnull RPSComponent rpsComponent, @Nonnull EventWaiter waiter) {
+        this.rpsComponent = rpsComponent;
         this.waiter = waiter;
     }
 
     @Nonnull
-    public CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> sendStageStrikingReplying(@Nonnull Message reference, @Nonnull Message message, @Nonnull Ruleset ruleset, long striker1, long striker2) {
-        return sendStageStrikingReplying(reference, message, ruleset, striker1, striker2, null);
+    public CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> sendStageStrikingReplying(@Nonnull Message reference, @Nonnull Message message, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS) {
+        return sendStageStrikingReplying(reference, message, ruleset, striker1, striker2, doRPS, null);
     }
 
     /**
-     * If you pass a set, you swear not to touch it until we are finished
+     * If you pass a set, you swear not to touch it until we are finished.
+     * The future can also fail with the {@link com.github.gpluscb.toni.command.components.RPSComponent.RPSTimeoutException}.
      */
     @Nonnull
-    public CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> sendStageStrikingReplying(@Nonnull Message reference, @Nonnull Message message, @Nonnull Ruleset ruleset, long striker1, long striker2, @Nullable SmashSet.SetStarterStrikingState set) {
+    public CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> sendStageStrikingReplying(@Nonnull Message reference, @Nonnull Message message, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS, @Nullable SmashSet.SetStarterStrikingState set) {
         @SuppressWarnings("DuplicatedCode")
-        PairNonnull<CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>>, ButtonActionMenu> initPair = initStrikeStages(message, ruleset, striker1, striker2, set);
+        PairNonnull<CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>>, ButtonActionMenu> initPair = initStrikeStages(message, ruleset, striker1, striker2, doRPS, set);
         CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> stageStrikingResult = initPair.getT();
         ButtonActionMenu menu = initPair.getU();
 
@@ -58,16 +63,17 @@ public class StrikeStagesComponent {
     }
 
     @Nonnull
-    public CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> attachStageStriking(@Nonnull Message message, @Nonnull Ruleset ruleset, long striker1, long striker2) {
-        return attachStageStriking(message, ruleset, striker1, striker2, null);
+    public CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> attachStageStriking(@Nonnull Message message, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS) {
+        return attachStageStriking(message, ruleset, striker1, striker2, doRPS, null);
     }
 
     /**
-     * If you pass a set, you swear not to touch it until we are finished
+     * If you pass a set, you swear not to touch it until we are finished.
+     * The future can also fail with the {@link com.github.gpluscb.toni.command.components.RPSComponent.RPSTimeoutException}.
      */
     @Nonnull
-    public CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> attachStageStriking(@Nonnull Message message, @Nonnull Ruleset ruleset, long striker1, long striker2, @Nullable SmashSet.SetStarterStrikingState set) {
-        PairNonnull<CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>>, ButtonActionMenu> initPair = initStrikeStages(message, ruleset, striker1, striker2, set);
+    public CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> attachStageStriking(@Nonnull Message message, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS, @Nullable SmashSet.SetStarterStrikingState set) {
+        PairNonnull<CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>>, ButtonActionMenu> initPair = initStrikeStages(message, ruleset, striker1, striker2, doRPS, set);
         CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> stageStrikingResult = initPair.getT();
         ButtonActionMenu menu = initPair.getU();
 
@@ -77,8 +83,22 @@ public class StrikeStagesComponent {
     }
 
     @Nonnull
-    private PairNonnull<CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>>, ButtonActionMenu> initStrikeStages(@Nonnull Message message, @Nonnull Ruleset ruleset, long striker1, long striker2, @Nullable SmashSet.SetStarterStrikingState set) {
+    private PairNonnull<CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>>, ButtonActionMenu> initStrikeStages(@Nonnull Message message, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS, @Nullable SmashSet.SetStarterStrikingState set) {
         CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> stageStrikingResult = new CompletableFuture<>();
+
+        boolean shouldSwap;
+        if (doRPS) {
+            // TODO: Actually RPS *AND* the choice whether to strike first
+            shouldSwap = false;
+        } else {
+            shouldSwap = ThreadLocalRandom.current().nextBoolean();
+        }
+
+        if (shouldSwap) {
+            long tmp = striker1;
+            striker1 = striker2;
+            striker2 = tmp;
+        }
 
         StageStrikingHandler handler = new StageStrikingHandler(stageStrikingResult, ruleset, striker1, striker2, set);
 

@@ -192,7 +192,6 @@ public class StrikeStagesComponent {
 
         public synchronized void timeout(@Nullable MessageChannel channel, long messageId) {
             StrikeStagesTimeoutException timeout = new StrikeStagesTimeoutException(strikes, currentStriker, channel, messageId);
-            // TODO: Deactivate
             result.completeExceptionally(timeout);
         }
     }

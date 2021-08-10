@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
+// TODO: Somehow do RPS required or have that as a server wide setting? Alternative is random choice
 public class Ruleset {
     private final int rulesetId;
     @Nonnull

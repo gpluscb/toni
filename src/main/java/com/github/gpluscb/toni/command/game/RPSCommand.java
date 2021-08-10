@@ -5,10 +5,11 @@ import com.github.gpluscb.toni.command.CommandContext;
 import com.github.gpluscb.toni.command.components.RPSComponent;
 import com.github.gpluscb.toni.util.FailLogger;
 import com.github.gpluscb.toni.util.MiscUtil;
+import com.github.gpluscb.toni.util.OneOfTwo;
+import com.github.gpluscb.toni.util.PairNonnull;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
-import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,34 +29,37 @@ public class RPSCommand implements Command {
 
     @Override
     public void execute(@Nonnull CommandContext ctx) {
-        int argNum = ctx.getArgNum();
-        if (ctx.getArgNum() < 1 || ctx.getArgNum() > 2) {
-            ctx.reply("You must mention either one or two users.").queue();
-            return;
+        OneOfTwo<PairNonnull<Long, Long>, MiscUtil.TwoUserArgsErrorType> argResult = MiscUtil.getTwoUserArgs(ctx);
+
+        MiscUtil.TwoUserArgsErrorType error = argResult.getU().orElse(null);
+        if (error != null) {
+            String reply;
+            switch (error) {
+                case WRONG_NUMBER_ARGS:
+                    reply = "You must mention either one or two users.";
+                    break;
+                case NOT_USER_MENTION_ARG:
+                    reply = "Arguments must be user mentions.";
+                    break;
+                case BOT_USER:
+                    reply = "This command doesn't support bot or webhook users.";
+                    break;
+                case USER_1_EQUALS_USER_2:
+                    reply = "I can't have someone rps with themselves, what would that even look like?";
+                    break;
+                default:
+                    throw new IllegalStateException("Non exhaustive switch over error");
+            }
+
+            ctx.reply(reply).queue();
         }
 
-        User user1User = ctx.getUserMentionArg(0);
-        User user2User = argNum == 2 ? ctx.getUserMentionArg(1) : ctx.getAuthor();
-        if (user1User == null || user2User == null) {
-            ctx.reply("Arguments must be user mentions of users in this server.").queue();
-            return;
-        }
+        PairNonnull<Long, Long> users = argResult.getTOrThrow();
+        long user1 = users.getT();
+        long user2 = users.getU();
 
-        if (user1User.isBot() || user2User.isBot()) {
-            ctx.reply("I can't support bot/webhook users right now, sorry.").queue();
-            return;
-        }
-
-        long user1 = user1User.getIdLong();
-        long user2 = user2User.getIdLong();
-
-        if (user1 == user2) {
-            ctx.reply("I can't have people play against themselves. How would that even work?").queue();
-            return;
-        }
-
-        String user1Mention = user1User.getAsMention();
-        String user2Mention = user2User.getAsMention();
+        String user1Mention = MiscUtil.mentionUser(user1);
+        String user2Mention = MiscUtil.mentionUser(user2);
 
         Message start = new MessageBuilder(String.format("Alrighty! %s and %s, please click on the button of your choice now. " +
                 "You have three (3) minutes!", user1Mention, user2Mention))

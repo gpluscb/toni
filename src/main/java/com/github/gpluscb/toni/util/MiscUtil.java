@@ -1,8 +1,10 @@
 package com.github.gpluscb.toni.util;
 
+import com.github.gpluscb.toni.command.CommandContext;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.requests.RestAction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,6 +36,41 @@ public class MiscUtil {
             log.catching(e);
             return null;
         }
+    }
+
+    public enum TwoUserArgsErrorType {
+        WRONG_NUMBER_ARGS,
+        NOT_USER_MENTION_ARG,
+        BOT_USER,
+        USER_1_EQUALS_USER_2,
+    }
+
+    /**
+     * Only useful if those one or two user mentions are <b>all</b> the arguments.
+     * If there is one argument given user 2 will default to the author.
+     */
+    @Nonnull
+    public static OneOfTwo<PairNonnull<Long, Long>, TwoUserArgsErrorType> getTwoUserArgs(@Nonnull CommandContext ctx) {
+        int argNum = ctx.getArgNum();
+        if (ctx.getArgNum() < 1 || ctx.getArgNum() > 2)
+            return OneOfTwo.ofU(TwoUserArgsErrorType.WRONG_NUMBER_ARGS);
+
+        User user1User = ctx.getUserMentionArg(0);
+        User user2User = argNum == 2 ? ctx.getUserMentionArg(1) : ctx.getAuthor();
+        if (user1User == null || user2User == null)
+            return OneOfTwo.ofU(TwoUserArgsErrorType.NOT_USER_MENTION_ARG);
+
+
+        if (user1User.isBot() || user2User.isBot())
+            return OneOfTwo.ofU(TwoUserArgsErrorType.BOT_USER);
+
+        long user1 = user1User.getIdLong();
+        long user2 = user2User.getIdLong();
+
+        if (user1 == user2)
+            return OneOfTwo.ofU(TwoUserArgsErrorType.USER_1_EQUALS_USER_2);
+
+        return OneOfTwo.ofT(new PairNonnull<>(user1, user2));
     }
 
     @Nonnull

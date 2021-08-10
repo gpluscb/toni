@@ -2,6 +2,7 @@ package com.github.gpluscb.toni.util.discord;
 
 import com.github.gpluscb.toni.util.Constants;
 import com.github.gpluscb.toni.util.FailLogger;
+import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.PairNonnull;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import com.jagrosh.jdautilities.menu.Menu;
@@ -28,7 +29,6 @@ import java.util.stream.Collectors;
 /**
  * We override the validation to only allow specific users in users.
  */
-// TODO: Way to disable the thing so it doesn't need more resources when we're done
 public class ButtonActionMenu extends Menu {
     private static final Logger log = LogManager.getLogger(ButtonActionMenu.class);
 
@@ -38,7 +38,7 @@ public class ButtonActionMenu extends Menu {
     @Nonnull
     private final Set<Button> buttonsToAdd;
     @Nonnull
-    private final Map<String, Function<ButtonClickEvent, Message>> buttonActions;
+    private final Map<String, Function<ButtonClickEvent, OneOfTwo<Message, MenuAction>>> buttonActions;
     @Nonnull
     private final Message start;
     @Nullable
@@ -46,7 +46,7 @@ public class ButtonActionMenu extends Menu {
     @Nonnull
     private final BiConsumer<MessageChannel, Long> timeoutAction;
 
-    public ButtonActionMenu(@Nonnull EventWaiter waiter, @Nonnull Set<Long> users, long timeout, @Nonnull TimeUnit unit, @Nonnull Map<Button, Function<ButtonClickEvent, Message>> buttonActions, @Nonnull Message start, @Nullable Button deletionButton, @Nonnull BiConsumer<MessageChannel, Long> timeoutAction) {
+    public ButtonActionMenu(@Nonnull EventWaiter waiter, @Nonnull Set<Long> users, long timeout, @Nonnull TimeUnit unit, @Nonnull Map<Button, Function<ButtonClickEvent, OneOfTwo<Message, MenuAction>>> buttonActions, @Nonnull Message start, @Nullable Button deletionButton, @Nonnull BiConsumer<MessageChannel, Long> timeoutAction) {
         super(waiter, Collections.emptySet(), Collections.emptySet(), timeout, unit);
         this.users = users;
 
@@ -142,16 +142,27 @@ public class ButtonActionMenu extends Menu {
             return;
         }
 
-        Message edited = buttonActions.get(buttonId).apply(e);
-        if (edited != null) channel.editMessageById(messageId, edited).queue(this::awaitEvents);
-        else awaitEvents(e.getJDA(), messageId, channel.getIdLong());
+        OneOfTwo<Message, MenuAction> action = buttonActions.get(buttonId).apply(e);
+        action
+                .onT(edited -> channel.editMessageById(messageId, edited).queue(this::awaitEvents))
+                .onU(otherAction -> {
+                    switch (otherAction) {
+                        case NOTHING:
+                            awaitEvents(e.getJDA(), messageId, channel.getIdLong());
+                            break;
+                        case CANCEL:
+                            break;
+                        default:
+                            throw new IllegalStateException("Non exhaustive switch over MenuAction");
+                    }
+                });
     }
 
     public static class Builder extends Menu.Builder<Builder, ButtonActionMenu> {
         @Nonnull
         private final Set<Long> users;
         @Nonnull
-        private final Map<Button, Function<ButtonClickEvent, Message>> buttonActions;
+        private final Map<Button, Function<ButtonClickEvent, OneOfTwo<Message, MenuAction>>> buttonActions;
         @Nullable
         private Message start;
         @Nullable
@@ -181,11 +192,10 @@ public class ButtonActionMenu extends Menu {
         }
 
         /**
-         * @param action If action returns null, the message is not edited
          * @throws IllegalArgumentException if button is already registered
          */
         @Nonnull
-        public synchronized Builder registerButton(@Nonnull Button button, @Nonnull Function<ButtonClickEvent, Message> action) {
+        public synchronized Builder registerButton(@Nonnull Button button, @Nonnull Function<ButtonClickEvent, OneOfTwo<Message, MenuAction>> action) {
             if (buttonActions.containsKey(button)) throw new IllegalArgumentException("Button already registered");
             buttonActions.put(button, action);
             return this;
@@ -241,5 +251,13 @@ public class ButtonActionMenu extends Menu {
 
             return new ButtonActionMenu(waiter, users, timeout, unit, buttonActions, start, deletionButton, timeoutAction);
         }
+    }
+
+    public enum MenuAction {
+        NOTHING,
+        /**
+         * Does not remove the buttons
+         */
+        CANCEL
     }
 }

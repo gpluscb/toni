@@ -160,21 +160,23 @@ public class UnrankedLfgCommand implements Command {
             currentlyChallenging = new HashSet<>();
         }
 
-        @Nullable
-        public Message fightButton(@Nonnull ButtonClickEvent e) {
+        @Nonnull
+        public OneOfTwo<Message, ButtonActionMenu.MenuAction> fightButton(@Nonnull ButtonClickEvent e) {
             synchronized (currentlyLfgPerGuild) {
                 // Was it cancelled?
-                if (!currentlyLfgPerGuild.contains(new PairNonnull<>(guildId, originalAuthorId))) return null;
+                if (!currentlyLfgPerGuild.contains(new PairNonnull<>(guildId, originalAuthorId)))
+                    return OneOfTwo.ofU(ButtonActionMenu.MenuAction.CANCEL);
             }
 
             long challengerId = e.getUser().getIdLong();
             if (challengerId == originalAuthorId) {
                 e.getChannel().sendMessage("If you are trying to play with yourself, that's ok too. But there's no need to ping matchmaking for that my friend.").queue();
-                return null;
+                return OneOfTwo.ofU(ButtonActionMenu.MenuAction.NOTHING);
             }
 
             synchronized (currentlyChallenging) {
-                if (currentlyChallenging.contains(challengerId)) return null;
+                if (currentlyChallenging.contains(challengerId))
+                    return OneOfTwo.ofU(ButtonActionMenu.MenuAction.NOTHING);
 
                 currentlyChallenging.add(challengerId);
             }
@@ -206,12 +208,12 @@ public class UnrankedLfgCommand implements Command {
 
             menu.displayReplying(originalChannel, originalMessageId);
 
-            return null;
+            return OneOfTwo.ofU(ButtonActionMenu.MenuAction.NOTHING);
         }
 
-        @Nullable
-        public Message cancelButton(@Nonnull ButtonClickEvent e) {
-            if (e.getUser().getIdLong() != originalAuthorId) return null;
+        @Nonnull
+        public OneOfTwo<Message, ButtonActionMenu.MenuAction> cancelButton(@Nonnull ButtonClickEvent e) {
+            if (e.getUser().getIdLong() != originalAuthorId) return OneOfTwo.ofU(ButtonActionMenu.MenuAction.NOTHING);
 
             e.deferEdit().queue();
 
@@ -219,11 +221,13 @@ public class UnrankedLfgCommand implements Command {
                 currentlyLfgPerGuild.remove(new PairNonnull<>(guildId, originalAuthorId));
             }
 
-            return new MessageBuilder(String.format("%s, %s was looking for a game, but cancelled their search.",
-                    MiscUtil.mentionRole(matchmakingRoleId), MiscUtil.mentionUser(originalAuthorId)))
-                    .mentionRoles(matchmakingRoleId).mentionUsers(originalAuthorId)
-                    .setActionRows()
-                    .build();
+            return OneOfTwo.ofT(
+                    new MessageBuilder(String.format("%s, %s was looking for a game, but cancelled their search.",
+                            MiscUtil.mentionRole(matchmakingRoleId), MiscUtil.mentionUser(originalAuthorId)))
+                            .mentionRoles(matchmakingRoleId).mentionUsers(originalAuthorId)
+                            .setActionRows()
+                            .build()
+            );
         }
 
         public void timeout(@Nullable MessageChannel channel, long messageId) {
@@ -249,14 +253,13 @@ public class UnrankedLfgCommand implements Command {
                 this.challengerId = challengerId;
             }
 
-            @Nullable
-            public Message confirmReaction(@Nonnull ButtonClickEvent e) {
+            @Nonnull
+            public OneOfTwo<Message, ButtonActionMenu.MenuAction> confirmReaction(@Nonnull ButtonClickEvent e) {
                 e.deferEdit().queue();
 
                 MessageChannel channel = e.getChannel();
 
                 synchronized (currentlyLfgPerGuild) {
-                    // This is the Object variant, not index
                     currentlyLfgPerGuild.remove(new PairNonnull<>(guildId, originalAuthorId));
                 }
 
@@ -266,10 +269,12 @@ public class UnrankedLfgCommand implements Command {
                         .setActionRows()
                         .queue();
 
-                return new MessageBuilder(String.format("%s, %s wants to play with you.", MiscUtil.mentionUser(originalAuthorId), MiscUtil.mentionUser(challengerId)))
-                        .mentionUsers(originalAuthorId, challengerId)
-                        .setActionRows()
-                        .build();
+                return OneOfTwo.ofT(
+                        new MessageBuilder(String.format("%s, %s wants to play with you.", MiscUtil.mentionUser(originalAuthorId), MiscUtil.mentionUser(challengerId)))
+                                .mentionUsers(originalAuthorId, challengerId)
+                                .setActionRows()
+                                .build()
+                );
             }
 
             public void timeout(@Nullable MessageChannel channel, long messageId) {

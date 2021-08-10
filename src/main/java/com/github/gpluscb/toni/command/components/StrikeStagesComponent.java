@@ -1,5 +1,6 @@
 package com.github.gpluscb.toni.command.components;
 
+import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.discord.ButtonActionMenu;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.PairNonnull;
@@ -136,18 +137,18 @@ public class StrikeStagesComponent {
             strikes.add(currentStrikes);
         }
 
-        @Nullable
-        public synchronized Message handleStrike(@Nonnull ButtonClickEvent e, int stageId) {
+        @Nonnull
+        public synchronized OneOfTwo<Message, ButtonActionMenu.MenuAction> handleStrike(@Nonnull ButtonClickEvent e, int stageId) {
             // TODO: I dislike that users of this class have no control over how these messages look
             if (e.getUser().getIdLong() != currentStriker) {
                 e.reply("It's not your turn to strike right now!").setEphemeral(true).queue();
-                return null;
+                return OneOfTwo.ofU(ButtonActionMenu.MenuAction.NOTHING);
             }
 
             if (strikes.stream().anyMatch(struckStages -> struckStages.contains(stageId))) {
                 e.deferEdit().queue();
                 log.warn("Stage was double struck. Race condition or failure to set as disabled?");
-                return new MessageBuilder("That stage has already been struck. Please strike a different one.").build();
+                return OneOfTwo.ofT(new MessageBuilder("That stage has already been struck. Please strike a different one.").build());
             }
 
             currentStrikes.add(stageId);
@@ -160,7 +161,7 @@ public class StrikeStagesComponent {
                 if (strikes.size() == starterStrikePattern.length) {
                     result.complete(new PairNonnull<>(strikes, e));
 
-                    return null; // TODO
+                    return OneOfTwo.ofU(ButtonActionMenu.MenuAction.CANCEL);
                 }
 
                 currentStrikes = new HashSet<>();
@@ -187,7 +188,7 @@ public class StrikeStagesComponent {
                             ).collect(Collectors.toList())
             ));
 
-            return builder.build();
+            return OneOfTwo.ofT(builder.build());
         }
 
         public synchronized void timeout(@Nullable MessageChannel channel, long messageId) {

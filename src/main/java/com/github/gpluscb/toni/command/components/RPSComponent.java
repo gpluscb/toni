@@ -79,7 +79,6 @@ public class RPSComponent {
         @Nonnull
         private final CompletableFuture<PairNonnull<RPSResult, ButtonClickEvent>> outcomeFuture;
 
-        private boolean finished;
         private final long user1;
         private final long user2;
         @Nullable
@@ -89,36 +88,31 @@ public class RPSComponent {
 
         private RPSHandler(long user1, long user2, @Nonnull CompletableFuture<PairNonnull<RPSResult, ButtonClickEvent>> outcomeFuture) {
             this.outcomeFuture = outcomeFuture;
-            finished = false;
             this.user1 = user1;
             this.user2 = user2;
         }
 
-        @Nullable
-        public synchronized Message rockButton(@Nonnull ButtonClickEvent e) {
-            choose(e, e.getUser().getIdLong() == user1, RPS.ROCK);
-            return null;
+        @Nonnull
+        public synchronized OneOfTwo<Message, ButtonActionMenu.MenuAction> rockButton(@Nonnull ButtonClickEvent e) {
+            return choose(e, e.getUser().getIdLong() == user1, RPS.ROCK);
         }
 
-        @Nullable
-        public synchronized Message paperButton(@Nonnull ButtonClickEvent e) {
-            choose(e, e.getUser().getIdLong() == user1, RPS.PAPER);
-            return null;
+        @Nonnull
+        public synchronized OneOfTwo<Message, ButtonActionMenu.MenuAction> paperButton(@Nonnull ButtonClickEvent e) {
+            return choose(e, e.getUser().getIdLong() == user1, RPS.PAPER);
         }
 
-        @Nullable
-        public synchronized Message scissorsButton(@Nonnull ButtonClickEvent e) {
-            choose(e, e.getUser().getIdLong() == user1, RPS.SCISSORS);
-            return null;
+        @Nonnull
+        public synchronized OneOfTwo<Message, ButtonActionMenu.MenuAction> scissorsButton(@Nonnull ButtonClickEvent e) {
+            return choose(e, e.getUser().getIdLong() == user1, RPS.SCISSORS);
         }
 
-        private synchronized void choose(@Nonnull ButtonClickEvent e, boolean isUser1, @Nonnull RPS choice) {
-            if (finished) return;
-
+        @Nonnull
+        private synchronized OneOfTwo<Message, ButtonActionMenu.MenuAction> choose(@Nonnull ButtonClickEvent e, boolean isUser1, @Nonnull RPS choice) {
             if ((isUser1 && choice1 != null) || (!isUser1 && choice2 != null)) {
                 e.reply("You have already chosen, and you must learn to live with that choice!")
                         .setEphemeral(true).queue();
-                return;
+                return OneOfTwo.ofU(ButtonActionMenu.MenuAction.NOTHING);
             }
 
             if (isUser1) choice1 = choice;
@@ -128,15 +122,15 @@ public class RPSComponent {
                 RPSResult outcome = RPS.determineWinner(choice1, choice2);
                 outcomeFuture.complete(new PairNonnull<>(outcome, e));
 
-                finished = true;
-            } else {
-                e.reply("I have noted your choice...").setEphemeral(true).queue();
+                return OneOfTwo.ofU(ButtonActionMenu.MenuAction.CANCEL);
             }
+
+            e.reply("I have noted your choice...").setEphemeral(true).queue();
+            return OneOfTwo.ofU(ButtonActionMenu.MenuAction.NOTHING);
         }
 
         public synchronized void timeout(@Nullable MessageChannel channel, long messageId) {
             RPSTimeoutException timeout = new RPSTimeoutException(choice1, choice2, channel, messageId);
-            finished = true;
             outcomeFuture.completeExceptionally(timeout);
         }
     }

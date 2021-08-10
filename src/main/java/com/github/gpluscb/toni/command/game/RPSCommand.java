@@ -29,7 +29,7 @@ public class RPSCommand implements Command {
 
     @Override
     public void execute(@Nonnull CommandContext ctx) {
-        OneOfTwo<PairNonnull<Long, Long>, MiscUtil.TwoUserArgsErrorType> argResult = MiscUtil.getTwoUserArgs(ctx);
+        OneOfTwo<PairNonnull<Long, Long>, MiscUtil.TwoUserArgsErrorType> argResult = MiscUtil.getTwoUserArgs(ctx, false);
 
         MiscUtil.TwoUserArgsErrorType error = argResult.getU().orElse(null);
         if (error != null) {
@@ -119,6 +119,8 @@ public class RPSCommand implements Command {
                     user1Mention, result.getChoiceA().getDisplayName(), user2Mention, result.getChoiceB().getDisplayName(), outcome))
                     .mentionUsers(user1, user2)
                     .queue();
+
+            // TODO: Edit message, remove ActionRows
         }));
     }
 

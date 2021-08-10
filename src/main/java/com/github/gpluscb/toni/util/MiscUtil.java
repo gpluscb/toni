@@ -50,9 +50,9 @@ public class MiscUtil {
      * If there is one argument given user 2 will default to the author.
      */
     @Nonnull
-    public static OneOfTwo<PairNonnull<Long, Long>, TwoUserArgsErrorType> getTwoUserArgs(@Nonnull CommandContext ctx) {
+    public static OneOfTwo<PairNonnull<Long, Long>, TwoUserArgsErrorType> getTwoUserArgs(@Nonnull CommandContext ctx, boolean allowMoreArgs) {
         int argNum = ctx.getArgNum();
-        if (ctx.getArgNum() < 1 || ctx.getArgNum() > 2)
+        if (ctx.getArgNum() < 1 || (!allowMoreArgs && ctx.getArgNum() > 2))
             return OneOfTwo.ofU(TwoUserArgsErrorType.WRONG_NUMBER_ARGS);
 
         User user1User = ctx.getUserMentionArg(0);

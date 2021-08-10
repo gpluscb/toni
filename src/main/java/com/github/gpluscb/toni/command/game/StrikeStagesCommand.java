@@ -39,7 +39,7 @@ public class StrikeStagesCommand implements Command {
         // TODO: Ruleset selection (standard ruleset per server??)
         // TODO: Full stage striking (includes RPS)
 
-        OneOfTwo<PairNonnull<Long, Long>, MiscUtil.TwoUserArgsErrorType> result = MiscUtil.getTwoUserArgs(ctx);
+        OneOfTwo<PairNonnull<Long, Long>, MiscUtil.TwoUserArgsErrorType> result = MiscUtil.getTwoUserArgs(ctx, true);
 
         MiscUtil.TwoUserArgsErrorType error = result.getU().orElse(null);
         if (error != null) {
@@ -131,13 +131,14 @@ public class StrikeStagesCommand implements Command {
         return new String[]{"strike", "strikestarters", "strikestages"};
     }
 
-    // TODO
     @Nullable
     @Override
     public String getShortHelp() {
-        return null;
+        // TODO: Actually implement ruleset id and do rps
+        return "Helps you do the stage striking procedure with a specific ruleset. Usage: `strike [PLAYER 1] <PLAYER 2> [RULESET ID] [DO RPS]`";
     }
 
+    // TODO
     @Nullable
     @Override
     public String getDetailedHelp() {

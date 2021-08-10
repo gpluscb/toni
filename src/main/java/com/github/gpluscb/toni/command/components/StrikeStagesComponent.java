@@ -119,7 +119,6 @@ public class StrikeStagesComponent {
         @Nonnull
         private final List<Set<Integer>> strikes;
 
-
         public StageStrikingHandler(@Nonnull CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> result, @Nonnull Ruleset ruleset, long striker1, long striker2, @Nullable SmashSet.SetStarterStrikingState set) {
             this.result = result;
             this.ruleset = ruleset;

@@ -86,7 +86,7 @@ public class StrikeStagesComponent {
                 .setDeletionButton(null)
                 .addUsers(striker1, striker2)
                 .setStart(message)
-                .setTimeout(3, TimeUnit.MINUTES)
+                .setTimeout(5, TimeUnit.MINUTES)
                 .setTimeoutAction(handler::timeout);
 
         for (Stage starter : ruleset.getStarters()) {
@@ -188,8 +188,76 @@ public class StrikeStagesComponent {
             return builder.build();
         }
 
-        public void timeout(@Nullable MessageChannel channel, long messageId) {
-            // TODO
+        public synchronized void timeout(@Nullable MessageChannel channel, long messageId) {
+            StrikeStagesTimeoutException timeout = new StrikeStagesTimeoutException(strikes, currentStriker, channel, messageId);
+            // TODO: Deactivate
+            result.completeExceptionally(timeout);
+        }
+    }
+
+    public static class StrikeStagesTimeoutException extends Exception {
+        @Nonnull
+        private final List<Set<Integer>> strikesSoFar;
+        private final long currentStriker;
+        @Nullable
+        private final MessageChannel channel;
+        private final long messageId;
+
+        public StrikeStagesTimeoutException(@Nonnull List<Set<Integer>> strikesSoFar, long currentStriker, @Nullable MessageChannel channel, long messageId) {
+            this.strikesSoFar = strikesSoFar;
+            this.currentStriker = currentStriker;
+            this.channel = channel;
+            this.messageId = messageId;
+        }
+
+        public StrikeStagesTimeoutException(String message, @Nonnull List<Set<Integer>> strikesSoFar, long currentStriker, @Nullable MessageChannel channel, long messageId) {
+            super(message);
+            this.strikesSoFar = strikesSoFar;
+            this.currentStriker = currentStriker;
+            this.channel = channel;
+            this.messageId = messageId;
+        }
+
+        public StrikeStagesTimeoutException(String message, Throwable cause, @Nonnull List<Set<Integer>> strikesSoFar, long currentStriker, @Nullable MessageChannel channel, long messageId) {
+            super(message, cause);
+            this.strikesSoFar = strikesSoFar;
+            this.currentStriker = currentStriker;
+            this.channel = channel;
+            this.messageId = messageId;
+        }
+
+        public StrikeStagesTimeoutException(Throwable cause, @Nonnull List<Set<Integer>> strikesSoFar, long currentStriker, @Nullable MessageChannel channel, long messageId) {
+            super(cause);
+            this.strikesSoFar = strikesSoFar;
+            this.currentStriker = currentStriker;
+            this.channel = channel;
+            this.messageId = messageId;
+        }
+
+        public StrikeStagesTimeoutException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace, @Nonnull List<Set<Integer>> strikesSoFar, long currentStriker, @Nullable MessageChannel channel, long messageId) {
+            super(message, cause, enableSuppression, writableStackTrace);
+            this.strikesSoFar = strikesSoFar;
+            this.currentStriker = currentStriker;
+            this.channel = channel;
+            this.messageId = messageId;
+        }
+
+        @Nonnull
+        public List<Set<Integer>> getStrikesSoFar() {
+            return strikesSoFar;
+        }
+
+        public long getCurrentStriker() {
+            return currentStriker;
+        }
+
+        @Nullable
+        public MessageChannel getChannel() {
+            return channel;
+        }
+
+        public long getMessageId() {
+            return messageId;
         }
     }
 }

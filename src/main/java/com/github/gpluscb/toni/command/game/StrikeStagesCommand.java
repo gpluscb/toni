@@ -11,6 +11,7 @@ import com.github.gpluscb.toni.util.smash.Ruleset;
 import com.github.gpluscb.toni.util.smash.Stage;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -84,7 +85,23 @@ public class StrikeStagesCommand implements Command {
 
         component.sendStageStrikingReplying(ctx.getMessage(), message, ruleset, user1, user2).whenComplete(FailLogger.logFail((pair, timeout) -> {
             if (timeout != null) {
-                // TODO
+                if (!(timeout instanceof StrikeStagesComponent.StrikeStagesTimeoutException)) {
+                    log.error("Failed StrikeStages completion not StrikeStagesTimeoutException", timeout);
+                    // TODO: Tell the user
+                    return;
+                }
+
+                StrikeStagesComponent.StrikeStagesTimeoutException strikeStagesTimeout = (StrikeStagesComponent.StrikeStagesTimeoutException) timeout;
+                long badUser = strikeStagesTimeout.getCurrentStriker();
+                MessageChannel channel = strikeStagesTimeout.getChannel();
+                if (channel == null) return;
+                long messageId = strikeStagesTimeout.getMessageId();
+
+                channel.editMessageById(messageId, String.format("%s, you didn't strike the stage in time.", MiscUtil.mentionUser(badUser)))
+                        .mentionUsers(badUser)
+                        .setActionRows()
+                        .queue();
+
                 return;
             }
 

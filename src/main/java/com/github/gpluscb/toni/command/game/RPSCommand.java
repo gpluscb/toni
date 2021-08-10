@@ -90,10 +90,10 @@ public class RPSCommand implements Command {
                 }
                 if (choice2 == null) lazyIdiots.append(MiscUtil.mentionUser(user2));
 
-                channel.sendMessage(String.format("The three (3) minutes are done. Not all of you have given me your choice. Shame on you, %s!", lazyIdiots)).mentionUsers(user1, user2)
+                channel.editMessageById(messageId, String.format("The three (3) minutes are done. Not all of you have given me your choice. Shame on you, %s!", lazyIdiots))
+                        .mentionUsers(user1, user2)
+                        .setActionRows()
                         .queue();
-
-                channel.retrieveMessageById(messageId).flatMap(m -> m.editMessage(m).setActionRows()).queue();
                 return;
             }
 

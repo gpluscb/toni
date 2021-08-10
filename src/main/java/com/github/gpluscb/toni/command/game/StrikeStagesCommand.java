@@ -69,11 +69,17 @@ public class StrikeStagesCommand implements Command {
 
         Ruleset ruleset = rulesets.get(0);
 
-        // TODO: Technically, rulesets with only one starter and 0 sized starterStrikePattern are legal
+        int[] starterStrikePattern = ruleset.getStarterStrikePattern();
+        if (starterStrikePattern.length == 0) {
+            // Has exactly one element in this case
+            Stage stage = ruleset.getStarters().get(0);
+            ctx.reply(String.format("This ruleset only has one starter weirdly. You're going to ~~Brazil~~ %s.", stage)).queue();
+        }
+
         Message message = new MessageBuilder(
                 String.format("Alright, time to strike stages. %s, you begin by striking %d stages.",
                         MiscUtil.mentionUser(user1),
-                        ruleset.getStarterStrikePattern()[0])
+                        starterStrikePattern[0])
         ).mentionUsers(user1).build();
 
         component.sendStageStrikingReplying(ctx.getMessage(), message, ruleset, user1, user2).whenComplete(FailLogger.logFail((pair, timeout) -> {

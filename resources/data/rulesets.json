@@ -34,6 +34,41 @@
       "stageId": 6,
       "stageEmoteId": 0,
       "name": "Kalos Pokémon League"
+    },
+    {
+      "stageId": 7,
+      "stageEmoteId": 0,
+      "name": "Yoshi's Story"
+    },
+    {
+      "stageId": 8,
+      "stageEmoteId": 0,
+      "name": "Small Battlefield"
+    },
+    {
+      "stageId": 9,
+      "stageEmoteId": 0,
+      "name": "Unova Pokémon League"
+    },
+    {
+      "stageId": 10,
+      "stageEmoteId": 0,
+      "name": "Yoshi's Island Brawl"
+    },
+    {
+      "stageId": 11,
+      "stageEmoteId": 0,
+      "name": "Warioware, Inc."
+    },
+    {
+      "stageId": 12,
+      "stageEmoteId": 0,
+      "name": "Castle Siege"
+    },
+    {
+      "stageId": 13,
+      "stageEmoteId": 0,
+      "name": "Northern Cave"
     }
   ],
   "rulesets": [
@@ -53,6 +88,309 @@
       ],
       "dsrMode": "NONE",
       "stageBans": 2,
+      "starterStrikePattern": [
+        1,
+        2,
+        1
+      ],
+      "stageBeforeCharacter": true,
+      "blindPickBeforeStage": true
+    },
+    {
+      "rulesetId": 1,
+      "name": "GOML Ruleset",
+      "starterIds": [
+        0,
+        1,
+        2,
+        3,
+        5
+      ],
+      "counterpickIds": [
+        6,
+        7
+      ],
+      "dsrMode": "NONE",
+      "stageBans": 2,
+      "starterStrikePattern": [
+        1,
+        2,
+        1
+      ],
+      "stageBeforeCharacter": true,
+      "blindPickBeforeStage": true
+    },
+    {
+      "rulesetId": 2,
+      "name": "2GG Ruleset",
+      "starterIds": [
+        0,
+        1,
+        2,
+        3,
+        5
+      ],
+      "counterpickIds": [
+        6
+      ],
+      "dsrMode": "NONE",
+      "stageBans": 2,
+      "starterStrikePattern": [
+        1,
+        2,
+        1
+      ],
+      "stageBeforeCharacter": true,
+      "blindPickBeforeStage": true
+    },
+    {
+      "rulesetId": 3,
+      "name": "Genesis Ruleset",
+      "starterIds": [
+        0,
+        1,
+        2,
+        3,
+        5
+      ],
+      "counterpickIds": [
+        6,
+        4,
+        7
+      ],
+      "dsrMode": "WINNERS_VARIATION",
+      "stageBans": 2,
+      "starterStrikePattern": [
+        1,
+        2,
+        1
+      ],
+      "stageBeforeCharacter": true,
+      "blindPickBeforeStage": true
+    },
+    {
+      "rulesetId": 4,
+      "name": "SWT Ruleset",
+      "starterIds": [
+        0,
+        1,
+        2,
+        3,
+        5
+      ],
+      "counterpickIds": [
+        6,
+        4,
+        7,
+        8
+      ],
+      "dsrMode": "MODIFIED_DSR",
+      "stageBans": 2,
+      "starterStrikePattern": [
+        1,
+        2,
+        1
+      ],
+      "stageBeforeCharacter": true,
+      "blindPickBeforeStage": true
+    },
+    {
+      "rulesetId": 5,
+      "name": "The Box Ruleset",
+      "starterIds": [
+        0,
+        1,
+        2,
+        3,
+        5
+      ],
+      "counterpickIds": [
+        6,
+        7
+      ],
+      "dsrMode": "MODIFIED_DSR",
+      "stageBans": 2,
+      "starterStrikePattern": [
+        1,
+        2,
+        1
+      ],
+      "stageBeforeCharacter": true,
+      "blindPickBeforeStage": true
+    },
+    {
+      "rulesetId": 6,
+      "name": "Collision Ruleset",
+      "starterIds": [
+        0,
+        1,
+        2,
+        3,
+        5
+      ],
+      "counterpickIds": [
+        9
+      ],
+      "dsrMode": "NONE",
+      "stageBans": 2,
+      "starterStrikePattern": [
+        1,
+        2,
+        1
+      ],
+      "stageBeforeCharacter": true,
+      "blindPickBeforeStage": true
+    },
+    {
+      "rulesetId": 7,
+      "name": "Frostbite Ruleset",
+      "starterIds": [
+        0,
+        1,
+        2,
+        3,
+        5
+      ],
+      "counterpickIds": [
+        6,
+        4,
+        7
+      ],
+      "dsrMode": "WINNERS_VARIATION",
+      "stageBans": 2,
+      "starterStrikePattern": [
+        1,
+        2,
+        1
+      ],
+      "stageBeforeCharacter": true,
+      "blindPickBeforeStage": true
+    },
+    {
+      "rulesetId": 8,
+      "name": "Shine Ruleset",
+      "starterIds": [
+        0,
+        1,
+        2,
+        3,
+        5
+      ],
+      "counterpickIds": [
+        6,
+        7
+      ],
+      "dsrMode": "WINNERS_VARIATION",
+      "stageBans": 2,
+      "starterStrikePattern": [
+        1,
+        2,
+        1
+      ],
+      "stageBeforeCharacter": true,
+      "blindPickBeforeStage": true
+    },
+    {
+      "rulesetId": 9,
+      "name": "Small Battlefield Ruleset",
+      "starterIds": [
+        0,
+        1,
+        2,
+        3,
+        8
+      ],
+      "counterpickIds": [
+        5,
+        6,
+        4,
+        7
+      ],
+      "dsrMode": "MODIFIED_DSR",
+      "stageBans": 3,
+      "starterStrikePattern": [
+        1,
+        2,
+        1
+      ],
+      "stageBeforeCharacter": true,
+      "blindPickBeforeStage": true
+    },
+    {
+      "rulesetId": 10,
+      "name": "Frame Perfect Series Ruleset",
+      "starterIds": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        4
+      ],
+      "counterpickIds": [
+        8,
+        6,
+        10,
+        9,
+        11,
+        12,
+        13
+      ],
+      "dsrMode": "WINNERS_VARIATION",
+      "stageBans": 3,
+      "starterStrikePattern": [
+        1,
+        2,
+        2,
+        1
+      ],
+      "stageBeforeCharacter": true,
+      "blindPickBeforeStage": true
+    },
+    {
+      "rulesetId": 11,
+      "name": "MDVA Classic",
+      "starterIds": [
+        0,
+        1,
+        2,
+        3,
+        5
+      ],
+      "counterpickIds": [
+        6,
+        4,
+        7
+      ],
+      "dsrMode": "NONE",
+      "stageBans": 2,
+      "starterStrikePattern": [
+        1,
+        2,
+        1
+      ],
+      "stageBeforeCharacter": true,
+      "blindPickBeforeStage": true
+    },
+    {
+      "rulesetId": 12,
+      "name": "Wario's Smash Down Ruleset",
+      "starterIds": [
+        0,
+        1,
+        8,
+        3,
+        5
+      ],
+      "counterpickIds": [
+        2,
+        6,
+        13,
+        7
+      ],
+      "dsrMode": "MODIFIED_DSR",
+      "stageBans": 3,
       "starterStrikePattern": [
         1,
         2,

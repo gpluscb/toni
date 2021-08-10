@@ -170,10 +170,12 @@ public class StrikeStagesComponent {
             }
 
             e.deferEdit().queue();
+            int stagesToStrike = starterStrikePattern[currentStrikeIdx] - currentStrikes.size();
             MessageBuilder builder = new MessageBuilder();
-            builder.appendFormat("%s, please strike %d stages from the list below.",
+            builder.appendFormat("%s, please strike %d stage%s from the list below.",
                     MiscUtil.mentionUser(currentStriker),
-                    starterStrikePattern[currentStrikeIdx] - currentStrikes.size())
+                    stagesToStrike,
+                    stagesToStrike > 1 ? "s" : "")
                     .mentionUsers(currentStriker);
 
             builder.setActionRows(ActionRow.of(

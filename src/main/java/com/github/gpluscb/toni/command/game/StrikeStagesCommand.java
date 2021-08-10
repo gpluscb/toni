@@ -77,10 +77,12 @@ public class StrikeStagesCommand implements Command {
             ctx.reply(String.format("This ruleset only has one starter weirdly. You're going to ~~Brazil~~ %s.", stage)).queue();
         }
 
+        int firstStrike = starterStrikePattern[0];
         Message message = new MessageBuilder(
-                String.format("Alright, time to strike stages. %s, you begin by striking %d stages.",
+                String.format("Alright, time to strike stages. %s, you begin by striking %d stage%s.",
                         MiscUtil.mentionUser(user1),
-                        starterStrikePattern[0])
+                        firstStrike,
+                        firstStrike > 1 ? "s" : "")
         ).mentionUsers(user1).build();
 
         component.sendStageStrikingReplying(ctx.getMessage(), message, ruleset, user1, user2).whenComplete(FailLogger.logFail((pair, timeout) -> {
@@ -126,7 +128,7 @@ public class StrikeStagesCommand implements Command {
     @Nonnull
     @Override
     public String[] getAliases() {
-        return new String[]{"strike", "strikestarters"};
+        return new String[]{"strike", "strikestarters", "strikestages"};
     }
 
     // TODO

@@ -1,5 +1,6 @@
-package com.github.gpluscb.toni.util;
+package com.github.gpluscb.toni.util.discord;
 
+import com.github.gpluscb.toni.util.Constants;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;

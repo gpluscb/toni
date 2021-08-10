@@ -1,6 +1,7 @@
 package com.github.gpluscb.toni.command.components;
 
 import com.github.gpluscb.toni.util.*;
+import com.github.gpluscb.toni.util.discord.ButtonActionMenu;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.entities.Emoji;
 import net.dv8tion.jda.api.entities.Message;

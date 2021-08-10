@@ -1,5 +1,7 @@
-package com.github.gpluscb.toni.util;
+package com.github.gpluscb.toni.util.discord;
 
+import com.github.gpluscb.toni.util.FailLogger;
+import com.github.gpluscb.toni.util.PairNonnull;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import com.jagrosh.jdautilities.menu.Menu;
 import net.dv8tion.jda.api.JDA;

@@ -1,6 +1,6 @@
 package com.github.gpluscb.toni.command.components;
 
-import com.github.gpluscb.toni.util.ButtonActionMenu;
+import com.github.gpluscb.toni.util.discord.ButtonActionMenu;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.PairNonnull;
 import com.github.gpluscb.toni.util.smash.Ruleset;

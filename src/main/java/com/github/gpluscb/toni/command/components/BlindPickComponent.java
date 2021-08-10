@@ -1,6 +1,6 @@
 package com.github.gpluscb.toni.command.components;
 
-import com.github.gpluscb.toni.util.DMChoiceWaiter;
+import com.github.gpluscb.toni.util.discord.DMChoiceWaiter;
 import com.github.gpluscb.toni.util.smash.Character;
 import com.github.gpluscb.toni.util.smash.CharacterTree;
 import net.dv8tion.jda.api.entities.Message;

@@ -1,6 +1,6 @@
 package com.github.gpluscb.toni.command;
 
-import com.github.gpluscb.toni.util.DMChoiceWaiter;
+import com.github.gpluscb.toni.util.discord.DMChoiceWaiter;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.apache.logging.log4j.LogManager;

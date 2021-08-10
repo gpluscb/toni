@@ -1,5 +1,6 @@
-package com.github.gpluscb.toni.util;
+package com.github.gpluscb.toni.util.discord;
 
+import com.github.gpluscb.toni.util.FailLogger;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.events.message.priv.PrivateMessageReceivedEvent;
 

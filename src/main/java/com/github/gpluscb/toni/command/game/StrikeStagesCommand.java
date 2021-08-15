@@ -58,6 +58,7 @@ public class StrikeStagesCommand implements Command {
             }
 
             ctx.reply(reply).queue();
+            return;
         }
 
         MiscUtil.OneOrTwoUserArgs users = result.getTOrThrow();

@@ -12,6 +12,7 @@ import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
+import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.Button;
 import org.apache.commons.lang3.StringUtils;
@@ -52,14 +53,7 @@ public class StrikeStagesComponent {
      */
     @Nonnull
     public CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> sendStageStrikingReplying(@Nonnull Message reference, @Nonnull Message message, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS, @Nullable SmashSet.SetStarterStrikingState set) {
-        @SuppressWarnings("DuplicatedCode")
-        PairNonnull<CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>>, ButtonActionMenu> initPair = initStrikeStages(message, ruleset, striker1, striker2, doRPS, set);
-        CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> stageStrikingResult = initPair.getT();
-        ButtonActionMenu menu = initPair.getU();
-
-        menu.displayReplying(reference);
-
-        return stageStrikingResult;
+        return initStrikeStagesReplying(reference, message, ruleset, striker1, striker2, doRPS, set);
     }
 
     @Nonnull
@@ -73,53 +67,96 @@ public class StrikeStagesComponent {
      */
     @Nonnull
     public CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> attachStageStriking(@Nonnull Message message, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS, @Nullable SmashSet.SetStarterStrikingState set) {
-        PairNonnull<CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>>, ButtonActionMenu> initPair = initStrikeStages(message, ruleset, striker1, striker2, doRPS, set);
-        CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> stageStrikingResult = initPair.getT();
-        ButtonActionMenu menu = initPair.getU();
-
-        menu.display(message);
-
-        return stageStrikingResult;
+        return initStrikeStages(message, ruleset, striker1, striker2, doRPS, set);
     }
 
     @Nonnull
-    private PairNonnull<CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>>, ButtonActionMenu> initStrikeStages(@Nonnull Message message, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS, @Nullable SmashSet.SetStarterStrikingState set) {
-        CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> stageStrikingResult = new CompletableFuture<>();
+    private CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> initStrikeStages(@Nonnull Message message, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS, @Nullable SmashSet.SetStarterStrikingState set) {
+        return initStrikeStagesHelper(null, message, ruleset, striker1, striker2, doRPS, set);
+    }
 
-        boolean shouldSwap;
+    @Nonnull
+    private CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> initStrikeStagesReplying(@Nonnull Message reference, @Nonnull Message message, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS, @Nullable SmashSet.SetStarterStrikingState set) {
+        return initStrikeStagesHelper(reference, message, ruleset, striker1, striker2, doRPS, set);
+    }
+
+    @Nonnull
+    private CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> initStrikeStagesHelper(@Nullable Message reference, @Nonnull Message message, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS, @Nullable SmashSet.SetStarterStrikingState set) {
+        CompletableFuture<Boolean> shouldSwapFuture;
         if (doRPS) {
             // TODO: Actually RPS *AND* the choice whether to strike first
-            shouldSwap = false;
+            CompletableFuture<PairNonnull<RPSComponent.RPSResult, ButtonClickEvent>> rpsResult;
+            if (reference == null)
+                rpsResult = rpsComponent.attachRPS(message, striker1, striker2);
+            else
+                rpsResult = rpsComponent.sendRPSReplying(reference, message, striker1, striker2);
+
+            shouldSwapFuture = rpsResult.thenCompose(pair -> evaluateRPSResult(striker1, striker2, pair.getT(), pair.getU()));
         } else {
-            shouldSwap = ThreadLocalRandom.current().nextBoolean();
+            shouldSwapFuture = CompletableFuture.completedFuture(ThreadLocalRandom.current().nextBoolean());
         }
 
-        if (shouldSwap) {
-            long tmp = striker1;
-            striker1 = striker2;
-            striker2 = tmp;
+        return shouldSwapFuture.thenCompose(shouldSwap -> {
+            long striker1_ = striker1;
+            long striker2_ = striker2;
+
+            if (shouldSwap) {
+                long tmp = striker1_;
+                striker1_ = striker2_;
+                striker2_ = tmp;
+            }
+
+            CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> stageStrikingResult = new CompletableFuture<>();
+
+            StageStrikingHandler handler = new StageStrikingHandler(stageStrikingResult, ruleset, striker1_, striker2_, set);
+
+            ButtonActionMenu.Builder builder = new ButtonActionMenu.Builder()
+                    .setEventWaiter(waiter)
+                    .setDeletionButton(null)
+                    .addUsers(striker1_, striker2_)
+                    .setStart(message)
+                    .setTimeout(5, TimeUnit.MINUTES)
+                    .setTimeoutAction(handler::timeout);
+
+            for (Stage starter : ruleset.getStarters()) {
+                builder.registerButton(
+                        Button.secondary(String.valueOf(starter.getStageId()), StringUtils.abbreviate(starter.getName(), LABEL_MAX_LENGTH)),
+                        e -> handler.handleStrike(e, starter.getStageId())
+                );
+            }
+
+            ButtonActionMenu menu = builder.build();
+
+            if (reference == null)
+                menu.display(message);
+            else
+                menu.displayReplying(reference);
+
+            return stageStrikingResult;
+        });
+    }
+
+    @Nonnull
+    private CompletableFuture<Boolean> evaluateRPSResult(long user1, long user2, @Nonnull RPSComponent.RPSResult result, @Nonnull ButtonClickEvent e) {
+        switch (result.getWinner()) {
+            case Tie:
+                String choice = result.getChoiceA().getDisplayName();
+                return e.editMessage(String.format("Both of you chose %s. So please try again.", choice))
+                        .flatMap(InteractionHook::retrieveOriginal)
+                        .submit()
+                        .thenCompose(m -> rpsComponent.attachRPS(m, user1, user2))
+                        .thenCompose(pair -> {
+                            RPSComponent.RPSResult newResult = pair.getT();
+                            ButtonClickEvent newE = pair.getU();
+                            return evaluateRPSResult(user1, user2, newResult, newE);
+                        });
+            case A:
+                return CompletableFuture.completedFuture(false);
+            case B:
+                return CompletableFuture.completedFuture(true);
+            default:
+                throw new IllegalStateException("Incomplete switch over Winner");
         }
-
-        StageStrikingHandler handler = new StageStrikingHandler(stageStrikingResult, ruleset, striker1, striker2, set);
-
-        ButtonActionMenu.Builder builder = new ButtonActionMenu.Builder()
-                .setEventWaiter(waiter)
-                .setDeletionButton(null)
-                .addUsers(striker1, striker2)
-                .setStart(message)
-                .setTimeout(5, TimeUnit.MINUTES)
-                .setTimeoutAction(handler::timeout);
-
-        for (Stage starter : ruleset.getStarters()) {
-            builder.registerButton(
-                    Button.secondary(String.valueOf(starter.getStageId()), StringUtils.abbreviate(starter.getName(), LABEL_MAX_LENGTH)),
-                    e -> handler.handleStrike(e, starter.getStageId())
-            );
-        }
-
-        ButtonActionMenu menu = builder.build();
-
-        return new PairNonnull<>(stageStrikingResult, menu);
     }
 
     private static class StageStrikingHandler {
@@ -193,16 +230,16 @@ public class StrikeStagesComponent {
             int stagesToStrike = starterStrikePattern[currentStrikeIdx] - currentStrikes.size();
             MessageBuilder builder = new MessageBuilder();
             builder.appendFormat("%s, please strike %d stage%s from the list below.",
-                    MiscUtil.mentionUser(currentStriker),
-                    stagesToStrike,
-                    stagesToStrike > 1 ? "s" : "")
+                            MiscUtil.mentionUser(currentStriker),
+                            stagesToStrike,
+                            stagesToStrike > 1 ? "s" : "")
                     .mentionUsers(currentStriker);
 
             builder.setActionRows(ActionRow.of(
                     ruleset.getStarters().stream()
                             .map(starter -> Button.secondary(
-                                    String.valueOf(starter.getStageId()),
-                                    StringUtils.abbreviate(starter.getName(), LABEL_MAX_LENGTH)
+                                            String.valueOf(starter.getStageId()),
+                                            StringUtils.abbreviate(starter.getName(), LABEL_MAX_LENGTH)
                                     ).withDisabled(strikes.stream().anyMatch(struckIds -> struckIds.contains(starter.getStageId())))
                             ).collect(Collectors.toList())
             ));

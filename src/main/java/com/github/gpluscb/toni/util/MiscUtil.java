@@ -83,6 +83,11 @@ public class MiscUtil {
         User user1User = ctx.getUserMentionArg(0);
         boolean twoArgumentsGiven = argNum >= 2;
         User user2User = twoArgumentsGiven ? ctx.getUserMentionArg(1) : ctx.getAuthor();
+        if (user2User == null && allowMoreArgs) {
+            user2User = ctx.getAuthor();
+            // TODO: Better naming
+            twoArgumentsGiven = false;
+        }
         if (user1User == null || user2User == null)
             return OneOfTwo.ofU(TwoUserArgsErrorType.NOT_USER_MENTION_ARG);
 

@@ -46,9 +46,13 @@ public class MiscUtil {
         switch (string.toLowerCase()) {
             case "0":
             case "false":
+            case "no":
+            case "n":
                 return false;
             case "1":
             case "true":
+            case "yes":
+            case "y":
                 return true;
             default:
                 return null;

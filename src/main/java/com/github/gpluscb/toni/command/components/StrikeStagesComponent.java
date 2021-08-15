@@ -1,6 +1,7 @@
 package com.github.gpluscb.toni.command.components;
 
 import com.github.gpluscb.toni.util.OneOfTwo;
+import com.github.gpluscb.toni.util.Pair;
 import com.github.gpluscb.toni.util.discord.ButtonActionMenu;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.PairNonnull;
@@ -23,6 +24,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -42,6 +44,9 @@ public class StrikeStagesComponent {
         this.waiter = waiter;
     }
 
+    /**
+     * The future can also fail with the {@link com.github.gpluscb.toni.command.components.RPSComponent.RPSTimeoutException}.
+     */
     @Nonnull
     public CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> sendStageStrikingReplying(@Nonnull Message reference, @Nonnull Message message, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS) {
         return sendStageStrikingReplying(reference, message, ruleset, striker1, striker2, doRPS, null);
@@ -56,6 +61,9 @@ public class StrikeStagesComponent {
         return initStrikeStagesReplying(reference, message, ruleset, striker1, striker2, doRPS, set);
     }
 
+    /**
+     * The future can also fail with the {@link com.github.gpluscb.toni.command.components.RPSComponent.RPSTimeoutException}.
+     */
     @Nonnull
     public CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> attachStageStriking(@Nonnull Message message, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS) {
         return attachStageStriking(message, ruleset, striker1, striker2, doRPS, null);
@@ -82,9 +90,11 @@ public class StrikeStagesComponent {
 
     @Nonnull
     private CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> initStrikeStagesHelper(@Nullable Message reference, @Nonnull Message message, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS, @Nullable SmashSet.SetStarterStrikingState set) {
-        CompletableFuture<Boolean> shouldSwapFuture;
+        // Message will be the message to edit, or null if not present
+        CompletableFuture<Pair<Boolean, Message>> shouldSwapFuture;
         if (doRPS) {
             // TODO: Actually RPS *AND* the choice whether to strike first
+            // TODO: I believe successful RPS still fails interaction
             CompletableFuture<PairNonnull<RPSComponent.RPSResult, ButtonClickEvent>> rpsResult;
             if (reference == null)
                 rpsResult = rpsComponent.attachRPS(message, striker1, striker2);
@@ -93,10 +103,13 @@ public class StrikeStagesComponent {
 
             shouldSwapFuture = rpsResult.thenCompose(pair -> evaluateRPSResult(striker1, striker2, pair.getT(), pair.getU()));
         } else {
-            shouldSwapFuture = CompletableFuture.completedFuture(ThreadLocalRandom.current().nextBoolean());
+            shouldSwapFuture = CompletableFuture.completedFuture(new Pair<>(ThreadLocalRandom.current().nextBoolean(), reference == null ? message : null));
         }
 
-        return shouldSwapFuture.thenCompose(shouldSwap -> {
+        return shouldSwapFuture.thenCompose(pair -> {
+            boolean shouldSwap = pair.getT();
+            @Nullable Message toEdit = pair.getU();
+
             long striker1_ = striker1;
             long striker2_ = striker2;
 
@@ -127,8 +140,8 @@ public class StrikeStagesComponent {
 
             ButtonActionMenu menu = builder.build();
 
-            if (reference == null)
-                menu.display(message);
+            if (reference == null || toEdit != null)
+                menu.display(toEdit == null ? message : toEdit);
             else
                 menu.displayReplying(reference);
 
@@ -136,8 +149,11 @@ public class StrikeStagesComponent {
         });
     }
 
+    /**
+     * Message will be the message to edit, or null if not present
+     */
     @Nonnull
-    private CompletableFuture<Boolean> evaluateRPSResult(long user1, long user2, @Nonnull RPSComponent.RPSResult result, @Nonnull ButtonClickEvent e) {
+    private CompletableFuture<Pair<Boolean, Message>> evaluateRPSResult(long user1, long user2, @Nonnull RPSComponent.RPSResult result, @Nonnull ButtonClickEvent e) {
         switch (result.getWinner()) {
             case Tie:
                 String choice = result.getChoiceA().getDisplayName();
@@ -151,9 +167,9 @@ public class StrikeStagesComponent {
                             return evaluateRPSResult(user1, user2, newResult, newE);
                         });
             case A:
-                return CompletableFuture.completedFuture(false);
+                return CompletableFuture.completedFuture(new Pair<>(false, e.getMessage()));
             case B:
-                return CompletableFuture.completedFuture(true);
+                return CompletableFuture.completedFuture(new Pair<>(true, e.getMessage()));
             default:
                 throw new IllegalStateException("Incomplete switch over Winner");
         }

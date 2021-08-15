@@ -127,6 +127,7 @@ public class StrikeStagesCommand implements Command {
         }
 
         int firstStrike = starterStrikePattern[0];
+        // FIXME: This is wrong if the random switcheroos
         Message message = new MessageBuilder(
                 String.format("Alright, time to strike stages. %s, you begin by striking %d stage%s.",
                         MiscUtil.mentionUser(user1),
@@ -137,6 +138,7 @@ public class StrikeStagesCommand implements Command {
         Ruleset ruleset_ = ruleset;
         component.sendStageStrikingReplying(ctx.getMessage(), message, ruleset, user1, user2, doRPS).whenComplete(FailLogger.logFail((pair, timeout) -> {
             if (timeout != null) {
+                // FIXME: Java feels the need to wrap this in CompletionException in this instance
                 if (!(timeout instanceof StrikeStagesComponent.StrikeStagesTimeoutException)) {
                     log.error("Failed StrikeStages completion not StrikeStagesTimeoutException", timeout);
                     // TODO: Tell the user

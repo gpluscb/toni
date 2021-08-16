@@ -71,7 +71,7 @@ public class CommandContext {
     @Nonnull
     @CheckReturnValue
     public MessageAction reply(@Nonnull MessageEmbed embed) {
-        return reply(new MessageBuilder().setEmbed(embed).build());
+        return reply(new MessageBuilder().setEmbeds(embed).build());
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")

@@ -486,11 +486,11 @@ public class TournamentCommand implements Command {
 
                 Message message;
                 if (eventPage == 0)
-                    message = new MessageBuilder().setEmbed(applyOneTournament(embed, tournament, idxOutOfSize).build()).build();
+                    message = new MessageBuilder().setEmbeds(applyOneTournament(embed, tournament, idxOutOfSize).build()).build();
                 else {
                     int eventIndex = eventPage - 1;
                     EventResponse event = pair.getU().get(eventIndex);
-                    message = new MessageBuilder().setEmbed(applyOneEvent(embed, tournament, event).build()).build();
+                    message = new MessageBuilder().setEmbeds(applyOneEvent(embed, tournament, event).build()).build();
                 }
                 lazyMessages[tournamentPage][eventPage] = message;
                 return message;

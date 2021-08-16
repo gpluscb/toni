@@ -149,9 +149,9 @@ public class StringTokenizer {
         }
 
         public static class TokenInfo {
-            int startPos;
-            int endPos;
-            int quoteCharLength;
+            private final int startPos;
+            private final int endPos;
+            private final int quoteCharLength;
 
             public TokenInfo(int startPos, int endPos, int quoteCharLength) {
                 this.startPos = startPos;

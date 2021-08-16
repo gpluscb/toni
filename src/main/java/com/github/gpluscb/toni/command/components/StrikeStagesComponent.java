@@ -24,7 +24,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -94,7 +93,6 @@ public class StrikeStagesComponent {
         CompletableFuture<Pair<Boolean, Message>> shouldSwapFuture;
         if (doRPS) {
             // TODO: Actually RPS *AND* the choice whether to strike first
-            // TODO: I believe successful RPS still fails interaction
             CompletableFuture<PairNonnull<RPSComponent.RPSResult, ButtonClickEvent>> rpsResult;
             if (reference == null)
                 rpsResult = rpsComponent.attachRPS(message, striker1, striker2);
@@ -167,8 +165,10 @@ public class StrikeStagesComponent {
                             return evaluateRPSResult(user1, user2, newResult, newE);
                         });
             case A:
+                e.deferEdit().queue();
                 return CompletableFuture.completedFuture(new Pair<>(false, e.getMessage()));
             case B:
+                e.deferEdit().queue();
                 return CompletableFuture.completedFuture(new Pair<>(true, e.getMessage()));
             default:
                 throw new IllegalStateException("Incomplete switch over Winner");

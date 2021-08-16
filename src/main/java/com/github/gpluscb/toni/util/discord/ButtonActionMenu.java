@@ -12,6 +12,7 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.Button;
 import net.dv8tion.jda.api.interactions.components.ButtonStyle;
 import net.dv8tion.jda.api.requests.restaction.MessageAction;
@@ -36,7 +37,7 @@ public class ButtonActionMenu extends Menu {
     private final Set<Long> users;
 
     @Nonnull
-    private final Set<Button> buttonsToAdd;
+    private final List<Button> buttonsToAdd;
     @Nonnull
     private final Map<String, Function<ButtonClickEvent, OneOfTwo<Message, MenuAction>>> buttonActions;
     @Nonnull
@@ -50,7 +51,7 @@ public class ButtonActionMenu extends Menu {
         super(waiter, Collections.emptySet(), Collections.emptySet(), timeout, unit);
         this.users = users;
 
-        buttonsToAdd = buttonActions.keySet(); // Preserve order
+        buttonsToAdd = new ArrayList<>(buttonActions.keySet());
         if (deletionButton != null) buttonsToAdd.add(deletionButton);
 
         if (buttonsToAdd.stream().anyMatch(button -> button.getStyle() == ButtonStyle.LINK))
@@ -97,10 +98,23 @@ public class ButtonActionMenu extends Menu {
     }
 
     private void init(@Nonnull MessageAction messageAction) {
-        Set<Button> buttons = new LinkedHashSet<>(buttonsToAdd); // Preserve order
-        if (deletionButton != null) buttons.add(deletionButton);
+        // Multiple ActionRows in case of > 5 buttons
+        List<ActionRow> actionRows = new ArrayList<>();
+        List<Button> currentRow = new ArrayList<>();
+        int currentButton = 0;
+        while (currentButton < buttonsToAdd.size()) {
+            currentRow.add(buttonsToAdd.get(currentButton));
+            if (currentRow.size() >= 5) {
+                actionRows.add(ActionRow.of(currentRow));
+                currentRow = new ArrayList<>();
+            }
 
-        messageAction.setActionRow(buttons).queue(this::awaitEvents);
+            currentButton++;
+        }
+
+        if (!currentRow.isEmpty()) actionRows.add(ActionRow.of(currentRow));
+
+        messageAction.setActionRows(actionRows).queue(this::awaitEvents);
     }
 
     private void awaitEvents(@Nonnull Message message) {

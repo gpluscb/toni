@@ -180,14 +180,14 @@ public class StrikeStagesComponent {
                         MiscUtil.mentionUser(user2),
                         result.getChoiceB().getDisplayName(),
                         MiscUtil.mentionUser(winner)
-                )).build())
+                )).mentionUsers(user1, user2).build())
                 .setTimeout(5, TimeUnit.MINUTES)
                 .registerButton(Button.secondary("first", Emoji.fromUnicode(Constants.ONE)), event -> {
-                    e.deferEdit().queue();
+                    event.deferEdit().queue();
                     user1StrikesFirstFuture.complete(new Pair<>(winner == user1, e.getMessage()));
                     return OneOfTwo.ofU(ButtonActionMenu.MenuAction.CANCEL);
                 }).registerButton(Button.secondary("second", Emoji.fromUnicode(Constants.TWO)), event -> {
-                    e.deferEdit().queue();
+                    event.deferEdit().queue();
                     user1StrikesFirstFuture.complete(new Pair<>(winner != user1, e.getMessage()));
                     return OneOfTwo.ofU(ButtonActionMenu.MenuAction.CANCEL);
                 })

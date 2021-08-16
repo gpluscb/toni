@@ -270,14 +270,29 @@ public class StrikeStagesComponent {
                             stagesToStrike > 1 ? "s" : "")
                     .mentionUsers(currentStriker);
 
-            builder.setActionRows(ActionRow.of(
-                    ruleset.getStarters().stream()
-                            .map(starter -> Button.secondary(
-                                            String.valueOf(starter.getStageId()),
-                                            StringUtils.abbreviate(starter.getName(), LABEL_MAX_LENGTH)
-                                    ).withDisabled(strikes.stream().anyMatch(struckIds -> struckIds.contains(starter.getStageId())))
-                            ).collect(Collectors.toList())
-            ));
+            List<Button> buttonsToAdd = ruleset.getStarters().stream()
+                    .map(starter -> Button.secondary(
+                                    String.valueOf(starter.getStageId()),
+                                    StringUtils.abbreviate(starter.getName(), LABEL_MAX_LENGTH)
+                            ).withDisabled(strikes.stream().anyMatch(struckIds -> struckIds.contains(starter.getStageId())))
+                    ).collect(Collectors.toList());
+
+            // Multiple ActionRows in case of > 5 buttons
+            // TODO: Dupe code
+            List<ActionRow> actionRows = new ArrayList<>();
+            List<Button> currentRow = new ArrayList<>();
+            int currentButton = 0;
+            while (currentButton < buttonsToAdd.size()) {
+                currentRow.add(buttonsToAdd.get(currentButton));
+                if (currentRow.size() >= 5) {
+                    actionRows.add(ActionRow.of(currentRow));
+                    currentRow = new ArrayList<>();
+                }
+
+                currentButton++;
+            }
+
+            builder.setActionRows(actionRows);
 
             return OneOfTwo.ofT(builder.build());
         }

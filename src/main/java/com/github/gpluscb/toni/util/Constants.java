@@ -45,4 +45,8 @@ public class Constants {
     public static final String PAPER = "\uD83D\uDCC4";
     @Nonnull
     public static final String SCISSORS = "\u2702\uFE0F";
+    @Nonnull
+    public static final String ONE = "1\u20E3";
+    @Nonnull
+    public static final String TWO = "2\u20E3";
 }

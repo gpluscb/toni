@@ -1,15 +1,13 @@
 package com.github.gpluscb.toni.command.components;
 
-import com.github.gpluscb.toni.util.OneOfTwo;
-import com.github.gpluscb.toni.util.Pair;
+import com.github.gpluscb.toni.util.*;
 import com.github.gpluscb.toni.util.discord.ButtonActionMenu;
-import com.github.gpluscb.toni.util.MiscUtil;
-import com.github.gpluscb.toni.util.PairNonnull;
 import com.github.gpluscb.toni.util.smash.Ruleset;
 import com.github.gpluscb.toni.util.smash.SmashSet;
 import com.github.gpluscb.toni.util.smash.Stage;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.MessageBuilder;
+import net.dv8tion.jda.api.entities.Emoji;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
@@ -44,7 +42,7 @@ public class StrikeStagesComponent {
     }
 
     /**
-     * The future can also fail with the {@link com.github.gpluscb.toni.command.components.RPSComponent.RPSTimeoutException}.
+     * The future can also fail with the {@link com.github.gpluscb.toni.command.components.RPSComponent.RPSTimeoutException} or {@link ChooseFirstStrikerTimeoutException}.
      */
     @Nonnull
     public CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> sendStageStrikingReplying(@Nonnull Message reference, @Nonnull Message message, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS) {
@@ -53,7 +51,7 @@ public class StrikeStagesComponent {
 
     /**
      * If you pass a set, you swear not to touch it until we are finished.
-     * The future can also fail with the {@link com.github.gpluscb.toni.command.components.RPSComponent.RPSTimeoutException}.
+     * The future can also fail with the {@link com.github.gpluscb.toni.command.components.RPSComponent.RPSTimeoutException} or {@link ChooseFirstStrikerTimeoutException}.
      */
     @Nonnull
     public CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> sendStageStrikingReplying(@Nonnull Message reference, @Nonnull Message message, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS, @Nullable SmashSet.SetStarterStrikingState set) {
@@ -61,7 +59,7 @@ public class StrikeStagesComponent {
     }
 
     /**
-     * The future can also fail with the {@link com.github.gpluscb.toni.command.components.RPSComponent.RPSTimeoutException}.
+     * The future can also fail with the {@link com.github.gpluscb.toni.command.components.RPSComponent.RPSTimeoutException} or {@link ChooseFirstStrikerTimeoutException}.
      */
     @Nonnull
     public CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> attachStageStriking(@Nonnull Message message, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS) {
@@ -70,7 +68,7 @@ public class StrikeStagesComponent {
 
     /**
      * If you pass a set, you swear not to touch it until we are finished.
-     * The future can also fail with the {@link com.github.gpluscb.toni.command.components.RPSComponent.RPSTimeoutException}.
+     * The future can also fail with the {@link com.github.gpluscb.toni.command.components.RPSComponent.RPSTimeoutException} or {@link ChooseFirstStrikerTimeoutException}.
      */
     @Nonnull
     public CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> attachStageStriking(@Nonnull Message message, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS, @Nullable SmashSet.SetStarterStrikingState set) {
@@ -90,41 +88,34 @@ public class StrikeStagesComponent {
     @Nonnull
     private CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> initStrikeStagesHelper(@Nullable Message reference, @Nonnull Message message, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS, @Nullable SmashSet.SetStarterStrikingState set) {
         // Message will be the message to edit, or null if not present
-        CompletableFuture<Pair<Boolean, Message>> shouldSwapFuture;
+        CompletableFuture<Pair<Boolean, Message>> user1StrikesFirstFuture;
         if (doRPS) {
-            // TODO: Actually RPS *AND* the choice whether to strike first
             CompletableFuture<PairNonnull<RPSComponent.RPSResult, ButtonClickEvent>> rpsResult;
             if (reference == null)
                 rpsResult = rpsComponent.attachRPS(message, striker1, striker2);
             else
                 rpsResult = rpsComponent.sendRPSReplying(reference, message, striker1, striker2);
 
-            shouldSwapFuture = rpsResult.thenCompose(pair -> evaluateRPSResult(striker1, striker2, pair.getT(), pair.getU()));
+            user1StrikesFirstFuture = rpsResult.thenCompose(pair -> evaluateRPSResult(striker1, striker2, pair.getT(), pair.getU()));
         } else {
-            shouldSwapFuture = CompletableFuture.completedFuture(new Pair<>(ThreadLocalRandom.current().nextBoolean(), reference == null ? message : null));
+            user1StrikesFirstFuture = CompletableFuture.completedFuture(new Pair<>(ThreadLocalRandom.current().nextBoolean(), reference == null ? message : null));
         }
 
-        return shouldSwapFuture.thenCompose(pair -> {
-            boolean shouldSwap = pair.getT();
+        return user1StrikesFirstFuture.thenCompose(pair -> {
+            boolean user1StrikesFirst = pair.getT();
             @Nullable Message toEdit = pair.getU();
 
-            long striker1_ = striker1;
-            long striker2_ = striker2;
-
-            if (shouldSwap) {
-                long tmp = striker1_;
-                striker1_ = striker2_;
-                striker2_ = tmp;
-            }
+            long firstStriker = user1StrikesFirst ? striker1 : striker2;
+            long secondStriker = user1StrikesFirst ? striker2 : striker1;
 
             CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> stageStrikingResult = new CompletableFuture<>();
 
-            StageStrikingHandler handler = new StageStrikingHandler(stageStrikingResult, ruleset, striker1_, striker2_, set);
+            StageStrikingHandler handler = new StageStrikingHandler(stageStrikingResult, ruleset, firstStriker, secondStriker, set);
 
             ButtonActionMenu.Builder builder = new ButtonActionMenu.Builder()
                     .setEventWaiter(waiter)
                     .setDeletionButton(null)
-                    .addUsers(striker1_, striker2_)
+                    .addUsers(striker1, striker2)
                     .setStart(message)
                     .setTimeout(5, TimeUnit.MINUTES)
                     .setTimeoutAction(handler::timeout);
@@ -152,6 +143,8 @@ public class StrikeStagesComponent {
      */
     @Nonnull
     private CompletableFuture<Pair<Boolean, Message>> evaluateRPSResult(long user1, long user2, @Nonnull RPSComponent.RPSResult result, @Nonnull ButtonClickEvent e) {
+        long winner;
+
         switch (result.getWinner()) {
             case Tie:
                 String choice = result.getChoiceA().getDisplayName();
@@ -165,14 +158,49 @@ public class StrikeStagesComponent {
                             return evaluateRPSResult(user1, user2, newResult, newE);
                         });
             case A:
-                e.deferEdit().queue();
-                return CompletableFuture.completedFuture(new Pair<>(false, e.getMessage()));
+                winner = user1;
+                break;
             case B:
-                e.deferEdit().queue();
-                return CompletableFuture.completedFuture(new Pair<>(true, e.getMessage()));
+                winner = user2;
+                break;
             default:
                 throw new IllegalStateException("Incomplete switch over Winner");
         }
+
+        CompletableFuture<Pair<Boolean, Message>> user1StrikesFirstFuture = new CompletableFuture<>();
+
+        ButtonActionMenu menu = new ButtonActionMenu.Builder()
+                .setEventWaiter(waiter)
+                .setDeletionButton(null)
+                .addUsers(winner)
+                .setStart(new MessageBuilder(String.format(
+                        "%s chose %s, and %s chose %s. So %s, you won the RPS. Will you strike first or second?",
+                        MiscUtil.mentionUser(user1),
+                        result.getChoiceA().getDisplayName(),
+                        MiscUtil.mentionUser(user2),
+                        result.getChoiceB().getDisplayName(),
+                        MiscUtil.mentionUser(winner)
+                )).build())
+                .setTimeout(5, TimeUnit.MINUTES)
+                .registerButton(Button.secondary("first", Emoji.fromUnicode(Constants.ONE)), event -> {
+                    e.deferEdit().queue();
+                    user1StrikesFirstFuture.complete(new Pair<>(winner == user1, e.getMessage()));
+                    return OneOfTwo.ofU(ButtonActionMenu.MenuAction.CANCEL);
+                }).registerButton(Button.secondary("second", Emoji.fromUnicode(Constants.TWO)), event -> {
+                    e.deferEdit().queue();
+                    user1StrikesFirstFuture.complete(new Pair<>(winner != user1, e.getMessage()));
+                    return OneOfTwo.ofU(ButtonActionMenu.MenuAction.CANCEL);
+                })
+                .setTimeoutAction((channel, messageId) -> {
+                    ChooseFirstStrikerTimeoutException exception = new ChooseFirstStrikerTimeoutException(winner, channel, messageId);
+                    user1StrikesFirstFuture.completeExceptionally(exception);
+                }).build();
+
+        e.deferEdit().queue();
+        //noinspection ConstantConditions Not ephemeral
+        menu.display(e.getMessage());
+
+        return user1StrikesFirstFuture;
     }
 
     private static class StageStrikingHandler {
@@ -266,6 +294,47 @@ public class StrikeStagesComponent {
         public synchronized void timeout(@Nullable MessageChannel channel, long messageId) {
             StrikeStagesTimeoutException timeout = new StrikeStagesTimeoutException(strikes, currentStriker, channel, messageId);
             result.completeExceptionally(timeout);
+        }
+    }
+
+    public static class ChooseFirstStrikerTimeoutException extends Exception {
+        private final long user;
+        @Nullable
+        private final MessageChannel channel;
+        private final long messageId;
+
+        public ChooseFirstStrikerTimeoutException(long user, @Nullable MessageChannel channel, long messageId) {
+            this.user = user;
+            this.channel = channel;
+            this.messageId = messageId;
+        }
+
+        public ChooseFirstStrikerTimeoutException(String message, long user, @Nullable MessageChannel channel, long messageId) {
+            super(message);
+            this.user = user;
+            this.channel = channel;
+            this.messageId = messageId;
+        }
+
+        public ChooseFirstStrikerTimeoutException(String message, Throwable cause, long user, @Nullable MessageChannel channel, long messageId) {
+            super(message, cause);
+            this.user = user;
+            this.channel = channel;
+            this.messageId = messageId;
+        }
+
+        public ChooseFirstStrikerTimeoutException(Throwable cause, long user, @Nullable MessageChannel channel, long messageId) {
+            super(cause);
+            this.user = user;
+            this.channel = channel;
+            this.messageId = messageId;
+        }
+
+        public ChooseFirstStrikerTimeoutException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace, long user, @Nullable MessageChannel channel, long messageId) {
+            super(message, cause, enableSuppression, writableStackTrace);
+            this.user = user;
+            this.channel = channel;
+            this.messageId = messageId;
         }
     }
 

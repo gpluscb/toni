@@ -292,6 +292,8 @@ public class StrikeStagesComponent {
                 currentButton++;
             }
 
+            if (!currentRow.isEmpty()) actionRows.add(ActionRow.of(currentRow));
+
             builder.setActionRows(actionRows);
 
             return OneOfTwo.ofT(builder.build());

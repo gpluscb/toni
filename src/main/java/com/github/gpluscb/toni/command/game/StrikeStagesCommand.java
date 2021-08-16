@@ -8,8 +8,6 @@ import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.smash.Ruleset;
 import com.github.gpluscb.toni.util.smash.Stage;
-import net.dv8tion.jda.api.MessageBuilder;
-import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
 import org.apache.logging.log4j.LogManager;
@@ -126,17 +124,8 @@ public class StrikeStagesCommand implements Command {
             ctx.reply(String.format("This ruleset only has one starter weirdly. You're going to ~~Brazil~~ %s.", stage)).queue();
         }
 
-        int firstStrike = starterStrikePattern[0];
-        // FIXME: This is wrong if the random switcheroos
-        Message message = new MessageBuilder(
-                String.format("Alright, time to strike stages. %s, you begin by striking %d stage%s.",
-                        MiscUtil.mentionUser(user1),
-                        firstStrike,
-                        firstStrike > 1 ? "s" : "")
-        ).mentionUsers(user1).build();
-
         Ruleset ruleset_ = ruleset;
-        component.sendStageStrikingReplying(ctx.getMessage(), message, ruleset, user1, user2, doRPS).whenComplete(FailLogger.logFail((pair, timeout) -> {
+        component.sendStageStrikingReplying(ctx.getMessage(), ruleset, user1, user2, doRPS).whenComplete(FailLogger.logFail((pair, timeout) -> {
             if (timeout != null) {
                 // FIXME: Java feels the need to wrap this in CompletionException in this instance
                 if (!(timeout instanceof StrikeStagesComponent.StrikeStagesTimeoutException)) {

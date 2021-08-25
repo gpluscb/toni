@@ -139,7 +139,7 @@ public class RPSCommand implements Command {
     @Override
     public String getDetailedHelp() {
         return "`rps [PLAYER 1 (default: message author)] <PLAYER 2>`\n" +
-                "Helps you play the world famous game of [rock paper scissors](https://en.wikipedia.org/wiki/Rock_paper_scissors). " +
+                "Helps you play the world famous game of [rock paper scissors](https://en.wikipedia.org/wiki/Rock_paper_scissors).\n" +
                 "Aliases: `rockpaperscissors`, `rps`";
     }
 }

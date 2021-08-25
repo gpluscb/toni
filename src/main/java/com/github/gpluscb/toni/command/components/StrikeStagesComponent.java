@@ -278,22 +278,9 @@ public class StrikeStagesComponent {
                     ).collect(Collectors.toList());
 
             // Multiple ActionRows in case of > 5 buttons
-            // TODO: Dupe code
-            List<ActionRow> actionRows = new ArrayList<>();
-            List<Button> currentRow = new ArrayList<>();
-            int currentButton = 0;
-            while (currentButton < buttonsToAdd.size()) {
-                currentRow.add(buttonsToAdd.get(currentButton));
-                if (currentRow.size() >= 5) {
-                    actionRows.add(ActionRow.of(currentRow));
-                    currentRow = new ArrayList<>();
-                }
+            List<List<Button>> splitButtonsToAdd = MiscUtil.splitList(buttonsToAdd, 5);
 
-                currentButton++;
-            }
-
-            if (!currentRow.isEmpty()) actionRows.add(ActionRow.of(currentRow));
-
+            List<ActionRow> actionRows = splitButtonsToAdd.stream().map(ActionRow::of).collect(Collectors.toList());
             builder.setActionRows(actionRows);
 
             return OneOfTwo.ofT(builder.build());

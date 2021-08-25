@@ -1,9 +1,6 @@
 package com.github.gpluscb.toni.util.discord;
 
-import com.github.gpluscb.toni.util.Constants;
-import com.github.gpluscb.toni.util.FailLogger;
-import com.github.gpluscb.toni.util.OneOfTwo;
-import com.github.gpluscb.toni.util.PairNonnull;
+import com.github.gpluscb.toni.util.*;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import com.jagrosh.jdautilities.menu.Menu;
 import net.dv8tion.jda.api.JDA;
@@ -99,20 +96,8 @@ public class ButtonActionMenu extends Menu {
 
     private void init(@Nonnull MessageAction messageAction) {
         // Multiple ActionRows in case of > 5 buttons
-        List<ActionRow> actionRows = new ArrayList<>();
-        List<Button> currentRow = new ArrayList<>();
-        int currentButton = 0;
-        while (currentButton < buttonsToAdd.size()) {
-            currentRow.add(buttonsToAdd.get(currentButton));
-            if (currentRow.size() >= 5) {
-                actionRows.add(ActionRow.of(currentRow));
-                currentRow = new ArrayList<>();
-            }
-
-            currentButton++;
-        }
-
-        if (!currentRow.isEmpty()) actionRows.add(ActionRow.of(currentRow));
+        List<List<Button>> splitButtonsToAdd = MiscUtil.splitList(buttonsToAdd, 5);
+        List<ActionRow> actionRows = splitButtonsToAdd.stream().map(ActionRow::of).collect(Collectors.toList());
 
         messageAction.setActionRows(actionRows).queue(this::awaitEvents);
     }

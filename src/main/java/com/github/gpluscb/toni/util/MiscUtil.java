@@ -5,6 +5,8 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.Button;
 import net.dv8tion.jda.api.requests.RestAction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -13,7 +15,9 @@ import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -121,6 +125,25 @@ public class MiscUtil {
             default:
                 return null;
         }
+    }
+
+    @Nonnull
+    public static <T> List<List<T>> splitList(@Nonnull List<T> toSplit, int maxLength) {
+        List<List<T>> ret = new ArrayList<>();
+        List<T> currentList = new ArrayList<>();
+
+        for (T elem : toSplit) {
+            currentList.add(elem);
+            if (currentList.size() >= maxLength) {
+                ret.add(currentList);
+                currentList = new ArrayList<>();
+            }
+
+        }
+
+        if (!currentList.isEmpty()) ret.add(currentList);
+
+        return ret;
     }
 
     @Nonnull

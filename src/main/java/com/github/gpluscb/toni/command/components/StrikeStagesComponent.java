@@ -331,6 +331,19 @@ public class StrikeStagesComponent {
             this.channel = channel;
             this.messageId = messageId;
         }
+
+        public long getUser() {
+            return user;
+        }
+
+        @Nullable
+        public MessageChannel getChannel() {
+            return channel;
+        }
+
+        public long getMessageId() {
+            return messageId;
+        }
     }
 
     public static class StrikeStagesTimeoutException extends Exception {

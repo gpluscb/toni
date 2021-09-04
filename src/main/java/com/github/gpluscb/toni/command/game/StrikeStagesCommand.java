@@ -2,6 +2,7 @@ package com.github.gpluscb.toni.command.game;
 
 import com.github.gpluscb.toni.command.Command;
 import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.components.RPSComponent;
 import com.github.gpluscb.toni.command.components.StrikeStagesComponent;
 import com.github.gpluscb.toni.util.FailLogger;
 import com.github.gpluscb.toni.util.MiscUtil;
@@ -17,6 +18,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletionException;
 
 public class StrikeStagesCommand implements Command {
     private static final Logger log = LogManager.getLogger(StrikeStagesCommand.class);
@@ -128,24 +130,63 @@ public class StrikeStagesCommand implements Command {
         Ruleset ruleset_ = ruleset;
         component.sendStageStrikingReplying(ctx.getMessage(), ruleset, user1, user2, doRPS).whenComplete(FailLogger.logFail((pair, timeout) -> {
             if (timeout != null) {
-                // FIXME: Java feels the need to wrap this in CompletionException in this instance
-                if (!(timeout instanceof StrikeStagesComponent.StrikeStagesTimeoutException)) {
-                    log.error("Failed StrikeStages completion not StrikeStagesTimeoutException", timeout);
-                    // TODO: Tell the user
-                    return;
+                if (timeout instanceof CompletionException) {
+                    Throwable timeoutCause = timeout.getCause();
+
+                    if (timeoutCause instanceof StrikeStagesComponent.StrikeStagesTimeoutException) {
+                        StrikeStagesComponent.StrikeStagesTimeoutException strikeStagesTimeout = (StrikeStagesComponent.StrikeStagesTimeoutException) timeoutCause;
+                        long badUser = strikeStagesTimeout.getCurrentStriker();
+                        MessageChannel channel = strikeStagesTimeout.getChannel();
+                        if (channel == null) return;
+                        long messageId = strikeStagesTimeout.getMessageId();
+
+                        channel.editMessageById(messageId, String.format("%s, you didn't strike the stage in time.", MiscUtil.mentionUser(badUser)))
+                                .mentionUsers(badUser)
+                                .setActionRows()
+                                .queue();
+
+                        return;
+                    } else if (timeoutCause instanceof StrikeStagesComponent.ChooseFirstStrikerTimeoutException) {
+                        StrikeStagesComponent.ChooseFirstStrikerTimeoutException firstStrikerTimeout = (StrikeStagesComponent.ChooseFirstStrikerTimeoutException) timeoutCause;
+                        long badUser = firstStrikerTimeout.getUser();
+                        MessageChannel channel = firstStrikerTimeout.getChannel();
+                        if (channel == null) return;
+                        long messageId = firstStrikerTimeout.getMessageId();
+
+                        channel.editMessageById(messageId, String.format("%s, you didn't choose if you want to strike first in time.", MiscUtil.mentionUser(badUser)))
+                                .mentionUsers(badUser)
+                                .setActionRows()
+                                .queue();
+
+                        return;
+                    } else if (timeoutCause instanceof RPSComponent.RPSTimeoutException) {
+                        RPSComponent.RPSTimeoutException rpsTimeout = (RPSComponent.RPSTimeoutException) timeoutCause;
+
+                        MessageChannel channel = rpsTimeout.getChannel();
+                        if (channel == null) return;
+                        long messageId = rpsTimeout.getMessageId();
+
+                        RPSComponent.RPS choice1 = rpsTimeout.getChoiceA();
+                        RPSComponent.RPS choice2 = rpsTimeout.getChoiceB();
+
+                        StringBuilder lazyIdiots = new StringBuilder();
+                        if (choice1 == null) {
+                            lazyIdiots.append(MiscUtil.mentionUser(user1));
+                            if (choice2 == null) lazyIdiots.append(" and ");
+                        }
+                        if (choice2 == null) lazyIdiots.append(MiscUtil.mentionUser(user2));
+
+                        channel.editMessageById(messageId, String.format("You didn't all complete the RPS! Be more alert next time, %s.", lazyIdiots))
+                                .mentionUsers(user1, user2)
+                                .setActionRows()
+                                .queue();
+
+                        return;
+                    }
                 }
 
-                StrikeStagesComponent.StrikeStagesTimeoutException strikeStagesTimeout = (StrikeStagesComponent.StrikeStagesTimeoutException) timeout;
-                long badUser = strikeStagesTimeout.getCurrentStriker();
-                MessageChannel channel = strikeStagesTimeout.getChannel();
-                if (channel == null) return;
-                long messageId = strikeStagesTimeout.getMessageId();
-
-                channel.editMessageById(messageId, String.format("%s, you didn't strike the stage in time.", MiscUtil.mentionUser(badUser)))
-                        .mentionUsers(badUser)
-                        .setActionRows()
-                        .queue();
-
+                log.error("Failed StrikeStages completion not StrikeStagesTimeoutException", timeout);
+                // TODO: Tell the user
                 return;
             }
 

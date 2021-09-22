@@ -366,6 +366,7 @@ public class SmashSet {
     }
 
     public static class GameData {
+        // TODO: save conflicts when reporting?
         @Nullable
         private Player winner;
         @Nullable

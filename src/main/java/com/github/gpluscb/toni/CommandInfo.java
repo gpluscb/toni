@@ -64,9 +64,8 @@ public class CommandInfo {
     }
 
     public static class Builder {
-        @Nullable
-        private Boolean adminOnly;
-        @Nullable
+        private boolean adminOnly;
+        @Nonnull
         private Permission[] requiredBotPerms;
         @Nullable
         private String[] aliases;
@@ -77,7 +76,12 @@ public class CommandInfo {
         @Nullable
         private String detailedHelp;
 
+        /**
+         * Defaults: adminOnly - false, requiredBotPerms - empty
+         */
         public Builder() {
+            adminOnly = false;
+            requiredBotPerms = new Permission[0];
         }
 
         @Nonnull
@@ -124,10 +128,8 @@ public class CommandInfo {
 
         @Nonnull
         public CommandInfo build() {
-            if (adminOnly == null || aliases == null || commandData == null || shortHelp == null || detailedHelp == null)
+            if (aliases == null || commandData == null)
                 throw new IllegalStateException("All fields must be set");
-
-            if (requiredBotPerms == null) requiredBotPerms = new Permission[0];
 
             return new CommandInfo(adminOnly, requiredBotPerms, aliases, commandData, shortHelp, detailedHelp);
         }

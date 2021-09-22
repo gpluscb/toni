@@ -1,4 +1,4 @@
-package com.github.gpluscb.toni;
+package com.github.gpluscb.toni.command;
 
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;

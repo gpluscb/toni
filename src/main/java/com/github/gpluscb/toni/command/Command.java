@@ -1,6 +1,5 @@
 package com.github.gpluscb.toni.command;
 
-import com.github.gpluscb.toni.CommandInfo;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 
 import javax.annotation.Nonnull;

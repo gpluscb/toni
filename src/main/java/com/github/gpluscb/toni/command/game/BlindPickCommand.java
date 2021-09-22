@@ -1,10 +1,9 @@
 package com.github.gpluscb.toni.command.game;
 
 import com.github.gpluscb.toni.command.Command;
-import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.MessageCommandContext;
 import com.github.gpluscb.toni.util.CharacterTree;
 import com.github.gpluscb.toni.util.DMChoiceWaiter;
-import com.github.gpluscb.toni.util.FailLogger;
 import com.github.gpluscb.toni.util.MiscUtil;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
@@ -35,7 +34,7 @@ public class BlindPickCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull CommandContext ctx) {
+    public void execute(@Nonnull MessageCommandContext ctx) {
         List<Long> users = new ArrayList<>();
         for (int i = 0; i < ctx.getArgNum(); i++) {
             User user = ctx.getUserMentionArg(i);

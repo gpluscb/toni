@@ -1,7 +1,7 @@
 package com.github.gpluscb.toni.command.matchmaking;
 
 import com.github.gpluscb.toni.command.Command;
-import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.MessageCommandContext;
 import com.github.gpluscb.toni.matchmaking.UnrankedManager;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
@@ -30,7 +30,7 @@ public class UnrankedConfigCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull CommandContext ctx) {
+    public void execute(@Nonnull MessageCommandContext ctx) {
         if (!ctx.getEvent().isFromGuild()) {
             ctx.reply("This command only works in servers, I won't set up matchmaking in our DMs.").queue();
             return;
@@ -123,7 +123,7 @@ public class UnrankedConfigCommand implements Command {
         }
     }
 
-    private void channelVariant(@Nonnull CommandContext ctx) {
+    private void channelVariant(@Nonnull MessageCommandContext ctx) {
         if (ctx.getArgNum() < 2) {
             ctx.reply("Too few arguments. I need to know what the matchmaking role is!").queue();
             return;
@@ -161,7 +161,7 @@ public class UnrankedConfigCommand implements Command {
         }
     }
 
-    private void roleVariant(@Nonnull CommandContext ctx) {
+    private void roleVariant(@Nonnull MessageCommandContext ctx) {
         if (ctx.getArgNum() < 2) {
             ctx.reply("Too few arguments. I need to know what the matchmaking role is!").queue();
             return;
@@ -199,7 +199,7 @@ public class UnrankedConfigCommand implements Command {
         }
     }
 
-    private void resetVariant(@Nonnull CommandContext ctx) {
+    private void resetVariant(@Nonnull MessageCommandContext ctx) {
         try {
             boolean wasPresent = manager.deleteMatchmakingConfig(ctx.getEvent().getGuild().getIdLong());
 
@@ -216,7 +216,7 @@ public class UnrankedConfigCommand implements Command {
 
     // I don't like this warning I feel like it makes stuff less intuitive sometimes
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    private boolean checkRole(@Nonnull CommandContext ctx, @Nonnull Role role) {
+    private boolean checkRole(@Nonnull MessageCommandContext ctx, @Nonnull Role role) {
         if (!(role.getGuild().getSelfMember().hasPermission(Permission.MESSAGE_MENTION_EVERYONE) || role.isMentionable())) {
             ctx.reply("The role you provided is not mentionable, but I need to be able to ping it.").queue();
             return false;

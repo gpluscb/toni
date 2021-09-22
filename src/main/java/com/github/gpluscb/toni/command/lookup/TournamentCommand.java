@@ -9,7 +9,7 @@ import com.github.gpluscb.ggjava.entity.object.response.enums.BracketTypeRespons
 import com.github.gpluscb.ggjava.entity.object.response.objects.*;
 import com.github.gpluscb.ggjava.entity.object.response.scalars.*;
 import com.github.gpluscb.toni.command.Command;
-import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.MessageCommandContext;
 import com.github.gpluscb.toni.smashgg.GGManager;
 import com.github.gpluscb.toni.util.*;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
@@ -46,7 +46,7 @@ public class TournamentCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull CommandContext ctx) {
+    public void execute(@Nonnull MessageCommandContext ctx) {
         if (ctx.getArgs().isEmpty()) {
             ctx.reply("Too few arguments. I can't just find you a tournament if I don't know what you're searching for. Use `help tournament` for help.").queue();
             return;
@@ -73,7 +73,7 @@ public class TournamentCommand implements Command {
         }));
     }
 
-    private void handleErrorResponse(@Nonnull CommandContext ctx, @Nonnull GGResponse<QueryResponse> errorResponse) {
+    private void handleErrorResponse(@Nonnull MessageCommandContext ctx, @Nonnull GGResponse<QueryResponse> errorResponse) {
         DeserializationException e = errorResponse.getException();
         List<GGError> errors = errorResponse.getErrors();
         if (e != null) log.catching(e);
@@ -85,7 +85,7 @@ public class TournamentCommand implements Command {
         ctx.reply("An error during the parsing of the response smash.gg sent me... I'll go annoy my dev. If this happens consistently, go give them some context too.").queue();
     }
 
-    private void sendReply(@Nonnull CommandContext ctx, @Nonnull List<TournamentResponse> tournaments) {
+    private void sendReply(@Nonnull MessageCommandContext ctx, @Nonnull List<TournamentResponse> tournaments) {
         if (tournaments.isEmpty()) {
             ctx.reply("Sorry, I couldn't find any tournament matching that on smash.gg.").queue();
             return;

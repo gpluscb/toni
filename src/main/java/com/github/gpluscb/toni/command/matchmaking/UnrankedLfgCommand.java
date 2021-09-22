@@ -1,7 +1,7 @@
 package com.github.gpluscb.toni.command.matchmaking;
 
 import com.github.gpluscb.toni.command.Command;
-import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.MessageCommandContext;
 import com.github.gpluscb.toni.matchmaking.UnrankedManager;
 import com.github.gpluscb.toni.util.*;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
@@ -44,7 +44,7 @@ public class UnrankedLfgCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull CommandContext ctx) {
+    public void execute(@Nonnull MessageCommandContext ctx) {
         if (!ctx.getEvent().isFromGuild()) {
             ctx.reply("This command only works in servers. There is only us two in our DMs. And it's nice that you want to play with me, but sorry I don't have hands.").queue();
             return;

@@ -1,7 +1,7 @@
 package com.github.gpluscb.toni.command.game;
 
 import com.github.gpluscb.toni.command.Command;
-import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.MessageCommandContext;
 import com.github.gpluscb.toni.util.ButtonActionMenu;
 import com.github.gpluscb.toni.util.Constants;
 import com.github.gpluscb.toni.util.MiscUtil;
@@ -27,7 +27,7 @@ public class RockPaperScissorsCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull CommandContext ctx) {
+    public void execute(@Nonnull MessageCommandContext ctx) {
         int argNum = ctx.getArgNum();
         if (ctx.getArgNum() < 1 || ctx.getArgNum() > 2) {
             ctx.reply("You must mention either one or two users.").queue();

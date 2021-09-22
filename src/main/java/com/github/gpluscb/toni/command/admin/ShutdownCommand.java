@@ -2,7 +2,7 @@ package com.github.gpluscb.toni.command.admin;
 
 import com.github.gpluscb.toni.Bot;
 import com.github.gpluscb.toni.command.Command;
-import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.MessageCommandContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -21,7 +21,7 @@ public class ShutdownCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull CommandContext ctx) {
+    public void execute(@Nonnull MessageCommandContext ctx) {
         if (!ctx.memberHasBotAdminPermission()) return;
 
         log.info("Shutdown command executed - shutting down");

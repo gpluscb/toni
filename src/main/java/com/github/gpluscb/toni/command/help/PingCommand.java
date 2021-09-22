@@ -1,7 +1,7 @@
 package com.github.gpluscb.toni.command.help;
 
 import com.github.gpluscb.toni.command.Command;
-import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.MessageCommandContext;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class PingCommand implements Command {
     @Override
-    public void execute(@Nonnull CommandContext ctx) {
+    public void execute(@Nonnull MessageCommandContext ctx) {
         AtomicLong sendTime = new AtomicLong();
         ctx.reply("Doing the measurement...").addCheck(() -> {
             sendTime.set(System.currentTimeMillis());

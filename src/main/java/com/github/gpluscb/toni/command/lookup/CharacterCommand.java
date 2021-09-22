@@ -1,7 +1,7 @@
 package com.github.gpluscb.toni.command.lookup;
 
 import com.github.gpluscb.toni.command.Command;
-import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.MessageCommandContext;
 import com.github.gpluscb.toni.ultimateframedata.CharacterData;
 import com.github.gpluscb.toni.ultimateframedata.UltimateframedataClient;
 import com.github.gpluscb.toni.util.*;
@@ -44,7 +44,7 @@ public class CharacterCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull CommandContext ctx) {
+    public void execute(@Nonnull MessageCommandContext ctx) {
         int argNum = ctx.getArgNum();
         // T: id, U: response in case Id is not found
         OneOfTwo<Pair<Short, String>, String> idAndMoveNameOrResponse = argNum == 0 ?
@@ -89,7 +89,7 @@ public class CharacterCommand implements Command {
      * @return T: Pair of id and move name. Note that move name may be null. U: Reason why we couldn't find anything.
      */
     @Nonnull
-    private OneOfTwo<Pair<Short, String>, String> findCharacterIdAndMoveNameOrResponse(@Nonnull CommandContext ctx) {
+    private OneOfTwo<Pair<Short, String>, String> findCharacterIdAndMoveNameOrResponse(@Nonnull MessageCommandContext ctx) {
         int characterArgNum = 0;
         OneOfTwo<Short, String> id = OneOfTwo.ofU("I don't know that character, sorry. " +
                 "Note that I only know the English names.");
@@ -231,7 +231,7 @@ public class CharacterCommand implements Command {
         }
     }
 
-    private void sendReply(@Nonnull CommandContext ctx, @Nullable CharacterData data, @Nullable PairNonnull<Integer, Integer> startMove, boolean startMoveRequested) {
+    private void sendReply(@Nonnull MessageCommandContext ctx, @Nullable CharacterData data, @Nullable PairNonnull<Integer, Integer> startMove, boolean startMoveRequested) {
         if (data == null) {
             log.error("Valid character requested, but not found by ufd service.");
             ctx.reply("Oh this is a bug. I was sure my buddy program would know about that character but it didn't. I'll tell my dev about it, but you can give them some context too.").queue();

@@ -1,7 +1,7 @@
 package com.github.gpluscb.toni.command.game;
 
 import com.github.gpluscb.toni.command.Command;
-import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.MessageCommandContext;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
 import net.dv8tion.jda.api.entities.User;
@@ -14,7 +14,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class RandomPlayerCommand implements Command {
     @Override
-    public void execute(@Nonnull CommandContext ctx) {
+    public void execute(@Nonnull MessageCommandContext ctx) {
         // T: User id, U: string choice
         List<OneOfTwo<Long, String>> choices = new ArrayList<>();
         for (int i = 0; i < ctx.getArgNum(); i++) {

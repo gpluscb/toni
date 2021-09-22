@@ -2,7 +2,7 @@ package com.github.gpluscb.toni.command.help;
 
 import com.github.gpluscb.toni.command.Command;
 import com.github.gpluscb.toni.command.CommandCategory;
-import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.MessageCommandContext;
 import com.github.gpluscb.toni.util.EmbedUtil;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
@@ -39,7 +39,7 @@ public class HelpCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull CommandContext ctx) {
+    public void execute(@Nonnull MessageCommandContext ctx) {
         List<String> args = ctx.getArgs();
         if (args.isEmpty()) {
             generalHelp(ctx);
@@ -92,7 +92,7 @@ public class HelpCommand implements Command {
         ctx.reply("I don't have that command or category.").queue();
     }
 
-    private void generalHelp(@Nonnull CommandContext ctx) {
+    private void generalHelp(@Nonnull MessageCommandContext ctx) {
         EmbedBuilder builder = EmbedUtil.getPrepared(ctx.getMember(), ctx.getAuthor()).setTitle("Toni's general help");
 
         builder.setDescription("My prefixes are `!t`, `noti` and `toni`, but you can mention me instead too.\n")

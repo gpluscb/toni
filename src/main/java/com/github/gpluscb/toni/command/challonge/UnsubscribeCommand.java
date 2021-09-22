@@ -3,7 +3,7 @@ package com.github.gpluscb.toni.command.challonge;
 import com.github.gpluscb.challonge_listener.ChallongeExtension;
 import com.github.gpluscb.toni.challonge.TournamentListener;
 import com.github.gpluscb.toni.command.Command;
-import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.MessageCommandContext;
 import com.github.gpluscb.toni.util.FailLogger;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.TextChannel;
@@ -31,7 +31,7 @@ public class UnsubscribeCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull CommandContext ctx) {
+    public void execute(@Nonnull MessageCommandContext ctx) {
         if (!ctx.getEvent().isFromGuild()) {
             ctx.reply("Hey, this command only works in servers!").queue();
             return;
@@ -100,7 +100,7 @@ public class UnsubscribeCommand implements Command {
         return subs.filter(sub -> guild.getTextChannelById(sub.getLogChannelId()) != null);
     }
 
-    private void sendResponse(@Nonnull CommandContext ctx, @Nonnull TournamentListener.Subscription sub) {
+    private void sendResponse(@Nonnull MessageCommandContext ctx, @Nonnull TournamentListener.Subscription sub) {
         try {
             listener.unsubscribe(sub);
 

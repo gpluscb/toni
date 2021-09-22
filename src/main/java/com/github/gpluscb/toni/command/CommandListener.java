@@ -1,6 +1,7 @@
 package com.github.gpluscb.toni.command;
 
 import com.github.gpluscb.toni.util.DMChoiceWaiter;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.apache.logging.log4j.LogManager;
@@ -32,9 +33,16 @@ public class CommandListener extends ListenerAdapter {
         if (!event.isFromGuild() && waiter.getActiveUsers().contains(event.getAuthor().getIdLong())) return;
         if (event.getAuthor().isBot() || !prefixPattern.matcher(event.getMessage().getContentRaw()).matches()) return;
 
-        CommandContext ctx = new CommandContext(event);
+        MessageCommandContext ctx = new MessageCommandContext(event);
         log.trace("Correct prefix received - ctx: {}", ctx);
 
         dispatcher.dispatch(ctx);
+    }
+
+    @Override
+    public void onSlashCommand(@Nonnull SlashCommandEvent event) {
+        log.trace("Slash command - {}", event);
+
+        dispatcher.dispatch(event);
     }
 }

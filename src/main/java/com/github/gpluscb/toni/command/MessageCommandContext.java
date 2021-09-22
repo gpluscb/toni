@@ -17,8 +17,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class CommandContext {
-    private static final Logger log = LogManager.getLogger(CommandContext.class);
+public class MessageCommandContext {
+    private static final Logger log = LogManager.getLogger(MessageCommandContext.class);
 
     // TODO: This infrastructure doesn't allow for more/custom prefixes or multiple word long commands
     // 0 is prefix, 1 is command
@@ -32,7 +32,7 @@ public class CommandContext {
     @Nonnull
     private final StringTokenizer.TokenList tokens;
 
-    public CommandContext(@Nonnull MessageReceivedEvent event) {
+    public MessageCommandContext(@Nonnull MessageReceivedEvent event) {
         this.event = event;
         tokens = TOKENIZER.tokenize(event.getMessage().getContentRaw());
     }

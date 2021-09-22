@@ -1,7 +1,7 @@
 package com.github.gpluscb.toni.command.admin;
 
 import com.github.gpluscb.toni.command.Command;
-import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.MessageCommandContext;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -12,7 +12,7 @@ import javax.script.ScriptEngineManager;
 
 public class EvalCommand implements Command {
     @Override
-    public void execute(@Nonnull CommandContext ctx) {
+    public void execute(@Nonnull MessageCommandContext ctx) {
         if (!ctx.memberHasBotAdminPermission()) return;
 
         String args = ctx.getArgsFrom(0);

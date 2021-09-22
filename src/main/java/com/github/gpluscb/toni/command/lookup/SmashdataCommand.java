@@ -1,7 +1,7 @@
 package com.github.gpluscb.toni.command.lookup;
 
 import com.github.gpluscb.toni.command.Command;
-import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.MessageCommandContext;
 import com.github.gpluscb.toni.smashdata.SmashdataManager;
 import com.github.gpluscb.toni.util.Constants;
 import com.github.gpluscb.toni.util.EmbedUtil;
@@ -43,7 +43,7 @@ public class SmashdataCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull CommandContext ctx) {
+    public void execute(@Nonnull MessageCommandContext ctx) {
         if (ctx.getArgs().isEmpty()) {
             ctx.reply("Too few arguments. I can't just find you a player if I don't know what you're searching for. Use `help player` for help.").queue();
             return;
@@ -101,7 +101,7 @@ public class SmashdataCommand implements Command {
         }
     }
 
-    private void sendReply(@Nonnull CommandContext ctx, @Nonnull List<SmashdataManager.PlayerData> results) {
+    private void sendReply(@Nonnull MessageCommandContext ctx, @Nonnull List<SmashdataManager.PlayerData> results) {
         if (results.isEmpty()) {
             ctx.reply("I couldn't find anything for that input, sorry.").queue();
             return;

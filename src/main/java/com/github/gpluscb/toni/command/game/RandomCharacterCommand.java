@@ -1,7 +1,7 @@
 package com.github.gpluscb.toni.command.game;
 
 import com.github.gpluscb.toni.command.Command;
-import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.MessageCommandContext;
 import com.github.gpluscb.toni.util.CharacterTree;
 import com.github.gpluscb.toni.util.MiscUtil;
 
@@ -21,7 +21,7 @@ public class RandomCharacterCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull CommandContext ctx) {
+    public void execute(@Nonnull MessageCommandContext ctx) {
         CharacterTree.Game game = CharacterTree.Game.ULTIMATE;
         boolean stackEchos = false;
         boolean stackMiis = false;
@@ -121,7 +121,7 @@ public class RandomCharacterCommand implements Command {
         sendResponse(ctx, selectedCharacters);
     }
 
-    private void sendResponse(@Nonnull CommandContext ctx, @Nonnull List<CharacterTree.Character> selectedCharacters) {
+    private void sendResponse(@Nonnull MessageCommandContext ctx, @Nonnull List<CharacterTree.Character> selectedCharacters) {
         String emotes = selectedCharacters.stream()
                 .map(character -> String.format("%s(%s)", MiscUtil.mentionEmote(character.getEmoteId()), character.getName()))
                 .collect(Collectors.joining("/"));
@@ -129,12 +129,12 @@ public class RandomCharacterCommand implements Command {
         ctx.reply(emotes).queue();
     }
 
-    private void tooManyArgs(@Nonnull CommandContext ctx) {
+    private void tooManyArgs(@Nonnull MessageCommandContext ctx) {
         ctx.reply("Too many arguments. Use `toni, help random` for a detailed description.").queue();
     }
 
     @Nullable
-    private Boolean shouldStackX(@Nonnull CommandContext ctx, @Nonnull String arg, @Nonnull String name) {
+    private Boolean shouldStackX(@Nonnull MessageCommandContext ctx, @Nonnull String arg, @Nonnull String name) {
         Boolean stackX = MiscUtil.boolFromString(arg);
         if (stackX == null)
             ctx.reply(String.format("I don't understand if you want %s to be treated as one character or not. " +

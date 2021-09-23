@@ -33,7 +33,7 @@ public class CommandListener extends ListenerAdapter {
         if (!event.isFromGuild() && waiter.getActiveUsers().contains(event.getAuthor().getIdLong())) return;
         if (event.getAuthor().isBot() || !prefixPattern.matcher(event.getMessage().getContentRaw()).matches()) return;
 
-        CommandContext ctx = CommandContext.fromMessageReceivedEvent(event);
+        CommandContext<?> ctx = CommandContext.fromMessageReceivedEvent(event);
         log.trace("Correct prefix received - ctx: {}", ctx);
 
         dispatcher.dispatch(ctx);
@@ -41,7 +41,7 @@ public class CommandListener extends ListenerAdapter {
 
     @Override
     public void onSlashCommand(@Nonnull SlashCommandEvent event) {
-        CommandContext ctx = CommandContext.fromSlashCommandEvent(event);
+        CommandContext<?> ctx = CommandContext.fromSlashCommandEvent(event);
         log.trace("Slash command - ctx: {}", ctx);
 
         dispatcher.dispatch(ctx);

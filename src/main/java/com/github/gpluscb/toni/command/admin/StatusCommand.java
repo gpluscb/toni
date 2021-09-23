@@ -16,7 +16,7 @@ public class StatusCommand implements Command {
     private static final Logger log = LogManager.getLogger(StatusCommand.class);
 
     @Override
-    public void execute(@Nonnull CommandContext ctx) {
+    public void execute(@Nonnull CommandContext<?> ctx) {
         if (!ctx.memberHasBotAdminPermission()) return;
 
         OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();

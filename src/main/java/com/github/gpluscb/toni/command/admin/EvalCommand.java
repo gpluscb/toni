@@ -14,7 +14,7 @@ import javax.script.ScriptEngineManager;
 
 public class EvalCommand implements Command {
     @Override
-    public void execute(@Nonnull CommandContext ctx) {
+    public void execute(@Nonnull CommandContext<?> ctx) {
         if (!ctx.memberHasBotAdminPermission()) return;
 
         String toEval = ctx.getContext().map(msg -> msg.getArgsFrom(0), slash -> slash.getOptionNonNull("js").getAsString());

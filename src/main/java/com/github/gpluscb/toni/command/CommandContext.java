@@ -10,12 +10,13 @@ import net.dv8tion.jda.api.events.Event;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.requests.RestAction;
+import net.dv8tion.jda.api.utils.AllowedMentions;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class CommandContext implements ICommandContext<Event, RestAction<?>> {
+public class CommandContext<T extends RestAction<?> & AllowedMentions<T>> implements ICommandContext<Event, T> {
     @Nonnull
     private final OneOfTwo<MessageCommandContext, SlashCommandContext> context;
 
@@ -24,13 +25,13 @@ public class CommandContext implements ICommandContext<Event, RestAction<?>> {
     }
 
     @Nonnull
-    public static CommandContext fromMessageReceivedEvent(@Nonnull MessageReceivedEvent e) {
-        return new CommandContext(OneOfTwo.ofT(new MessageCommandContext(e)));
+    public static CommandContext<?> fromMessageReceivedEvent(@Nonnull MessageReceivedEvent e) {
+        return new CommandContext<>(OneOfTwo.ofT(new MessageCommandContext(e)));
     }
 
     @Nonnull
-    public static CommandContext fromSlashCommandEvent(@Nonnull SlashCommandEvent e) {
-        return new CommandContext(OneOfTwo.ofU(new SlashCommandContext(e)));
+    public static CommandContext<?> fromSlashCommandEvent(@Nonnull SlashCommandEvent e) {
+        return new CommandContext<>(OneOfTwo.ofU(new SlashCommandContext(e)));
     }
 
     @Nonnull
@@ -51,8 +52,8 @@ public class CommandContext implements ICommandContext<Event, RestAction<?>> {
     @Nonnull
     @CheckReturnValue
     @Override
-    public RestAction<?> reply(@Nonnull Message message) {
-        return context.map(ctx -> ctx.reply(message), ctx -> ctx.reply(message));
+    public T reply(@Nonnull Message message) {
+        return (T) context.map(ctx -> ctx.reply(message), ctx -> ctx.reply(message));
     }
 
     @Override

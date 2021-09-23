@@ -22,7 +22,7 @@ public class UpdateSmashdataCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull CommandContext ctx) {
+    public void execute(@Nonnull CommandContext<?> ctx) {
         if (!ctx.memberHasBotAdminPermission()) return;
 
         OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();

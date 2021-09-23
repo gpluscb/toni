@@ -25,7 +25,7 @@ public class ShutdownCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull CommandContext ctx) {
+    public void execute(@Nonnull CommandContext<?> ctx) {
         if (!ctx.memberHasBotAdminPermission()) return;
 
         log.info("Shutdown command executed - shutting down");

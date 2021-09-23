@@ -37,7 +37,7 @@ public class CommandDispatcher {
         });
     }
 
-    public void dispatch(@Nonnull CommandContext ctx) {
+    public void dispatch(@Nonnull CommandContext<?> ctx) {
         commands.stream().flatMap(category -> category.getCommands().stream())
                 .filter(command ->
                         ctx.getContext().map(
@@ -70,7 +70,7 @@ public class CommandDispatcher {
                 });
     }
 
-    private void executeCommandSafe(@Nonnull Command command, @Nonnull CommandContext ctx) {
+    private void executeCommandSafe(@Nonnull Command command, @Nonnull CommandContext<?> ctx) {
         try {
             command.execute(ctx);
         } catch (Exception e) {

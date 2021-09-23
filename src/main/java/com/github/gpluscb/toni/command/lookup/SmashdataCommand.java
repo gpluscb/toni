@@ -64,7 +64,7 @@ public class SmashdataCommand implements Command {
 
             requestedTag = slash.getOptionNonNull("tag").getAsString();
 
-            // TODO: Defer reply???
+            slash.getEvent().deferReply().queue();
         }
 
         try {
@@ -139,7 +139,7 @@ public class SmashdataCommand implements Command {
 
         ctx.getContext()
                 .onT(msg -> menu.displayReplying(msg.getMessage()))
-                .onU(slash -> menu.displaySlashCommandReplying(slash.getEvent()));
+                .onU(slash -> menu.displaySlashCommandDeferred(slash.getEvent()));
     }
 
     @Nonnull

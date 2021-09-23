@@ -71,6 +71,11 @@ public class SlashCommandContext implements ICommandContext<SlashCommandEvent, R
     }
 
     @Nonnull
+    public String getName() {
+        return event.getName();
+    }
+
+    @Nonnull
     public OptionMapping getOptionNonNull(@Nonnull String name) {
         OptionMapping ret = event.getOption(name);
         if (ret == null) {

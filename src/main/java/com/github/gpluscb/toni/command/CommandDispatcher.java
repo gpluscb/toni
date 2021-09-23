@@ -2,8 +2,8 @@ package com.github.gpluscb.toni.command;
 
 import com.github.gpluscb.toni.util.FailLogger;
 import com.github.gpluscb.toni.util.MiscUtil;
+import com.github.gpluscb.toni.util.OneOfTwo;
 import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -37,19 +37,30 @@ public class CommandDispatcher {
         });
     }
 
-    public void dispatch(@Nonnull MessageCommandContext ctx) {
+    public void dispatch(@Nonnull CommandContext ctx) {
         commands.stream().flatMap(category -> category.getCommands().stream())
-                .filter(command -> Arrays.asList(command.getAliases()).contains(ctx.getInvokedName().toLowerCase())).findAny()
+                .filter(command ->
+                        ctx.getContext().map(
+                                msg -> Arrays.asList(command.getInfo().getAliases()).contains(msg.getInvokedName().toLowerCase()),
+                                slash -> command.getInfo().getCommandData().getName().equals(slash.getName())
+                        )
+                ).findAny()
                 .ifPresent(command -> {
-                    MessageReceivedEvent e = ctx.getEvent();
-                    Permission[] perms = command.getRequiredBotPerms();
-                    if (e.isFromGuild() && !e.getGuild().getSelfMember().hasPermission(e.getTextChannel(), perms)) {
-                        log.debug("Missing perms: {}", (Object) perms);
-                        ctx.reply(String.format("I need the following permissions for this command: %s.",
-                                        Arrays.stream(perms).map(MiscUtil::getPermName).collect(Collectors.joining(", "))))
-                                .queue();
-                        return;
+                    OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
+                    if (context.isT()) {
+                        MessageCommandContext msg = context.getTOrThrow();
+
+                        MessageReceivedEvent e = msg.getEvent();
+                        Permission[] perms = command.getInfo().getRequiredBotPerms();
+                        if (e.isFromGuild() && !e.getGuild().getSelfMember().hasPermission(e.getTextChannel(), perms)) {
+                            log.debug("Missing perms: {}", (Object) perms);
+                            ctx.reply(String.format("I need the following permissions for this command: %s.",
+                                            Arrays.stream(perms).map(MiscUtil::getPermName).collect(Collectors.joining(", "))))
+                                    .queue();
+                            return;
+                        }
                     }
+
                     synchronized (executor) {
                         if (!executor.isShutdown()) {
                             log.trace("Dispatching command: {}", command);
@@ -59,36 +70,12 @@ public class CommandDispatcher {
                 });
     }
 
-    public void dispatch(@Nonnull SlashCommandEvent event) {
-        commands.stream().flatMap(category -> category.getCommands().stream())
-                .filter(command -> command.getCommandData().getName().equals(event.getName())).findAny()
-                .ifPresent(command -> {
-                    synchronized (executor) {
-                        if (!executor.isShutdown()) {
-                            if (!executor.isShutdown()) {
-                                log.trace("Dispatching command: {}", command);
-                                executor.execute(FailLogger.logFail(() -> executeCommandSafe(command, event)));
-                            } else log.info("Rejecting dispatch of command {} - already shut down", command);
-                        }
-                    }
-                });
-    }
-
-    private void executeCommandSafe(@Nonnull Command command, @Nonnull MessageCommandContext ctx) {
+    private void executeCommandSafe(@Nonnull Command command, @Nonnull CommandContext ctx) {
         try {
             command.execute(ctx);
         } catch (Exception e) {
             log.error(String.format("Command %s had uncaught exception, ctx: %s", command, ctx), e);
             ctx.reply("One of my commands had a really bad error... I'll go yell at my dev about it (at least if they managed to implement that feature right), but you should give them some context too.").queue();
-        }
-    }
-
-    private void executeCommandSafe(@Nonnull Command command, @Nonnull SlashCommandEvent event) {
-        try {
-            command.execute(event);
-        } catch (Exception e) {
-            log.error(String.format("Command %s had uncaught exception, ctx: %s", command, event), e);
-            event.reply("One of my commands had a really bad error... I'll go yell at my dev about it (at least if they managed to implement that feature right), but you should give them some context too.").queue();
         }
     }
 

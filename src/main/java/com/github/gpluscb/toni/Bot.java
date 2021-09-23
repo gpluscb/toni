@@ -42,6 +42,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.requests.RestAction;
 import net.dv8tion.jda.api.requests.restaction.MessageAction;
@@ -64,9 +66,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 // TODO: Update to java 14
 public class Bot {
@@ -329,6 +333,20 @@ public class Bot {
         commands.add(new CommandCategory("unranked", "**[BETA]** Commands for unranked matchmaking", matchmakingCommands));
 
         return commands;
+    }
+
+    // TODO: Do this only once it's loaded
+    private void hookSlashCommands(@Nonnull ShardManager shardManager, long adminGuildId, @Nonnull List<CommandCategory> commands) {
+        Map<Boolean, List<Command>> map = commands.stream().flatMap(cat -> cat.getCommands().stream()).collect(Collectors.groupingBy(cmd -> cmd.getInfo().isAdminOnly()));
+        List<CommandData> globalCommands = map.get(false).stream().map(cmd -> cmd.getInfo().getCommandData()).collect(Collectors.toList());
+        List<CommandData> adminOnlyCommands = map.get(true).stream().map(cmd -> cmd.getInfo().getCommandData()).collect(Collectors.toList());
+        Guild adminGuild = shardManager.getGuildById(adminGuildId);
+        if (adminGuild == null) throw new IllegalStateException("Admin Guild is null");
+
+        shardManager.getShardCache().forEachUnordered(jda -> {
+            jda.updateCommands().addCommands(globalCommands).queue();
+            adminGuild.updateCommands().addCommands(adminOnlyCommands).queue();
+        });
     }
 
     public void shutdown() {

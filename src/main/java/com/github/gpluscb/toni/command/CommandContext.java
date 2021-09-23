@@ -7,6 +7,8 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.Event;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.requests.RestAction;
 
 import javax.annotation.CheckReturnValue;
@@ -19,6 +21,16 @@ public class CommandContext implements ICommandContext<Event, RestAction<?>> {
 
     public CommandContext(@Nonnull OneOfTwo<MessageCommandContext, SlashCommandContext> context) {
         this.context = context;
+    }
+
+    @Nonnull
+    public static CommandContext fromMessageReceivedEvent(@Nonnull MessageReceivedEvent e) {
+        return new CommandContext(OneOfTwo.ofT(new MessageCommandContext(e)));
+    }
+
+    @Nonnull
+    public static CommandContext fromSlashCommandEvent(@Nonnull SlashCommandEvent e) {
+        return new CommandContext(OneOfTwo.ofU(new SlashCommandContext(e)));
     }
 
     @Nonnull

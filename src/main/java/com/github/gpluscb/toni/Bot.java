@@ -20,23 +20,24 @@ import com.github.gpluscb.toni.command.help.PrivacyCommand;
 import com.github.gpluscb.toni.command.lookup.CharacterCommand;
 import com.github.gpluscb.toni.command.lookup.SmashdataCommand;
 import com.github.gpluscb.toni.command.lookup.TournamentCommand;
-import com.github.gpluscb.toni.statsposting.BotListClient;
-import com.github.gpluscb.toni.statsposting.dbots.DBotsClient;
-import com.github.gpluscb.toni.statsposting.PostGuildRoutine;
 import com.github.gpluscb.toni.command.matchmaking.AvailableCommand;
 import com.github.gpluscb.toni.command.matchmaking.UnrankedConfigCommand;
 import com.github.gpluscb.toni.command.matchmaking.UnrankedLfgCommand;
 import com.github.gpluscb.toni.matchmaking.UnrankedManager;
 import com.github.gpluscb.toni.smashdata.SmashdataManager;
 import com.github.gpluscb.toni.smashgg.GGManager;
+import com.github.gpluscb.toni.statsposting.BotListClient;
+import com.github.gpluscb.toni.statsposting.PostGuildRoutine;
+import com.github.gpluscb.toni.statsposting.dbots.DBotsClient;
 import com.github.gpluscb.toni.statsposting.dbots.DBotsClientMock;
 import com.github.gpluscb.toni.statsposting.dbots.StatsResponse;
 import com.github.gpluscb.toni.statsposting.topgg.TopggClient;
 import com.github.gpluscb.toni.statsposting.topgg.TopggClientMock;
 import com.github.gpluscb.toni.ultimateframedata.UltimateframedataClient;
-import com.github.gpluscb.toni.util.smash.CharacterTree;
 import com.github.gpluscb.toni.util.discord.DMChoiceWaiter;
 import com.github.gpluscb.toni.util.discord.DiscordAppenderImpl;
+import com.github.gpluscb.toni.util.discord.ShardsLoadListener;
+import com.github.gpluscb.toni.util.smash.CharacterTree;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
@@ -58,7 +59,9 @@ import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.security.auth.login.LoginException;
-import java.io.*;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.Reader;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -160,6 +163,66 @@ public class Bot {
         EventWaiter waiter = new EventWaiter(waiterPool, false);
         DMChoiceWaiter dmWaiter = new DMChoiceWaiter(waiter);
 
+        long botId = cfg.getBotId();
+
+        boolean mockBotLists = cfg.isMockBotLists();
+        BotListClient<StatsResponse> dBotsClient;
+        if (mockBotLists) {
+            log.trace("Creating DBotsClientMock");
+            dBotsClient = new DBotsClientMock();
+        } else {
+            log.trace("Creating DBotsClient");
+            dBotsClient = new DBotsClient(cfg.getDbotsToken(), okHttp, botId);
+        }
+
+        BotListClient<Void> topggClient;
+        if (mockBotLists) {
+            log.trace("Creating TopggClientMock");
+            topggClient = new TopggClientMock();
+        } else {
+            log.trace("Creating TopggClient");
+            topggClient = new TopggClient(cfg.getTopggToken(), okHttp, botId);
+        }
+
+        log.trace("Constructing post stats routine");
+        postGuildRoutine = new PostGuildRoutine(dBotsClient, topggClient);
+
+        log.trace("Loading characters");
+        CharacterTree characterTree;
+        try (Reader file = new FileReader(cfg.getCharactersFileLocation())) {
+            JsonArray json = JsonParser.parseReader(file).getAsJsonArray();
+            characterTree = CharacterTree.fromJson(json);
+        } catch (Exception e) {
+            log.error("Exception while loading characters - shutting down", e);
+            ggManager.shutdown();
+            // challongeManager.shutdown();
+            // listener.shutdown();
+            // client.close();
+            waiterPool.shutdownNow();
+            throw e;
+        }
+
+        log.trace("Loading commands");
+        List<CommandCategory> commands = loadCommands(ufdClient, waiter, dmWaiter, /*challonge, listener, */characterTree, cfg);
+
+        log.trace("Creating loadListener");
+        long adminGuildId = cfg.getAdminGuildId();
+
+        // TODO: Somehow notice if slash commands could not be hooked?
+        ShardsLoadListener loadListener = new ShardsLoadListener(jda -> {
+            Guild adminGuild = jda.getGuildById(adminGuildId);
+
+            if (adminGuild == null) return;
+
+            log.trace("Admin guild loaded, hooking slash commands");
+            hookSlashCommands(adminGuild, commands);
+        }, loadedShardManager -> {
+            log.trace("Shards finished loading");
+
+            log.trace("Starting post stats routine");
+            postGuildRoutine.start(loadedShardManager);
+        });
+
         try {
             log.trace("Building ShardManager");
             shardManager = DefaultShardManagerBuilder.createLight(cfg.getDiscordToken())
@@ -167,7 +230,7 @@ public class Bot {
                     .enableCache(CacheFlag.MEMBER_OVERRIDES)
                     .setMemberCachePolicy(MemberCachePolicy.NONE)
                     .setChunkingFilter(ChunkingFilter.NONE)
-                    .addEventListeners(waiter)
+                    .addEventListeners(waiter, loadListener)
                     .setActivity(Activity.listening("Help: \"Toni, Help\""))
                     .setUseShutdownNow(true)
                     .build();
@@ -193,22 +256,6 @@ public class Bot {
 			waiterPool.shutdownNow();
 			throw e;
 		}*/
-
-        log.trace("Loading characters");
-        CharacterTree characterTree;
-        try (Reader file = new FileReader(cfg.getCharactersFileLocation())) {
-            JsonArray json = JsonParser.parseReader(file).getAsJsonArray();
-            characterTree = CharacterTree.fromJson(json);
-        } catch (Exception e) {
-            log.error("Exception while loading characters - shutting down", e);
-            ggManager.shutdown();
-            shardManager.shutdown();
-            // challongeManager.shutdown();
-            // listener.shutdown();
-            // client.close();
-            waiterPool.shutdownNow();
-            throw e;
-        }
 
         log.trace("Loading smashdata");
         try {
@@ -238,41 +285,14 @@ public class Bot {
             throw e;
         }
 
-        log.trace("Loading commands");
-        List<CommandCategory> commands = loadCommands(ufdClient, waiter, dmWaiter, /*challonge, listener, */characterTree, cfg);
+        log.trace("Starting command listener and dispatcher");
         dispatcher = new CommandDispatcher(commands);
-
-        long botId = cfg.getBotId();
 
         CommandListener commandListener = new CommandListener(dmWaiter, dispatcher, botId);
         shardManager.addEventListener(commandListener);
 
         log.trace("Enabling discord appender");
         DiscordAppenderImpl.setShardManager(shardManager);
-
-        boolean mockBotLists = cfg.isMockBotLists();
-        BotListClient<StatsResponse> dBotsClient;
-        if (mockBotLists) {
-            log.trace("Creating DBotsClientMock");
-            dBotsClient = new DBotsClientMock();
-        } else {
-            log.trace("Creating DBotsClient");
-            dBotsClient = new DBotsClient(cfg.getDbotsToken(), okHttp, botId);
-        }
-
-        BotListClient<Void> topggClient;
-        if (mockBotLists) {
-            log.trace("Creating TopggClientMock");
-            topggClient = new TopggClientMock();
-        } else {
-            log.trace("Creating TopggClient");
-            topggClient = new TopggClient(cfg.getTopggToken(), okHttp, botId);
-        }
-
-        log.trace("Starting post stats routine");
-        postGuildRoutine = new PostGuildRoutine(dBotsClient, topggClient, shardManager);
-
-        shardManager.addEventListener(postGuildRoutine);
 
         log.info("Bot construction complete");
     }
@@ -336,12 +356,10 @@ public class Bot {
     }
 
     // TODO: Do this only once it's loaded
-    private void hookSlashCommands(@Nonnull ShardManager shardManager, long adminGuildId, @Nonnull List<CommandCategory> commands) {
+    private void hookSlashCommands(@Nonnull Guild adminGuild, @Nonnull List<CommandCategory> commands) {
         Map<Boolean, List<Command>> map = commands.stream().flatMap(cat -> cat.getCommands().stream()).collect(Collectors.groupingBy(cmd -> cmd.getInfo().isAdminOnly()));
         List<CommandData> globalCommands = map.get(false).stream().map(cmd -> cmd.getInfo().getCommandData()).collect(Collectors.toList());
         List<CommandData> adminOnlyCommands = map.get(true).stream().map(cmd -> cmd.getInfo().getCommandData()).collect(Collectors.toList());
-        Guild adminGuild = shardManager.getGuildById(adminGuildId);
-        if (adminGuild == null) throw new IllegalStateException("Admin Guild is null");
 
         shardManager.getShardCache().forEachUnordered(jda -> {
             jda.updateCommands().addCommands(globalCommands).queue();

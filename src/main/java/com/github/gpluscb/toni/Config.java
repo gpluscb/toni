@@ -26,6 +26,7 @@ public class Config {
     @Nonnull
     private final String github;
     private final long devId;
+    private final long adminGuildId;
     @Nonnull
     private final String stopwordListLocation;
     @Nonnull
@@ -35,7 +36,7 @@ public class Config {
     @Nonnull
     private final String charactersFileLocation;
 
-    public Config(@Nonnull String ggToken, @Nonnull String discordToken, @Nonnull String challongeUsername, @Nonnull String challongeToken, @Nonnull String dbotsToken, @Nonnull String topggToken, boolean mockBotLists, @Nonnull String inviteUrl, long botId, @Nonnull String supportServer, @Nonnull String twitterHandle, @Nonnull String github, long devId, @Nonnull String stopwordListLocation, @Nonnull String stateDbLocation, @Nonnull String smashdataDbLocation, @Nonnull String charactersFileLocation) {
+    public Config(@Nonnull String ggToken, @Nonnull String discordToken, @Nonnull String challongeUsername, @Nonnull String challongeToken, @Nonnull String dbotsToken, @Nonnull String topggToken, boolean mockBotLists, @Nonnull String inviteUrl, long botId, @Nonnull String supportServer, @Nonnull String twitterHandle, @Nonnull String github, long devId, long adminGuildId, @Nonnull String stopwordListLocation, @Nonnull String stateDbLocation, @Nonnull String smashdataDbLocation, @Nonnull String charactersFileLocation) {
         this.ggToken = ggToken;
         this.discordToken = discordToken;
         this.challongeUsername = challongeUsername;
@@ -49,6 +50,7 @@ public class Config {
         this.twitterHandle = twitterHandle;
         this.github = github;
         this.devId = devId;
+        this.adminGuildId = adminGuildId;
         this.stopwordListLocation = stopwordListLocation;
         this.stateDbLocation = stateDbLocation;
         this.smashdataDbLocation = smashdataDbLocation;
@@ -152,5 +154,9 @@ public class Config {
     @Nonnull
     public String getGithub() {
         return github;
+    }
+
+    public long getAdminGuildId() {
+        return adminGuildId;
     }
 }

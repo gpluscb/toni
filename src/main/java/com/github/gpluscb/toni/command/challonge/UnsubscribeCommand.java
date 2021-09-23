@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class UnsubscribeCommand implements Command {
+public class UnsubscribeCommand/* implements Command*/ {
     private final static Logger log = LogManager.getLogger(UnsubscribeCommand.class);
 
     @Nonnull
@@ -30,7 +30,7 @@ public class UnsubscribeCommand implements Command {
         this.listener = listener;
     }
 
-    @Override
+//    @Override
     public void execute(@Nonnull MessageCommandContext ctx) {
         if (!ctx.getEvent().isFromGuild()) {
             ctx.reply("Hey, this command only works in servers!").queue();
@@ -112,19 +112,19 @@ public class UnsubscribeCommand implements Command {
     }
 
     @Nonnull
-    @Override
+//    @Override
     public String[] getAliases() {
         return new String[]{"unsubscribe", "unsub", "unlink"};
     }
 
     @Nullable
-    @Override
+//    @Override
     public String getShortHelp() {
         return "Reverses a subscription of a channel in this server to a tournament on challonge. Usage: `unsubscribe [END OF TOURNAMENT URL | CHANNEL MENTION]`";
     }
 
     @Nullable
-    @Override
+//    @Override
     public String getDetailedHelp() {
         return "`unsub[scribe]|unlink [END OF TOURNAMENT URL | CHANNEL MENTION]`\nReverses a subscription to a tournament. The tournament url/channel mention is not needed if only one subscription exists in the server.";
     }

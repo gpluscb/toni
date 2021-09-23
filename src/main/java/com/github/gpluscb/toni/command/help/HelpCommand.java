@@ -2,14 +2,17 @@ package com.github.gpluscb.toni.command.help;
 
 import com.github.gpluscb.toni.command.Command;
 import com.github.gpluscb.toni.command.CommandCategory;
-import com.github.gpluscb.toni.command.MessageCommandContext;
+import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.CommandInfo;
 import com.github.gpluscb.toni.util.discord.EmbedUtil;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.components.Button;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -39,14 +42,19 @@ public class HelpCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull MessageCommandContext ctx) {
-        List<String> args = ctx.getArgs();
-        if (args.isEmpty()) {
+    public void execute(@Nonnull CommandContext<?> ctx) {
+        String commandArg = ctx.getContext().map(msg -> {
+            List<String> args = msg.getArgs();
+            return args.isEmpty() ? null : args.get(0).toLowerCase();
+        }, slash -> {
+            OptionMapping commandArgMapping = slash.getOption("command/category");
+            return commandArgMapping == null ? null : commandArgMapping.getAsString();
+        });
+
+        if (commandArg == null) {
             generalHelp(ctx);
             return;
         }
-
-        String commandArg = args.get(0).toLowerCase();
 
         EmbedBuilder builder = EmbedUtil.getPrepared(ctx.getMember(), ctx.getUser());
 
@@ -62,8 +70,9 @@ public class HelpCommand implements Command {
             builder.setDescription(shortDescription);
 
             List<EmbedUtil.InlineField> helpFields = requestedCategory.getCommands().stream()
-                    .filter(command -> command.getShortHelp() != null)
-                    .map(command -> new EmbedUtil.InlineField(command.getAliases()[0], command.getShortHelp()))
+                    .map(Command::getInfo)
+                    .filter(info -> info.getShortHelp() != null)
+                    .map(info -> new EmbedUtil.InlineField(info.getAliases()[0], info.getShortHelp()))
                     .collect(Collectors.toList());
             String parsedFields = EmbedUtil.parseInlineFields(helpFields);
             builder.addField("Commands", parsedFields, false);
@@ -73,9 +82,10 @@ public class HelpCommand implements Command {
             return;
         }
 
-        Command requestedCommand = commands.stream().flatMap(category -> category.getCommands().stream())
-                .filter(command -> Arrays.asList(command.getAliases()).contains(commandArg))
-                .filter(command -> command.getDetailedHelp() != null)
+        CommandInfo requestedCommand = commands.stream().flatMap(category -> category.getCommands().stream())
+                .map(Command::getInfo)
+                .filter(info -> Arrays.asList(info.getAliases()).contains(commandArg))
+                .filter(info -> info.getDetailedHelp() != null)
                 .findAny().orElse(null);
 
         if (requestedCommand != null) {
@@ -92,7 +102,7 @@ public class HelpCommand implements Command {
         ctx.reply("I don't have that command or category.").queue();
     }
 
-    private void generalHelp(@Nonnull MessageCommandContext ctx) {
+    private void generalHelp(@Nonnull CommandContext<?> ctx) {
         EmbedBuilder builder = EmbedUtil.getPrepared(ctx.getMember(), ctx.getUser()).setTitle("Toni's general help");
 
         builder.setDescription("My prefixes are `!t`, `noti` and `toni`, but you can mention me instead too.\n")
@@ -118,32 +128,26 @@ public class HelpCommand implements Command {
         Button inviteButton = Button.link(inviteUrl, "Invite me");
         Button supportButton = Button.link(supportServer, "Support server");
 
-        ctx.reply(builder.build())
-                .setActionRow(topGGButton, githubButton, inviteButton, supportButton)
-                .queue();
+        ctx.getContext().onT(msg ->
+                        msg.reply(builder.build())
+                                .setActionRow(topGGButton, githubButton, inviteButton, supportButton)
+                                .queue())
+                .onU(slash ->
+                        slash.reply(builder.build())
+                                .addActionRow(topGGButton, githubButton, inviteButton, supportButton)
+                                .queue());
     }
 
     @Nonnull
     @Override
-    public Permission[] getRequiredBotPerms() {
-        return new Permission[]{Permission.MESSAGE_EMBED_LINKS};
-    }
-
-    @Nonnull
-    @Override
-    public String[] getAliases() {
-        return new String[]{"help", "h"};
-    }
-
-    @Nullable
-    @Override
-    public String getShortHelp() {
-        return "Helps you out. Usage: `help [CATEGORY|COMMAND]`";
-    }
-
-    @Nullable
-    @Override
-    public String getDetailedHelp() {
-        return "`stack owoflow - Circular reference`";
+    public CommandInfo getInfo() {
+        return new CommandInfo.Builder()
+                .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_EMBED_LINKS})
+                .setAliases(new String[]{"help", "h"})
+                .setShortHelp("Helps you out. Usage: `help [CATEGORY|COMMAND]`")
+                .setDetailedHelp("`stack owoflow - Circular reference`")
+                .setCommandData(new CommandData("help", "Helps you out")
+                        .addOption(OptionType.STRING, "command/category", "The specific command or category name", false))
+                .build();
     }
 }

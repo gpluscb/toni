@@ -1,13 +1,14 @@
 package com.github.gpluscb.toni.command.admin;
 
-import com.github.gpluscb.toni.command.Command;
-import com.github.gpluscb.toni.command.MessageCommandContext;
+import com.github.gpluscb.toni.command.*;
 import com.github.gpluscb.toni.smashdata.SmashdataManager;
+import com.github.gpluscb.toni.util.OneOfTwo;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.sql.SQLException;
 
 public class UpdateSmashdataCommand implements Command {
@@ -21,15 +22,16 @@ public class UpdateSmashdataCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull MessageCommandContext ctx) {
+    public void execute(@Nonnull CommandContext ctx) {
         if (!ctx.memberHasBotAdminPermission()) return;
 
-        if (ctx.getArgNum() < 1) {
+        OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
+        if (context.isT() && context.getTOrThrow().getArgNum() < 1) {
             ctx.reply("Too few args. `updatesmashdata <PATH TO NEW DB>`").queue();
             return;
         }
 
-        String dbPath = ctx.getArgsFrom(0);
+        String dbPath = ctx.getContext().map(msg -> msg.getArgsFrom(0), slash -> slash.getOptionNonNull("path").getAsString());
 
         try {
             smashdata.updateDb(dbPath);
@@ -43,19 +45,12 @@ public class UpdateSmashdataCommand implements Command {
 
     @Nonnull
     @Override
-    public String[] getAliases() {
-        return new String[]{"updatesmashdata"};
-    }
-
-    @Nullable
-    @Override
-    public String getShortHelp() {
-        return null;
-    }
-
-    @Nullable
-    @Override
-    public String getDetailedHelp() {
-        return null;
+    public CommandInfo getInfo() {
+        return new CommandInfo.Builder()
+                .setAdminOnly(true)
+                .setAliases(new String[]{"updatesmashdata"})
+                .setCommandData(new CommandData("updatesmashdata", "Updates the smashdata db path")
+                        .addOption(OptionType.STRING, "path", "The new path", true))
+                .build();
     }
 }

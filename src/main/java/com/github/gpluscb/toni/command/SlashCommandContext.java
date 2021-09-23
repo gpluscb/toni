@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyAction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -62,6 +63,21 @@ public class SlashCommandContext implements ICommandContext<SlashCommandEvent, R
     @Override
     public MessageChannel getChannel() {
         return event.getChannel();
+    }
+
+    @Nullable
+    public OptionMapping getOption(@Nonnull String name) {
+        return event.getOption(name);
+    }
+
+    @Nonnull
+    public OptionMapping getOptionNonNull(@Nonnull String name) {
+        OptionMapping ret = event.getOption(name);
+        if (ret == null) {
+            log.error("OptionMapping is null for option: {}, event: {}", name, event);
+            throw new IllegalArgumentException("OptionMapping is null");
+        }
+        return ret;
     }
 
     @Override

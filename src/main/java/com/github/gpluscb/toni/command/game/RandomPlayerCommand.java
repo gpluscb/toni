@@ -1,35 +1,49 @@
 package com.github.gpluscb.toni.command.game;
 
-import com.github.gpluscb.toni.command.Command;
-import com.github.gpluscb.toni.command.MessageCommandContext;
+import com.github.gpluscb.toni.command.*;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class RandomPlayerCommand implements Command {
     @Override
-    public void execute(@Nonnull MessageCommandContext ctx) {
+    public void execute(@Nonnull CommandContext<?> ctx) {
         // T: User id, U: string choice
         List<OneOfTwo<Long, String>> choices = new ArrayList<>();
-        for (int i = 0; i < ctx.getArgNum(); i++) {
-            User user = ctx.getUserMentionArg(i);
-            String stringChoice = null;
 
-            if (user == null) stringChoice = ctx.getArg(i);
+        OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
+        if (context.isT()) {
+            MessageCommandContext msg = context.getTOrThrow();
 
-            // Exactly one of these two will be null
-            choices.add(new OneOfTwo<>(user, stringChoice).mapT(User::getIdLong));
-        }
+            for (int i = 0; i < msg.getArgNum(); i++) {
+                User user = msg.getUserMentionArg(i);
+                String stringChoice = null;
 
-        if (choices.size() < 2) {
-            ctx.reply("You must give at least two (2) choices.").queue();
-            return;
+                if (user == null) stringChoice = msg.getArg(i);
+
+                // Exactly one of these two will be null
+                choices.add(new OneOfTwo<>(user, stringChoice).mapT(User::getIdLong));
+            }
+
+            if (choices.size() < 2) {
+                ctx.reply("You must give at least two (2) choices.").queue();
+                return;
+            }
+        } else {
+            SlashCommandContext slash = context.getUOrThrow();
+
+            String choice1 = slash.getOptionNonNull("choice 1").getAsString();
+            choices.add(OneOfTwo.ofU(choice1));
+
+            String choice2 = slash.getOptionNonNull("choice 2").getAsString();
+            choices.add(OneOfTwo.ofU(choice2));
         }
 
         ThreadLocalRandom rng = ThreadLocalRandom.current();
@@ -45,21 +59,17 @@ public class RandomPlayerCommand implements Command {
 
     @Nonnull
     @Override
-    public String[] getAliases() {
-        return new String[]{"randomplayer", "chooseplayer", "choose"};
-    }
-
-    @Nullable
-    @Override
-    public String getShortHelp() {
-        return "Picks a random element out of multiple choices. Usage: `choose <CHOICES...>`";
-    }
-
-    @Nullable
-    @Override
-    public String getDetailedHelp() {
-        return "`choose <CHOICES...>`\n" +
-                "Picks a random choice out of the given choices. Useful if you don't want to play rock paper scissors for example.\n" +
-                "Aliases: `choose`, `randomplayer`, `chooseplayer`";
+    public CommandInfo getInfo() {
+        return new CommandInfo.Builder()
+                .setAliases(new String[]{"randomplayer", "chooseplayer", "choose"})
+                .setShortHelp("Picks a random element out of multiple choices. Usage: `choose <CHOICES...>`")
+                .setDetailedHelp("`choose <CHOICES...>`\n" +
+                        "Picks a random choice out of the given choices. Useful if you don't want to play rock paper scissors for example.\n" +
+                        "The slash command version supports only two (2) choices.\n" +
+                        "Aliases: `choose`, `randomplayer`, `chooseplayer`")
+                .setCommandData(new CommandData("choose", "Choose between two options")
+                        .addOption(OptionType.USER, "choice 1", "The first choice", true)
+                        .addOption(OptionType.USER, "choice 2", "The second choice", true))
+                .build();
     }
 }

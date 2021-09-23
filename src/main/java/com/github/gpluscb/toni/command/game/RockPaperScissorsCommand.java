@@ -1,10 +1,10 @@
 package com.github.gpluscb.toni.command.game;
 
-import com.github.gpluscb.toni.command.Command;
-import com.github.gpluscb.toni.command.MessageCommandContext;
-import com.github.gpluscb.toni.util.discord.ButtonActionMenu;
+import com.github.gpluscb.toni.command.*;
 import com.github.gpluscb.toni.util.Constants;
 import com.github.gpluscb.toni.util.MiscUtil;
+import com.github.gpluscb.toni.util.OneOfTwo;
+import com.github.gpluscb.toni.util.discord.ButtonActionMenu;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Emoji;
@@ -12,6 +12,9 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.components.Button;
 
 import javax.annotation.Nonnull;
@@ -27,18 +30,34 @@ public class RockPaperScissorsCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull MessageCommandContext ctx) {
-        int argNum = ctx.getArgNum();
-        if (ctx.getArgNum() < 1 || ctx.getArgNum() > 2) {
-            ctx.reply("You must mention either one or two users.").queue();
-            return;
-        }
+    public void execute(@Nonnull CommandContext<?> ctx) {
+        User user1User;
+        User user2User;
 
-        User user1User = ctx.getUserMentionArg(0);
-        User user2User = argNum == 2 ? ctx.getUserMentionArg(1) : ctx.getUser();
-        if (user1User == null || user2User == null) {
-            ctx.reply("Arguments must be user mentions of users in this server.").queue();
-            return;
+        OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
+        if (context.isT()) {
+            MessageCommandContext msg = context.getTOrThrow();
+
+            int argNum = msg.getArgNum();
+            if (argNum < 1 || argNum > 2) {
+                ctx.reply("You must mention either one or two users.").queue();
+                return;
+            }
+
+            user1User = msg.getUserMentionArg(0);
+            user2User = argNum == 2 ? msg.getUserMentionArg(1) : ctx.getUser();
+            if (user1User == null || user2User == null) {
+                ctx.reply("Arguments must be user mentions of users in this server.").queue();
+                return;
+            }
+        } else {
+            SlashCommandContext slash = context.getUOrThrow();
+
+            user1User = slash.getOptionNonNull("user 1").getAsUser();
+
+            OptionMapping user2Option = slash.getOption("user 2");
+
+            user2User = user2Option == null ? ctx.getUser() : user2Option.getAsUser();
         }
 
         if (user1User.isBot() || user2User.isBot()) {
@@ -76,29 +95,27 @@ public class RockPaperScissorsCommand implements Command {
                 .setTimeoutAction(handler::timeout)
                 .build();
 
-        menu.displayReplying(ctx.getMessage());
+        context.onT(msg ->
+                        menu.displayReplying(msg.getMessage()))
+                .onU(slash ->
+                        menu.displaySlashCommandReplying(slash.getEvent()));
     }
 
     @Nonnull
     @Override
-    public String[] getAliases() {
-        return new String[]{"rps", "rockpaperscissors"};
-    }
-
-    @Nullable
-    @Override
-    public String getShortHelp() {
-        return "Helps you play rock paper scissors. Usage: `rps [PLAYER 1] <PLAYER 2>`";
-    }
-
-    @Nullable
-    @Override
-    public String getDetailedHelp() {
-        return "`rps [PLAYER 1 (default: message author)] <PLAYER 2>`\n" +
-                "Helps you play the world famous game of [rock paper scissors](https://en.wikipedia.org/wiki/Rock_paper_scissors). " +
-                "After performing the command, both participants will have to DM me. " +
-                "So you might have to unblock me (but what kind of monster would have me blocked in the first place?)\n" +
-                "Aliases: `rockpaperscissors`, `rps`";
+    public CommandInfo getInfo() {
+        return new CommandInfo.Builder()
+                .setAliases(new String[]{"rps", "rockpaperscissors"})
+                .setShortHelp("Helps you play rock paper scissors. Usage: `rps [PLAYER 1] <PLAYER 2>`")
+                .setDetailedHelp("`rps [PLAYER 1 (default: message author)] <PLAYER 2>`\n" +
+                        "Helps you play the world famous game of [rock paper scissors](https://en.wikipedia.org/wiki/Rock_paper_scissors). " +
+                        "After performing the command, both participants will have to DM me. " +
+                        "So you might have to unblock me (but what kind of monster would have me blocked in the first place?)\n" +
+                        "Aliases: `rockpaperscissors`, `rps`")
+                .setCommandData(new CommandData("rps", "Helps you play rock paper scissors")
+                        .addOption(OptionType.USER, "player 1", "The first rps player", true)
+                        .addOption(OptionType.USER, "player 2", "The second rps player. This is yourself by default", false))
+                .build();
     }
 
     private static class RPSHandler {
@@ -155,13 +172,11 @@ public class RockPaperScissorsCommand implements Command {
                         : String.format("%s won!", intOutcome > 0 ? user1Mention : user2Mention);
 
                 e.reply(String.format("It has been decided! %s chose %s, and %s chose %s. That means %s",
-                        user1Mention, choice1.getName(), user2Mention, choice2.getName(), outcome))
+                                user1Mention, choice1.getName(), user2Mention, choice2.getName(), outcome))
                         .mentionUsers(user1, user2)
                         .queue();
 
                 Message originalMessage = e.getMessage();
-                // This is only null for interactions on ephemeral messages
-                //noinspection ConstantConditions
                 originalMessage.editMessage(originalMessage).setActionRows().queue();
 
                 finished = true;

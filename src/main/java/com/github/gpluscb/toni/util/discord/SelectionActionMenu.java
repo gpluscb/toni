@@ -1,5 +1,7 @@
-package com.github.gpluscb.toni.util;
+package com.github.gpluscb.toni.util.discord;
 
+import com.github.gpluscb.toni.util.FailLogger;
+import com.github.gpluscb.toni.util.PairNonnull;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import com.jagrosh.jdautilities.menu.Menu;
 import net.dv8tion.jda.api.JDA;
@@ -7,9 +9,9 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
-import net.dv8tion.jda.api.interactions.components.Button;
-import net.dv8tion.jda.api.interactions.components.ButtonStyle;
+import net.dv8tion.jda.api.events.interaction.SelectionMenuEvent;
+import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
+import net.dv8tion.jda.api.interactions.components.selections.SelectionMenu;
 import net.dv8tion.jda.api.requests.restaction.MessageAction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,43 +27,37 @@ import java.util.stream.Collectors;
 /**
  * We override the validation to only allow specific users in users.
  */
-public class ButtonActionMenu extends Menu {
-    private static final Logger log = LogManager.getLogger(ButtonActionMenu.class);
+public class SelectionActionMenu extends Menu { // TODO: Allow for multiple selections somehow?? Make it NestedSelectionActionMenu
+    private static final Logger log = LogManager.getLogger(SelectionActionMenu.class);
 
     @Nonnull
     private final Set<Long> users;
 
     @Nonnull
-    private final Set<Button> buttonsToAdd;
+    private final Set<SelectOption> optionsToAdd;
     @Nonnull
-    private final Map<String, Function<ButtonClickEvent, Message>> buttonActions;
+    private final Map<String, Function<SelectionMenuEvent, Message>> selectionActions;
     @Nonnull
     private final Message start;
-    @Nullable
-    private final Button deletionButton;
+    @Nonnull
+    private final String id;
     @Nonnull
     private final BiConsumer<MessageChannel, Long> timeoutAction;
 
-    public ButtonActionMenu(@Nonnull EventWaiter waiter, @Nonnull Set<Long> users, long timeout, @Nonnull TimeUnit unit, @Nonnull Map<Button, Function<ButtonClickEvent, Message>> buttonActions, @Nonnull Message start, @Nullable Button deletionButton, @Nonnull BiConsumer<MessageChannel, Long> timeoutAction) {
+    public SelectionActionMenu(@Nonnull EventWaiter waiter, @Nonnull Set<Long> users, long timeout, @Nonnull TimeUnit unit, @Nonnull Map<SelectOption, Function<SelectionMenuEvent, Message>> selectionActions, @Nonnull Message start, @Nonnull String id, @Nonnull BiConsumer<MessageChannel, Long> timeoutAction) {
         super(waiter, Collections.emptySet(), Collections.emptySet(), timeout, unit);
         this.users = users;
 
-        buttonsToAdd = buttonActions.keySet(); // Preserve order
-        if (deletionButton != null) buttonsToAdd.add(deletionButton);
+        optionsToAdd = selectionActions.keySet();
 
-        if (buttonsToAdd.stream().anyMatch(button -> button.getStyle() == ButtonStyle.LINK))
-            throw new IllegalStateException("Buttons may not be link buttons");
-
-        // e.getKey.getId() cannot return null here since we don't allow link buttons
-        //noinspection ConstantConditions
-        this.buttonActions = buttonActions
+        this.selectionActions = selectionActions
                 .entrySet()
                 .stream()
-                .map(e -> new PairNonnull<>(e.getKey().getId(), e.getValue()))
+                .map(e -> new PairNonnull<>(e.getKey().getValue(), e.getValue()))
                 .collect(Collectors.toMap(PairNonnull::getT, PairNonnull::getU));
 
         this.start = start;
-        this.deletionButton = deletionButton;
+        this.id = id;
         this.timeoutAction = timeoutAction;
     }
 
@@ -93,10 +89,8 @@ public class ButtonActionMenu extends Menu {
     }
 
     private void init(@Nonnull MessageAction messageAction) {
-        Set<Button> buttons = new LinkedHashSet<>(buttonsToAdd); // Preserve order
-        if (deletionButton != null) buttons.add(deletionButton);
-
-        messageAction.setActionRow(buttons).queue(this::awaitEvents);
+        SelectionMenu selectionMenu = SelectionMenu.create(id).addOptions(optionsToAdd).build();
+        messageAction.setActionRow(selectionMenu).queue(this::awaitEvents);
     }
 
     private void awaitEvents(@Nonnull Message message) {
@@ -104,9 +98,9 @@ public class ButtonActionMenu extends Menu {
     }
 
     private void awaitEvents(@Nonnull JDA jda, long messageId, long channelId) {
-        waiter.waitForEvent(ButtonClickEvent.class,
-                e -> checkButtonClick(e, messageId),
-                this::handleButtonClick,
+        waiter.waitForEvent(SelectionMenuEvent.class,
+                e -> checkSelection(e, messageId),
+                this::handleSelection,
                 timeout, unit, FailLogger.logFail(() -> { // This is the only thing that will be executed on not JDA-WS thread. So exceptions may get swallowed
                     MessageChannel channel = jda.getTextChannelById(channelId);
                     if (channel == null) channel = jda.getPrivateChannelById(channelId);
@@ -115,43 +109,37 @@ public class ButtonActionMenu extends Menu {
                 }));
     }
 
-    private boolean isValidUser(long user) {
-        return users.isEmpty() || users.contains(user);
+    private boolean checkSelection(@Nonnull SelectionMenuEvent e, long messageId) {
+        return e.getMessageIdLong() == messageId
+                && e.getComponentId().equals(id)
+                && isValidUser(e.getUser().getIdLong());
     }
 
-    private boolean checkButtonClick(@Nonnull ButtonClickEvent e, long messageId) {
-        if (e.getMessageIdLong() != messageId) return false;
-        if (!isValidUser(e.getUser().getIdLong())) return false;
-
-        String buttonId = e.getComponentId();
-        return buttonActions.containsKey(buttonId) ||
-                (deletionButton != null && buttonId.equals(deletionButton.getId()));
-    }
-
-    private void handleButtonClick(@Nonnull ButtonClickEvent e) {
-        String buttonId = e.getComponentId();
+    private void handleSelection(@Nonnull SelectionMenuEvent e) {
+        // We require exactly one selection.
+        String value = e.getValues().get(0);
+        Message edited = selectionActions.get(value).apply(e);
 
         long messageId = e.getMessageIdLong();
         MessageChannel channel = e.getChannel();
-        if (deletionButton != null && buttonId.equals(deletionButton.getId())) {
-            channel.deleteMessageById(e.getMessageId()).queue();
-            return;
-        }
 
-        Message edited = buttonActions.get(buttonId).apply(e);
         if (edited != null) channel.editMessageById(messageId, edited).queue(this::awaitEvents);
         else awaitEvents(e.getJDA(), messageId, channel.getIdLong());
     }
 
-    public static class Builder extends Menu.Builder<Builder, ButtonActionMenu> {
+    private boolean isValidUser(long user) {
+        return users.isEmpty() || users.contains(user);
+    }
+
+    public static class Builder extends Menu.Builder<SelectionActionMenu.Builder, SelectionActionMenu> {
         @Nonnull
         private final Set<Long> users;
         @Nonnull
-        private final Map<Button, Function<ButtonClickEvent, Message>> buttonActions;
+        private final Map<SelectOption, Function<SelectionMenuEvent, Message>> selectionActions;
         @Nullable
         private Message start;
         @Nullable
-        private Button deletionButton;
+        private String id;
         @Nullable
         private BiConsumer<MessageChannel, Long> timeoutAction;
 
@@ -160,8 +148,7 @@ public class ButtonActionMenu extends Menu {
          */
         public Builder() {
             users = new HashSet<>();
-            buttonActions = new LinkedHashMap<>(); // Preserve order
-            deletionButton = Button.danger("delete", Constants.CROSS_MARK);
+            selectionActions = new LinkedHashMap<>(); // Preserve order
             setTimeout(20, TimeUnit.MINUTES);
         }
 
@@ -171,35 +158,34 @@ public class ButtonActionMenu extends Menu {
          * If the user list ends up empty, everyone can use it
          */
         @Nonnull
-        public Builder addUsers(Long... users) {
+        public SelectionActionMenu.Builder addUsers(Long... users) {
             this.users.addAll(Arrays.asList(users));
             return this;
         }
 
         /**
          * @param action If action returns null, the message is not edited
-         * @throws IllegalArgumentException if button is already registered
+         * @throws IllegalArgumentException if option is already registered
          */
         @Nonnull
-        public synchronized Builder registerButton(@Nonnull Button button, @Nonnull Function<ButtonClickEvent, Message> action) {
-            if (buttonActions.containsKey(button)) throw new IllegalArgumentException("Button already registered");
-            buttonActions.put(button, action);
+        public synchronized SelectionActionMenu.Builder registerOption(@Nonnull SelectOption option, @Nonnull Function<SelectionMenuEvent, Message> action) {
+            if (selectionActions.containsKey(option)) throw new IllegalArgumentException("Option already registered");
+            selectionActions.put(option, action);
             return this;
         }
 
         @Nonnull
-        public Builder setStart(@Nullable Message start) {
+        public SelectionActionMenu.Builder setStart(@Nullable Message start) {
             this.start = start;
             return this;
         }
 
         /**
-         * Default: {@link Constants#CROSS_MARK}
-         * {@code null} is none, not default
+         * Default: Random 5-character String
          */
         @Nonnull
-        public Builder setDeletionButton(@Nullable Button deletionButton) {
-            this.deletionButton = deletionButton;
+        public SelectionActionMenu.Builder setId(@Nullable String id) {
+            this.id = id;
             return this;
         }
 
@@ -209,7 +195,7 @@ public class ButtonActionMenu extends Menu {
          * Default: look at source lol it's too long for docs: {@link #build()}
          */
         @Nonnull
-        public Builder setTimeoutAction(@Nullable BiConsumer<MessageChannel, Long> timeoutAction) {
+        public SelectionActionMenu.Builder setTimeoutAction(@Nullable BiConsumer<MessageChannel, Long> timeoutAction) {
             this.timeoutAction = timeoutAction;
             return this;
         }
@@ -219,7 +205,7 @@ public class ButtonActionMenu extends Menu {
          */
         @Nonnull
         @Override
-        public synchronized ButtonActionMenu build() {
+        public synchronized SelectionActionMenu build() {
             if (waiter == null) throw new IllegalStateException("Waiter must be set");
             if (start == null) throw new IllegalStateException("Start must be set");
             if (!super.users.isEmpty())
@@ -235,7 +221,22 @@ public class ButtonActionMenu extends Menu {
                 };
             }
 
-            return new ButtonActionMenu(waiter, users, timeout, unit, buttonActions, start, deletionButton, timeoutAction);
+            if (id == null) {
+                // Source: https://www.baeldung.com/java-random-string lol
+                int leftLimit = 97; // letter 'a'
+                int rightLimit = 122; // letter 'z'
+                int targetStringLength = 5;
+                Random random = new Random();
+
+                String generatedString = random.ints(leftLimit, rightLimit + 1)
+                        .limit(targetStringLength)
+                        .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+                        .toString();
+
+                System.out.println(generatedString);
+            }
+
+            return new SelectionActionMenu(waiter, users, timeout, unit, selectionActions, start, id, timeoutAction);
         }
     }
 }

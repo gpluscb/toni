@@ -3,7 +3,7 @@ package com.github.gpluscb.toni.command.help;
 import com.github.gpluscb.toni.command.Command;
 import com.github.gpluscb.toni.command.CommandCategory;
 import com.github.gpluscb.toni.command.MessageCommandContext;
-import com.github.gpluscb.toni.util.EmbedUtil;
+import com.github.gpluscb.toni.util.discord.EmbedUtil;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.interactions.components.Button;

@@ -2,7 +2,7 @@ package com.github.gpluscb.toni.command.game;
 
 import com.github.gpluscb.toni.command.Command;
 import com.github.gpluscb.toni.command.MessageCommandContext;
-import com.github.gpluscb.toni.util.CharacterTree;
+import com.github.gpluscb.toni.util.smash.CharacterTree;
 import com.github.gpluscb.toni.util.MiscUtil;
 
 import javax.annotation.Nonnull;

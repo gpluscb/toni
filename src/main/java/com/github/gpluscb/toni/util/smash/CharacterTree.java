@@ -1,5 +1,6 @@
-package com.github.gpluscb.toni.util;
+package com.github.gpluscb.toni.util.smash;
 
+import com.github.gpluscb.toni.util.OneOfTwo;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -7,7 +8,6 @@ import com.google.gson.JsonObject;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class CharacterTree {
     @Nonnull

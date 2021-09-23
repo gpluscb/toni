@@ -5,6 +5,8 @@ import com.github.gpluscb.toni.command.MessageCommandContext;
 import com.github.gpluscb.toni.ultimateframedata.CharacterData;
 import com.github.gpluscb.toni.ultimateframedata.UltimateframedataClient;
 import com.github.gpluscb.toni.util.*;
+import com.github.gpluscb.toni.util.discord.EmbedUtil;
+import com.github.gpluscb.toni.util.smash.CharacterTree;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;

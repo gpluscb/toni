@@ -92,7 +92,7 @@ public class UnrankedLfgCommand implements Command {
         }
 
         long guildId = ctx.getEvent().getGuild().getIdLong();
-        long userId = ctx.getAuthor().getIdLong();
+        long userId = ctx.getUser().getIdLong();
         long roleId = config.getLfgRoleId();
 
         synchronized (currentlyLfgPerGuild) {

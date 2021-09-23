@@ -2,7 +2,6 @@ package com.github.gpluscb.toni.command;
 
 import com.github.gpluscb.toni.util.StringTokenizer;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -17,7 +16,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class MessageCommandContext {
+public class MessageCommandContext implements ICommandContext<MessageReceivedEvent, MessageAction> {
     private static final Logger log = LogManager.getLogger(MessageCommandContext.class);
 
     // TODO: This infrastructure doesn't allow for more/custom prefixes or multiple word long commands
@@ -43,6 +42,7 @@ public class MessageCommandContext {
      */
     @Nonnull
     @CheckReturnValue
+    @Override
     public MessageAction reply(@Nonnull Message message) {
         String content = message.getContentRaw();
         log.debug("Reply: {}", content.isEmpty() ? message.getEmbeds() : content);
@@ -52,38 +52,6 @@ public class MessageCommandContext {
             return e.getTextChannel().sendMessage(message);
         else
             return getMessage().reply(message);
-    }
-
-    /**
-     * Assumes perms
-     * Except it works around missing MESSAGE_HISTORY
-     */
-    @Nonnull
-    @CheckReturnValue
-    public MessageAction reply(@Nonnull String message) {
-        return reply(new MessageBuilder(message).build());
-    }
-
-    /**
-     * Assumes perms
-     * Except it works around missing MESSAGE_HISTORY
-     */
-    @Nonnull
-    @CheckReturnValue
-    public MessageAction reply(@Nonnull MessageEmbed embed) {
-        return reply(new MessageBuilder().setEmbed(embed).build());
-    }
-
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    public boolean memberHasBotAdminPermission() {
-        return event.getAuthor().getIdLong() == 107565973652938752L;
-    }
-
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    public boolean memberHasManageChannelsPermission() {
-        Member member = event.getMember();
-        if (member == null) throw new IllegalStateException("This event is not from a server.");
-        return member.hasPermission(Permission.MANAGE_CHANNEL);
     }
 
     @Nonnull
@@ -209,11 +177,13 @@ public class MessageCommandContext {
     }
 
     @Nonnull
+    @Override
     public MessageReceivedEvent getEvent() {
         return event;
     }
 
     @Nonnull
+    @Override
     public JDA getJDA() {
         return event.getJDA();
     }
@@ -229,11 +199,13 @@ public class MessageCommandContext {
     }
 
     @Nonnull
-    public User getAuthor() {
+    @Override
+    public User getUser() {
         return event.getAuthor();
     }
 
     @Nullable
+    @Override
     public Member getMember() {
         return event.getMember();
     }

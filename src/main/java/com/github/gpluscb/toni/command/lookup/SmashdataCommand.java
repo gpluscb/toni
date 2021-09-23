@@ -107,7 +107,7 @@ public class SmashdataCommand implements Command {
             return;
         }
 
-        User author = ctx.getAuthor();
+        User author = ctx.getUser();
         Member member = ctx.getEvent().getMember();
 
         PlayerEmbedPaginator pages = new PlayerEmbedPaginator(EmbedUtil.getPreparedSmashdata(member, author).build(), results);

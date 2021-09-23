@@ -85,4 +85,12 @@ public class OneOfTwo<T, U> {
         if (u != null) return u;
         throw new IllegalStateException("Called getUOrThrow when this is T");
     }
+
+    @Override
+    public String toString() {
+        return "OneOfTwo{" +
+                "t=" + t +
+                ", u=" + u +
+                '}';
+    }
 }

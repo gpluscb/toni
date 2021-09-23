@@ -35,7 +35,7 @@ public class RockPaperScissorsCommand implements Command {
         }
 
         User user1User = ctx.getUserMentionArg(0);
-        User user2User = argNum == 2 ? ctx.getUserMentionArg(1) : ctx.getAuthor();
+        User user2User = argNum == 2 ? ctx.getUserMentionArg(1) : ctx.getUser();
         if (user1User == null || user2User == null) {
             ctx.reply("Arguments must be user mentions of users in this server.").queue();
             return;

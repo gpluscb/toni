@@ -238,7 +238,7 @@ public class CharacterCommand implements Command {
             return;
         }
 
-        User author = ctx.getAuthor();
+        User author = ctx.getUser();
         Member member = ctx.getEvent().getMember();
 
         new CustomSelectionActionMenu(

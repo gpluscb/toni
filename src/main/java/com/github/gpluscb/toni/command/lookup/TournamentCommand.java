@@ -91,7 +91,7 @@ public class TournamentCommand implements Command {
             return;
         }
 
-        User author = ctx.getAuthor();
+        User author = ctx.getUser();
         Member member = ctx.getEvent().getMember();
 
         TournamentEmbedPaginator pages = new TournamentEmbedPaginator(EmbedUtil.getPreparedGG(member, author).build(), tournaments);

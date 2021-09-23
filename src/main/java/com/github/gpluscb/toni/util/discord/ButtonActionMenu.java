@@ -11,6 +11,8 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.Button;
 import net.dv8tion.jda.api.interactions.components.ButtonStyle;
 import net.dv8tion.jda.api.requests.restaction.MessageAction;
@@ -71,6 +73,13 @@ public class ButtonActionMenu extends Menu {
     @Override
     public void display(@Nonnull MessageChannel channel) {
         init(channel.sendMessage(start));
+    }
+
+    public void displaySlashCommandReplying(@Nonnull SlashCommandEvent e) {
+        Set<Button> buttons = new LinkedHashSet<>(buttonsToAdd); // Preserve order
+        if (deletionButton != null) buttons.add(deletionButton);
+
+        e.reply(start).addActionRow(buttons).flatMap(InteractionHook::retrieveOriginal).queue(this::awaitEvents);
     }
 
     public void displayReplying(Message reference) {

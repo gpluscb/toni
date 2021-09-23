@@ -1,7 +1,6 @@
 package com.github.gpluscb.toni.command.lookup;
 
-import com.github.gpluscb.toni.command.Command;
-import com.github.gpluscb.toni.command.MessageCommandContext;
+import com.github.gpluscb.toni.command.*;
 import com.github.gpluscb.toni.ultimateframedata.CharacterData;
 import com.github.gpluscb.toni.ultimateframedata.UltimateframedataClient;
 import com.github.gpluscb.toni.util.*;
@@ -14,6 +13,10 @@ import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.interaction.SelectionMenuEvent;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
 import net.dv8tion.jda.api.interactions.components.selections.SelectionMenu;
@@ -24,7 +27,10 @@ import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static net.dv8tion.jda.api.interactions.components.selections.SelectOption.LABEL_MAX_LENGTH;
@@ -46,26 +52,63 @@ public class CharacterCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull MessageCommandContext ctx) {
-        int argNum = ctx.getArgNum();
-        // T: id, U: response in case Id is not found
-        OneOfTwo<Pair<Short, String>, String> idAndMoveNameOrResponse = argNum == 0 ?
-                OneOfTwo.ofT(new Pair<>((short) 20, null))
-                : findCharacterIdAndMoveNameOrResponse(ctx);
-
-        if (idAndMoveNameOrResponse.isU()) {
-            // We know because of the isU
-            ctx.reply(idAndMoveNameOrResponse.getUOrThrow()).queue();
-            return;
-        }
-
-        // We know because of the isU
-        Pair<Short, String> idAndMoveName = idAndMoveNameOrResponse.getTOrThrow();
-        short id = idAndMoveName.getT();
+    public void execute(@Nonnull CommandContext<?> ctx) {
+        short id;
         @Nullable
-        String moveName = idAndMoveName.getU();
+        String moveName;
 
-        ctx.getChannel().sendTyping().queue();
+        OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
+        if (context.isT()) {
+            MessageCommandContext msg = context.getTOrThrow();
+
+            int argNum = msg.getArgNum();
+            // T: id, U: response in case Id is not found
+            OneOfTwo<Pair<Short, String>, String> idAndMoveNameOrResponse = argNum == 0 ?
+                    OneOfTwo.ofT(new Pair<>((short) 20, null))
+                    : findCharacterIdAndMoveNameOrResponse(msg);
+
+            if (idAndMoveNameOrResponse.isU()) {
+                // We know because of the isU
+                ctx.reply(idAndMoveNameOrResponse.getUOrThrow()).queue();
+                return;
+            }
+
+            Pair<Short, String> idAndMoveName = idAndMoveNameOrResponse.getTOrThrow();
+            id = idAndMoveName.getT();
+            moveName = idAndMoveName.getU();
+
+            ctx.getChannel().sendTyping().queue();
+        } else {
+            SlashCommandContext slash = context.getUOrThrow();
+
+            String characterName = slash.getOptionNonNull("character").getAsString().toLowerCase();
+
+            Optional<Short> idOptional = characters.stream().filter(character -> character.getAltNames().contains(characterName)).map(c -> {
+                        Short id__ = c.getId();
+                        return Optional.ofNullable(id__);
+                    })
+                    .findAny().orElse(null);
+
+            // I think this is ok here, I don't really want Optional<Optional<Short>> or other weird constructs
+            //noinspection OptionalAssignedToNull
+            if (idOptional == null) {
+                ctx.reply("I don't know that character, sorry. Note that I only know the English names").queue();
+                return;
+            }
+
+            if (idOptional.isEmpty()) {
+                ctx.reply("This character by itself doesn't have a page on ultimateframedata, but sub-characters probably do!" +
+                        " So try for example `Charizard` instead of `Pokémon Trainer`.").queue();
+                return;
+            }
+
+            id = idOptional.get();
+
+            OptionMapping moveNameMapping = slash.getOption("move");
+            moveName = moveNameMapping == null ? null : moveNameMapping.getAsString();
+
+            slash.getEvent().deferReply().queue();
+        }
 
         client.getCharacter(id).whenComplete(FailLogger.logFail((response, t) -> {
             try {
@@ -233,7 +276,7 @@ public class CharacterCommand implements Command {
         }
     }
 
-    private void sendReply(@Nonnull MessageCommandContext ctx, @Nullable CharacterData data, @Nullable PairNonnull<Integer, Integer> startMove, boolean startMoveRequested) {
+    private void sendReply(@Nonnull CommandContext<?> ctx, @Nullable CharacterData data, @Nullable PairNonnull<Integer, Integer> startMove, boolean startMoveRequested) {
         if (data == null) {
             log.error("Valid character requested, but not found by ufd service.");
             ctx.reply("Oh this is a bug. I was sure my buddy program would know about that character but it didn't. I'll tell my dev about it, but you can give them some context too.").queue();
@@ -241,13 +284,13 @@ public class CharacterCommand implements Command {
         }
 
         User author = ctx.getUser();
-        Member member = ctx.getEvent().getMember();
+        Member member = ctx.getMember();
 
         new CustomSelectionActionMenu(
                 EmbedUtil.getPreparedUFD(member, author).build(),
                 author.getIdLong(),
                 data,
-                ctx.getMessage(),
+                ctx.getContext().mapT(MessageCommandContext::getMessage).mapU(SlashCommandContext::getEvent),
                 startMove,
                 startMoveRequested
         );
@@ -387,29 +430,19 @@ public class CharacterCommand implements Command {
 
     @Nonnull
     @Override
-    public Permission[] getRequiredBotPerms() {
-        return new Permission[]{Permission.MESSAGE_EMBED_LINKS};
-    }
-
-    @Nonnull
-    @Override
-    public String[] getAliases() {
-        return new String[]{"character", "char", "ufd", "moves", "move", "hitboxes", "hitbox"};
-    }
-
-    @Nullable
-    @Override
-    public String getShortHelp() {
-        return "Displays the moves of a character using data from [ultimateframedata.com](https://ultimateframedata.com). Usage: `character <CHARACTER NAME...> [MOVE NAME...]`";
-    }
-
-    @Nullable
-    @Override
-    public String getDetailedHelp() {
-        return "`character <CHARACTER NAME...> [MOVE NAME...]`\n" +
-                "Looks up the moves of a character on [ultimateframedata.com](https://ultimateframedata.com).\n" +
-                "Use the drop-down menus to select the move section, move, and hitbox image.\n" +
-                "Aliases: `character`, `char`, `ufd`, `move`, `moves`, `hitboxes`, `hitbox`";
+    public CommandInfo getInfo() {
+        return new CommandInfo.Builder()
+                .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_EMBED_LINKS})
+                .setAliases(new String[]{"character", "char", "ufd", "moves", "move", "hitboxes", "hitbox"})
+                .setShortHelp("Displays the moves of a character using data from [ultimateframedata.com](https://ultimateframedata.com). Usage: `character <CHARACTER NAME...> [MOVE NAME...]`")
+                .setDetailedHelp("`character <CHARACTER NAME...> [MOVE NAME...]`\n" +
+                        "Looks up the moves of a character on [ultimateframedata.com](https://ultimateframedata.com).\n" +
+                        "Use the drop-down menus to select the move section, move, and hitbox image.\n" +
+                        "Aliases: `character`, `char`, `ufd`, `move`, `moves`, `hitboxes`, `hitbox`")
+                .setCommandData(new CommandData("moves", "Displays moves of a smash ultimate character")
+                        .addOption(OptionType.USER, "character", "The character name", true)
+                        .addOption(OptionType.USER, "move", "The move name (e.g. `fair`, `down b`)", false))
+                .build();
     }
 
     private class CustomSelectionActionMenu {
@@ -433,7 +466,7 @@ public class CharacterCommand implements Command {
 
         private boolean displayCouldNotFindMove;
 
-        public CustomSelectionActionMenu(@Nonnull MessageEmbed template, long user, @Nonnull CharacterData data, @Nonnull Message reference, @Nullable PairNonnull<Integer, Integer> startMove, boolean startMoveRequested) {
+        public CustomSelectionActionMenu(@Nonnull MessageEmbed template, long user, @Nonnull CharacterData data, @Nonnull OneOfTwo<Message, SlashCommandEvent> referenceOrSlashEvent, @Nullable PairNonnull<Integer, Integer> startMove, boolean startMoveRequested) {
             this.user = user;
             this.template = template;
             messageId = null;
@@ -451,21 +484,32 @@ public class CharacterCommand implements Command {
             }
 
             boolean hasPerms = true;
-            MessageChannel channel = reference.getChannel();
+            MessageChannel channel = referenceOrSlashEvent.map(Message::getChannel, SlashCommandEvent::getChannel);
             if (channel instanceof TextChannel) {
                 TextChannel textChannel = (TextChannel) channel;
                 hasPerms = textChannel.getGuild().getSelfMember().hasPermission(textChannel, Permission.MESSAGE_HISTORY);
             }
 
             Message start = getCurrent();
+            List<ActionRow> actionRows = prepareActionRows();
 
-            if (hasPerms)
-                init(channel.sendMessage(start).referenceById(reference.getIdLong()));
-            else
-                init(channel.sendMessage(start));
+            if (referenceOrSlashEvent.isT()) {
+                MessageAction action;
+                if (hasPerms) {
+                    action = channel.sendMessage(start).referenceById(referenceOrSlashEvent.getTOrThrow().getIdLong());
+                } else {
+                    action = channel.sendMessage(start);
+                }
+
+                action.setActionRows(actionRows).queue(this::awaitEvents);
+            } else {
+                // is slash event
+                SlashCommandEvent slash = referenceOrSlashEvent.getUOrThrow();
+                slash.getHook().sendMessage(start).addActionRows(actionRows).queue(this::awaitEvents);
+            }
         }
 
-        private synchronized void init(@Nonnull MessageAction action) {
+        private List<ActionRow> prepareActionRows() {
             List<ActionRow> actionRows = new ArrayList<>(3);
 
             actionRows.add(ActionRow.of(SelectionMenu.create(sectionMenuId).addOptions(currentSectionOptions()).build()));
@@ -475,7 +519,7 @@ public class CharacterCommand implements Command {
             if (!hitboxOptions.isEmpty())
                 actionRows.add(ActionRow.of(SelectionMenu.create(hitboxMenuId).addOptions(currentHitboxOptions()).build()));
 
-            action.setActionRows(actionRows).queue(this::awaitEvents);
+            return actionRows;
         }
 
         private synchronized void awaitEvents(@Nonnull Message message) {
@@ -535,7 +579,7 @@ public class CharacterCommand implements Command {
                 Message current = getCurrent();
                 // We know because of the check that messageId is not null here
                 //noinspection ConstantConditions
-                init(e.getChannel().editMessageById(messageId, current).setActionRows());
+                e.getChannel().editMessageById(messageId, current).setActionRows(prepareActionRows()).queue(this::awaitEvents);
             } catch (NumberFormatException ex) {
                 log.error("Non-Integer component value: {}", value);
                 // We know because of the check that messageId is not null here

@@ -8,8 +8,7 @@ import com.github.gpluscb.ggjava.entity.object.response.enums.ActivityStateRespo
 import com.github.gpluscb.ggjava.entity.object.response.enums.BracketTypeResponse;
 import com.github.gpluscb.ggjava.entity.object.response.objects.*;
 import com.github.gpluscb.ggjava.entity.object.response.scalars.*;
-import com.github.gpluscb.toni.command.Command;
-import com.github.gpluscb.toni.command.MessageCommandContext;
+import com.github.gpluscb.toni.command.*;
 import com.github.gpluscb.toni.smashgg.GGManager;
 import com.github.gpluscb.toni.util.*;
 import com.github.gpluscb.toni.util.discord.EmbedUtil;
@@ -23,6 +22,8 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -48,16 +49,30 @@ public class TournamentCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull MessageCommandContext ctx) {
-        if (ctx.getArgs().isEmpty()) {
-            ctx.reply("Too few arguments. I can't just find you a tournament if I don't know what you're searching for. Use `help tournament` for help.").queue();
-            return;
+    public void execute(@Nonnull CommandContext<?> ctx) {
+        String searchTerm;
+
+        OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
+        if (context.isT()) {
+            MessageCommandContext msg = context.getTOrThrow();
+
+            if (msg.getArgs().isEmpty()) {
+                ctx.reply("Too few arguments. I can't just find you a tournament if I don't know what you're searching for. Use `help tournament` for help.").queue();
+                return;
+            }
+
+            searchTerm = msg.getArgsFrom(0);
+
+            ctx.getChannel().sendTyping().queue();
+        } else {
+            SlashCommandContext slash = context.getUOrThrow();
+            searchTerm = slash.getOptionNonNull("search term").getAsString();
+
+            slash.getEvent().deferReply().queue();
         }
 
-        ctx.getChannel().sendTyping().queue();
-
         // more than 15 -> risk of query complexiy
-        ggManager.searchTouranmentsByName(ctx.getArgsFrom(0), 15, 8).whenComplete(FailLogger.logFail((response, t) -> {
+        ggManager.searchTouranmentsByName(searchTerm, 15, 8).whenComplete(FailLogger.logFail((response, t) -> {
             try {
                 if (t != null) {
                     ctx.reply("The request to smash.gg failed. Tell my dev if this happens a lot - I've already annoyed them about it, but it can't hurt to give them some more context.").queue();
@@ -75,7 +90,7 @@ public class TournamentCommand implements Command {
         }));
     }
 
-    private void handleErrorResponse(@Nonnull MessageCommandContext ctx, @Nonnull GGResponse<QueryResponse> errorResponse) {
+    private void handleErrorResponse(@Nonnull CommandContext<?> ctx, @Nonnull GGResponse<QueryResponse> errorResponse) {
         DeserializationException e = errorResponse.getException();
         List<GGError> errors = errorResponse.getErrors();
         if (e != null) log.catching(e);
@@ -87,14 +102,14 @@ public class TournamentCommand implements Command {
         ctx.reply("An error during the parsing of the response smash.gg sent me... I'll go annoy my dev. If this happens consistently, go give them some context too.").queue();
     }
 
-    private void sendReply(@Nonnull MessageCommandContext ctx, @Nonnull List<TournamentResponse> tournaments) {
+    private void sendReply(@Nonnull CommandContext<?> ctx, @Nonnull List<TournamentResponse> tournaments) {
         if (tournaments.isEmpty()) {
             ctx.reply("Sorry, I couldn't find any tournament matching that on smash.gg.").queue();
             return;
         }
 
         User author = ctx.getUser();
-        Member member = ctx.getEvent().getMember();
+        Member member = ctx.getMember();
 
         TournamentEmbedPaginator pages = new TournamentEmbedPaginator(EmbedUtil.getPreparedGG(member, author).build(), tournaments);
         ReactionActionMenu.Builder menuBuilder = new ReactionActionMenu.Builder()
@@ -109,7 +124,11 @@ public class TournamentCommand implements Command {
                     .registerButton(Constants.ARROW_FORWARD, pages::prevTournament);
         }
 
-        menuBuilder.build().displayReplying(ctx.getMessage());
+        ReactionActionMenu menu = menuBuilder.build();
+
+        ctx.getContext()
+                .onT(msg -> menu.displayReplying(msg.getMessage()))
+                .onU(slash -> menu.displaySlashCommandDeferred(slash.getEvent()));
     }
 
     @Nonnull
@@ -377,30 +396,19 @@ public class TournamentCommand implements Command {
 
     @Nonnull
     @Override
-    public Permission[] getRequiredBotPerms() {
-        return new Permission[]{Permission.MESSAGE_EMBED_LINKS};
-    }
-
-    @Nonnull
-    @Override
-    public String[] getAliases() {
-        return new String[]{"tournament", "tourney", "tournaments", "tourneys"};
-    }
-
-    @Nullable
-    @Override
-    public String getShortHelp() {
-        return "Finds and displays tournaments from [smash.gg](https://smash.gg). Usage: `tournament <SEARCH TERM...>`";
-    }
-
-    @Nullable
-    @Override
-    public String getDetailedHelp() {
-        return "`tournament <SEARCH TERM...>`\n" +
-                "Searches for tournaments on [smash.gg](https://smash.gg) by their name, id, or slug (end of url).\n" +
-                String.format("If there are multiple tournaments matching the given term, use the %s/%s reactions to cycle through them.%n", Constants.ARROW_BACKWARD, Constants.ARROW_FORWARD) +
-                String.format("Use the %s/%s reactions to cycle through events in a tournament.%n", Constants.ARROW_DOWNWARD, Constants.ARROW_UPWARD) +
-                "Aliases: `tournaments`, `tournament`, `tourney`, `tourneys`";
+    public CommandInfo getInfo() {
+        return new CommandInfo.Builder()
+                .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_EMBED_LINKS})
+                .setAliases(new String[]{"tournament", "tourney", "tournaments", "tourneys"})
+                .setShortHelp("Finds and displays tournaments from [smash.gg](https://smash.gg). Usage: `tournament <SEARCH TERM...>`")
+                .setDetailedHelp("`tournament <SEARCH TERM...>`\n" +
+                        "Searches for tournaments on [smash.gg](https://smash.gg) by their name, id, or slug (end of url).\n" +
+                        String.format("If there are multiple tournaments matching the given term, use the %s/%s reactions to cycle through them.%n", Constants.ARROW_BACKWARD, Constants.ARROW_FORWARD) +
+                        String.format("Use the %s/%s reactions to cycle through events in a tournament.%n", Constants.ARROW_DOWNWARD, Constants.ARROW_UPWARD) +
+                        "Aliases: `tournaments`, `tournament`, `tourney`, `tourneys`")
+                .setCommandData(new CommandData("tournament", "Displays info about a tournament")
+                        .addOption(OptionType.STRING, "search term", "The search term (e.g. the end of the tournament url)", true))
+                .build();
     }
 
     private class TournamentEmbedPaginator {
@@ -486,11 +494,11 @@ public class TournamentCommand implements Command {
 
                 Message message;
                 if (eventPage == 0)
-                    message = new MessageBuilder().setEmbed(applyOneTournament(embed, tournament, idxOutOfSize).build()).build();
+                    message = new MessageBuilder().setEmbeds(applyOneTournament(embed, tournament, idxOutOfSize).build()).build();
                 else {
                     int eventIndex = eventPage - 1;
                     EventResponse event = pair.getU().get(eventIndex);
-                    message = new MessageBuilder().setEmbed(applyOneEvent(embed, tournament, event).build()).build();
+                    message = new MessageBuilder().setEmbeds(applyOneEvent(embed, tournament, event).build()).build();
                 }
                 lazyMessages[tournamentPage][eventPage] = message;
                 return message;

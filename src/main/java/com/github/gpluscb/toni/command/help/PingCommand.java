@@ -20,7 +20,7 @@ public class PingCommand implements Command {
                             return true;
                         }).flatMap(m -> m.editMessage(calculateResponse(sendTime.get()))),
                 slash ->
-                        slash.reply("Doing the measurement...").addCheck(() -> {
+                        slash.getEvent().reply("Doing the measurement...").addCheck(() -> {
                             sendTime.set(System.currentTimeMillis());
                             return true;
                         }).flatMap(hook -> hook.editOriginal(calculateResponse(sendTime.get())))

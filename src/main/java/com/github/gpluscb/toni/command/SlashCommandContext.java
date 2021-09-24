@@ -7,7 +7,7 @@ import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
-import net.dv8tion.jda.api.requests.restaction.interactions.ReplyAction;
+import net.dv8tion.jda.api.requests.RestAction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -15,7 +15,7 @@ import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class SlashCommandContext implements ICommandContext<SlashCommandEvent, ReplyAction> {
+public class SlashCommandContext implements ICommandContext<SlashCommandEvent, RestAction<?>> {
     private static final Logger log = LogManager.getLogger(SlashCommandContext.class);
 
     @Nonnull
@@ -34,11 +34,13 @@ public class SlashCommandContext implements ICommandContext<SlashCommandEvent, R
     @Nonnull
     @CheckReturnValue
     @Override
-    public ReplyAction reply(@Nonnull Message message) {
+    public RestAction<?> reply(@Nonnull Message message) {
         String content = message.getContentRaw();
         log.debug("Reply: {}", content.isEmpty() ? message.getEmbeds() : content);
 
-        return event.reply(message);
+        return event.isAcknowledged() ?
+                event.getHook().sendMessage(message)
+                : event.reply(message);
     }
 
     @Nonnull

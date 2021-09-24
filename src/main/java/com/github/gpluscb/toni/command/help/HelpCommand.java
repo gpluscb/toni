@@ -6,7 +6,10 @@ import com.github.gpluscb.toni.command.CommandContext;
 import com.github.gpluscb.toni.command.CommandInfo;
 import com.github.gpluscb.toni.util.discord.EmbedUtil;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
@@ -128,12 +131,13 @@ public class HelpCommand implements Command {
         Button inviteButton = Button.link(inviteUrl, "Invite me");
         Button supportButton = Button.link(supportServer, "Support server");
 
+        MessageEmbed embed = builder.build();
         ctx.getContext().onT(msg ->
-                        msg.reply(builder.build())
+                        msg.reply(embed)
                                 .setActionRow(topGGButton, githubButton, inviteButton, supportButton)
                                 .queue())
                 .onU(slash ->
-                        slash.reply(builder.build())
+                        slash.getEvent().reply(new MessageBuilder().setEmbeds(embed).build())
                                 .addActionRow(topGGButton, githubButton, inviteButton, supportButton)
                                 .queue());
     }

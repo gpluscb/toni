@@ -53,6 +53,7 @@ public class CommandContext<T extends RestAction<?> & AllowedMentions<T>> implem
     @CheckReturnValue
     @Override
     public T reply(@Nonnull Message message) {
+        // TODO: Uhhhhhhhh how do we actually do this right???
         return (T) context.map(ctx -> ctx.reply(message), ctx -> ctx.reply(message));
     }
 

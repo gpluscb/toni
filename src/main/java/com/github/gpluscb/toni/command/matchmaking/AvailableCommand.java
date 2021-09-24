@@ -1,20 +1,22 @@
 package com.github.gpluscb.toni.command.matchmaking;
 
-import com.github.gpluscb.toni.command.Command;
-import com.github.gpluscb.toni.command.MessageCommandContext;
+import com.github.gpluscb.toni.command.*;
 import com.github.gpluscb.toni.matchmaking.UnrankedManager;
 import com.github.gpluscb.toni.util.MiscUtil;
+import com.github.gpluscb.toni.util.OneOfTwo;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.exceptions.HierarchyException;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.requests.RestAction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.util.HashMap;
@@ -42,13 +44,14 @@ public class AvailableCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull MessageCommandContext ctx) {
-        if (!ctx.getEvent().isFromGuild()) {
+    public void execute(@Nonnull CommandContext<?> ctx) {
+        OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
+        if (!context.map(msg -> msg.getEvent().isFromGuild(), slash -> slash.getEvent().isFromGuild())) {
             ctx.reply("This command only works in servers. And we are not in a server right now. We are in DMs.").queue();
             return;
         }
 
-        Guild guild = ctx.getEvent().getGuild();
+        Guild guild = context.map(msg -> msg.getEvent().getGuild(), slash -> slash.getEvent().getGuild());
         long guildId = guild.getIdLong();
         try {
             UnrankedManager.MatchmakingConfig config = manager.loadMatchmakingConfig(guildId);
@@ -76,19 +79,32 @@ public class AvailableCommand implements Command {
             }
 
             Duration duration;
-            if (ctx.getArgNum() > 0) {
-                duration = MiscUtil.parseDuration(ctx.getArgsFrom(0));
-                if (duration == null) {
-                    ctx.reply("The given duration was not a valid duration. An example duration is `1h 30m`.").queue();
-                    return;
-                }
+            if (context.isT()) {
+                MessageCommandContext msg = context.getTOrThrow();
 
-                if (duration.compareTo(Duration.ofHours(12)) > 0) {
-                    ctx.reply("The maximum duration is 12h.").queue();
-                    return;
-                }
+                if (msg.getArgNum() > 0) {
+                    duration = MiscUtil.parseDuration(msg.getArgsFrom(0));
+                    if (duration == null) {
+                        ctx.reply("The given duration was not a valid duration. An example duration is `1h 30m`.").queue();
+                        return;
+                    }
+
+                    if (duration.compareTo(Duration.ofHours(12)) > 0) {
+                        ctx.reply("The maximum duration is 12h.").queue();
+                        return;
+                    }
+                } else duration = null; // We don't init it with null because duration needs to be effectively final later
             } else {
-                duration = null;
+                SlashCommandContext slash = context.getUOrThrow();
+
+                OptionMapping durationMapping = slash.getOption("duration");
+                if (durationMapping != null) {
+                    duration = MiscUtil.parseDuration(durationMapping.getAsString());
+                    if (duration == null) {
+                        ctx.reply("The given duration was not a valid duration. An example duration is `1h 30m`.").queue();
+                        return;
+                    }
+                } else duration = null;
             }
 
             Member member = ctx.getMember();
@@ -109,7 +125,7 @@ public class AvailableCommand implements Command {
                         scheduledRoleRemovals.remove(id);
                     }
 
-                    guild.removeRoleFromMember(ctx.getMember(), role).flatMap(v -> ctx.reply("I have successfully removed the role.")).queue();
+                    guild.removeRoleFromMember(ctx.getMember(), role).flatMap(v -> (RestAction<?>) ctx.reply("I have successfully removed the role.")).queue();
                 } catch (InsufficientPermissionException | HierarchyException e) {
                     ctx.reply("I couldn't remove the role because I lack permissions. Mods might be able to fix that.").queue();
                 }
@@ -163,23 +179,17 @@ public class AvailableCommand implements Command {
 
     @Nonnull
     @Override
-    public String[] getAliases() {
-        return new String[]{"available"};
-    }
-
-    @Nullable
-    @Override
-    public String getShortHelp() {
-        return "**[BETA]** Gives you the matchmaking role for a given amount of time. Usage: `available [DURATION]`";
-    }
-
-    @Nullable
-    @Override
-    public String getDetailedHelp() {
-        return "`available [DURATION]`\n" +
-                "Gives you the matchmaking role for the given duration, or permanently if you don't specify a duration." +
-                " The duration can have the format `Xh Xm Xs`, and it can't be longer than 12h." +
-                " Note that I can't remember to remove the role if I shut down during that time.\n" + // TODO: Maybe fix that? That sounds so painful to fix tho.
-                String.format("This command is in **BETA**. If you have feedback, bugs, or other issues, please go to [my support server](%s).", supportServer);
+    public CommandInfo getInfo() {
+        return new CommandInfo.Builder()
+                .setAliases(new String[]{"available"})
+                .setShortHelp("**[BETA]** Gives you the matchmaking role for a given amount of time. Usage: `available [DURATION]`")
+                .setDetailedHelp("`available [DURATION]`\n" +
+                        "Gives you the matchmaking role for the given duration, or permanently if you don't specify a duration." +
+                        " The duration can have the format `Xh Xm Xs`, and it can't be longer than 12h." +
+                        " Note that I can't remember to remove the role if I shut down during that time.\n" + // TODO: Maybe fix that? That sounds so painful to fix tho.
+                        String.format("This command is in **BETA**. If you have feedback, bugs, or other issues, please go to [my support server](%s).", supportServer))
+                .setCommandData(new CommandData("available", "[BETA] Gives you the matchmaking role for a given duration")
+                        .addOption(OptionType.STRING, "duration", "The duration after which I should remove the matchmaking role. Default is to never remove it", false))
+                .build();
     }
 }

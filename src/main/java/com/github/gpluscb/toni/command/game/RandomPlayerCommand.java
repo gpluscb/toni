@@ -39,10 +39,10 @@ public class RandomPlayerCommand implements Command {
         } else {
             SlashCommandContext slash = context.getUOrThrow();
 
-            String choice1 = slash.getOptionNonNull("choice 1").getAsString();
+            String choice1 = slash.getOptionNonNull("choice-1").getAsString();
             choices.add(OneOfTwo.ofU(choice1));
 
-            String choice2 = slash.getOptionNonNull("choice 2").getAsString();
+            String choice2 = slash.getOptionNonNull("choice-2").getAsString();
             choices.add(OneOfTwo.ofU(choice2));
         }
 
@@ -68,8 +68,8 @@ public class RandomPlayerCommand implements Command {
                         "The slash command version supports only two (2) choices.\n" +
                         "Aliases: `choose`, `randomplayer`, `chooseplayer`")
                 .setCommandData(new CommandData("choose", "Choose between two options")
-                        .addOption(OptionType.USER, "choice 1", "The first choice", true)
-                        .addOption(OptionType.USER, "choice 2", "The second choice", true))
+                        .addOption(OptionType.USER, "choice-1", "The first choice", true)
+                        .addOption(OptionType.USER, "choice-2", "The second choice", true))
                 .build();
     }
 }

@@ -53,9 +53,9 @@ public class RockPaperScissorsCommand implements Command {
         } else {
             SlashCommandContext slash = context.getUOrThrow();
 
-            user1User = slash.getOptionNonNull("user 1").getAsUser();
+            user1User = slash.getOptionNonNull("player-1").getAsUser();
 
-            OptionMapping user2Option = slash.getOption("user 2");
+            OptionMapping user2Option = slash.getOption("player-2");
 
             user2User = user2Option == null ? ctx.getUser() : user2Option.getAsUser();
         }
@@ -113,8 +113,8 @@ public class RockPaperScissorsCommand implements Command {
                         "So you might have to unblock me (but what kind of monster would have me blocked in the first place?)\n" +
                         "Aliases: `rockpaperscissors`, `rps`")
                 .setCommandData(new CommandData("rps", "Helps you play rock paper scissors")
-                        .addOption(OptionType.USER, "player 1", "The first rps player", true)
-                        .addOption(OptionType.USER, "player 2", "The second rps player. This is yourself by default", false))
+                        .addOption(OptionType.USER, "player-1", "The first rps player", true)
+                        .addOption(OptionType.USER, "player-2", "The second rps player. This is yourself by default", false))
                 .build();
     }
 

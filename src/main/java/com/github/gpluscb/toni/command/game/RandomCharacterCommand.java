@@ -143,16 +143,16 @@ public class RandomCharacterCommand implements Command {
             // Stack ZSS/Samus by default for Brawl
             if (game == CharacterTree.Game.BRAWL) stackZssSamus = true;
 
-            OptionMapping stackSheikZeldaMapping = slash.getOption("Stack Sheik/Zelda");
+            OptionMapping stackSheikZeldaMapping = slash.getOption("stack-sheik-zelda");
             if (stackSheikZeldaMapping != null) stackSheikZelda = stackSheikZeldaMapping.getAsBoolean();
 
-            OptionMapping stackZSSSamusMapping = slash.getOption("Stack Samus/ZSS");
+            OptionMapping stackZSSSamusMapping = slash.getOption("stack-samus-zss");
             if (stackZSSSamusMapping != null) stackZssSamus = stackZSSSamusMapping.getAsBoolean();
 
-            OptionMapping stackMiisMapping = slash.getOption("Stack Miis");
+            OptionMapping stackMiisMapping = slash.getOption("stack-miis");
             if (stackMiisMapping != null) stackMiis = stackMiisMapping.getAsBoolean();
 
-            OptionMapping stackEchosMapping = slash.getOption("Stack Echos");
+            OptionMapping stackEchosMapping = slash.getOption("stack-echos");
             if (stackEchosMapping != null) stackEchos = stackEchosMapping.getAsBoolean();
         }
 
@@ -202,15 +202,15 @@ public class RandomCharacterCommand implements Command {
                 .setCommandData(new CommandData("random", "Picks a random character")
                         .addSubcommands(new SubcommandData("64", "Random character for smash 64"),
                                 new SubcommandData("melee", "Random character for melee")
-                                        .addOption(OptionType.BOOLEAN, "Stack Sheik/Zelda", "Should I treat Sheik and Zelda as a single character? Default is true.", false),
+                                        .addOption(OptionType.BOOLEAN, "stack-sheik-zelda", "Should I treat Sheik and Zelda as a single character? Default is true.", false),
                                 new SubcommandData("brawl", "Random character for brawl")
-                                        .addOption(OptionType.BOOLEAN, "Stack Sheik/Zelda", "Should I treat Sheik and Zelda as a single character? Default is true.", false)
-                                        .addOption(OptionType.BOOLEAN, "Stack Samus/ZSS", "Should I treat Samus and ZSS as a single character? Default is true.", false),
+                                        .addOption(OptionType.BOOLEAN, "stack-sheik-zelda", "Should I treat Sheik and Zelda as a single character? Default is true.", false)
+                                        .addOption(OptionType.BOOLEAN, "stack-samus-zss", "Should I treat Samus and ZSS as a single character? Default is true.", false),
                                 new SubcommandData("4", "Random character for smash 4")
-                                        .addOption(OptionType.BOOLEAN, "Stack Miis", "Should I treat the Miis as a single character? Default is false.", false),
+                                        .addOption(OptionType.BOOLEAN, "stack-miis", "Should I treat the Miis as a single character? Default is false.", false),
                                 new SubcommandData("ult", "Random character for smash ultimate")
-                                        .addOption(OptionType.BOOLEAN, "Stack Miis", "Should I treat the Miis as a single character? Default is false.", false)
-                                        .addOption(OptionType.BOOLEAN, "Stack Echos", "Should I treat echo fighters like they are the same as their base character? Default is false.", false))
+                                        .addOption(OptionType.BOOLEAN, "stack-miis", "Should I treat the Miis as a single character? Default is false.", false)
+                                        .addOption(OptionType.BOOLEAN, "stack-echos", "Should I treat echo fighters like they are the same as their base character? Default is false.", false))
                 ).build();
     }
 }

@@ -67,7 +67,7 @@ public class UnrankedConfigCommand implements Command {
                 return;
         }
 
-        // Default variant
+        // Default variant / Setup variant
         if (context.isT() && context.getTOrThrow().getArgNum() < 1) {
             ctx.reply("Too few arguments. Correct usage is `unrankedcfg <role mention> [channel mention]`.").queue();
             return;
@@ -303,13 +303,14 @@ public class UnrankedConfigCommand implements Command {
                         "Aliases: `unrankedconfig`, `unrankedcfg`\n" +
                         String.format("This command is in **BETA**. If you have feedback, bugs, or other issues, please go to [my support server](%s).", supportServer))
                 .setCommandData(new CommandData("unrankedconfig", "[BETA] Configuration for unranked matchmaking")
-                        .addOption(OptionType.ROLE, "role", "The matchmaking role", true)
-                        .addOption(OptionType.CHANNEL, "channel", "The matchmaking channel if you want to limit unranked matchmaking to one channel", false)
                         .addSubcommands(new SubcommandData("channel", "Update the matchmaking channel. Resets the channel to none if no channel is given")
                                         .addOption(OptionType.CHANNEL, "channel", "The new matchmaking channel", false),
                                 new SubcommandData("role", "Update the matchmaking role")
                                         .addOption(OptionType.ROLE, "role", "The new matchmaking role", true),
-                                new SubcommandData("reset", "Removes unranked matchmaking from this server"))
+                                new SubcommandData("reset", "Removes unranked matchmaking from this server"),
+                                new SubcommandData("setup", "Set up unranked matchmaking for this server")
+                                        .addOption(OptionType.ROLE, "role", "The matchmaking role", true)
+                                        .addOption(OptionType.CHANNEL, "channel", "The matchmaking channel if you want to limit unranked matchmaking to one channel", false))
                 ).build();
     }
 }

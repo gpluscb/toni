@@ -76,12 +76,12 @@ public class BlindPickCommand implements Command {
         } else {
             SlashCommandContext slash = context.getUOrThrow();
 
-            User user1User = slash.getOptionNonNull("user 1").getAsUser();
+            User user1User = slash.getOptionNonNull("player-1").getAsUser();
             long user1 = user1User.getIdLong();
             users.add(user1);
 
             User user2User;
-            OptionMapping user2Option = slash.getOption("user 2");
+            OptionMapping user2Option = slash.getOption("player-2");
             if (user2Option == null) user2User = ctx.getUser();
             else user2User = user2Option.getAsUser();
             long user2 = user2User.getIdLong();
@@ -154,8 +154,8 @@ public class BlindPickCommand implements Command {
                         "The slash command version supports at most two (2) participants.\n" +
                         "Aliases: `doubleblind`, `blindpick`, `blind`")
                 .setCommandData(new CommandData("doubleblind", "Helps you do a double blind pick")
-                        .addOption(OptionType.USER, "player 1", "The first participant in the double blind", true)
-                        .addOption(OptionType.USER, "player 2", "The second participant in the double blind. This is yourself by default", false))
+                        .addOption(OptionType.USER, "player-1", "The first participant in the double blind", true)
+                        .addOption(OptionType.USER, "player-2", "The second participant in the double blind. This is yourself by default", false))
                 .build();
     }
 }

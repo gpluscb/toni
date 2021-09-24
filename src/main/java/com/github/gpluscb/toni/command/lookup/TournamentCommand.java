@@ -66,7 +66,7 @@ public class TournamentCommand implements Command {
             ctx.getChannel().sendTyping().queue();
         } else {
             SlashCommandContext slash = context.getUOrThrow();
-            searchTerm = slash.getOptionNonNull("search term").getAsString();
+            searchTerm = slash.getOptionNonNull("search-term").getAsString();
 
             slash.getEvent().deferReply().queue();
         }
@@ -407,7 +407,7 @@ public class TournamentCommand implements Command {
                         String.format("Use the %s/%s reactions to cycle through events in a tournament.%n", Constants.ARROW_DOWNWARD, Constants.ARROW_UPWARD) +
                         "Aliases: `tournaments`, `tournament`, `tourney`, `tourneys`")
                 .setCommandData(new CommandData("tournament", "Displays info about a tournament")
-                        .addOption(OptionType.STRING, "search term", "The search term (e.g. the end of the tournament url)", true))
+                        .addOption(OptionType.STRING, "search-term", "The search term (e.g. the end of the tournament url)", true))
                 .build();
     }
 

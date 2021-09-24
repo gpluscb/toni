@@ -47,7 +47,7 @@ public class HelpCommand implements Command {
             List<String> args = msg.getArgs();
             return args.isEmpty() ? null : args.get(0).toLowerCase();
         }, slash -> {
-            OptionMapping commandArgMapping = slash.getOption("command/category");
+            OptionMapping commandArgMapping = slash.getOption("command-or-category");
             return commandArgMapping == null ? null : commandArgMapping.getAsString();
         });
 
@@ -147,7 +147,7 @@ public class HelpCommand implements Command {
                 .setShortHelp("Helps you out. Usage: `help [CATEGORY|COMMAND]`")
                 .setDetailedHelp("`stack owoflow - Circular reference`")
                 .setCommandData(new CommandData("help", "Helps you out")
-                        .addOption(OptionType.STRING, "command/category", "The specific command or category name", false))
+                        .addOption(OptionType.STRING, "command-or-category", "The specific command or category name", false))
                 .build();
     }
 }

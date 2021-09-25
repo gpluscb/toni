@@ -34,14 +34,11 @@ import com.github.gpluscb.toni.statsposting.dbots.StatsResponse;
 import com.github.gpluscb.toni.statsposting.topgg.TopggClient;
 import com.github.gpluscb.toni.statsposting.topgg.TopggClientMock;
 import com.github.gpluscb.toni.ultimateframedata.UltimateframedataClient;
+import com.github.gpluscb.toni.util.Rulesets;
 import com.github.gpluscb.toni.util.discord.DMChoiceWaiter;
 import com.github.gpluscb.toni.util.discord.DiscordAppenderImpl;
 import com.github.gpluscb.toni.util.discord.ShardsLoadListener;
 import com.github.gpluscb.toni.util.smash.CharacterTree;
-import com.github.gpluscb.toni.util.Rulesets;
-import com.github.gpluscb.toni.util.smash.CharacterTree;
-import com.github.gpluscb.toni.util.discord.DMChoiceWaiter;
-import com.github.gpluscb.toni.util.discord.DiscordAppenderImpl;
 import com.github.gpluscb.toni.util.smash.Ruleset;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -228,7 +225,7 @@ public class Bot {
         } catch (Exception e) {
             log.error("Exception while loading rulesets - shutting down", e);
             ggManager.shutdown();
-            shardManager.shutdown();
+            unrankedManager.shutdown();
             // challongeManager.shutdown();
             // listener.shutdown();
             // client.close();

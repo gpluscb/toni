@@ -18,60 +18,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public class CommandContext<T extends RestAction<?> & AllowedMentions<T>> implements ICommandContext<Event, T> {
-    public CommandContext(@Nonnull MessageReceivedEvent event) {
-        this.event = event;
-        tokens = TOKENIZER.tokenize(event.getMessage().getContentRaw());
-    }
-
-    /**
-     * Assumes perms
-     * Except it works around missing MESSAGE_HISTORY
-     */
-    @Nonnull
-    @CheckReturnValue
-    public MessageAction reply(@Nonnull Message message) {
-        String content = message.getContentRaw();
-        log.debug("Reply: {}", content.isEmpty() ? message.getEmbeds() : content);
-
-        MessageReceivedEvent e = getEvent();
-        if (e.isFromGuild() && !e.getGuild().getSelfMember().hasPermission(e.getTextChannel(), Permission.MESSAGE_HISTORY))
-            return e.getTextChannel().sendMessage(message);
-        else
-            return getMessage().reply(message);
-    }
-
-    /**
-     * Assumes perms
-     * Except it works around missing MESSAGE_HISTORY
-     */
-    @Nonnull
-    @CheckReturnValue
-    public MessageAction reply(@Nonnull String message) {
-        return reply(new MessageBuilder(message).build());
-    }
-
-    /**
-     * Assumes perms
-     * Except it works around missing MESSAGE_HISTORY
-     */
-    @Nonnull
-    @CheckReturnValue
-    public MessageAction reply(@Nonnull MessageEmbed embed) {
-        return reply(new MessageBuilder().setEmbeds(embed).build());
-    }
-
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    public boolean memberHasBotAdminPermission() {
-        return event.getAuthor().getIdLong() == 107565973652938752L;
-    }
-
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    public boolean memberHasManageChannelsPermission() {
-        Member member = event.getMember();
-        if (member == null) throw new IllegalStateException("This event is not from a server.");
-        return member.hasPermission(Permission.MANAGE_CHANNEL);
-    }
-
     @Nonnull
     private final OneOfTwo<MessageCommandContext, SlashCommandContext> context;
 

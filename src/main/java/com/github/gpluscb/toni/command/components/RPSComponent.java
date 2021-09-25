@@ -1,12 +1,15 @@
 package com.github.gpluscb.toni.command.components;
 
-import com.github.gpluscb.toni.util.*;
+import com.github.gpluscb.toni.util.Constants;
+import com.github.gpluscb.toni.util.OneOfTwo;
+import com.github.gpluscb.toni.util.PairNonnull;
 import com.github.gpluscb.toni.util.discord.ButtonActionMenu;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.entities.Emoji;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.interactions.components.Button;
 
 import javax.annotation.Nonnull;
@@ -34,6 +37,22 @@ public class RPSComponent {
         ButtonActionMenu menu = initPair.getU();
 
         menu.display(message);
+
+        return rpsOutcome;
+    }
+
+    /**
+     * It is the callers responsibility to edit the message (and remove the buttons if you want)
+     * The message should be one returned by MessageBuilder
+     */
+    @Nonnull
+    public CompletableFuture<PairNonnull<RPSResult, ButtonClickEvent>> sendSlashRPSReplying(@Nonnull SlashCommandEvent event, @Nonnull Message message, long user1, long user2) {
+        PairNonnull<CompletableFuture<PairNonnull<RPSResult, ButtonClickEvent>>, ButtonActionMenu> initPair = initRps(message, user1, user2);
+
+        CompletableFuture<PairNonnull<RPSResult, ButtonClickEvent>> rpsOutcome = initPair.getT();
+        ButtonActionMenu menu = initPair.getU();
+
+        menu.displaySlashCommandReplying(event);
 
         return rpsOutcome;
     }

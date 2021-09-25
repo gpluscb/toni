@@ -1,20 +1,23 @@
 package com.github.gpluscb.toni.command.game;
 
-import com.github.gpluscb.toni.command.Command;
-import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.*;
 import com.github.gpluscb.toni.command.components.RPSComponent;
 import com.github.gpluscb.toni.util.FailLogger;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
 import net.dv8tion.jda.api.MessageBuilder;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 public class RPSCommand implements Command {
     private static final Logger log = LogManager.getLogger(RPSCommand.class);
@@ -27,35 +30,63 @@ public class RPSCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull CommandContext ctx) {
-        OneOfTwo<MiscUtil.OneOrTwoUserArgs, MiscUtil.TwoUserArgsErrorType> argResult = MiscUtil.getTwoUserArgs(ctx, false);
+    public void execute(@Nonnull CommandContext<?> ctx) {
+        User user1User;
+        User user2User;
 
-        MiscUtil.TwoUserArgsErrorType error = argResult.getU().orElse(null);
-        if (error != null) {
-            String reply;
-            switch (error) {
-                case WRONG_NUMBER_ARGS:
-                    reply = "You must mention either one or two users.";
-                    break;
-                case NOT_USER_MENTION_ARG:
-                    reply = "Arguments must be user mentions.";
-                    break;
-                case BOT_USER:
-                    reply = "This command doesn't support bot or webhook users.";
-                    break;
-                case USER_1_EQUALS_USER_2:
-                    reply = "I can't have someone rps with themselves, what would that even look like?";
-                    break;
-                default:
-                    throw new IllegalStateException("Non exhaustive switch over error");
+        OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
+
+        if (context.isT()) {
+            MessageCommandContext msg = context.getTOrThrow();
+            OneOfTwo<MiscUtil.OneOrTwoUserArgs, MiscUtil.TwoUserArgsErrorType> argResult = MiscUtil.getTwoUserArgs(msg, false);
+            MiscUtil.TwoUserArgsErrorType error = argResult.getU().orElse(null);
+            if (error != null) {
+                String reply;
+                switch (error) {
+                    case WRONG_NUMBER_ARGS:
+                        reply = "You must mention either one or two users.";
+                        break;
+                    case NOT_USER_MENTION_ARG:
+                        reply = "Arguments must be user mentions.";
+                        break;
+                    case BOT_USER:
+                        reply = "This command doesn't support bot or webhook users.";
+                        break;
+                    case USER_1_EQUALS_USER_2:
+                        reply = "I can't have someone rps with themselves, what would that even look like?";
+                        break;
+                    default:
+                        throw new IllegalStateException("Non exhaustive switch over error");
+                }
+
+                ctx.reply(reply).queue();
             }
 
-            ctx.reply(reply).queue();
+            MiscUtil.OneOrTwoUserArgs users = argResult.getTOrThrow();
+            user1User = users.getUser1();
+            user2User = users.getUser2();
+        } else {
+            SlashCommandContext slash = context.getUOrThrow();
+
+            user1User = slash.getOptionNonNull("player-1").getAsUser();
+
+            OptionMapping user2Option = slash.getOption("player-2");
+
+            user2User = user2Option == null ? ctx.getUser() : user2Option.getAsUser();
         }
 
-        MiscUtil.OneOrTwoUserArgs users = argResult.getTOrThrow();
-        long user1 = users.getUser1();
-        long user2 = users.getUser2();
+        if (user1User.isBot() || user2User.isBot()) {
+            ctx.reply("I can't support bot/webhook users right now, sorry.").queue();
+            return;
+        }
+
+        long user1 = user1User.getIdLong();
+        long user2 = user2User.getIdLong();
+
+        if (user1 == user2) {
+            ctx.reply("I can't have people play against themselves. How would that even work?").queue();
+            return;
+        }
 
         String user1Mention = MiscUtil.mentionUser(user1);
         String user2Mention = MiscUtil.mentionUser(user2);
@@ -65,7 +96,10 @@ public class RPSCommand implements Command {
                 .mentionUsers(user1, user2)
                 .build();
 
-        component.sendRPSReplying(ctx.getMessage(), start, user1, user2).whenComplete(FailLogger.logFail((pair, timeout) -> {
+        context.map(
+                msg -> component.sendRPSReplying(msg.getMessage(), start, user1, user2),
+                slash -> component.sendSlashRPSReplying(slash.getEvent(), start, user1, user2)
+        ).whenComplete(FailLogger.logFail((pair, timeout) -> {
             if (timeout != null) {
                 if (!(timeout instanceof RPSComponent.RPSTimeoutException)) {
                     log.error("Failed RPS completion not RPSTimeoutException", timeout);
@@ -115,7 +149,7 @@ public class RPSCommand implements Command {
             }
 
             e.reply(String.format("It has been decided! %s chose %s, and %s chose %s. That means %s",
-                    user1Mention, result.getChoiceA().getDisplayName(), user2Mention, result.getChoiceB().getDisplayName(), outcome))
+                            user1Mention, result.getChoiceA().getDisplayName(), user2Mention, result.getChoiceB().getDisplayName(), outcome))
                     .mentionUsers(user1, user2)
                     .queue();
 
@@ -125,21 +159,19 @@ public class RPSCommand implements Command {
 
     @Nonnull
     @Override
-    public String[] getAliases() {
-        return new String[]{"rps", "rockpaperscissors"};
-    }
-
-    @Nullable
-    @Override
-    public String getShortHelp() {
-        return "Helps you play rock paper scissors. Usage: `rps [PLAYER 1] <PLAYER 2>`";
-    }
-
-    @Nullable
-    @Override
-    public String getDetailedHelp() {
-        return "`rps [PLAYER 1 (default: message author)] <PLAYER 2>`\n" +
-                "Helps you play the world famous game of [rock paper scissors](https://en.wikipedia.org/wiki/Rock_paper_scissors).\n" +
-                "Aliases: `rockpaperscissors`, `rps`";
+    public CommandInfo getInfo() {
+        return new CommandInfo.Builder()
+                .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_HISTORY})
+                .setAliases(new String[]{"rps", "rockpaperscissors"})
+                .setShortHelp("Helps you play rock paper scissors. Usage: `rps [PLAYER 1] <PLAYER 2>`")
+                .setDetailedHelp("`rps [PLAYER 1 (default: message author)] <PLAYER 2>`\n" +
+                        "Helps you play the world famous game of [rock paper scissors](https://en.wikipedia.org/wiki/Rock_paper_scissors). " +
+                        "After performing the command, both participants will have to DM me. " +
+                        "So you might have to unblock me (but what kind of monster would have me blocked in the first place?)\n" +
+                        "Aliases: `rockpaperscissors`, `rps`")
+                .setCommandData(new CommandData("rps", "Helps you play rock paper scissors")
+                        .addOption(OptionType.USER, "player-1", "The first rps player", true)
+                        .addOption(OptionType.USER, "player-2", "The second rps player. This is yourself by default", false))
+                .build();
     }
 }

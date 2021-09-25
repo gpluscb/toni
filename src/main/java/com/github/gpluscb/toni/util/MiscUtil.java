@@ -1,12 +1,10 @@
 package com.github.gpluscb.toni.util;
 
-import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.MessageCommandContext;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.Button;
 import net.dv8tion.jda.api.requests.RestAction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -79,16 +77,16 @@ public class MiscUtil {
      */
     // TODO: This needs an overhaul, probably should have List of users with minUsers and maxUsers and defaultAuthorIfMin or sth like that
     @Nonnull
-    public static OneOfTwo<OneOrTwoUserArgs, TwoUserArgsErrorType> getTwoUserArgs(@Nonnull CommandContext ctx, boolean allowMoreArgs) {
+    public static OneOfTwo<OneOrTwoUserArgs, TwoUserArgsErrorType> getTwoUserArgs(@Nonnull MessageCommandContext ctx, boolean allowMoreArgs) {
         int argNum = ctx.getArgNum();
         if (ctx.getArgNum() < 1 || (!allowMoreArgs && ctx.getArgNum() > 2))
             return OneOfTwo.ofU(TwoUserArgsErrorType.WRONG_NUMBER_ARGS);
 
         User user1User = ctx.getUserMentionArg(0);
         boolean twoArgumentsGiven = argNum >= 2;
-        User user2User = twoArgumentsGiven ? ctx.getUserMentionArg(1) : ctx.getAuthor();
+        User user2User = twoArgumentsGiven ? ctx.getUserMentionArg(1) : ctx.getUser();
         if (user2User == null && allowMoreArgs) {
-            user2User = ctx.getAuthor();
+            user2User = ctx.getUser();
             // TODO: Better naming
             twoArgumentsGiven = false;
         }

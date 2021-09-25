@@ -53,7 +53,7 @@ public class SmashdataManager {
         PreparedStatement statement = connection.prepareStatement("SELECT player_id, tag, prefixes, characters, country, state, region, social FROM players WHERE UPPER(tag) = ?");
         statement.setQueryTimeout(10);
 
-        statement.setString(1, requestedTag);
+        statement.setString(1, requestedTag.toLowerCase());
 
         List<PlayerData> results = new ArrayList<>();
 

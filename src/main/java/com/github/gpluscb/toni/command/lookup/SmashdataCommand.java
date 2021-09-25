@@ -68,7 +68,7 @@ public class SmashdataCommand implements Command {
         }
 
         try {
-            List<SmashdataManager.PlayerData> results = smashdata.loadSmashdataByTag(requestedTag.toUpperCase());
+            List<SmashdataManager.PlayerData> results = smashdata.loadSmashdataByTag(requestedTag);
 
             Comparator<SmashdataManager.PlayerData> comp = (a, b) -> {
                 // Find the higher ranked player

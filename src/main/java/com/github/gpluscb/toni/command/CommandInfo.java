@@ -33,7 +33,7 @@ public class CommandInfo {
         return requiredBotPerms;
     }
 
-    public boolean isAdminOnly() {
+    public boolean isAdminGuildOnly() {
         return adminOnly;
     }
 

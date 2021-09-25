@@ -351,7 +351,7 @@ public class Bot {
     }
 
     private void hookSlashCommands(@Nonnull Guild adminGuild, @Nonnull List<CommandCategory> commands) {
-        Map<Boolean, List<Command>> map = commands.stream().flatMap(cat -> cat.getCommands().stream()).collect(Collectors.groupingBy(cmd -> cmd.getInfo().isAdminOnly()));
+        Map<Boolean, List<Command>> map = commands.stream().flatMap(cat -> cat.getCommands().stream()).collect(Collectors.groupingBy(cmd -> cmd.getInfo().isAdminGuildOnly()));
         List<CommandData> globalCommands = map.get(false).stream().map(cmd -> cmd.getInfo().getCommandData()).collect(Collectors.toList());
         List<CommandData> adminOnlyCommands = map.get(true).stream().map(cmd -> cmd.getInfo().getCommandData()).collect(Collectors.toList());
 

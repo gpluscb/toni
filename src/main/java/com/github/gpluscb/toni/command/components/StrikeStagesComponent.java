@@ -11,6 +11,7 @@ import net.dv8tion.jda.api.entities.Emoji;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.Button;
@@ -45,6 +46,23 @@ public class StrikeStagesComponent {
      * The future can also fail with the {@link com.github.gpluscb.toni.command.components.RPSComponent.RPSTimeoutException} or {@link ChooseFirstStrikerTimeoutException}.
      */
     @Nonnull
+    public CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> sendSlashStageStrikingReplying(@Nonnull SlashCommandEvent event, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS) {
+        return sendSlashStageStrikingReplying(event, ruleset, striker1, striker2, doRPS, null);
+    }
+
+    /**
+     * If you pass a set, you swear not to touch it until we are finished.
+     * The future can also fail with the {@link com.github.gpluscb.toni.command.components.RPSComponent.RPSTimeoutException} or {@link ChooseFirstStrikerTimeoutException}.
+     */
+    @Nonnull
+    public CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> sendSlashStageStrikingReplying(@Nonnull SlashCommandEvent event, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS, @Nullable SmashSet.SetStarterStrikingState set) {
+        return initStrikeStagesReplying(OneOfTwo.ofU(event), ruleset, striker1, striker2, doRPS, set);
+    }
+
+    /**
+     * The future can also fail with the {@link com.github.gpluscb.toni.command.components.RPSComponent.RPSTimeoutException} or {@link ChooseFirstStrikerTimeoutException}.
+     */
+    @Nonnull
     public CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> sendStageStrikingReplying(@Nonnull Message reference, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS) {
         return sendStageStrikingReplying(reference, ruleset, striker1, striker2, doRPS, null);
     }
@@ -55,16 +73,16 @@ public class StrikeStagesComponent {
      */
     @Nonnull
     public CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> sendStageStrikingReplying(@Nonnull Message reference, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS, @Nullable SmashSet.SetStarterStrikingState set) {
-        return initStrikeStagesReplying(reference, ruleset, striker1, striker2, doRPS, set);
+        return initStrikeStagesReplying(OneOfTwo.ofT(reference), ruleset, striker1, striker2, doRPS, set);
     }
 
     @Nonnull
-    private CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> initStrikeStagesReplying(@Nonnull Message reference, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS, @Nullable SmashSet.SetStarterStrikingState set) {
+    private CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> initStrikeStagesReplying(@Nonnull OneOfTwo<Message, SlashCommandEvent> reference, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS, @Nullable SmashSet.SetStarterStrikingState set) {
         return initStrikeStagesHelper(reference, ruleset, striker1, striker2, doRPS, set);
     }
 
     @Nonnull
-    private CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> initStrikeStagesHelper(@Nonnull Message reference, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS, @Nullable SmashSet.SetStarterStrikingState set) {
+    private CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> initStrikeStagesHelper(@Nonnull OneOfTwo<Message, SlashCommandEvent> reference, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS, @Nullable SmashSet.SetStarterStrikingState set) {
         String striker1Mention = MiscUtil.mentionUser(striker1);
         String striker2Mention = MiscUtil.mentionUser(striker2);
 
@@ -79,7 +97,10 @@ public class StrikeStagesComponent {
             )).mentionUsers(striker1, striker2).build();
 
             CompletableFuture<PairNonnull<RPSComponent.RPSResult, ButtonClickEvent>> rpsResult;
-            rpsResult = rpsComponent.sendRPSReplying(reference, message, striker1, striker2);
+            rpsResult = reference.map(
+                    msg -> rpsComponent.sendRPSReplying(msg, message, striker1, striker2),
+                    slash -> rpsComponent.sendSlashRPSReplying(slash, message, striker1, striker2)
+            );
 
             user1StrikesFirstFuture = rpsResult.thenCompose(pair -> evaluateRPSResult(striker1, striker2, pair.getT(), pair.getU()));
         } else {
@@ -122,7 +143,7 @@ public class StrikeStagesComponent {
 
             ButtonActionMenu menu = builder.build();
 
-            if (toEdit == null) menu.displayReplying(reference);
+            if (toEdit == null) reference.onT(menu::displayReplying).onU(menu::displaySlashCommandReplying);
             else menu.display(toEdit);
 
             return stageStrikingResult;
@@ -188,7 +209,6 @@ public class StrikeStagesComponent {
                 }).build();
 
         e.deferEdit().queue();
-        //noinspection ConstantConditions Not ephemeral
         menu.display(e.getMessage());
 
         return user1StrikesFirstFuture;

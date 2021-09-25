@@ -13,6 +13,7 @@ import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.requests.RestAction;
+import net.dv8tion.jda.api.utils.TimeFormat;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -93,7 +94,8 @@ public class AvailableCommand implements Command {
                         ctx.reply("The maximum duration is 12h.").queue();
                         return;
                     }
-                } else duration = null; // We don't init it with null because duration needs to be effectively final later
+                } else
+                    duration = null; // We don't init it with null because duration needs to be effectively final later
             } else {
                 SlashCommandContext slash = context.getUOrThrow();
 
@@ -146,8 +148,10 @@ public class AvailableCommand implements Command {
                         if (duration == null) {
                             reply.append(". Use this command again to remove it.");
                         } else {
-                            reply.append(String.format(" for %s." +
-                                    " Note that in case I reboot during that time, I won't be able to remove the role.", MiscUtil.durationToString(duration)));
+                            reply.append(String.format(" for %s (until %s)." +
+                                    " Note that in case I reboot during that time, I won't be able to remove the role.",
+                                    MiscUtil.durationToString(duration),
+                                    TimeFormat.RELATIVE.after(duration)));
 
                             ScheduledFuture<?> future = guild.removeRoleFromMember(member, role)
                                     .mapToResult()

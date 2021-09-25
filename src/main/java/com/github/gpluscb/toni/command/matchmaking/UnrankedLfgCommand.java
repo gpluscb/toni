@@ -10,7 +10,10 @@ import com.github.gpluscb.toni.util.discord.ButtonActionMenu;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.Emoji;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
@@ -18,6 +21,7 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.components.Button;
 import net.dv8tion.jda.api.requests.ErrorResponse;
+import net.dv8tion.jda.api.utils.TimeFormat;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -129,8 +133,12 @@ public class UnrankedLfgCommand implements Command {
             currentlyLfgPerGuild.add(new PairNonnull<>(guildId, userId));
         }
 
-        Message start = new MessageBuilder(String.format("%s, %s is looking for a game for %s. %2$s, you can click on the %s button to cancel.",
-                MiscUtil.mentionRole(roleId), MiscUtil.mentionUser(userId), MiscUtil.durationToString(duration), Constants.CROSS_MARK))
+        Message start = new MessageBuilder(String.format("%s, %s is looking for a game for %s (until %s). %2$s, you can click on the %s button to cancel.",
+                MiscUtil.mentionRole(roleId),
+                MiscUtil.mentionUser(userId),
+                MiscUtil.durationToString(duration),
+                TimeFormat.RELATIVE.after(duration),
+                Constants.CROSS_MARK))
                 .mentionRoles(roleId).mentionUsers(userId).build();
 
         ButtonHandler handler = new ButtonHandler(guildId, userId, roleId);

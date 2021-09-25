@@ -26,13 +26,9 @@ public class BlindPickCommand implements Command {
     @Nonnull
     private final List<CharacterTree.Character> characters;
 
-    @Nonnull
-    private final List<Long> usersDoingBlindPick;
-
     public BlindPickCommand(@Nonnull DMChoiceWaiter waiter, @Nonnull CharacterTree characterTree) {
         this.waiter = waiter;
         this.characters = characterTree.getAllCharacters();
-        usersDoingBlindPick = new ArrayList<>();
     }
 
     @Override
@@ -97,15 +93,6 @@ public class BlindPickCommand implements Command {
             }
 
             users.add(user2);
-        }
-
-        synchronized (usersDoingBlindPick) {
-            if (usersDoingBlindPick.stream().anyMatch(users::contains)) {
-                ctx.reply("Some of you ppl are already doing another blind pick. I can't have people doing two blind picks at the same time!").queue();
-                return;
-            }
-
-            usersDoingBlindPick.addAll(users);
         }
 
         // TODO: Avoid too many mentions somehow -> could potentially be a vector for ping spams

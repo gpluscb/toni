@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.sharding.ShardManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -21,7 +22,7 @@ public class StatusCommand implements Command {
 
         OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
         if (context.isT() && context.getTOrThrow().getArgNum() < 2) {
-            ctx.reply("Too few args. `status <ACTIVITY(listening|watching|playing)> <STATUS...>`").queue();
+            ctx.reply("Too few args. `status <ACTIVITY(listening|watching|playing|competing)> <STATUS...>`").queue();
             return;
         }
 
@@ -66,7 +67,11 @@ public class StatusCommand implements Command {
                 .setAdminOnly(true)
                 .setAliases(new String[]{"setstatus", "status"})
                 .setCommandData(new CommandData("status", "Changes the bot status")
-                        .addOption(OptionType.STRING, "activity", "The displayed activity: listening|watching|playing|competing", true)
+                        .addOptions(new OptionData(OptionType.STRING, "activity", "The displayed activity", true)
+                                .addChoice("listening", "listening")
+                                .addChoice("watching", "watching")
+                                .addChoice("playing", "playing")
+                                .addChoice("competing", "competing"))
                         .addOption(OptionType.STRING, "status", "The displayed status", true))
                 .build();
     }

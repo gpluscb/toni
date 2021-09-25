@@ -1,6 +1,5 @@
 package com.github.gpluscb.toni.command;
 
-import com.github.gpluscb.toni.util.discord.DMChoiceWaiter;
 import com.github.gpluscb.toni.Config;
 import com.github.gpluscb.toni.util.discord.DMChoiceWaiter;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;

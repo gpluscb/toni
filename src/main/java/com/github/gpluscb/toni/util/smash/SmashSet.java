@@ -5,7 +5,10 @@ import com.github.gpluscb.toni.util.OneOfTwo;
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 
 public class SmashSet {
     @Nonnull

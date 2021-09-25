@@ -2,7 +2,6 @@ package com.github.gpluscb.toni.command.challonge;
 
 import com.github.gpluscb.challonge_listener.ChallongeExtension;
 import com.github.gpluscb.toni.challonge.TournamentListener;
-import com.github.gpluscb.toni.command.Command;
 import com.github.gpluscb.toni.command.MessageCommandContext;
 import com.github.gpluscb.toni.util.FailLogger;
 import net.dv8tion.jda.api.entities.Guild;
@@ -30,7 +29,7 @@ public class UnsubscribeCommand/* implements Command*/ {
         this.listener = listener;
     }
 
-//    @Override
+    //    @Override
     public void execute(@Nonnull MessageCommandContext ctx) {
         if (!ctx.getEvent().isFromGuild()) {
             ctx.reply("Hey, this command only works in servers!").queue();

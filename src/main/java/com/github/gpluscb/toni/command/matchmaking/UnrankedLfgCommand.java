@@ -2,8 +2,6 @@ package com.github.gpluscb.toni.command.matchmaking;
 
 import com.github.gpluscb.toni.command.*;
 import com.github.gpluscb.toni.matchmaking.UnrankedManager;
-import com.github.gpluscb.toni.util.*;
-import com.github.gpluscb.toni.util.discord.ButtonActionMenu;
 import com.github.gpluscb.toni.util.Constants;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;

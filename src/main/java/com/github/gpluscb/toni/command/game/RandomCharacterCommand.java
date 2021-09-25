@@ -1,12 +1,9 @@
 package com.github.gpluscb.toni.command.game;
 
-import com.github.gpluscb.toni.command.Command;
-import com.github.gpluscb.toni.command.CommandContext;
-import com.github.gpluscb.toni.util.smash.Character;
-import com.github.gpluscb.toni.util.smash.CharacterTree;
 import com.github.gpluscb.toni.command.*;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
+import com.github.gpluscb.toni.util.smash.Character;
 import com.github.gpluscb.toni.util.smash.CharacterTree;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;

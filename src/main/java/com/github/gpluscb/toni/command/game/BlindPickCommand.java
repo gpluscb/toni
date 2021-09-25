@@ -1,21 +1,16 @@
 package com.github.gpluscb.toni.command.game;
 
-import com.github.gpluscb.toni.command.Command;
-import com.github.gpluscb.toni.command.CommandContext;
-import com.github.gpluscb.toni.command.components.BlindPickComponent;
-import com.github.gpluscb.toni.util.smash.Character;
 import com.github.gpluscb.toni.command.*;
+import com.github.gpluscb.toni.command.components.BlindPickComponent;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
-import com.github.gpluscb.toni.util.discord.DMChoiceWaiter;
-import com.github.gpluscb.toni.util.smash.CharacterTree;
-import net.dv8tion.jda.api.entities.Message;
+import com.github.gpluscb.toni.util.smash.Character;
 import net.dv8tion.jda.api.entities.User;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;

@@ -4,7 +4,6 @@ import com.github.gpluscb.toni.Config;
 import com.github.gpluscb.toni.command.Command;
 import com.github.gpluscb.toni.command.CommandCategory;
 import com.github.gpluscb.toni.command.CommandContext;
-import com.github.gpluscb.toni.util.discord.EmbedUtil;
 import com.github.gpluscb.toni.command.CommandInfo;
 import com.github.gpluscb.toni.util.discord.EmbedUtil;
 import net.dv8tion.jda.api.EmbedBuilder;

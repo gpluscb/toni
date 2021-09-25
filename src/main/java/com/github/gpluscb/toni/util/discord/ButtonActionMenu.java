@@ -1,8 +1,5 @@
 package com.github.gpluscb.toni.util.discord;
 
-import com.github.gpluscb.toni.util.Constants;
-import com.github.gpluscb.toni.util.FailLogger;
-import com.github.gpluscb.toni.util.PairNonnull;
 import com.github.gpluscb.toni.util.*;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import com.jagrosh.jdautilities.menu.Menu;

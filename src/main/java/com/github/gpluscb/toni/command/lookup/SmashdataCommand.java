@@ -56,7 +56,7 @@ public class SmashdataCommand implements Command {
                 return;
             }
 
-            requestedTag = msg.getArgsFrom(0).toUpperCase();
+            requestedTag = msg.getArgsFrom(0);
 
             ctx.getChannel().sendTyping().queue();
         } else {
@@ -68,7 +68,7 @@ public class SmashdataCommand implements Command {
         }
 
         try {
-            List<SmashdataManager.PlayerData> results = smashdata.loadSmashdataByTag(requestedTag);
+            List<SmashdataManager.PlayerData> results = smashdata.loadSmashdataByTag(requestedTag.toUpperCase());
 
             Comparator<SmashdataManager.PlayerData> comp = (a, b) -> {
                 // Find the higher ranked player

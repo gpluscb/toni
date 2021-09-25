@@ -102,6 +102,8 @@ public class SlashCommandContext implements ICommandContext<SlashCommandEvent, R
     public String toString() {
         return "SlashCommandContext{" +
                 "event=" + event +
+                ", command=" + event.getCommandPath() +
+                ", options=" + event.getOptions() +
                 '}';
     }
 }

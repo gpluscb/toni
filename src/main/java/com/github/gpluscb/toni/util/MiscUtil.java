@@ -48,22 +48,34 @@ public class MiscUtil {
     }
 
     public static class OneOrTwoUserArgs {
-        private final long user1;
-        private final long user2;
+        @Nonnull
+        private final User user1User;
+        @Nonnull
+        private final User user2User;
         private final boolean twoArgumentsGiven;
 
-        public OneOrTwoUserArgs(long user1, long user2, boolean twoArgumentsGiven) {
-            this.user1 = user1;
-            this.user2 = user2;
+        public OneOrTwoUserArgs(@Nonnull User user1User, @Nonnull User user2User, boolean twoArgumentsGiven) {
+            this.user1User = user1User;
+            this.user2User = user2User;
             this.twoArgumentsGiven = twoArgumentsGiven;
         }
 
         public long getUser1() {
-            return user1;
+            return user1User.getIdLong();
         }
 
         public long getUser2() {
-            return user2;
+            return user2User.getIdLong();
+        }
+
+        @Nonnull
+        public User getUser1User() {
+            return user1User;
+        }
+
+        @Nonnull
+        public User getUser2User() {
+            return user2User;
         }
 
         public boolean isTwoArgumentsGiven() {
@@ -97,13 +109,10 @@ public class MiscUtil {
         if (user1User.isBot() || user2User.isBot())
             return OneOfTwo.ofU(TwoUserArgsErrorType.BOT_USER);
 
-        long user1 = user1User.getIdLong();
-        long user2 = user2User.getIdLong();
-
-        if (user1 == user2)
+        if (user1User.getIdLong() == user2User.getIdLong())
             return OneOfTwo.ofU(TwoUserArgsErrorType.USER_1_EQUALS_USER_2);
 
-        return OneOfTwo.ofT(new OneOrTwoUserArgs(user1, user2, twoArgumentsGiven));
+        return OneOfTwo.ofT(new OneOrTwoUserArgs(user1User, user2User, twoArgumentsGiven));
     }
 
     @Nonnull

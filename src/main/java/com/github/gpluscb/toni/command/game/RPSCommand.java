@@ -63,8 +63,8 @@ public class RPSCommand implements Command {
             }
 
             MiscUtil.OneOrTwoUserArgs users = argResult.getTOrThrow();
-            user1User = users.getUser1();
-            user2User = users.getUser2();
+            user1User = users.getUser1User();
+            user2User = users.getUser2User();
         } else {
             SlashCommandContext slash = context.getUOrThrow();
 
@@ -153,7 +153,7 @@ public class RPSCommand implements Command {
                     .mentionUsers(user1, user2)
                     .queue();
 
-            // TODO: Edit message, remove ActionRows
+            // TODO: Edit message, remove ActionRows. Only then MESSAGE_HISTORY will be needed I think
         }));
     }
 

@@ -19,13 +19,9 @@ public class UnrankedConfigCommand implements Command {
     private static final Logger log = LogManager.getLogger(UnrankedConfigCommand.class);
 
     @Nonnull
-    private final String supportServer;
-
-    @Nonnull
     private final UnrankedManager manager;
 
-    public UnrankedConfigCommand(@Nonnull String supportServer, @Nonnull UnrankedManager manager) {
-        this.supportServer = supportServer;
+    public UnrankedConfigCommand(@Nonnull UnrankedManager manager) {
         this.manager = manager;
     }
 

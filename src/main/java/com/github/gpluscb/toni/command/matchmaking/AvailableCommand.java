@@ -30,16 +30,12 @@ public class AvailableCommand implements Command {
     private static final Logger log = LogManager.getLogger(AvailableCommand.class);
 
     @Nonnull
-    private final String supportServer;
-
-    @Nonnull
     private final UnrankedManager manager;
 
     @Nonnull
     private final Map<Long, ScheduledFuture<?>> scheduledRoleRemovals;
 
-    public AvailableCommand(@Nonnull String supportServer, @Nonnull UnrankedManager manager) {
-        this.supportServer = supportServer;
+    public AvailableCommand(@Nonnull UnrankedManager manager) {
         this.manager = manager;
         scheduledRoleRemovals = new HashMap<>();
     }

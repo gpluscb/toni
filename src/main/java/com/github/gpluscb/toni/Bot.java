@@ -230,7 +230,7 @@ public class Bot {
         }
 
         log.trace("Loading commands");
-        List<CommandCategory> commands = loadCommands(ufdClient, waiter, dmWaiter, /*challonge, listener, */characterTree, cfg.getSupportServer());
+        List<CommandCategory> commands = loadCommands(ufdClient, waiter, dmWaiter, /*challonge, listener, */characterTree);
 
         log.trace("Creating loadListener");
         long adminGuildId = cfg.getAdminGuildId();
@@ -310,7 +310,7 @@ public class Bot {
     }
 
     @Nonnull
-    private List<CommandCategory> loadCommands(@Nonnull UltimateframedataClient ufdClient, @Nonnull EventWaiter waiter, @Nonnull DMChoiceWaiter dmWaiter, /*@Nonnull ChallongeExtension challonge, @Nonnull TournamentListener listener, */@Nonnull CharacterTree characterTree, @Nonnull String supportServer) {
+    private List<CommandCategory> loadCommands(@Nonnull UltimateframedataClient ufdClient, @Nonnull EventWaiter waiter, @Nonnull DMChoiceWaiter dmWaiter, /*@Nonnull ChallongeExtension challonge, @Nonnull TournamentListener listener, */@Nonnull CharacterTree characterTree) {
         List<CommandCategory> commands = new ArrayList<>();
 
         List<Command> adminCommands = new ArrayList<>();
@@ -343,9 +343,9 @@ public class Bot {
         commands.add(new CommandCategory("lookup", "Lookup commands for other websites", lookupCommands));
 
         List<Command> matchmakingCommands = new ArrayList<>();
-        matchmakingCommands.add(new UnrankedConfigCommand(supportServer, unrankedManager));
-        matchmakingCommands.add(new AvailableCommand(supportServer, unrankedManager));
-        matchmakingCommands.add(new UnrankedLfgCommand(supportServer, unrankedManager, waiter));
+        matchmakingCommands.add(new UnrankedConfigCommand(unrankedManager));
+        matchmakingCommands.add(new AvailableCommand(unrankedManager));
+        matchmakingCommands.add(new UnrankedLfgCommand(unrankedManager, waiter));
         commands.add(new CommandCategory("matchmaking", "Commands for matchmaking", matchmakingCommands));
 
         return commands;

@@ -37,9 +37,6 @@ public class UnrankedLfgCommand implements Command {
     private static final Logger log = LogManager.getLogger(UnrankedLfgCommand.class);
 
     @Nonnull
-    private final String supportServer;
-
-    @Nonnull
     private final UnrankedManager manager;
     @Nonnull
     private final EventWaiter waiter;
@@ -47,8 +44,7 @@ public class UnrankedLfgCommand implements Command {
     @Nonnull
     private final Set<PairNonnull<Long, Long>> currentlyLfgPerGuild;
 
-    public UnrankedLfgCommand(@Nonnull String supportServer, @Nonnull UnrankedManager manager, @Nonnull EventWaiter waiter) {
-        this.supportServer = supportServer;
+    public UnrankedLfgCommand(@Nonnull UnrankedManager manager, @Nonnull EventWaiter waiter) {
         this.manager = manager;
         this.waiter = waiter;
         currentlyLfgPerGuild = new HashSet<>();

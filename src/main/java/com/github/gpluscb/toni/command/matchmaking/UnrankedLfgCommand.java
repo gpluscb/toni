@@ -168,7 +168,7 @@ public class UnrankedLfgCommand implements Command {
                         "Pings the matchmaking role and asks players to react if they want to play. Notifies you when they react within the given duration." +
                         " The duration can have the format `Xh Xm Xs`, and it has to be between 10m and 5h.\n" +
                         "Aliases: `lfg`, `unranked`, `fight`, `fite`")
-                .setCommandData(new CommandData("lfg", "Pings matchmaking and let's you know if someone is available to play")
+                .setCommandData(new CommandData("lfg", "Pings matchmaking and lets you know if someone is available to play")
                         .addOption(OptionType.STRING, "duration", "How long you are looking for a game. Default is two hours", false))
                 .build();
     }

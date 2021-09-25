@@ -62,10 +62,14 @@ public class CharacterCommand implements Command {
             MessageCommandContext msg = context.getTOrThrow();
 
             int argNum = msg.getArgNum();
+
+            if (argNum == 0) {
+                ctx.reply("You haven't given a character name. Use `toni, help character` for detailed help.").queue();
+                return;
+            }
+
             // T: id, U: response in case Id is not found
-            OneOfTwo<Pair<Short, String>, String> idAndMoveNameOrResponse = argNum == 0 ?
-                    OneOfTwo.ofT(new Pair<>((short) 20, null))
-                    : findCharacterIdAndMoveNameOrResponse(msg);
+            OneOfTwo<Pair<Short, String>, String> idAndMoveNameOrResponse = findCharacterIdAndMoveNameOrResponse(msg);
 
             if (idAndMoveNameOrResponse.isU()) {
                 // We know because of the isU

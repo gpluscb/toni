@@ -63,6 +63,9 @@ public class ReactionActionMenu extends Menu {
         channel.sendMessage(start).queue(this::init);
     }
 
+    /**
+     * Needs MESSAGE_HISTORY perms
+     */
     public void displaySlashCommandReplying(@Nonnull SlashCommandEvent e) {
         e.reply(start).flatMap(InteractionHook::retrieveOriginal).queue(this::init);
     }

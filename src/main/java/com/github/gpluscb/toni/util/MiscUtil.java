@@ -152,6 +152,8 @@ public class MiscUtil {
         switch (perm) {
             case MESSAGE_EMBED_LINKS:
                 return "Embed Links";
+            case MESSAGE_HISTORY:
+                return "Read Message History";
             default:
                 return perm.getName();
         }

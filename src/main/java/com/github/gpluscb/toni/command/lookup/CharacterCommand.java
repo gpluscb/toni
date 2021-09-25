@@ -436,7 +436,7 @@ public class CharacterCommand implements Command {
     @Override
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
-                .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_EMBED_LINKS})
+                .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_EMBED_LINKS, Permission.MESSAGE_HISTORY})
                 .setAliases(new String[]{"character", "char", "ufd", "moves", "move", "hitboxes", "hitbox"})
                 .setShortHelp("Displays the moves of a character using data from [ultimateframedata.com](https://ultimateframedata.com). Usage: `character <CHARACTER NAME...> [MOVE NAME...]`")
                 .setDetailedHelp("`character <CHARACTER NAME...> [MOVE NAME...]`\n" +

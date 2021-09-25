@@ -9,15 +9,15 @@ import com.github.gpluscb.toni.util.PairNonnull;
 import com.github.gpluscb.toni.util.discord.ButtonActionMenu;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.MessageBuilder;
-import net.dv8tion.jda.api.entities.Emoji;
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
+import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.components.Button;
+import net.dv8tion.jda.api.requests.ErrorResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -153,6 +153,7 @@ public class UnrankedLfgCommand implements Command {
     @Override
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
+                .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_HISTORY})
                 .setAliases(new String[]{"unranked", "lfg", "fight", "fite"})
                 .setShortHelp("**[BETA]** Pings the matchmaking role and lets you know if someone wants to play for a given duration. Usage: `unranked [DURATION]`")
                 .setDetailedHelp("`lfg [DURATION (default 2h)]`\n" +
@@ -251,13 +252,13 @@ public class UnrankedLfgCommand implements Command {
                 currentlyLfgPerGuild.remove(new PairNonnull<>(guildId, originalAuthorId));
             }
 
-            if (channel != null) {
-                channel.editMessageById(messageId, String.format("%s, %s was looking for a game.",
-                                MiscUtil.mentionRole(matchmakingRoleId), MiscUtil.mentionUser(originalAuthorId)))
-                        .mentionRoles(matchmakingRoleId).mentionUsers(originalAuthorId)
-                        .setActionRows()
-                        .queue();
-            }
+            if (channel == null) return;
+
+            channel.editMessageById(messageId, String.format("%s, %s was looking for a game.",
+                            MiscUtil.mentionRole(matchmakingRoleId), MiscUtil.mentionUser(originalAuthorId)))
+                    .mentionRoles(matchmakingRoleId).mentionUsers(originalAuthorId)
+                    .setActionRows()
+                    .queue(null, new ErrorHandler().ignore(ErrorResponse.UNKNOWN_MESSAGE));
         }
 
         private class DisableButtonHandler {
@@ -298,7 +299,7 @@ public class UnrankedLfgCommand implements Command {
                 channel.editMessageById(messageId, String.format("%s, %s wants to play with you.", MiscUtil.mentionUser(originalAuthorId), MiscUtil.mentionUser(challengerId)))
                         .mentionUsers(originalAuthorId, challengerId)
                         .setActionRows()
-                        .queue();
+                        .queue(null, new ErrorHandler().ignore(ErrorResponse.UNKNOWN_MESSAGE));
             }
         }
     }

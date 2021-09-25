@@ -12,9 +12,11 @@ import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.Button;
 import net.dv8tion.jda.api.interactions.components.ButtonStyle;
+import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.requests.restaction.MessageAction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -75,6 +77,9 @@ public class ButtonActionMenu extends Menu {
         init(channel.sendMessage(start));
     }
 
+    /**
+     * Needs MESSAGE_HISTORY perms
+     */
     public void displaySlashCommandReplying(@Nonnull SlashCommandEvent e) {
         Set<Button> buttons = new LinkedHashSet<>(buttonsToAdd); // Preserve order
         if (deletionButton != null) buttons.add(deletionButton);
@@ -240,10 +245,15 @@ public class ButtonActionMenu extends Menu {
             if (timeoutAction == null) {
                 timeoutAction = (channel, id) -> {
                     if (channel == null) return;
+                    if (channel instanceof TextChannel) {
+                        TextChannel textChannel = (TextChannel) channel;
+                        if (!textChannel.getGuild().getSelfMember().hasPermission(textChannel, Permission.MESSAGE_HISTORY))
+                            return;
+                    }
 
                     channel.retrieveMessageById(id)
                             .flatMap(m -> m.editMessage(m).setActionRows())
-                            .queue();
+                            .queue(null, new ErrorHandler().ignore(ErrorResponse.UNKNOWN_MESSAGE));
                 };
             }
 

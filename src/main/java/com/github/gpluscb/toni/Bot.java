@@ -202,6 +202,33 @@ public class Bot {
             throw e;
         }
 
+        log.trace("Loading unranked manager");
+        try {
+            unrankedManager = new UnrankedManager(cfg.getStateDbLocation());
+        } catch (SQLException e) {
+            log.error("Exception while loading unranked manager - shutting down", e);
+            ggManager.shutdown();
+            // challongeManager.shutdown();
+            // listener.shutdown();
+            // client.close();
+            waiterPool.shutdownNow();
+            throw e;
+        }
+
+        log.trace("Loading smashdata");
+        try {
+            smashdata = new SmashdataManager(cfg.getSmashdataDbLocation());
+        } catch (SQLException e) {
+            log.error("Exception while loading smashdata - shutting down", e);
+            ggManager.shutdown();
+            unrankedManager.shutdown();
+            // challongeManager.shutdown();
+            // listener.shutdown();
+            // client.close();
+            waiterPool.shutdownNow();
+            throw e;
+        }
+
         log.trace("Loading commands");
         List<CommandCategory> commands = loadCommands(ufdClient, waiter, dmWaiter, /*challonge, listener, */characterTree, cfg.getSupportServer());
 
@@ -237,6 +264,7 @@ public class Bot {
         } catch (LoginException e) {
             log.error("LoginException - shutting down", e);
             ggManager.shutdown();
+            unrankedManager.shutdown();
             //challongeManager.shutdown();
             //client.close();
             waiterPool.shutdownNow();
@@ -251,39 +279,12 @@ public class Bot {
 			log.error("Exception while registering TournamentListener - shutting down", e);
 			ggManager.shutdown();
 			shardManager.shutdown();
+			unrankedManager.shutdown();
 			challongeManager.shutdown();
 			client.close();
 			waiterPool.shutdownNow();
 			throw e;
 		}*/
-
-        log.trace("Loading smashdata");
-        try {
-            smashdata = new SmashdataManager(cfg.getSmashdataDbLocation());
-        } catch (SQLException e) {
-            log.error("Exception while loading smashdata - shutting down", e);
-            ggManager.shutdown();
-            shardManager.shutdown();
-            // challongeManager.shutdown();
-            // listener.shutdown();
-            // client.close();
-            waiterPool.shutdownNow();
-            throw e;
-        }
-
-        log.trace("Loading unranked manager");
-        try {
-            unrankedManager = new UnrankedManager(cfg.getStateDbLocation());
-        } catch (SQLException e) {
-            log.error("Exception while loading unranked manager - shutting down", e);
-            ggManager.shutdown();
-            shardManager.shutdown();
-            // challongeManager.shutdown();
-            // listener.shutdown();
-            // client.close();
-            waiterPool.shutdownNow();
-            throw e;
-        }
 
         log.trace("Starting command listener and dispatcher");
         dispatcher = new CommandDispatcher(commands);

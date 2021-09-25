@@ -1,5 +1,6 @@
 package com.github.gpluscb.toni.command;
 
+import com.github.gpluscb.toni.Config;
 import com.github.gpluscb.toni.util.OneOfTwo;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Member;
@@ -25,13 +26,13 @@ public class CommandContext<T extends RestAction<?> & AllowedMentions<T>> implem
     }
 
     @Nonnull
-    public static CommandContext<?> fromMessageReceivedEvent(@Nonnull MessageReceivedEvent e) {
-        return new CommandContext<>(OneOfTwo.ofT(new MessageCommandContext(e)));
+    public static CommandContext<?> fromMessageReceivedEvent(@Nonnull MessageReceivedEvent e, @Nonnull Config config) {
+        return new CommandContext<>(OneOfTwo.ofT(new MessageCommandContext(e, config)));
     }
 
     @Nonnull
-    public static CommandContext<?> fromSlashCommandEvent(@Nonnull SlashCommandEvent e) {
-        return new CommandContext<>(OneOfTwo.ofU(new SlashCommandContext(e)));
+    public static CommandContext<?> fromSlashCommandEvent(@Nonnull SlashCommandEvent e, @Nonnull Config config) {
+        return new CommandContext<>(OneOfTwo.ofU(new SlashCommandContext(e, config)));
     }
 
     @Nonnull
@@ -84,6 +85,12 @@ public class CommandContext<T extends RestAction<?> & AllowedMentions<T>> implem
     @Override
     public MessageChannel getChannel() {
         return context.map(MessageCommandContext::getChannel, SlashCommandContext::getChannel);
+    }
+
+    @Nonnull
+    @Override
+    public Config getConfig() {
+        return context.map(MessageCommandContext::getConfig, SlashCommandContext::getConfig);
     }
 
     @Override

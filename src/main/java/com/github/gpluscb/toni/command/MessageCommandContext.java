@@ -1,5 +1,6 @@
 package com.github.gpluscb.toni.command;
 
+import com.github.gpluscb.toni.Config;
 import com.github.gpluscb.toni.util.StringTokenizer;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.Permission;
@@ -31,9 +32,13 @@ public class MessageCommandContext implements ICommandContext<MessageReceivedEve
     @Nonnull
     private final StringTokenizer.TokenList tokens;
 
-    public MessageCommandContext(@Nonnull MessageReceivedEvent event) {
+    @Nonnull
+    private final Config config;
+
+    public MessageCommandContext(@Nonnull MessageReceivedEvent event, @Nonnull Config config) {
         this.event = event;
         tokens = TOKENIZER.tokenize(event.getMessage().getContentRaw());
+        this.config = config;
     }
 
     /**
@@ -208,6 +213,12 @@ public class MessageCommandContext implements ICommandContext<MessageReceivedEve
     @Override
     public Member getMember() {
         return event.getMember();
+    }
+
+    @Override
+    @Nonnull
+    public Config getConfig() {
+        return config;
     }
 
     @Nonnull

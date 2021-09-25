@@ -1,5 +1,6 @@
 package com.github.gpluscb.toni.command;
 
+import com.github.gpluscb.toni.Config;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
@@ -30,10 +31,9 @@ public interface ICommandContext<EVENT extends Event, ACTION extends RestAction<
 
     EVENT getEvent();
 
-    // TODO: Un-hardcode this
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     default boolean memberHasBotAdminPermission() {
-        return getUser().getIdLong() == 107565973652938752L;
+        return getUser().getIdLong() == getConfig().getDevId();
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
@@ -54,4 +54,7 @@ public interface ICommandContext<EVENT extends Event, ACTION extends RestAction<
 
     @Nonnull
     MessageChannel getChannel();
+
+    @Nonnull
+    Config getConfig();
 }

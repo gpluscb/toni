@@ -203,7 +203,7 @@ public class Bot {
         }
 
         log.trace("Loading commands");
-        List<CommandCategory> commands = loadCommands(ufdClient, waiter, dmWaiter, /*challonge, listener, */characterTree, cfg);
+        List<CommandCategory> commands = loadCommands(ufdClient, waiter, dmWaiter, /*challonge, listener, */characterTree, cfg.getSupportServer());
 
         log.trace("Creating loadListener");
         long adminGuildId = cfg.getAdminGuildId();
@@ -288,7 +288,7 @@ public class Bot {
         log.trace("Starting command listener and dispatcher");
         dispatcher = new CommandDispatcher(commands);
 
-        CommandListener commandListener = new CommandListener(dmWaiter, dispatcher, botId);
+        CommandListener commandListener = new CommandListener(dmWaiter, dispatcher, cfg);
         shardManager.addEventListener(commandListener);
 
         log.trace("Enabling discord appender");
@@ -309,12 +309,7 @@ public class Bot {
     }
 
     @Nonnull
-    private List<CommandCategory> loadCommands(@Nonnull UltimateframedataClient ufdClient, @Nonnull EventWaiter waiter, @Nonnull DMChoiceWaiter dmWaiter, /*@Nonnull ChallongeExtension challonge, @Nonnull TournamentListener listener, */@Nonnull CharacterTree characterTree, @Nonnull Config cfg) {
-        String supportServer = cfg.getSupportServer();
-        long devId = cfg.getDevId();
-        String inviteUrl = cfg.getInviteUrl();
-        String twitterHandle = cfg.getTwitterHandle();
-
+    private List<CommandCategory> loadCommands(@Nonnull UltimateframedataClient ufdClient, @Nonnull EventWaiter waiter, @Nonnull DMChoiceWaiter dmWaiter, /*@Nonnull ChallongeExtension challonge, @Nonnull TournamentListener listener, */@Nonnull CharacterTree characterTree, @Nonnull String supportServer) {
         List<CommandCategory> commands = new ArrayList<>();
 
         List<Command> adminCommands = new ArrayList<>();
@@ -325,8 +320,8 @@ public class Bot {
         commands.add(new CommandCategory(null, null, adminCommands));
 
         List<Command> infoCommands = new ArrayList<>();
-        infoCommands.add(new HelpCommand(commands, supportServer, inviteUrl, twitterHandle, cfg.getGithub(), devId, cfg.getBotId()));
-        infoCommands.add(new PrivacyCommand(supportServer, twitterHandle, devId));
+        infoCommands.add(new HelpCommand(commands));
+        infoCommands.add(new PrivacyCommand());
         infoCommands.add(new PingCommand());
         commands.add(new CommandCategory("info", "Bot information commands", infoCommands));
 

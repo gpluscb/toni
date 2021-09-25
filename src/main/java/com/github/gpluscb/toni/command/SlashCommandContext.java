@@ -1,5 +1,6 @@
 package com.github.gpluscb.toni.command;
 
+import com.github.gpluscb.toni.Config;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
@@ -21,8 +22,12 @@ public class SlashCommandContext implements ICommandContext<SlashCommandEvent, R
     @Nonnull
     private final SlashCommandEvent event;
 
-    public SlashCommandContext(@Nonnull SlashCommandEvent event) {
+    @Nonnull
+    private final Config config;
+
+    public SlashCommandContext(@Nonnull SlashCommandEvent event, @Nonnull Config config) {
         this.event = event;
+        this.config = config;
     }
 
     @Nonnull
@@ -65,6 +70,12 @@ public class SlashCommandContext implements ICommandContext<SlashCommandEvent, R
     @Override
     public MessageChannel getChannel() {
         return event.getChannel();
+    }
+
+    @Override
+    @Nonnull
+    public Config getConfig() {
+        return config;
     }
 
     @Nullable

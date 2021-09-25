@@ -1,11 +1,13 @@
 package com.github.gpluscb.toni.command.lookup;
 
-import com.github.gpluscb.toni.command.Command;
-import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.*;
 import com.github.gpluscb.toni.smashdata.SmashdataManager;
 import com.github.gpluscb.toni.util.Constants;
 import com.github.gpluscb.toni.util.discord.EmbedUtil;
 import com.github.gpluscb.toni.util.MiscUtil;
+import com.github.gpluscb.toni.util.OneOfTwo;
+import com.github.gpluscb.toni.util.discord.EmbedUtil;
+import com.github.gpluscb.toni.util.discord.ReactionActionMenu;
 import com.github.gpluscb.toni.util.discord.ReactionActionMenu;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -16,11 +18,12 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -43,15 +46,28 @@ public class SmashdataCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull CommandContext ctx) {
-        if (ctx.getArgs().isEmpty()) {
-            ctx.reply("Too few arguments. I can't just find you a player if I don't know what you're searching for. Use `help player` for help.").queue();
-            return;
+    public void execute(@Nonnull CommandContext<?> ctx) {
+        String requestedTag;
+
+        OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
+        if (context.isT()) {
+            MessageCommandContext msg = context.getTOrThrow();
+
+            if (msg.getArgs().isEmpty()) {
+                ctx.reply("Too few arguments. I can't just find you a player if I don't know what you're searching for. Use `help player` for help.").queue();
+                return;
+            }
+
+            requestedTag = msg.getArgsFrom(0);
+
+            ctx.getChannel().sendTyping().queue();
+        } else {
+            SlashCommandContext slash = context.getUOrThrow();
+
+            requestedTag = slash.getOptionNonNull("tag").getAsString();
+
+            slash.getEvent().deferReply().queue();
         }
-
-        String requestedTag = ctx.getArgsFrom(0).toUpperCase();
-
-        ctx.getChannel().sendTyping().queue();
 
         try {
             List<SmashdataManager.PlayerData> results = smashdata.loadSmashdataByTag(requestedTag);
@@ -101,14 +117,14 @@ public class SmashdataCommand implements Command {
         }
     }
 
-    private void sendReply(@Nonnull CommandContext ctx, @Nonnull List<SmashdataManager.PlayerData> results) {
+    private void sendReply(@Nonnull CommandContext<?> ctx, @Nonnull List<SmashdataManager.PlayerData> results) {
         if (results.isEmpty()) {
             ctx.reply("I couldn't find anything for that input, sorry.").queue();
             return;
         }
 
-        User author = ctx.getAuthor();
-        Member member = ctx.getEvent().getMember();
+        User author = ctx.getUser();
+        Member member = ctx.getMember();
 
         PlayerEmbedPaginator pages = new PlayerEmbedPaginator(EmbedUtil.getPreparedSmashdata(member, author).build(), results);
         ReactionActionMenu.Builder menuBuilder = new ReactionActionMenu.Builder()
@@ -121,7 +137,11 @@ public class SmashdataCommand implements Command {
                     .registerButton(Constants.ARROW_FORWARD, pages::nextResult);
         }
 
-        menuBuilder.build().displayReplying(ctx.getMessage());
+        ReactionActionMenu menu = menuBuilder.build();
+
+        ctx.getContext()
+                .onT(msg -> menu.displayReplying(msg.getMessage()))
+                .onU(slash -> menu.displaySlashCommandDeferred(slash.getEvent()));
     }
 
     @Nonnull
@@ -182,29 +202,18 @@ public class SmashdataCommand implements Command {
 
     @Nonnull
     @Override
-    public String[] getAliases() {
-        return new String[]{"smashdata", "player", "smasher", "data"};
-    }
-
-    @Nonnull
-    @Override
-    public Permission[] getRequiredBotPerms() {
-        return new Permission[]{Permission.MESSAGE_EMBED_LINKS};
-    }
-
-    @Nullable
-    @Override
-    public String getShortHelp() {
-        return "Displays info about a smasher using data from [smashdata.gg](https://smashdata.gg). Usage: `smashdata <TAG...>`";
-    }
-
-    @Nullable
-    @Override
-    public String getDetailedHelp() {
-        return "`smashdata <TAG...>`\n" +
-                "Looks up a smash ultimate player by their tag using data from [smashdata.gg](https://smashdata.gg).\n" +
-                String.format("If there are multiple smashers matching the given tag, use the %s/%s to cycle through them.%n", Constants.ARROW_BACKWARD, Constants.ARROW_FORWARD) +
-                "Aliases: `smashdata`, `player`, `smasher`, `data`";
+    public CommandInfo getInfo() {
+        return new CommandInfo.Builder()
+                .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_EMBED_LINKS})
+                .setAliases(new String[]{"smashdata", "player", "smasher", "data"})
+                .setShortHelp("Displays info about a smasher using data from [smashdata.gg](https://smashdata.gg). Usage: `smashdata <TAG...>`")
+                .setDetailedHelp("`smashdata <TAG...>`\n" +
+                        "Looks up a smash ultimate player by their tag using data from [smashdata.gg](https://smashdata.gg).\n" +
+                        String.format("If there are multiple smashers matching the given tag, use the %s/%s to cycle through them.%n", Constants.ARROW_BACKWARD, Constants.ARROW_FORWARD) +
+                        "Aliases: `smashdata`, `player`, `smasher`, `data`")
+                .setCommandData(new CommandData("smasher", "Displays info about a smasher")
+                        .addOption(OptionType.STRING, "tag", "The smasher's tag", true))
+                .build();
     }
 
     private class PlayerEmbedPaginator {

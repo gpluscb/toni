@@ -118,9 +118,13 @@ public class MiscUtil {
         switch (string.toLowerCase()) {
             case "0":
             case "false":
+            case "no":
+            case "n":
                 return false;
             case "1":
             case "true":
+            case "yes":
+            case "y":
                 return true;
             default:
                 return null;
@@ -239,6 +243,8 @@ public class MiscUtil {
         switch (perm) {
             case MESSAGE_EMBED_LINKS:
                 return "Embed Links";
+            case MESSAGE_HISTORY:
+                return "Read Message History";
             default:
                 return perm.getName();
         }

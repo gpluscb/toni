@@ -3,7 +3,7 @@ package com.github.gpluscb.toni.command.challonge;
 import com.github.gpluscb.challonge_listener.ChallongeExtension;
 import com.github.gpluscb.toni.challonge.TournamentListener;
 import com.github.gpluscb.toni.command.Command;
-import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.MessageCommandContext;
 import com.github.gpluscb.toni.util.FailLogger;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.TextChannel;
@@ -15,7 +15,7 @@ import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.util.List;
 
-public class SubscribeCommand implements Command {
+public class SubscribeCommand/* implements Command*/ {
     private final static Logger log = LogManager.getLogger(SubscribeCommand.class);
 
     @Nonnull
@@ -29,8 +29,8 @@ public class SubscribeCommand implements Command {
     }
 
     // TODO: No args variant
-    @Override
-    public void execute(@Nonnull CommandContext ctx) {
+//    @Override
+    public void execute(@Nonnull MessageCommandContext ctx) {
         if (!ctx.getEvent().isFromGuild()) {
             ctx.reply("This command only works in servers, sorry.").queue();
             return;
@@ -109,19 +109,19 @@ public class SubscribeCommand implements Command {
     }
 
     @Nonnull
-    @Override
+//    @Override
     public String[] getAliases() {
         return new String[]{"subscribe", "sub", "link"};
     }
 
     @Nullable
-    @Override
+//    @Override
     public String getShortHelp() {
         return "Subscribes a channel in this server to receive automated updates about a tournament on challonge. Usage: `subscribe <END OF TOURNAMENT URL> <CHANNEL MENTION>`";
     }
 
     @Nullable
-    @Override
+//    @Override
     public String getDetailedHelp() {
         return "`sub[scribe]|link <END OF TOURNAMENT URL> <CHANNEL MENTION>`\nThe bot will look at the specified tournament, and send updates in the specified channel. " +
                 "The part of the url I'd need would, for example, be `example` for `challonge.com/example`.\n" +

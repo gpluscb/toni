@@ -1,17 +1,29 @@
 package com.github.gpluscb.toni.command.matchmaking;
 
-import com.github.gpluscb.toni.command.Command;
-import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.*;
 import com.github.gpluscb.toni.matchmaking.UnrankedManager;
 import com.github.gpluscb.toni.util.*;
 import com.github.gpluscb.toni.util.discord.ButtonActionMenu;
+import com.github.gpluscb.toni.util.Constants;
+import com.github.gpluscb.toni.util.MiscUtil;
+import com.github.gpluscb.toni.util.OneOfTwo;
+import com.github.gpluscb.toni.util.PairNonnull;
+import com.github.gpluscb.toni.util.discord.ButtonActionMenu;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.MessageBuilder;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Emoji;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
+import net.dv8tion.jda.api.exceptions.ErrorHandler;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.components.Button;
+import net.dv8tion.jda.api.requests.ErrorResponse;
+import net.dv8tion.jda.api.utils.TimeFormat;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -27,9 +39,6 @@ public class UnrankedLfgCommand implements Command {
     private static final Logger log = LogManager.getLogger(UnrankedLfgCommand.class);
 
     @Nonnull
-    private final String supportServer;
-
-    @Nonnull
     private final UnrankedManager manager;
     @Nonnull
     private final EventWaiter waiter;
@@ -37,23 +46,26 @@ public class UnrankedLfgCommand implements Command {
     @Nonnull
     private final Set<PairNonnull<Long, Long>> currentlyLfgPerGuild;
 
-    public UnrankedLfgCommand(@Nonnull String supportServer, @Nonnull UnrankedManager manager, @Nonnull EventWaiter waiter) {
-        this.supportServer = supportServer;
+    public UnrankedLfgCommand(@Nonnull UnrankedManager manager, @Nonnull EventWaiter waiter) {
         this.manager = manager;
         this.waiter = waiter;
         currentlyLfgPerGuild = new HashSet<>();
     }
 
     @Override
-    public void execute(@Nonnull CommandContext ctx) {
-        if (!ctx.getEvent().isFromGuild()) {
+    public void execute(@Nonnull CommandContext<?> ctx) {
+        OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
+
+        if (!context.map(msg -> msg.getEvent().isFromGuild(), slash -> slash.getEvent().isFromGuild())) {
             ctx.reply("This command only works in servers. There is only us two in our DMs. And it's nice that you want to play with me, but sorry I don't have hands.").queue();
             return;
         }
 
+        Guild guild = context.map(msg -> msg.getEvent().getGuild(), slash -> slash.getEvent().getGuild());
+
         UnrankedManager.MatchmakingConfig config;
         try {
-            config = manager.loadMatchmakingConfig(ctx.getEvent().getGuild().getIdLong());
+            config = manager.loadMatchmakingConfig(guild.getIdLong());
         } catch (SQLException e) {
             log.catching(e);
             ctx.reply("Something went wrong talking to my database. I've told my dev about this, if this keeps happening you should give them some context too.").queue();
@@ -71,29 +83,43 @@ public class UnrankedLfgCommand implements Command {
             return;
         }
 
-        Duration duration;
-        if (ctx.getArgNum() > 0) {
-            duration = MiscUtil.parseDuration(ctx.getArgsFrom(0));
-            if (duration == null) {
-                ctx.reply("The given duration was not a valid duration. An example duration is `1h 30m`.").queue();
-                return;
-            }
+        Duration duration = Duration.ofHours(2);
+        if (context.isT()) {
+            MessageCommandContext msg = context.getTOrThrow();
 
-            if (duration.compareTo(Duration.ofHours(5)) > 0) {
-                ctx.reply("The maximum duration is 5h.").queue();
-                return;
-            }
-
-            if (duration.compareTo(Duration.ofMinutes(10)) < 0) {
-                ctx.reply("The minimum duration is 10 minutes.").queue();
-                return;
+            if (msg.getArgNum() > 0) {
+                duration = MiscUtil.parseDuration(msg.getArgsFrom(0));
+                if (duration == null) {
+                    ctx.reply("The given duration was not a valid duration. An example duration is `1h 30m`.").queue();
+                    return;
+                }
             }
         } else {
-            duration = Duration.ofHours(2);
+            SlashCommandContext slash = context.getUOrThrow();
+
+            OptionMapping durationMapping = slash.getOption("duration");
+            if (durationMapping != null) {
+                duration = MiscUtil.parseDuration(durationMapping.getAsString());
+
+                if (duration == null) {
+                    ctx.reply("The given duration was not a valid duration. An example duration is `1h 30m`.").queue();
+                    return;
+                }
+            }
         }
 
-        long guildId = ctx.getEvent().getGuild().getIdLong();
-        long userId = ctx.getAuthor().getIdLong();
+        if (duration.compareTo(Duration.ofHours(5)) > 0) {
+            ctx.reply("The maximum duration is 5h.").queue();
+            return;
+        }
+
+        if (duration.compareTo(Duration.ofMinutes(10)) < 0) {
+            ctx.reply("The minimum duration is 10 minutes.").queue();
+            return;
+        }
+
+        long guildId = guild.getIdLong();
+        long userId = ctx.getUser().getIdLong();
         long roleId = config.getLfgRoleId();
 
         synchronized (currentlyLfgPerGuild) {
@@ -105,8 +131,12 @@ public class UnrankedLfgCommand implements Command {
             currentlyLfgPerGuild.add(new PairNonnull<>(guildId, userId));
         }
 
-        Message start = new MessageBuilder(String.format("%s, %s is looking for a game for %s. %2$s, you can click on the %s button to cancel.",
-                MiscUtil.mentionRole(roleId), MiscUtil.mentionUser(userId), MiscUtil.durationToString(duration), Constants.CROSS_MARK))
+        Message start = new MessageBuilder(String.format("%s, %s is looking for a game for %s (until %s). %2$s, you can click on the %s button to cancel.",
+                MiscUtil.mentionRole(roleId),
+                MiscUtil.mentionUser(userId),
+                MiscUtil.durationToString(duration),
+                TimeFormat.RELATIVE.after(duration),
+                Constants.CROSS_MARK))
                 .mentionRoles(roleId).mentionUsers(userId).build();
 
         ButtonHandler handler = new ButtonHandler(guildId, userId, roleId);
@@ -120,29 +150,25 @@ public class UnrankedLfgCommand implements Command {
                 .setTimeoutAction(handler::timeout)
                 .build();
 
-        menu.displayReplying(ctx.getMessage());
+        context
+                .onT(msg -> menu.displayReplying(msg.getMessage()))
+                .onU(slash -> menu.displaySlashCommandReplying(slash.getEvent()));
     }
 
     @Nonnull
     @Override
-    public String[] getAliases() {
-        return new String[]{"unranked", "lfg", "fight", "fite"};
-    }
-
-    @Nullable
-    @Override
-    public String getShortHelp() {
-        return "**[BETA]** Pings the matchmaking role and lets you know if someone wants to play for a given duration. Usage: `unranked [DURATION]`";
-    }
-
-    @Nullable
-    @Override
-    public String getDetailedHelp() {
-        return "`lfg [DURATION (default 2h)]`\n" +
-                "Pings the matchmaking role and asks players to react if they want to play. Notifies you when they react within the given duration." +
-                " The duration can have the format `Xh Xm Xs`, and it has to be between 10m and 5h.\n" +
-                "Aliases: `lfg`, `unranked`, `fight`, `fite`\n" +
-                String.format("This command is in **BETA**. If you have feedback, bugs, or other issues, please go to [my support server](%s).", supportServer);
+    public CommandInfo getInfo() {
+        return new CommandInfo.Builder()
+                .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_HISTORY})
+                .setAliases(new String[]{"unranked", "lfg", "fight", "fite"})
+                .setShortHelp("Pings the matchmaking role and lets you know if someone wants to play for a given duration. Usage: `unranked [DURATION]`")
+                .setDetailedHelp("`lfg [DURATION (default 2h)]`\n" +
+                        "Pings the matchmaking role and asks players to react if they want to play. Notifies you when they react within the given duration." +
+                        " The duration can have the format `Xh Xm Xs`, and it has to be between 10m and 5h.\n" +
+                        "Aliases: `lfg`, `unranked`, `fight`, `fite`")
+                .setCommandData(new CommandData("lfg", "Pings matchmaking and lets you know if someone is available to play")
+                        .addOption(OptionType.STRING, "duration", "How long you are looking for a game. Default is two hours", false))
+                .build();
     }
 
     private class ButtonHandler {
@@ -235,13 +261,13 @@ public class UnrankedLfgCommand implements Command {
                 currentlyLfgPerGuild.remove(new PairNonnull<>(guildId, originalAuthorId));
             }
 
-            if (channel != null) {
-                channel.editMessageById(messageId, String.format("%s, %s was looking for a game.",
-                        MiscUtil.mentionRole(matchmakingRoleId), MiscUtil.mentionUser(originalAuthorId)))
-                        .mentionRoles(matchmakingRoleId).mentionUsers(originalAuthorId)
-                        .setActionRows()
-                        .queue();
-            }
+            if (channel == null) return;
+
+            channel.editMessageById(messageId, String.format("%s, %s was looking for a game.",
+                            MiscUtil.mentionRole(matchmakingRoleId), MiscUtil.mentionUser(originalAuthorId)))
+                    .mentionRoles(matchmakingRoleId).mentionUsers(originalAuthorId)
+                    .setActionRows()
+                    .queue(null, new ErrorHandler().ignore(ErrorResponse.UNKNOWN_MESSAGE));
         }
 
         private class DisableButtonHandler {
@@ -264,7 +290,7 @@ public class UnrankedLfgCommand implements Command {
                 }
 
                 channel.editMessageById(originalMessageId, String.format("%s, %s was looking for a game, but they found someone.",
-                        MiscUtil.mentionRole(matchmakingRoleId), MiscUtil.mentionUser(originalAuthorId)))
+                                MiscUtil.mentionRole(matchmakingRoleId), MiscUtil.mentionUser(originalAuthorId)))
                         .mentionRoles(matchmakingRoleId).mentionUsers(originalAuthorId)
                         .setActionRows()
                         .queue();
@@ -283,7 +309,7 @@ public class UnrankedLfgCommand implements Command {
                 channel.editMessageById(messageId, String.format("%s, %s wants to play with you.", MiscUtil.mentionUser(originalAuthorId), MiscUtil.mentionUser(challengerId)))
                         .mentionUsers(originalAuthorId, challengerId)
                         .setActionRows()
-                        .queue();
+                        .queue(null, new ErrorHandler().ignore(ErrorResponse.UNKNOWN_MESSAGE));
             }
         }
     }

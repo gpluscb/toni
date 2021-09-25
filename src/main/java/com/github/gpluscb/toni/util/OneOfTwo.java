@@ -51,7 +51,9 @@ public class OneOfTwo<T, U> {
         return map(OneOfTwo::ofT, u -> ofU(map.apply(u)));
     }
 
-    @Nonnull
+    /**
+     * It is ok for the functions to return null here.
+     */
     public <V> V map(@Nonnull Function<T, V> onT, @Nonnull Function<U, V> onU) {
         return t != null ? onT.apply(t) : onU.apply(u);
     }
@@ -84,5 +86,13 @@ public class OneOfTwo<T, U> {
     public U getUOrThrow() {
         if (u != null) return u;
         throw new IllegalStateException("Called getUOrThrow when this is T");
+    }
+
+    @Override
+    public String toString() {
+        return "OneOfTwo{" +
+                "t=" + t +
+                ", u=" + u +
+                '}';
     }
 }

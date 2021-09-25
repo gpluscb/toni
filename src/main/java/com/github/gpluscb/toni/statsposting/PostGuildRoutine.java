@@ -13,7 +13,7 @@ import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class PostGuildRoutine extends ListenerAdapter {
+public class PostGuildRoutine {
     private static final Logger log = LogManager.getLogger(PostGuildRoutine.class);
 
     @Nonnull
@@ -23,27 +23,16 @@ public class PostGuildRoutine extends ListenerAdapter {
     private final BotListClient<StatsResponse> dBotsClient;
     @Nonnull
     private final BotListClient<Void> topggClient;
-    @Nonnull
-    private final ShardManager shardManager;
 
-    @Nonnull
-    private final Set<Integer> shardsReady;
-    @Nonnull
-    private final AtomicBoolean isRunning;
-
-    public PostGuildRoutine(@Nonnull BotListClient<StatsResponse> dBotsClient, @Nonnull BotListClient<Void> topggClient, @Nonnull ShardManager shardManager) {
+    public PostGuildRoutine(@Nonnull BotListClient<StatsResponse> dBotsClient, @Nonnull BotListClient<Void> topggClient) {
         executer = new ScheduledThreadPoolExecutor(1);
         executer.setThreadFactory(r -> new Thread(r, "PostGuildRoutine Schedule-Thread"));
 
         this.dBotsClient = dBotsClient;
         this.topggClient = topggClient;
-        this.shardManager = shardManager;
-
-        shardsReady = new HashSet<>();
-        isRunning = new AtomicBoolean(false);
     }
 
-    private void init() {
+    public void start(@Nonnull ShardManager shardManager) {
         executer.scheduleAtFixedRate(() -> {
             // We are in far fewer than 2 million guilds, so the cast is safe.
             int guildCount = (int) shardManager.getGuildCache().size();
@@ -57,23 +46,6 @@ public class PostGuildRoutine extends ListenerAdapter {
                 else log.debug("Successful guild stats post to topgg");
             });
         }, 0, 6, TimeUnit.HOURS);
-    }
-
-    @Override
-    public void onReady(@Nonnull ReadyEvent event) {
-        int shardsReadyCount;
-        synchronized (shardsReady) {
-            shardsReady.add(event.getJDA().getShardInfo().getShardId());
-            shardsReadyCount = shardsReady.size();
-        }
-
-        int shardsTotal = shardManager.getShardsTotal();
-
-        if (shardsReadyCount > shardsTotal) {
-            log.error("shardsReadyCount ({}) > shardsTotal ({})", shardsReadyCount, shardsTotal);
-        } else if (shardsReadyCount == shardsTotal && !isRunning.getAndSet(true)) {
-            init();
-        }
     }
 
     public void shutdown() {

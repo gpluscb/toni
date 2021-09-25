@@ -20,20 +20,24 @@ import com.github.gpluscb.toni.command.help.PrivacyCommand;
 import com.github.gpluscb.toni.command.lookup.CharacterCommand;
 import com.github.gpluscb.toni.command.lookup.SmashdataCommand;
 import com.github.gpluscb.toni.command.lookup.TournamentCommand;
-import com.github.gpluscb.toni.statsposting.BotListClient;
-import com.github.gpluscb.toni.statsposting.dbots.DBotsClient;
-import com.github.gpluscb.toni.statsposting.PostGuildRoutine;
 import com.github.gpluscb.toni.command.matchmaking.AvailableCommand;
 import com.github.gpluscb.toni.command.matchmaking.UnrankedConfigCommand;
 import com.github.gpluscb.toni.command.matchmaking.UnrankedLfgCommand;
 import com.github.gpluscb.toni.matchmaking.UnrankedManager;
 import com.github.gpluscb.toni.smashdata.SmashdataManager;
 import com.github.gpluscb.toni.smashgg.GGManager;
+import com.github.gpluscb.toni.statsposting.BotListClient;
+import com.github.gpluscb.toni.statsposting.PostGuildRoutine;
+import com.github.gpluscb.toni.statsposting.dbots.DBotsClient;
 import com.github.gpluscb.toni.statsposting.dbots.DBotsClientMock;
 import com.github.gpluscb.toni.statsposting.dbots.StatsResponse;
 import com.github.gpluscb.toni.statsposting.topgg.TopggClient;
 import com.github.gpluscb.toni.statsposting.topgg.TopggClientMock;
 import com.github.gpluscb.toni.ultimateframedata.UltimateframedataClient;
+import com.github.gpluscb.toni.util.discord.DMChoiceWaiter;
+import com.github.gpluscb.toni.util.discord.DiscordAppenderImpl;
+import com.github.gpluscb.toni.util.discord.ShardsLoadListener;
+import com.github.gpluscb.toni.util.smash.CharacterTree;
 import com.github.gpluscb.toni.util.Rulesets;
 import com.github.gpluscb.toni.util.smash.CharacterTree;
 import com.github.gpluscb.toni.util.discord.DMChoiceWaiter;
@@ -44,6 +48,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.requests.RestAction;
 import net.dv8tion.jda.api.requests.restaction.MessageAction;
@@ -58,7 +64,9 @@ import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.security.auth.login.LoginException;
-import java.io.*;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.Reader;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -66,9 +74,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 // TODO: Update to java 14
 public class Bot {
@@ -158,39 +168,29 @@ public class Bot {
         EventWaiter waiter = new EventWaiter(waiterPool, false);
         DMChoiceWaiter dmWaiter = new DMChoiceWaiter(waiter);
 
-        try {
-            log.trace("Building ShardManager");
-            shardManager = DefaultShardManagerBuilder.createLight(cfg.getDiscordToken())
-                    .enableIntents(GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGE_REACTIONS, GatewayIntent.GUILD_MESSAGE_REACTIONS)
-                    .enableCache(CacheFlag.MEMBER_OVERRIDES)
-                    .setMemberCachePolicy(MemberCachePolicy.NONE)
-                    .setChunkingFilter(ChunkingFilter.NONE)
-                    .addEventListeners(waiter)
-                    .setActivity(Activity.listening("Help: \"Toni, Help\""))
-                    .setUseShutdownNow(true)
-                    .build();
-        } catch (LoginException e) {
-            log.error("LoginException - shutting down", e);
-            ggManager.shutdown();
-            //challongeManager.shutdown();
-            //client.close();
-            waiterPool.shutdownNow();
-            throw e;
+        long botId = cfg.getBotId();
+
+        boolean mockBotLists = cfg.isMockBotLists();
+        BotListClient<StatsResponse> dBotsClient;
+        if (mockBotLists) {
+            log.trace("Creating DBotsClientMock");
+            dBotsClient = new DBotsClientMock();
+        } else {
+            log.trace("Creating DBotsClient");
+            dBotsClient = new DBotsClient(cfg.getDbotsToken(), okHttp, botId);
         }
 
-		/* log.trace("Registering TournamentListener");
-		try {
-			listener = new TournamentListener(shardManager, cfg.getStateDbLocation());
-			challongeManager.addListener(listener);
-		} catch(SQLException e) {
-			log.error("Exception while registering TournamentListener - shutting down", e);
-			ggManager.shutdown();
-			shardManager.shutdown();
-			challongeManager.shutdown();
-			client.close();
-			waiterPool.shutdownNow();
-			throw e;
-		}*/
+        BotListClient<Void> topggClient;
+        if (mockBotLists) {
+            log.trace("Creating TopggClientMock");
+            topggClient = new TopggClientMock();
+        } else {
+            log.trace("Creating TopggClient");
+            topggClient = new TopggClient(cfg.getTopggToken(), okHttp, botId);
+        }
+
+        log.trace("Constructing post stats routine");
+        postGuildRoutine = new PostGuildRoutine(dBotsClient, topggClient);
 
         log.trace("Loading characters");
         CharacterTree characterTree;
@@ -200,7 +200,19 @@ public class Bot {
         } catch (Exception e) {
             log.error("Exception while loading characters - shutting down", e);
             ggManager.shutdown();
-            shardManager.shutdown();
+            // challongeManager.shutdown();
+            // listener.shutdown();
+            // client.close();
+            waiterPool.shutdownNow();
+            throw e;
+        }
+
+        log.trace("Loading unranked manager");
+        try {
+            unrankedManager = new UnrankedManager(cfg.getStateDbLocation());
+        } catch (SQLException e) {
+            log.error("Exception while loading unranked manager - shutting down", e);
+            ggManager.shutdown();
             // challongeManager.shutdown();
             // listener.shutdown();
             // client.close();
@@ -230,21 +242,7 @@ public class Bot {
         } catch (SQLException e) {
             log.error("Exception while loading smashdata - shutting down", e);
             ggManager.shutdown();
-            shardManager.shutdown();
-            // challongeManager.shutdown();
-            // listener.shutdown();
-            // client.close();
-            waiterPool.shutdownNow();
-            throw e;
-        }
-
-        log.trace("Loading unranked manager");
-        try {
-            unrankedManager = new UnrankedManager(cfg.getStateDbLocation());
-        } catch (SQLException e) {
-            log.error("Exception while loading unranked manager - shutting down", e);
-            ggManager.shutdown();
-            shardManager.shutdown();
+            unrankedManager.shutdown();
             // challongeManager.shutdown();
             // listener.shutdown();
             // client.close();
@@ -253,40 +251,70 @@ public class Bot {
         }
 
         log.trace("Loading commands");
-        List<CommandCategory> commands = loadCommands(ufdClient, waiter, dmWaiter, /*challonge, listener, */characterTree, rulesets, cfg);
+        List<CommandCategory> commands = loadCommands(ufdClient, waiter, dmWaiter, /*challonge, listener, */characterTree, rulesets);
+
+        log.trace("Creating loadListener");
+        long adminGuildId = cfg.getAdminGuildId();
+
+        // TODO: Somehow notice if slash commands could not be hooked?
+        ShardsLoadListener loadListener = new ShardsLoadListener(jda -> {
+            Guild adminGuild = jda.getGuildById(adminGuildId);
+
+            if (adminGuild == null) return;
+
+            log.trace("Admin guild loaded, hooking slash commands");
+            hookSlashCommands(adminGuild, commands);
+        }, loadedShardManager -> {
+            log.trace("Shards finished loading");
+
+            log.trace("Starting post stats routine");
+            postGuildRoutine.start(loadedShardManager);
+        });
+
+        try {
+            log.trace("Building ShardManager");
+            shardManager = DefaultShardManagerBuilder.createLight(cfg.getDiscordToken())
+                    .enableIntents(GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGE_REACTIONS, GatewayIntent.GUILD_MESSAGE_REACTIONS)
+                    .enableCache(CacheFlag.MEMBER_OVERRIDES)
+                    .setMemberCachePolicy(MemberCachePolicy.NONE)
+                    .setChunkingFilter(ChunkingFilter.NONE)
+                    .addEventListeners(waiter, loadListener)
+                    .setActivity(Activity.listening("Help: \"Toni, Help\""))
+                    .setUseShutdownNow(true)
+                    .build();
+        } catch (LoginException e) {
+            log.error("LoginException - shutting down", e);
+            ggManager.shutdown();
+            unrankedManager.shutdown();
+            //challongeManager.shutdown();
+            //client.close();
+            waiterPool.shutdownNow();
+            throw e;
+        }
+
+		/* log.trace("Registering TournamentListener");
+		try {
+			listener = new TournamentListener(shardManager, cfg.getStateDbLocation());
+			challongeManager.addListener(listener);
+		} catch(SQLException e) {
+			log.error("Exception while registering TournamentListener - shutting down", e);
+			ggManager.shutdown();
+			shardManager.shutdown();
+			unrankedManager.shutdown();
+			challongeManager.shutdown();
+			client.close();
+			waiterPool.shutdownNow();
+			throw e;
+		}*/
+
+        log.trace("Starting command listener and dispatcher");
         dispatcher = new CommandDispatcher(commands);
 
-        long botId = cfg.getBotId();
-
-        CommandListener commandListener = new CommandListener(dmWaiter, dispatcher, botId);
+        CommandListener commandListener = new CommandListener(dmWaiter, dispatcher, cfg);
         shardManager.addEventListener(commandListener);
 
         log.trace("Enabling discord appender");
         DiscordAppenderImpl.setShardManager(shardManager);
-
-        boolean mockBotLists = cfg.isMockBotLists();
-        BotListClient<StatsResponse> dBotsClient;
-        if (mockBotLists) {
-            log.trace("Creating DBotsClientMock");
-            dBotsClient = new DBotsClientMock();
-        } else {
-            log.trace("Creating DBotsClient");
-            dBotsClient = new DBotsClient(cfg.getDbotsToken(), okHttp, botId);
-        }
-
-        BotListClient<Void> topggClient;
-        if (mockBotLists) {
-            log.trace("Creating TopggClientMock");
-            topggClient = new TopggClientMock();
-        } else {
-            log.trace("Creating TopggClient");
-            topggClient = new TopggClient(cfg.getTopggToken(), okHttp, botId);
-        }
-
-        log.trace("Starting post stats routine");
-        postGuildRoutine = new PostGuildRoutine(dBotsClient, topggClient, shardManager);
-
-        shardManager.addEventListener(postGuildRoutine);
 
         log.info("Bot construction complete");
     }
@@ -314,12 +342,7 @@ public class Bot {
     }
 
     @Nonnull
-    private List<CommandCategory> loadCommands(@Nonnull UltimateframedataClient ufdClient, @Nonnull EventWaiter waiter, @Nonnull DMChoiceWaiter dmWaiter, /*@Nonnull ChallongeExtension challonge, @Nonnull TournamentListener listener, */@Nonnull CharacterTree characterTree, @Nonnull List<Ruleset> rulesets, @Nonnull Config cfg) {
-        String supportServer = cfg.getSupportServer();
-        long devId = cfg.getDevId();
-        String inviteUrl = cfg.getInviteUrl();
-        String twitterHandle = cfg.getTwitterHandle();
-
+    private List<CommandCategory> loadCommands(@Nonnull UltimateframedataClient ufdClient, @Nonnull EventWaiter waiter, @Nonnull DMChoiceWaiter dmWaiter, /*@Nonnull ChallongeExtension challonge, @Nonnull TournamentListener listener, */@Nonnull CharacterTree characterTree, @Nonnull List<Ruleset> rulesets) {
         RPSComponent rpsComponent = new RPSComponent(waiter);
         BlindPickComponent blindPickComponent = new BlindPickComponent(dmWaiter, characterTree);
         StrikeStagesComponent strikeStagesComponent = new StrikeStagesComponent(rpsComponent, waiter);
@@ -334,8 +357,8 @@ public class Bot {
         commands.add(new CommandCategory(null, null, adminCommands));
 
         List<Command> infoCommands = new ArrayList<>();
-        infoCommands.add(new HelpCommand(commands, supportServer, inviteUrl, twitterHandle, cfg.getGithub(), devId, cfg.getBotId()));
-        infoCommands.add(new PrivacyCommand(supportServer, twitterHandle, devId));
+        infoCommands.add(new HelpCommand(commands));
+        infoCommands.add(new PrivacyCommand());
         infoCommands.add(new PingCommand());
         commands.add(new CommandCategory("info", "Bot information commands", infoCommands));
 
@@ -357,12 +380,23 @@ public class Bot {
         commands.add(new CommandCategory("lookup", "Lookup commands for other websites", lookupCommands));
 
         List<Command> matchmakingCommands = new ArrayList<>();
-        matchmakingCommands.add(new UnrankedConfigCommand(supportServer, unrankedManager));
-        matchmakingCommands.add(new AvailableCommand(supportServer, unrankedManager));
-        matchmakingCommands.add(new UnrankedLfgCommand(supportServer, unrankedManager, waiter));
-        commands.add(new CommandCategory("unranked", "**[BETA]** Commands for unranked matchmaking", matchmakingCommands));
+        matchmakingCommands.add(new UnrankedConfigCommand(unrankedManager));
+        matchmakingCommands.add(new AvailableCommand(unrankedManager));
+        matchmakingCommands.add(new UnrankedLfgCommand(unrankedManager, waiter));
+        commands.add(new CommandCategory("matchmaking", "Commands for matchmaking", matchmakingCommands));
 
         return commands;
+    }
+
+    private void hookSlashCommands(@Nonnull Guild adminGuild, @Nonnull List<CommandCategory> commands) {
+        Map<Boolean, List<Command>> map = commands.stream().flatMap(cat -> cat.getCommands().stream()).collect(Collectors.groupingBy(cmd -> cmd.getInfo().isAdminGuildOnly()));
+        List<CommandData> globalCommands = map.get(false).stream().map(cmd -> cmd.getInfo().getCommandData()).collect(Collectors.toList());
+        List<CommandData> adminOnlyCommands = map.get(true).stream().map(cmd -> cmd.getInfo().getCommandData()).collect(Collectors.toList());
+
+        shardManager.getShardCache().forEachUnordered(jda -> {
+            jda.updateCommands().addCommands(globalCommands).queue();
+            adminGuild.updateCommands().addCommands(adminOnlyCommands).queue();
+        });
     }
 
     public void shutdown() {

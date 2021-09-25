@@ -10,8 +10,10 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.interaction.SelectionMenuEvent;
+import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
 import net.dv8tion.jda.api.interactions.components.selections.SelectionMenu;
+import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.requests.restaction.MessageAction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -214,10 +216,15 @@ public class SelectionActionMenu extends Menu { // TODO: Allow for multiple sele
             if (timeoutAction == null) {
                 timeoutAction = (channel, id) -> {
                     if (channel == null) return;
+                    if (channel instanceof TextChannel) {
+                        TextChannel textChannel = (TextChannel) channel;
+                        if (!textChannel.getGuild().getSelfMember().hasPermission(textChannel, Permission.MESSAGE_HISTORY))
+                            return;
+                    }
 
                     channel.retrieveMessageById(id)
                             .flatMap(m -> m.editMessage(m).setActionRows())
-                            .queue();
+                            .queue(null, new ErrorHandler().ignore(ErrorResponse.UNKNOWN_MESSAGE));
                 };
             }
 

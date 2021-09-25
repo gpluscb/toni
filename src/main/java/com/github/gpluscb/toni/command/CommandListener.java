@@ -1,6 +1,9 @@
 package com.github.gpluscb.toni.command;
 
 import com.github.gpluscb.toni.util.discord.DMChoiceWaiter;
+import com.github.gpluscb.toni.Config;
+import com.github.gpluscb.toni.util.discord.DMChoiceWaiter;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.apache.logging.log4j.LogManager;
@@ -18,11 +21,14 @@ public class CommandListener extends ListenerAdapter {
     private final CommandDispatcher dispatcher;
     @Nonnull
     private final Pattern prefixPattern;
+    @Nonnull
+    private final Config config;
 
-    public CommandListener(@Nonnull DMChoiceWaiter waiter, @Nonnull CommandDispatcher dispatcher, long botId) {
+    public CommandListener(@Nonnull DMChoiceWaiter waiter, @Nonnull CommandDispatcher dispatcher, @Nonnull Config config) {
         this.waiter = waiter;
         this.dispatcher = dispatcher;
-        prefixPattern = Pattern.compile(String.format("(!t|toni|noti|<@!?%s>),? [\\s\\S]*", botId), Pattern.CASE_INSENSITIVE);
+        this.config = config;
+        prefixPattern = Pattern.compile(String.format("(!t|toni|noti|<@!?%s>),? [\\s\\S]*", config.getBotId()), Pattern.CASE_INSENSITIVE);
     }
 
     @Override
@@ -32,8 +38,16 @@ public class CommandListener extends ListenerAdapter {
         if (!event.isFromGuild() && waiter.getActiveUsers().contains(event.getAuthor().getIdLong())) return;
         if (event.getAuthor().isBot() || !prefixPattern.matcher(event.getMessage().getContentRaw()).matches()) return;
 
-        CommandContext ctx = new CommandContext(event);
+        CommandContext<?> ctx = CommandContext.fromMessageReceivedEvent(event, config);
         log.trace("Correct prefix received - ctx: {}", ctx);
+
+        dispatcher.dispatch(ctx);
+    }
+
+    @Override
+    public void onSlashCommand(@Nonnull SlashCommandEvent event) {
+        CommandContext<?> ctx = CommandContext.fromSlashCommandEvent(event, config);
+        log.trace("Slash command - ctx: {}", ctx);
 
         dispatcher.dispatch(ctx);
     }

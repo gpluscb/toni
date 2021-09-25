@@ -1,5 +1,8 @@
 package com.github.gpluscb.toni.util.discord;
 
+import com.github.gpluscb.toni.util.Constants;
+import com.github.gpluscb.toni.util.FailLogger;
+import com.github.gpluscb.toni.util.PairNonnull;
 import com.github.gpluscb.toni.util.*;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import com.jagrosh.jdautilities.menu.Menu;
@@ -9,9 +12,13 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.exceptions.ErrorHandler;
+import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.Button;
 import net.dv8tion.jda.api.interactions.components.ButtonStyle;
+import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.requests.restaction.MessageAction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -70,6 +77,16 @@ public class ButtonActionMenu extends Menu {
     @Override
     public void display(@Nonnull MessageChannel channel) {
         init(channel.sendMessage(start));
+    }
+
+    /**
+     * Needs MESSAGE_HISTORY perms
+     */
+    public void displaySlashCommandReplying(@Nonnull SlashCommandEvent e) {
+        Set<Button> buttons = new LinkedHashSet<>(buttonsToAdd); // Preserve order
+        if (deletionButton != null) buttons.add(deletionButton);
+
+        e.reply(start).addActionRow(buttons).flatMap(InteractionHook::retrieveOriginal).queue(this::awaitEvents);
     }
 
     public void displayReplying(Message reference) {
@@ -241,10 +258,15 @@ public class ButtonActionMenu extends Menu {
             if (timeoutAction == null) {
                 timeoutAction = (channel, id) -> {
                     if (channel == null) return;
+                    if (channel instanceof TextChannel) {
+                        TextChannel textChannel = (TextChannel) channel;
+                        if (!textChannel.getGuild().getSelfMember().hasPermission(textChannel, Permission.MESSAGE_HISTORY))
+                            return;
+                    }
 
                     channel.retrieveMessageById(id)
                             .flatMap(m -> m.editMessage(m).setActionRows())
-                            .queue();
+                            .queue(null, new ErrorHandler().ignore(ErrorResponse.UNKNOWN_MESSAGE));
                 };
             }
 

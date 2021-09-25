@@ -4,13 +4,20 @@ import com.github.gpluscb.toni.command.Command;
 import com.github.gpluscb.toni.command.CommandContext;
 import com.github.gpluscb.toni.command.components.BlindPickComponent;
 import com.github.gpluscb.toni.util.smash.Character;
+import com.github.gpluscb.toni.command.*;
 import com.github.gpluscb.toni.util.MiscUtil;
+import com.github.gpluscb.toni.util.OneOfTwo;
+import com.github.gpluscb.toni.util.discord.DMChoiceWaiter;
+import com.github.gpluscb.toni.util.smash.CharacterTree;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -29,37 +36,67 @@ public class BlindPickCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull CommandContext ctx) {
+    public void execute(@Nonnull CommandContext<?> ctx) {
         List<Long> users = new ArrayList<>();
-        for (int i = 0; i < ctx.getArgNum(); i++) {
-            User user = ctx.getUserMentionArg(i);
-            if (user == null) {
-                ctx.reply("Arguments must be user mentions of users in this server.").queue();
+
+        OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
+        if (context.isT()) {
+            MessageCommandContext msg = context.getTOrThrow();
+
+            for (int i = 0; i < msg.getArgNum(); i++) {
+                User user = msg.getUserMentionArg(i);
+                if (user == null) {
+                    ctx.reply("Arguments must be user mentions of users in this server.").queue();
+                    return;
+                }
+
+                if (user.isBot()) {
+                    ctx.reply("Sorry, I can't support bots or webhook users.").queue();
+                    return;
+                }
+
+                long userId = user.getIdLong();
+                if (users.contains(userId)) {
+                    ctx.reply("Users must be unique.").queue();
+                    return;
+                }
+
+                users.add(userId);
+            }
+
+            if (users.size() < 2) {
+                ctx.reply("You must mention at least two (2) users.").queue();
                 return;
             }
 
-            if (user.isBot()) {
+            if (users.size() > 8) {
+                ctx.reply("You must not mention more than eight (8) users.").queue();
+                return;
+            }
+        } else {
+            SlashCommandContext slash = context.getUOrThrow();
+
+            User user1User = slash.getOptionNonNull("player-1").getAsUser();
+            long user1 = user1User.getIdLong();
+            users.add(user1);
+
+            User user2User;
+            OptionMapping user2Option = slash.getOption("player-2");
+            if (user2Option == null) user2User = ctx.getUser();
+            else user2User = user2Option.getAsUser();
+            long user2 = user2User.getIdLong();
+
+            if (user1User.isBot() || user2User.isBot()) {
                 ctx.reply("Sorry, I can't support bots or webhook users.").queue();
                 return;
             }
 
-            long userId = user.getIdLong();
-            if (users.contains(userId)) {
-                ctx.reply("Users must be unique.").queue();
+            if (user1 == user2) {
+                ctx.reply("The users must be different from each other.").queue();
                 return;
             }
 
-            users.add(userId);
-        }
-
-        if (users.size() < 2) {
-            ctx.reply("You must mention at least two (2) users.").queue();
-            return;
-        }
-
-        if (users.size() > 8) {
-            ctx.reply("You must not mention more than eight (8) users.").queue();
-            return;
+            users.add(user2);
         }
 
         // TODO: Avoid too many mentions somehow -> could potentially be a vector for ping spams
@@ -103,23 +140,19 @@ public class BlindPickCommand implements Command {
 
     @Nonnull
     @Override
-    public String[] getAliases() {
-        return new String[]{"doubleblind", "doubleblindpick", "blind", "blindpick"};
-    }
-
-    @Nullable
-    @Override
-    public String getShortHelp() {
-        return "Helps you do a (double) blind pick. Usage: `blind <USERS...>`";
-    }
-
-    @Nullable
-    @Override
-    public String getDetailedHelp() {
-        return "`doubleblind <USERS...>`\n" +
-                "Assists you in doing a [blind pick](https://gist.github.com/gpluscb/559f00e750854b46c0a71827e094ab3e). " +
-                "After performing the command, everyone who participates in the blind pick will have to DM me. " +
-                "So you might have to unblock me (but what kind of monster would have me blocked in the first place?)\n" +
-                "Aliases: `doubleblind`, `blindpick`, `blind`";
+    public CommandInfo getInfo() {
+        return new CommandInfo.Builder()
+                .setAliases(new String[]{"doubleblind", "doubleblindpick", "blind", "blindpick"})
+                .setShortHelp("Helps you do a (double) blind pick. Usage: `blind <USERS...>`")
+                .setDetailedHelp("`doubleblind <USERS...>`\n" +
+                        "Assists you in doing a [blind pick](https://gist.github.com/gpluscb/559f00e750854b46c0a71827e094ab3e). " +
+                        "After performing the command, everyone who participates in the blind pick will have to DM me. " +
+                        "So you might have to unblock me (but what kind of monster would have me blocked in the first place?).\n" +
+                        "The slash command version supports at most two (2) participants.\n" +
+                        "Aliases: `doubleblind`, `blindpick`, `blind`")
+                .setCommandData(new CommandData("doubleblind", "Helps you do a double blind pick")
+                        .addOption(OptionType.USER, "player-1", "The first participant in the double blind", true)
+                        .addOption(OptionType.USER, "player-2", "The second participant in the double blind. This is yourself by default", false))
+                .build();
     }
 }

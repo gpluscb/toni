@@ -1,37 +1,23 @@
 package com.github.gpluscb.toni.command;
 
-import com.github.gpluscb.toni.util.StringTokenizer;
+import com.github.gpluscb.toni.Config;
+import com.github.gpluscb.toni.util.OneOfTwo;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.MessageBuilder;
-import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.Event;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.api.requests.restaction.MessageAction;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import net.dv8tion.jda.api.requests.RestAction;
+import net.dv8tion.jda.api.utils.AllowedMentions;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-public class CommandContext {
-    private static final Logger log = LogManager.getLogger(CommandContext.class);
-
-    // TODO: This infrastructure doesn't allow for more/custom prefixes or multiple word long commands
-    // 0 is prefix, 1 is command
-    private static final int ARG_OFFSET = 2;
-
-    // TODO: Less ugly or something
-    private static final StringTokenizer TOKENIZER = new StringTokenizer('"', '`');
-
-    @Nonnull
-    private final MessageReceivedEvent event;
-    @Nonnull
-    private final StringTokenizer.TokenList tokens;
-
+public class CommandContext<T extends RestAction<?> & AllowedMentions<T>> implements ICommandContext<Event, T> {
     public CommandContext(@Nonnull MessageReceivedEvent event) {
         this.event = event;
         tokens = TOKENIZER.tokenize(event.getMessage().getContentRaw());
@@ -87,167 +73,84 @@ public class CommandContext {
     }
 
     @Nonnull
-    public List<String> getArgs() {
-        List<String> tokens = this.tokens.getTokens();
-        return tokens.subList(ARG_OFFSET, tokens.size());
-    }
+    private final OneOfTwo<MessageCommandContext, SlashCommandContext> context;
 
-    public int getArgNum() {
-        return tokens.getTokenNum() - ARG_OFFSET;
+    public CommandContext(@Nonnull OneOfTwo<MessageCommandContext, SlashCommandContext> context) {
+        this.context = context;
     }
 
     @Nonnull
-    public String getArg(int index) {
-        return tokens.getToken(index + ARG_OFFSET);
-    }
-
-    /**
-     * @param end exclusive
-     */
-    @Nonnull
-    public String getArgsRange(int start, int end) {
-        return tokens.getTokenRange(start + ARG_OFFSET, end + ARG_OFFSET);
+    public static CommandContext<?> fromMessageReceivedEvent(@Nonnull MessageReceivedEvent e, @Nonnull Config config) {
+        return new CommandContext<>(OneOfTwo.ofT(new MessageCommandContext(e, config)));
     }
 
     @Nonnull
-    public String getArgsFrom(int start) {
-        return tokens.getTokensFrom(start + ARG_OFFSET);
+    public static CommandContext<?> fromSlashCommandEvent(@Nonnull SlashCommandEvent e, @Nonnull Config config) {
+        return new CommandContext<>(OneOfTwo.ofU(new SlashCommandContext(e, config)));
+    }
+
+    @Nonnull
+    public OneOfTwo<MessageCommandContext, SlashCommandContext> getContext() {
+        return context;
     }
 
     @Nullable
-    public User getUserMentionArg(int index) {
-        String arg = getArg(index);
-
-        Pattern userPattern = Message.MentionType.USER.getPattern();
-        Matcher matcher = userPattern.matcher(arg);
-        if (!matcher.matches()) return null;
-
-        // First group is id
-        String id = matcher.group(1);
-
-        // Can't rely on cache, so this list is the "cache" we work with
-        List<User> mentionedUsers = getMessage().getMentionedUsers();
-
-        User mention = mentionedUsers.stream().filter(user -> user.getId().equals(id)).findAny().orElse(null);
-        if (mention == null)
-            log.info("Arg fits user mention pattern, not found in mentionedUsers, arg: {}, id: {}, content: {}, mentionedUsers: {}", arg, id, getContent(), mentionedUsers);
-
-        return mention;
+    public MessageCommandContext getMessageCommandContext() {
+        return context.getT().orElse(null);
     }
 
     @Nullable
-    public Member getMemberMentionArg(int index) {
-        String arg = getArg(index);
-
-        Pattern memberPattern = Message.MentionType.USER.getPattern();
-        Matcher matcher = memberPattern.matcher(arg);
-        if (!matcher.matches()) return null;
-
-        // First group is id
-        String id = matcher.group(1);
-
-        // Can't rely on cache, so this list is the "cache" we work with
-        List<Member> mentionedMembers = getMessage().getMentionedMembers();
-
-        return mentionedMembers.stream().filter(member -> member.getId().equals(id)).findAny().orElse(null);
-    }
-
-    @Nullable
-    public Role getRoleMentionArg(int index) {
-        String arg = getArg(index);
-
-        Pattern rolePattern = Message.MentionType.ROLE.getPattern();
-        Matcher matcher = rolePattern.matcher(arg);
-        if (!matcher.matches()) return null;
-
-        // First group is id
-        String id = matcher.group(1);
-
-        List<Role> mentionedRoles = getMessage().getMentionedRoles();
-
-        Role mention = mentionedRoles.stream().filter(role -> role.getId().equals(id)).findAny().orElse(null);
-        if (mention == null)
-            log.info("Arg fits role mention pattern, not found in mentionedRoles, arg: {}, id: {}, content: {}, mentionedRoles: {}", arg, id, getContent(), mentionedRoles);
-
-        return mention;
-    }
-
-    @Nullable
-    public TextChannel getChannelMentionArg(int index) {
-        String arg = getArg(index);
-
-        Pattern channelPattern = Message.MentionType.CHANNEL.getPattern();
-        Matcher matcher = channelPattern.matcher(arg);
-        if (!matcher.matches()) return null;
-
-        // First group is id
-        String id = matcher.group(1);
-
-        // Working with mentioned channels cache because it's smaller
-        List<TextChannel> mentionedChannels = getMessage().getMentionedChannels();
-
-        TextChannel mention = mentionedChannels.stream().filter(channel -> channel.getId().equals(id)).findAny().orElse(null);
-        if (mention == null)
-            log.info("Arg fits channel mention pattern, not found in mentionedChannels, arg: {}, id: {}, content: {}, mentionedChannels: {}", arg, id, getContent(), mentionedChannels);
-
-        return mention;
+    public SlashCommandContext getSlashCommandContext() {
+        return context.getU().orElse(null);
     }
 
     @Nonnull
-    public String getInvokedName() {
-        return tokens.getToken(1);
+    @CheckReturnValue
+    @Override
+    public T reply(@Nonnull Message message) {
+        // TODO: Uhhhhhhhh how do we actually do this right???
+        return (T) context.map(ctx -> ctx.reply(message), ctx -> ctx.reply(message));
+    }
+
+    @Override
+    public Event getEvent() {
+        return context.map(MessageCommandContext::getEvent, SlashCommandContext::getEvent);
     }
 
     @Nonnull
-    public String getInvokedPrefix() {
-        return tokens.getToken(0);
-    }
-
-    @Nonnull
-    public StringTokenizer.TokenList getTokens() {
-        return tokens;
-    }
-
-    @Nonnull
-    public MessageReceivedEvent getEvent() {
-        return event;
-    }
-
-    @Nonnull
+    @Override
     public JDA getJDA() {
-        return event.getJDA();
+        return context.map(MessageCommandContext::getJDA, SlashCommandContext::getJDA);
     }
 
     @Nonnull
-    public Message getMessage() {
-        return event.getMessage();
-    }
-
-    @Nonnull
-    public String getContent() {
-        return event.getMessage().getContentRaw();
-    }
-
-    @Nonnull
-    public User getAuthor() {
-        return event.getAuthor();
+    @Override
+    public User getUser() {
+        return context.map(MessageCommandContext::getUser, SlashCommandContext::getUser);
     }
 
     @Nullable
+    @Override
     public Member getMember() {
-        return event.getMember();
+        return context.map(MessageCommandContext::getMember, SlashCommandContext::getMember);
     }
 
     @Nonnull
+    @Override
     public MessageChannel getChannel() {
-        return event.getChannel();
+        return context.map(MessageCommandContext::getChannel, SlashCommandContext::getChannel);
+    }
+
+    @Nonnull
+    @Override
+    public Config getConfig() {
+        return context.map(MessageCommandContext::getConfig, SlashCommandContext::getConfig);
     }
 
     @Override
     public String toString() {
         return "CommandContext{" +
-                "event=" + event +
-                ", tokens=" + tokens +
+                "context=" + context +
                 '}';
     }
 }

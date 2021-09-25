@@ -294,15 +294,14 @@ public class UnrankedConfigCommand implements Command {
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
                 .setAliases(new String[]{"unrankedconfig", "unrankedcfg"})
-                .setShortHelp("**[BETA]** Helps you configure unranked matchmaking. For more info on usage, see `toni, help unrankedconfig`.")
+                .setShortHelp("Helps you configure unranked matchmaking. For more info on usage, see `toni, help unrankedconfig`.")
                 .setDetailedHelp("`unrankedconfig <ROLE> [CHANNEL]` Sets up matchmaking with the specified matchmaking role, optionally only in a specific channel.\n" +
                         "`unrankedconfig channel <CHANNEL|\"ALL\">`" +
                         " Sets a specific channel for the matchmaking configuration, or removes channel restrictions if the argument is `all`.\n" +
                         "`unrankedconfig role <ROLE>` Sets a matchmaking role.\n" +
                         "`unrankedconfig reset` Removes matchmaking from this server.\n" +
-                        "Aliases: `unrankedconfig`, `unrankedcfg`\n" +
-                        String.format("This command is in **BETA**. If you have feedback, bugs, or other issues, please go to [my support server](%s).", supportServer))
-                .setCommandData(new CommandData("unrankedconfig", "[BETA] Configuration for unranked matchmaking")
+                        "Aliases: `unrankedconfig`, `unrankedcfg`")
+                .setCommandData(new CommandData("unrankedconfig", "Configuration for unranked matchmaking")
                         .addSubcommands(new SubcommandData("channel", "Update the matchmaking channel. Resets the channel to none if no channel is given")
                                         .addOption(OptionType.CHANNEL, "channel", "The new matchmaking channel", false),
                                 new SubcommandData("role", "Update the matchmaking role")

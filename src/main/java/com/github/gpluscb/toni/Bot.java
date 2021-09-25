@@ -346,7 +346,7 @@ public class Bot {
         matchmakingCommands.add(new UnrankedConfigCommand(supportServer, unrankedManager));
         matchmakingCommands.add(new AvailableCommand(supportServer, unrankedManager));
         matchmakingCommands.add(new UnrankedLfgCommand(supportServer, unrankedManager, waiter));
-        commands.add(new CommandCategory("matchmaking", "**[BETA]** Commands for matchmaking", matchmakingCommands));
+        commands.add(new CommandCategory("matchmaking", "Commands for matchmaking", matchmakingCommands));
 
         return commands;
     }

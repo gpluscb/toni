@@ -186,13 +186,12 @@ public class AvailableCommand implements Command {
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
                 .setAliases(new String[]{"available"})
-                .setShortHelp("**[BETA]** Gives you the matchmaking role for a given amount of time. Usage: `available [DURATION]`")
+                .setShortHelp("Gives you the matchmaking role for a given amount of time. Usage: `available [DURATION]`")
                 .setDetailedHelp("`available [DURATION]`\n" +
                         "Gives you the matchmaking role for the given duration, or permanently if you don't specify a duration." +
                         " The duration can have the format `Xh Xm Xs`, and it can't be longer than 12h." +
-                        " Note that I can't remember to remove the role if I shut down during that time.\n" + // TODO: Maybe fix that? That sounds so painful to fix tho.
-                        String.format("This command is in **BETA**. If you have feedback, bugs, or other issues, please go to [my support server](%s).", supportServer))
-                .setCommandData(new CommandData("available", "[BETA] Gives you the matchmaking role for a given duration")
+                        " Note that I can't remember to remove the role if I shut down during that time.") // TODO: Maybe fix that? That sounds so painful to fix tho.
+                .setCommandData(new CommandData("available", "Gives you the matchmaking role for a given duration")
                         .addOption(OptionType.STRING, "duration", "The duration after which I should remove the matchmaking role. Default is to never remove it", false))
                 .build();
     }

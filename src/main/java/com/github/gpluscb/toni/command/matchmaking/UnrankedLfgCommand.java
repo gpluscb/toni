@@ -163,13 +163,12 @@ public class UnrankedLfgCommand implements Command {
         return new CommandInfo.Builder()
                 .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_HISTORY})
                 .setAliases(new String[]{"unranked", "lfg", "fight", "fite"})
-                .setShortHelp("**[BETA]** Pings the matchmaking role and lets you know if someone wants to play for a given duration. Usage: `unranked [DURATION]`")
+                .setShortHelp("Pings the matchmaking role and lets you know if someone wants to play for a given duration. Usage: `unranked [DURATION]`")
                 .setDetailedHelp("`lfg [DURATION (default 2h)]`\n" +
                         "Pings the matchmaking role and asks players to react if they want to play. Notifies you when they react within the given duration." +
                         " The duration can have the format `Xh Xm Xs`, and it has to be between 10m and 5h.\n" +
-                        "Aliases: `lfg`, `unranked`, `fight`, `fite`\n" +
-                        String.format("This command is in **BETA**. If you have feedback, bugs, or other issues, please go to [my support server](%s).", supportServer))
-                .setCommandData(new CommandData("lfg", "[BETA] Pings matchmaking and let's you know if someone is available to play")
+                        "Aliases: `lfg`, `unranked`, `fight`, `fite`")
+                .setCommandData(new CommandData("lfg", "Pings matchmaking and let's you know if someone is available to play")
                         .addOption(OptionType.STRING, "duration", "How long you are looking for a game. Default is two hours", false))
                 .build();
     }

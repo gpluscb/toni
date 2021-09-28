@@ -41,7 +41,6 @@ public class StrikeStagesComponent {
         this.waiter = waiter;
     }
 
-
     /**
      * The future can also fail with the {@link com.github.gpluscb.toni.command.components.RPSComponent.RPSTimeoutException} or {@link ChooseFirstStrikerTimeoutException}.
      */

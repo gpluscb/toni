@@ -202,8 +202,7 @@ public class StrikeStagesComponent {
                     event.deferEdit().queue();
                     user1StrikesFirstFuture.complete(new Pair<>(winner != user1, e.getMessage()));
                     return OneOfTwo.ofU(ButtonActionMenu.MenuAction.CANCEL);
-                })
-                .setTimeoutAction((channel, messageId) -> {
+                }).setTimeoutAction((channel, messageId) -> {
                     ChooseFirstStrikerTimeoutException exception = new ChooseFirstStrikerTimeoutException(winner, channel, messageId);
                     user1StrikesFirstFuture.completeExceptionally(exception);
                 }).build();

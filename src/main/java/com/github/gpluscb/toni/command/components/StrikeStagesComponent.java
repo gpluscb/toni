@@ -3,7 +3,6 @@ package com.github.gpluscb.toni.command.components;
 import com.github.gpluscb.toni.util.*;
 import com.github.gpluscb.toni.util.discord.ButtonActionMenu;
 import com.github.gpluscb.toni.util.smash.Ruleset;
-import com.github.gpluscb.toni.util.smash.SmashSet;
 import com.github.gpluscb.toni.util.smash.Stage;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.MessageBuilder;
@@ -42,21 +41,13 @@ public class StrikeStagesComponent {
         this.waiter = waiter;
     }
 
+
     /**
      * The future can also fail with the {@link com.github.gpluscb.toni.command.components.RPSComponent.RPSTimeoutException} or {@link ChooseFirstStrikerTimeoutException}.
      */
     @Nonnull
     public CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> sendSlashStageStrikingReplying(@Nonnull SlashCommandEvent event, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS) {
-        return sendSlashStageStrikingReplying(event, ruleset, striker1, striker2, doRPS, null);
-    }
-
-    /**
-     * If you pass a set, you swear not to touch it until we are finished.
-     * The future can also fail with the {@link com.github.gpluscb.toni.command.components.RPSComponent.RPSTimeoutException} or {@link ChooseFirstStrikerTimeoutException}.
-     */
-    @Nonnull
-    public CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> sendSlashStageStrikingReplying(@Nonnull SlashCommandEvent event, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS, @Nullable SmashSet.SetStarterStrikingState set) {
-        return initStrikeStagesReplying(OneOfTwo.ofU(event), ruleset, striker1, striker2, doRPS, set);
+        return initStrikeStagesReplying(OneOfTwo.ofU(event), ruleset, striker1, striker2, doRPS);
     }
 
     /**
@@ -64,25 +55,11 @@ public class StrikeStagesComponent {
      */
     @Nonnull
     public CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> sendStageStrikingReplying(@Nonnull Message reference, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS) {
-        return sendStageStrikingReplying(reference, ruleset, striker1, striker2, doRPS, null);
-    }
-
-    /**
-     * If you pass a set, you swear not to touch it until we are finished.
-     * The future can also fail with the {@link com.github.gpluscb.toni.command.components.RPSComponent.RPSTimeoutException} or {@link ChooseFirstStrikerTimeoutException}.
-     */
-    @Nonnull
-    public CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> sendStageStrikingReplying(@Nonnull Message reference, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS, @Nullable SmashSet.SetStarterStrikingState set) {
-        return initStrikeStagesReplying(OneOfTwo.ofT(reference), ruleset, striker1, striker2, doRPS, set);
+        return initStrikeStagesReplying(OneOfTwo.ofT(reference), ruleset, striker1, striker2, doRPS);
     }
 
     @Nonnull
-    private CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> initStrikeStagesReplying(@Nonnull OneOfTwo<Message, SlashCommandEvent> reference, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS, @Nullable SmashSet.SetStarterStrikingState set) {
-        return initStrikeStagesHelper(reference, ruleset, striker1, striker2, doRPS, set);
-    }
-
-    @Nonnull
-    private CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> initStrikeStagesHelper(@Nonnull OneOfTwo<Message, SlashCommandEvent> reference, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS, @Nullable SmashSet.SetStarterStrikingState set) {
+    private CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> initStrikeStagesReplying(@Nonnull OneOfTwo<Message, SlashCommandEvent> reference, @Nonnull Ruleset ruleset, long striker1, long striker2, boolean doRPS) {
         String striker1Mention = MiscUtil.mentionUser(striker1);
         String striker2Mention = MiscUtil.mentionUser(striker2);
 
@@ -124,7 +101,7 @@ public class StrikeStagesComponent {
 
             CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> stageStrikingResult = new CompletableFuture<>();
 
-            StageStrikingHandler handler = new StageStrikingHandler(stageStrikingResult, ruleset, firstStriker, secondStriker, set);
+            StageStrikingHandler handler = new StageStrikingHandler(stageStrikingResult, ruleset, firstStriker, secondStriker);
 
             ButtonActionMenu.Builder builder = new ButtonActionMenu.Builder()
                     .setEventWaiter(waiter)
@@ -220,8 +197,6 @@ public class StrikeStagesComponent {
         private final Ruleset ruleset;
         private final long striker1;
         private final long striker2;
-        @Nullable
-        private final SmashSet.SetStarterStrikingState set;
 
         private long currentStriker;
         private int currentStrikeIdx;
@@ -230,15 +205,11 @@ public class StrikeStagesComponent {
         @Nonnull
         private final List<Set<Integer>> strikes;
 
-        public StageStrikingHandler(@Nonnull CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> result, @Nonnull Ruleset ruleset, long striker1, long striker2, @Nullable SmashSet.SetStarterStrikingState set) {
+        public StageStrikingHandler(@Nonnull CompletableFuture<PairNonnull<List<Set<Integer>>, ButtonClickEvent>> result, @Nonnull Ruleset ruleset, long striker1, long striker2) {
             this.result = result;
             this.ruleset = ruleset;
             this.striker1 = striker1;
             this.striker2 = striker2;
-            this.set = set;
-
-            if (set != null && set.getSmashSet().getRuleset() != ruleset)
-                throw new IllegalArgumentException("ruleset does not match ruleset of set");
 
             currentStriker = striker1;
             currentStrikeIdx = 0;
@@ -265,9 +236,6 @@ public class StrikeStagesComponent {
 
             int[] starterStrikePattern = ruleset.getStarterStrikePattern();
             if (currentStrikes.size() == starterStrikePattern[currentStrikeIdx]) {
-                // If we didn't mess up this should always be ok (except someone else messed with the set)
-                if (set != null) set.strikeStages(currentStrikes);
-
                 if (strikes.size() == starterStrikePattern.length) {
                     result.complete(new PairNonnull<>(strikes, e));
 

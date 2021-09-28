@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 
 import static net.dv8tion.jda.api.interactions.components.Button.LABEL_MAX_LENGTH;
 
+// TODO: Somehow I completely disregarded the RPS winner in the set
 public class StrikeStagesComponent {
     private static final Logger log = LogManager.getLogger(StrikeStagesComponent.class);
 

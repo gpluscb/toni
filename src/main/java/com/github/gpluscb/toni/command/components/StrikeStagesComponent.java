@@ -112,9 +112,10 @@ public class StrikeStagesComponent {
                     .setTimeoutAction(handler::timeout);
 
             for (Stage starter : ruleset.getStarters()) {
+                int id = starter.getStageId();
                 builder.registerButton(
-                        Button.secondary(String.valueOf(starter.getStageId()), StringUtils.abbreviate(starter.getName(), LABEL_MAX_LENGTH)),
-                        e -> handler.handleStrike(e, starter.getStageId())
+                        Button.secondary(String.valueOf(id), StringUtils.abbreviate(starter.getName(), LABEL_MAX_LENGTH)),
+                        e -> handler.handleStrike(e, id)
                 );
             }
 

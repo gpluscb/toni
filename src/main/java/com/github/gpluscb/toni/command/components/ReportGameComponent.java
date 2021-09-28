@@ -36,6 +36,7 @@ public class ReportGameComponent {
         return reportGameResult;
     }
 
+    @Nonnull
     private PairNonnull<CompletableFuture<ReportGameResult>, ButtonActionMenu> initReportGame(@Nonnull Message message, long user1, long user2) {
         CompletableFuture<ReportGameResult> reportGameOutcome = new CompletableFuture<>();
 

@@ -1,177 +1,138 @@
 package com.github.gpluscb.toni.matchmaking;
 
+import com.mongodb.async.client.MongoClient;
+import com.mongodb.async.client.MongoCollection;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.result.DeleteResult;
+import com.mongodb.client.result.UpdateResult;
+import org.bson.Document;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.sql.*;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 public class UnrankedManager {
     @Nonnull
-    private final Connection connection;
+    private final MongoCollection<UnrankedMatchmakingConfig> guilds;
+
+    public UnrankedManager(@Nonnull MongoClient client) {
+        guilds = client.getDatabase("unrankedMatchmakingConfigs")
+                .getCollection("guilds", UnrankedMatchmakingConfig.class);
+    }
+
+    /**
+     * {@link CompletableFuture} may complete with null
+     */
     @Nonnull
-    private final Map<Long, MatchmakingConfig> matchmakingConfigCache;
+    public CompletableFuture<UnrankedMatchmakingConfig> loadMatchmakingConfig(long guildId) {
+        CompletableFuture<UnrankedMatchmakingConfig> ret = new CompletableFuture<>();
 
-    public UnrankedManager(@Nonnull String dbLocation) throws SQLException {
-        connection = DriverManager.getConnection("jdbc:sqlite:" + dbLocation);
-        matchmakingConfigCache = Collections.synchronizedMap(new HashMap<>());
-    }
+        guilds.find(Filters.eq("guildId", guildId)).first((r, t) -> {
+            if (t != null) ret.completeExceptionally(t);
+            else ret.complete(r);
+        });
 
-    @Nullable
-    public MatchmakingConfig loadMatchmakingConfig(long guildId) throws SQLException {
-        MatchmakingConfig cached = matchmakingConfigCache.get(guildId);
-        if (cached != null) return cached;
-
-        PreparedStatement statement = connection.prepareStatement("SELECT lfg_role_id, channel_id FROM unranked_matchmaking_configs WHERE guild_id = ?");
-        statement.setQueryTimeout(10);
-
-        statement.setLong(1, guildId);
-
-        ResultSet rs = statement.executeQuery();
-
-        if (rs.isClosed()) return null;
-
-        long lfgRoleId = rs.getLong("lfg_role_id");
-        Long channelId = rs.getLong("channel_id");
-        if (rs.wasNull()) channelId = null;
-
-        statement.close();
-
-        return new MatchmakingConfig(lfgRoleId, channelId);
+        return ret;
     }
 
     /**
-     * @return true if changes were made (the row didn't already exist)
+     * @throws com.mongodb.MongoWriteException        returned via the {@link CompletableFuture}
+     * @throws com.mongodb.MongoWriteConcernException returned via the {@link CompletableFuture}
+     * @throws com.mongodb.MongoException             returned via the {@link CompletableFuture}
      */
-    public boolean storeMatchmakingConfig(long guildId, @Nonnull MatchmakingConfig config) throws SQLException {
-        PreparedStatement statement = connection
-                .prepareStatement("INSERT INTO unranked_matchmaking_configs (guild_id, lfg_role_id, channel_id) VALUES (?, ?, ?) ON CONFLICT (guild_id) DO NOTHING");
-        statement.setQueryTimeout(10);
+    @Nonnull
+    public CompletableFuture<Void> storeMatchmakingConfig(@Nonnull UnrankedMatchmakingConfig config) {
+        CompletableFuture<Void> ret = new CompletableFuture<>();
 
-        statement.setLong(1, guildId);
-        statement.setLong(2, config.getLfgRoleId());
-        Long channelId = config.getChannelId();
-        if (channelId == null) statement.setNull(3, Types.BIGINT);
-        else statement.setLong(3, channelId);
+        guilds.insertOne(config, (r, t) -> {
+            if (t != null) ret.completeExceptionally(t);
+            else ret.complete(null);
+        });
 
-        boolean affected;
-        synchronized (matchmakingConfigCache) {
-            affected = statement.executeUpdate() >= 1;
-
-            matchmakingConfigCache.put(guildId, config);
-        }
-
-        statement.close();
-
-        return affected;
+        return ret;
     }
 
     /**
-     * @return true if a row was affected
+     * @throws com.mongodb.MongoWriteException        returned via the {@link CompletableFuture}
+     * @throws com.mongodb.MongoWriteConcernException returned via the {@link CompletableFuture}
+     * @throws com.mongodb.MongoException             returned via the {@link CompletableFuture}
      */
-    public boolean updateMatchmakingConfig(long guildId, @Nonnull MatchmakingConfig config) throws SQLException {
-        PreparedStatement statement = connection.prepareStatement("UPDATE unranked_matchmaking_configs SET lfg_role_id = ?, channel_id = ? WHERE guild_id = ?");
-        statement.setQueryTimeout(10);
+    @Nonnull
+    public CompletableFuture<UpdateResult> updateMatchmakingConfig(@Nonnull UnrankedMatchmakingConfig config) {
+        CompletableFuture<UpdateResult> ret = new CompletableFuture<>();
 
-        statement.setLong(1, config.getLfgRoleId());
-        Long channelId = config.getChannelId();
-        if (channelId == null) statement.setNull(2, Types.BIGINT);
-        else statement.setLong(2, channelId);
-        statement.setLong(3, guildId);
+        guilds.replaceOne(Filters.eq("id", config.guildId), config, (r, t) -> {
+            if (t != null) ret.completeExceptionally(t);
+            else ret.complete(r);
+        });
 
-        boolean affected;
-        synchronized (matchmakingConfigCache) {
-            affected = statement.executeUpdate() >= 1;
-
-            matchmakingConfigCache.put(guildId, config);
-        }
-
-        statement.close();
-
-        return affected;
+        return ret;
     }
 
     /**
-     * @return true if a row was affected
+     * @throws com.mongodb.MongoWriteException        returned via the {@link CompletableFuture}
+     * @throws com.mongodb.MongoWriteConcernException returned via the {@link CompletableFuture}
+     * @throws com.mongodb.MongoException             returned via the {@link CompletableFuture}
      */
-    public boolean updateMatchmakingRole(long guildId, long lfgRoleId) throws SQLException {
-        PreparedStatement statement = connection.prepareStatement("UPDATE unranked_matchmaking_configs SET lfg_role_id = ? WHERE guild_id = ?");
-        statement.setQueryTimeout(10);
+    @Nonnull
+    public CompletableFuture<UpdateResult> updateMatchmakingRole(long guildId, long lfgRoleId) {
+        CompletableFuture<UpdateResult> ret = new CompletableFuture<>();
 
-        statement.setLong(1, lfgRoleId);
-        statement.setLong(2, guildId);
+        guilds.updateOne(Filters.eq("id", guildId), new Document("$set", new Document("lfgRoleId", lfgRoleId)), (r, t) -> {
+            if (t != null) ret.completeExceptionally(t);
+            else ret.complete(r);
+        });
 
-        boolean affected;
-        synchronized (matchmakingConfigCache) {
-            affected = statement.executeUpdate() >= 1;
-
-            MatchmakingConfig cachedConfig = matchmakingConfigCache.get(guildId);
-            if (cachedConfig != null)
-                matchmakingConfigCache.put(guildId, new MatchmakingConfig(lfgRoleId, cachedConfig.getChannelId()));
-        }
-
-        statement.close();
-
-        return affected;
+        return ret;
     }
 
     /**
-     * @return true if a row was affected
+     * @throws com.mongodb.MongoWriteException        returned via the {@link CompletableFuture}
+     * @throws com.mongodb.MongoWriteConcernException returned via the {@link CompletableFuture}
+     * @throws com.mongodb.MongoException             returned via the {@link CompletableFuture}
      */
-    public boolean updateMatchmakingChannel(long guildId, @Nullable Long channelId) throws SQLException {
-        PreparedStatement statement = connection.prepareStatement("UPDATE unranked_matchmaking_configs SET channel_id = ? WHERE guild_id = ?");
-        statement.setQueryTimeout(10);
+    @Nonnull
+    public CompletableFuture<UpdateResult> updateMatchmakingChannel(long guildId, @Nullable Long channelId) {
+        CompletableFuture<UpdateResult> ret = new CompletableFuture<>();
 
-        if (channelId == null) statement.setNull(1, Types.BIGINT);
-        else statement.setLong(1, channelId);
-        statement.setLong(2, guildId);
+        guilds.updateOne(Filters.eq("id", guildId), new Document("$set", new Document("channelId", channelId)), (r, t) -> {
+            if (t != null) ret.completeExceptionally(t);
+            else ret.complete(r);
+        });
 
-        boolean affected;
-        synchronized (matchmakingConfigCache) {
-            affected = statement.executeUpdate() >= 1;
-
-            MatchmakingConfig cachedConfig = matchmakingConfigCache.get(guildId);
-            if (cachedConfig != null)
-                matchmakingConfigCache.put(guildId, new MatchmakingConfig(cachedConfig.getLfgRoleId(), channelId));
-        }
-
-        statement.close();
-
-        return affected;
+        return ret;
     }
 
     /**
-     * @return true if a row was affected
+     * @throws com.mongodb.MongoWriteException        returned via the {@link CompletableFuture}
+     * @throws com.mongodb.MongoWriteConcernException returned via the {@link CompletableFuture}
+     * @throws com.mongodb.MongoException             returned via the {@link CompletableFuture}
      */
-    public boolean deleteMatchmakingConfig(long guildId) throws SQLException {
-        PreparedStatement statement = connection.prepareStatement("DELETE FROM unranked_matchmaking_configs WHERE guild_id = ?");
-        statement.setQueryTimeout(10);
+    public CompletableFuture<DeleteResult> deleteMatchmakingConfig(long guildId) {
+        CompletableFuture<DeleteResult> ret = new CompletableFuture<>();
 
-        statement.setLong(1, guildId);
+        guilds.deleteOne(Filters.eq("id", guildId), (r, t) -> {
+            if (t != null) ret.completeExceptionally(t);
+            else ret.complete(r);
+        });
 
-        boolean affected = statement.executeUpdate() >= 1;
-
-        statement.close();
-
-        // About race condition: We are fine with too little in cache
-        matchmakingConfigCache.remove(guildId);
-
-        return affected;
+        return ret;
     }
 
-    public void shutdown() throws SQLException {
-        connection.close();
-    }
-
-    public static class MatchmakingConfig {
+    public static class UnrankedMatchmakingConfig {
+        private final long guildId;
         private final long lfgRoleId;
         @Nullable
         private final Long channelId;
 
-        public MatchmakingConfig(long lfgRoleId, @Nullable Long channelId) {
+        public UnrankedMatchmakingConfig(long guildId, long lfgRoleId, @Nullable Long channelId) {
+            this.guildId = guildId;
             this.lfgRoleId = lfgRoleId;
             this.channelId = channelId;
+        }
+
+        public long getGuildId() {
+            return guildId;
         }
 
         public long getLfgRoleId() {

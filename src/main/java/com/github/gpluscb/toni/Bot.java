@@ -42,6 +42,8 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
+import com.mongodb.async.client.MongoClient;
+import com.mongodb.async.client.MongoClients;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
@@ -96,7 +98,7 @@ public class Bot {
     @Nonnull
     private final SmashdataManager smashdata;
     @Nonnull
-    private final UnrankedManager unrankedManager;
+    private final MongoClient mongoClient;
     @Nonnull
     private final ScheduledExecutorService waiterPool;
 
@@ -202,18 +204,11 @@ public class Bot {
             throw e;
         }
 
+        log.trace("Loading mongodb database");
+        mongoClient = MongoClients.create();
+
         log.trace("Loading unranked manager");
-        try {
-            unrankedManager = new UnrankedManager(cfg.getStateDbLocation());
-        } catch (SQLException e) {
-            log.error("Exception while loading unranked manager - shutting down", e);
-            ggManager.shutdown();
-            // challongeManager.shutdown();
-            // listener.shutdown();
-            // client.close();
-            waiterPool.shutdownNow();
-            throw e;
-        }
+        UnrankedManager unrankedManager = new UnrankedManager(mongoClient);
 
         log.trace("Loading smashdata");
         try {
@@ -221,7 +216,7 @@ public class Bot {
         } catch (SQLException e) {
             log.error("Exception while loading smashdata - shutting down", e);
             ggManager.shutdown();
-            unrankedManager.shutdown();
+            mongoClient.close();
             // challongeManager.shutdown();
             // listener.shutdown();
             // client.close();
@@ -230,7 +225,7 @@ public class Bot {
         }
 
         log.trace("Loading commands");
-        List<CommandCategory> commands = loadCommands(ufdClient, waiter, dmWaiter, /*challonge, listener, */characterTree);
+        List<CommandCategory> commands = loadCommands(ufdClient, waiter, dmWaiter, unrankedManager, /*challonge, listener, */characterTree);
 
         log.trace("Creating loadListener");
         long adminGuildId = cfg.getAdminGuildId();
@@ -264,7 +259,7 @@ public class Bot {
         } catch (LoginException e) {
             log.error("LoginException - shutting down", e);
             ggManager.shutdown();
-            unrankedManager.shutdown();
+            mongoClient.close();
             //challongeManager.shutdown();
             //client.close();
             waiterPool.shutdownNow();
@@ -279,7 +274,7 @@ public class Bot {
 			log.error("Exception while registering TournamentListener - shutting down", e);
 			ggManager.shutdown();
 			shardManager.shutdown();
-			unrankedManager.shutdown();
+			mongoClient.close();
 			challongeManager.shutdown();
 			client.close();
 			waiterPool.shutdownNow();
@@ -310,7 +305,7 @@ public class Bot {
     }
 
     @Nonnull
-    private List<CommandCategory> loadCommands(@Nonnull UltimateframedataClient ufdClient, @Nonnull EventWaiter waiter, @Nonnull DMChoiceWaiter dmWaiter, /*@Nonnull ChallongeExtension challonge, @Nonnull TournamentListener listener, */@Nonnull CharacterTree characterTree) {
+    private List<CommandCategory> loadCommands(@Nonnull UltimateframedataClient ufdClient, @Nonnull EventWaiter waiter, @Nonnull DMChoiceWaiter dmWaiter, @Nonnull UnrankedManager unrankedManager, /*@Nonnull ChallongeExtension challonge, @Nonnull TournamentListener listener, */@Nonnull CharacterTree characterTree) {
         List<CommandCategory> commands = new ArrayList<>();
 
         List<Command> adminCommands = new ArrayList<>();
@@ -374,11 +369,7 @@ public class Bot {
             log.catching(e);
         }
 
-        try {
-            unrankedManager.shutdown();
-        } catch (SQLException e) {
-            log.catching(e);
-        }
+        mongoClient.close();
 
 		/*challongeManager.shutdown();
 		try {

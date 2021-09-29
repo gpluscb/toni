@@ -27,7 +27,6 @@ import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.sql.SQLException;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
@@ -61,96 +60,97 @@ public class UnrankedLfgCommand implements Command {
 
         Guild guild = context.map(msg -> msg.getEvent().getGuild(), slash -> slash.getEvent().getGuild());
 
-        UnrankedManager.MatchmakingConfig config;
-        try {
-            config = manager.loadMatchmakingConfig(guild.getIdLong());
-        } catch (SQLException e) {
-            log.catching(e);
-            ctx.reply("Something went wrong talking to my database. I've told my dev about this, if this keeps happening you should give them some context too.").queue();
-            return;
-        }
+        context.onU(slash -> slash.getEvent().deferReply().queue());
 
-        if (config == null) {
-            ctx.reply("Matchmaking is not set up in this server. A mod can use the `unrankedcfg` command to configure matchmaking.").queue();
-            return;
-        }
-
-        Long lfgChannelId = config.getChannelId();
-        if (lfgChannelId != null && ctx.getChannel().getIdLong() != lfgChannelId) {
-            ctx.reply(String.format("This command is configured to only work in %s.", MiscUtil.mentionChannel(lfgChannelId))).queue();
-            return;
-        }
-
-        Duration duration = Duration.ofHours(2);
-        if (context.isT()) {
-            MessageCommandContext msg = context.getTOrThrow();
-
-            if (msg.getArgNum() > 0) {
-                duration = MiscUtil.parseDuration(msg.getArgsFrom(0));
-                if (duration == null) {
-                    ctx.reply("The given duration was not a valid duration. An example duration is `1h 30m`.").queue();
-                    return;
-                }
-            }
-        } else {
-            SlashCommandContext slash = context.getUOrThrow();
-
-            OptionMapping durationMapping = slash.getOption("duration");
-            if (durationMapping != null) {
-                duration = MiscUtil.parseDuration(durationMapping.getAsString());
-
-                if (duration == null) {
-                    ctx.reply("The given duration was not a valid duration. An example duration is `1h 30m`.").queue();
-                    return;
-                }
-            }
-        }
-
-        if (duration.compareTo(Duration.ofHours(5)) > 0) {
-            ctx.reply("The maximum duration is 5h.").queue();
-            return;
-        }
-
-        if (duration.compareTo(Duration.ofMinutes(10)) < 0) {
-            ctx.reply("The minimum duration is 10 minutes.").queue();
-            return;
-        }
-
-        long guildId = guild.getIdLong();
-        long userId = ctx.getUser().getIdLong();
-        long roleId = config.getLfgRoleId();
-
-        synchronized (currentlyLfgPerGuild) {
-            if (currentlyLfgPerGuild.contains(new PairNonnull<>(guildId, userId))) {
-                ctx.reply("You are already looking for a game. If you believe this is a bug, contact my dev.").queue();
+        manager.loadMatchmakingConfig(guild.getIdLong()).whenComplete((config, t) -> {
+            if (t != null) {
+                log.error("Error loading config", t);
+                ctx.reply("Something went wrong talking to my database. I've told my dev about this, if this keeps happening you should give them some context too.").queue();
                 return;
             }
 
-            currentlyLfgPerGuild.add(new PairNonnull<>(guildId, userId));
-        }
+            if (config == null) {
+                ctx.reply("Matchmaking is not set up in this server. A mod can use the `unrankedcfg` command to configure matchmaking.").queue();
+                return;
+            }
 
-        Message start = new MessageBuilder(String.format("%s, %s is looking for a game for %s (until %s). %2$s, you can click on the %s button to cancel.",
-                MiscUtil.mentionRole(roleId),
-                MiscUtil.mentionUser(userId),
-                MiscUtil.durationToString(duration),
-                TimeFormat.RELATIVE.after(duration),
-                Constants.CROSS_MARK))
-                .mentionRoles(roleId).mentionUsers(userId).build();
+            Long lfgChannelId = config.getChannelId();
+            if (lfgChannelId != null && ctx.getChannel().getIdLong() != lfgChannelId) {
+                ctx.reply(String.format("This command is configured to only work in %s.", MiscUtil.mentionChannel(lfgChannelId))).queue();
+                return;
+            }
 
-        ButtonHandler handler = new ButtonHandler(guildId, userId, roleId);
-        ButtonActionMenu menu = new ButtonActionMenu.Builder()
-                .setEventWaiter(waiter)
-                .setDeletionButton(null)
-                .registerButton(Button.success("fight", Emoji.fromUnicode(Constants.FENCER)).withLabel("Fight"), handler::fightButton)
-                .registerButton(Button.danger("cancel", Emoji.fromUnicode(Constants.CROSS_MARK)), handler::cancelButton)
-                .setStart(start)
-                .setTimeout(duration.getSeconds(), TimeUnit.SECONDS)
-                .setTimeoutAction(handler::timeout)
-                .build();
+            Duration duration = Duration.ofHours(2);
+            if (context.isT()) {
+                MessageCommandContext msg = context.getTOrThrow();
 
-        context
-                .onT(msg -> menu.displayReplying(msg.getMessage()))
-                .onU(slash -> menu.displaySlashCommandReplying(slash.getEvent()));
+                if (msg.getArgNum() > 0) {
+                    duration = MiscUtil.parseDuration(msg.getArgsFrom(0));
+                    if (duration == null) {
+                        ctx.reply("The given duration was not a valid duration. An example duration is `1h 30m`.").queue();
+                        return;
+                    }
+                }
+            } else {
+                SlashCommandContext slash = context.getUOrThrow();
+
+                OptionMapping durationMapping = slash.getOption("duration");
+                if (durationMapping != null) {
+                    duration = MiscUtil.parseDuration(durationMapping.getAsString());
+
+                    if (duration == null) {
+                        ctx.reply("The given duration was not a valid duration. An example duration is `1h 30m`.").queue();
+                        return;
+                    }
+                }
+            }
+
+            if (duration.compareTo(Duration.ofHours(5)) > 0) {
+                ctx.reply("The maximum duration is 5h.").queue();
+                return;
+            }
+
+            if (duration.compareTo(Duration.ofMinutes(10)) < 0) {
+                ctx.reply("The minimum duration is 10 minutes.").queue();
+                return;
+            }
+
+            long guildId = guild.getIdLong();
+            long userId = ctx.getUser().getIdLong();
+            long roleId = config.getLfgRoleId();
+
+            synchronized (currentlyLfgPerGuild) {
+                if (currentlyLfgPerGuild.contains(new PairNonnull<>(guildId, userId))) {
+                    ctx.reply("You are already looking for a game. If you believe this is a bug, contact my dev.").queue();
+                    return;
+                }
+
+                currentlyLfgPerGuild.add(new PairNonnull<>(guildId, userId));
+            }
+
+            Message start = new MessageBuilder(String.format("%s, %s is looking for a game for %s (until %s). %2$s, you can click on the %s button to cancel.",
+                    MiscUtil.mentionRole(roleId),
+                    MiscUtil.mentionUser(userId),
+                    MiscUtil.durationToString(duration),
+                    TimeFormat.RELATIVE.after(duration),
+                    Constants.CROSS_MARK))
+                    .mentionRoles(roleId).mentionUsers(userId).build();
+
+            ButtonHandler handler = new ButtonHandler(guildId, userId, roleId);
+            ButtonActionMenu menu = new ButtonActionMenu.Builder()
+                    .setEventWaiter(waiter)
+                    .setDeletionButton(null)
+                    .registerButton(Button.success("fight", Emoji.fromUnicode(Constants.FENCER)).withLabel("Fight"), handler::fightButton)
+                    .registerButton(Button.danger("cancel", Emoji.fromUnicode(Constants.CROSS_MARK)), handler::cancelButton)
+                    .setStart(start)
+                    .setTimeout(duration.getSeconds(), TimeUnit.SECONDS)
+                    .setTimeoutAction(handler::timeout)
+                    .build();
+
+            context
+                    .onT(msg -> menu.displayReplying(msg.getMessage()))
+                    .onU(slash -> menu.displaySlashCommandReplying(slash.getEvent()));
+        });
     }
 
     @Nonnull

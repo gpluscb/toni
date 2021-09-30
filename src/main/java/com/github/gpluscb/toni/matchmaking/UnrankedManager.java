@@ -27,11 +27,12 @@ public class UnrankedManager {
         CodecRegistry registry = CodecRegistries.fromRegistries(MongoClientSettings.getDefaultCodecRegistry(),
                 CodecRegistries.fromProviders(pojoProvider));
 
-        guilds = client.getDatabase("unrankedMatchmakingConfigs")
-                .getCollection("guilds", UnrankedMatchmakingConfig.class)
+        guilds = client.getDatabase("toni")
+                .getCollection("unrankedMatchmakingConfigs", UnrankedMatchmakingConfig.class)
                 .withCodecRegistry(registry);
     }
 
+    // TODO: actually document throwing stuff and such and such
     /**
      * {@link CompletableFuture} may complete with null
      */

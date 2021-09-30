@@ -43,7 +43,7 @@ public class ReportGameComponent {
         ReportGameComponent.ReportGameHandler handler = new ReportGameComponent.ReportGameHandler(user1, user2, reportGameOutcome);
 
         ButtonActionMenu menu = new ButtonActionMenu.Builder()
-                .setEventWaiter(waiter)
+                .setWaiter(waiter)
                 .setDeletionButton(null)
                 .addUsers(user1, user2)
                 .setStart(message)

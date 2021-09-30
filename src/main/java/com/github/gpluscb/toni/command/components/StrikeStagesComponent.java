@@ -104,7 +104,7 @@ public class StrikeStagesComponent {
             StageStrikingHandler handler = new StageStrikingHandler(stageStrikingResult, ruleset, firstStriker, secondStriker);
 
             ButtonActionMenu.Builder builder = new ButtonActionMenu.Builder()
-                    .setEventWaiter(waiter)
+                    .setWaiter(waiter)
                     .setDeletionButton(null)
                     .addUsers(striker1, striker2)
                     .setStart(message)
@@ -121,7 +121,7 @@ public class StrikeStagesComponent {
 
             ButtonActionMenu menu = builder.build();
 
-            if (toEdit == null) reference.onT(menu::displayReplying).onU(menu::displaySlashCommandReplying);
+            if (toEdit == null) reference.onT(menu::displayReplying).onU(menu::displaySlashReplying);
             else menu.display(toEdit);
 
             return stageStrikingResult;
@@ -160,7 +160,7 @@ public class StrikeStagesComponent {
         CompletableFuture<Pair<Boolean, Message>> user1StrikesFirstFuture = new CompletableFuture<>();
 
         ButtonActionMenu menu = new ButtonActionMenu.Builder()
-                .setEventWaiter(waiter)
+                .setWaiter(waiter)
                 .setDeletionButton(null)
                 .addUsers(winner)
                 .setStart(new MessageBuilder(String.format(

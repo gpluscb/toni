@@ -42,7 +42,7 @@ public class BanStagesComponent {
         BanStagesComponent.BanStagesHandler handler = new BanStagesComponent.BanStagesHandler(ruleset, user, banStagesOutcome);
 
         ButtonActionMenu.Builder builder = new ButtonActionMenu.Builder()
-                .setEventWaiter(waiter)
+                .setWaiter(waiter)
                 .setDeletionButton(null)
                 .addUsers(user)
                 .setStart(message)

@@ -154,7 +154,7 @@ public class StrikeStagesCommand implements Command {
         if (starterStrikePattern.length == 0) {
             // Has exactly one element in this case
             Stage stage = ruleset.getStarters().get(0);
-            ctx.reply(String.format("This ruleset only has one starter weirdly. You're going to ~~Brazil~~ %s.", stage)).queue();
+            ctx.reply(String.format("This ruleset only has one starter weirdly. You're going to ~~Brazil~~ %s.", stage.getName())).queue();
         }
 
         boolean doRPS_ = doRPS;

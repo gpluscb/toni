@@ -139,7 +139,7 @@ public class UnrankedLfgCommand implements Command {
 
         ButtonHandler handler = new ButtonHandler(guildId, userId, roleId);
         ButtonActionMenu menu = new ButtonActionMenu.Builder()
-                .setEventWaiter(waiter)
+                .setWaiter(waiter)
                 .setDeletionButton(null)
                 .registerButton(Button.success("fight", Emoji.fromUnicode(Constants.FENCER)).withLabel("Fight"), handler::fightButton)
                 .registerButton(Button.danger("cancel", Emoji.fromUnicode(Constants.CROSS_MARK)), handler::cancelButton)
@@ -150,7 +150,7 @@ public class UnrankedLfgCommand implements Command {
 
         context
                 .onT(msg -> menu.displayReplying(msg.getMessage()))
-                .onU(slash -> menu.displaySlashCommandReplying(slash.getEvent()));
+                .onU(slash -> menu.displaySlashReplying(slash.getEvent()));
     }
 
     @Nonnull
@@ -221,7 +221,7 @@ public class UnrankedLfgCommand implements Command {
             // TODO: Should we keep that "if you want me to disable" stuff to just the main message?
             DisableButtonHandler handler = new DisableButtonHandler(originalMessageId, challengerId);
             ButtonActionMenu menu = new ButtonActionMenu.Builder()
-                    .setEventWaiter(waiter)
+                    .setWaiter(waiter)
                     .setDeletionButton(null)
                     .registerButton(Button.success("confirm", Constants.CHECK_MARK), handler::confirmReaction)
                     .setStart(start)

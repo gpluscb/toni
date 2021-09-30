@@ -52,7 +52,7 @@ public class RPSComponent {
         CompletableFuture<PairNonnull<RPSResult, ButtonClickEvent>> rpsOutcome = initPair.getT();
         ButtonActionMenu menu = initPair.getU();
 
-        menu.displaySlashCommandReplying(event);
+        menu.displaySlashReplying(event);
 
         return rpsOutcome;
     }
@@ -80,7 +80,7 @@ public class RPSComponent {
         RPSHandler handler = new RPSHandler(user1, user2, rpsOutcome);
 
         ButtonActionMenu menu = new ButtonActionMenu.Builder()
-                .setEventWaiter(waiter)
+                .setWaiter(waiter)
                 .setDeletionButton(null)
                 .addUsers(user1, user2)
                 .setStart(message)

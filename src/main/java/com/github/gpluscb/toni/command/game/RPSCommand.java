@@ -1,10 +1,10 @@
 package com.github.gpluscb.toni.command.game;
 
 import com.github.gpluscb.toni.command.*;
-import com.github.gpluscb.toni.command.components.RPSComponent;
-import com.github.gpluscb.toni.util.FailLogger;
+import com.github.gpluscb.toni.command.components.RPSMenu;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
+import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
@@ -18,15 +18,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
+import java.util.concurrent.TimeUnit;
 
 public class RPSCommand implements Command {
-    private static final Logger log = LogManager.getLogger(RPSCommand.class);
-
     @Nonnull
-    private final RPSComponent component;
+    private final EventWaiter waiter;
 
-    public RPSCommand(@Nonnull RPSComponent component) {
-        this.component = component;
+    public RPSCommand(@Nonnull EventWaiter waiter) {
+        this.waiter = waiter;
     }
 
     @Override
@@ -96,65 +95,67 @@ public class RPSCommand implements Command {
                 .mentionUsers(user1, user2)
                 .build();
 
-        context.map(
-                msg -> component.sendRPSReplying(msg.getMessage(), start, user1, user2),
-                slash -> component.sendSlashRPSReplying(slash.getEvent(), start, user1, user2)
-        ).whenComplete(FailLogger.logFail((pair, timeout) -> {
-            if (timeout != null) {
-                if (!(timeout instanceof RPSComponent.RPSTimeoutException)) {
-                    log.error("Failed RPS completion not RPSTimeoutException", timeout);
-                    // TODO: Tell the user?
-                    return;
-                }
+        RPSMenu menu = new RPSMenu.Builder()
+                .setWaiter(waiter)
+                .setUsers(user1, user2)
+                .setStart(start)
+                .setTimeout(3, TimeUnit.MINUTES)
+                .setOnTimeout(timeout -> onTimeout(timeout, user1, user2))
+                .setOnResult((result, e) -> onRPSResult(result, e, user1, user2))
+                .build();
 
-                RPSComponent.RPSTimeoutException rpsTimeout = (RPSComponent.RPSTimeoutException) timeout;
-                MessageChannel channel = rpsTimeout.getChannel();
-                RPSComponent.RPS choice1 = rpsTimeout.getChoiceA();
-                RPSComponent.RPS choice2 = rpsTimeout.getChoiceB();
-                long messageId = rpsTimeout.getMessageId();
+        context
+                .onT(msg -> menu.displayReplying(msg.getMessage()))
+                .onU(slash -> menu.displaySlashReplying(slash.getEvent()));
+    }
 
-                if (channel == null) return;
+    private void onRPSResult(@Nonnull RPSMenu.RPSResult result, @Nonnull ButtonClickEvent e, long user1, long user2) {
+        String user1Mention = MiscUtil.mentionUser(user1);
+        String user2Mention = MiscUtil.mentionUser(user2);
 
-                // TODO: Variable naming
-                StringBuilder lazyIdiots = new StringBuilder();
-                if (choice1 == null) {
-                    lazyIdiots.append(MiscUtil.mentionUser(user1));
-                    if (choice2 == null) lazyIdiots.append(" and ");
-                }
-                if (choice2 == null) lazyIdiots.append(MiscUtil.mentionUser(user2));
+        String outcome;
+        switch (result.getWinner()) {
+            case Tie:
+                outcome = "It's a tie!";
+                break;
+            case A:
+                outcome = String.format("%s won!", user1Mention);
+                break;
+            case B:
+                outcome = String.format("%s won!", user2Mention);
+                break;
+            default:
+                throw new IllegalStateException("Not all results covered");
+        }
 
-                channel.editMessageById(messageId, String.format("The three (3) minutes are done. Not all of you have given me your choice. Shame on you, %s!", lazyIdiots))
-                        .mentionUsers(user1, user2)
-                        .setActionRows()
-                        .queue();
-                return;
-            }
+        e.reply(String.format("It has been decided! %s chose %s, and %s chose %s. That means %s",
+                        user1Mention, result.getChoiceA().getDisplayName(), user2Mention, result.getChoiceB().getDisplayName(), outcome))
+                .mentionUsers(user1, user2)
+                .queue();
 
-            RPSComponent.RPSResult result = pair.getT();
-            ButtonClickEvent e = pair.getU();
+        // TODO: Edit message, remove ActionRows. Only then MESSAGE_HISTORY will be needed I think
+    }
 
-            String outcome;
-            switch (result.getWinner()) {
-                case Tie:
-                    outcome = "It's a tie!";
-                    break;
-                case A:
-                    outcome = String.format("%s won!", user1Mention);
-                    break;
-                case B:
-                    outcome = String.format("%s won!", user2Mention);
-                    break;
-                default:
-                    throw new IllegalStateException("Not all results covered");
-            }
+    private void onTimeout(@Nonnull RPSMenu.RPSTimeoutEvent timeout, long user1, long user2) {
+        MessageChannel channel = timeout.getChannel();
+        RPSMenu.RPS choice1 = timeout.getChoiceA();
+        RPSMenu.RPS choice2 = timeout.getChoiceB();
+        long messageId = timeout.getMessageId();
 
-            e.reply(String.format("It has been decided! %s chose %s, and %s chose %s. That means %s",
-                            user1Mention, result.getChoiceA().getDisplayName(), user2Mention, result.getChoiceB().getDisplayName(), outcome))
-                    .mentionUsers(user1, user2)
-                    .queue();
+        if (channel == null) return;
 
-            // TODO: Edit message, remove ActionRows. Only then MESSAGE_HISTORY will be needed I think
-        }));
+        // TODO: Variable naming
+        StringBuilder lazyIdiots = new StringBuilder();
+        if (choice1 == null) {
+            lazyIdiots.append(MiscUtil.mentionUser(user1));
+            if (choice2 == null) lazyIdiots.append(" and ");
+        }
+        if (choice2 == null) lazyIdiots.append(MiscUtil.mentionUser(user2));
+
+        channel.editMessageById(messageId, String.format("The three (3) minutes are done. Not all of you have given me your choice. Shame on you, %s!", lazyIdiots))
+                .mentionUsers(user1, user2)
+                .setActionRows()
+                .queue();
     }
 
     @Nonnull

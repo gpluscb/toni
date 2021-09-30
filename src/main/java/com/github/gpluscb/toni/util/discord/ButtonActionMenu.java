@@ -2,7 +2,6 @@ package com.github.gpluscb.toni.util.discord;
 
 import com.github.gpluscb.toni.util.*;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
-import com.jagrosh.jdautilities.menu.Menu;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
@@ -31,7 +30,7 @@ import java.util.stream.Collectors;
 /**
  * We override the validation to only allow specific users in users.
  */
-public class ButtonActionMenu extends Menu {
+public class ButtonActionMenu extends ActionMenu {
     private static final Logger log = LogManager.getLogger(ButtonActionMenu.class);
 
     @Nonnull
@@ -49,7 +48,7 @@ public class ButtonActionMenu extends Menu {
     private final BiConsumer<MessageChannel, Long> timeoutAction;
 
     public ButtonActionMenu(@Nonnull EventWaiter waiter, @Nonnull Set<Long> users, long timeout, @Nonnull TimeUnit unit, @Nonnull Map<Button, Function<ButtonClickEvent, OneOfTwo<Message, MenuAction>>> buttonActions, @Nonnull Message start, @Nullable Button deletionButton, @Nonnull BiConsumer<MessageChannel, Long> timeoutAction) {
-        super(waiter, Collections.emptySet(), Collections.emptySet(), timeout, unit);
+        super(waiter, timeout, unit);
         this.users = users;
 
         buttonsToAdd = new ArrayList<>(buttonActions.keySet());
@@ -76,20 +75,28 @@ public class ButtonActionMenu extends Menu {
         init(channel.sendMessage(start));
     }
 
-    /**
-     * Needs MESSAGE_HISTORY perms
-     */
-    public void displaySlashCommandReplying(@Nonnull SlashCommandEvent e) {
+    @Override
+    public void display(@Nonnull Message message) {
+        init(message.editMessage(start));
+    }
+
+    @Override
+    public void displaySlashReplying(@Nonnull SlashCommandEvent e) {
         Set<Button> buttons = new LinkedHashSet<>(buttonsToAdd); // Preserve order
         if (deletionButton != null) buttons.add(deletionButton);
 
         e.reply(start).addActionRow(buttons).flatMap(InteractionHook::retrieveOriginal).queue(this::awaitEvents);
     }
 
-    public void displayReplying(Message reference) {
-        displayReplying(reference.getChannel(), reference.getIdLong());
+    @Override
+    public void displayDeferredReplying(@Nonnull InteractionHook hook) {
+        Set<Button> buttons = new LinkedHashSet<>(buttonsToAdd); // Preserve order
+        if (deletionButton != null) buttons.add(deletionButton);
+
+        hook.sendMessage(start).addActionRow(buttons).queue(this::awaitEvents);
     }
 
+    @Override
     public void displayReplying(@Nonnull MessageChannel channel, long messageId) {
         boolean hasPerms = true;
         if (channel instanceof TextChannel) {
@@ -101,11 +108,6 @@ public class ButtonActionMenu extends Menu {
             init(channel.sendMessage(start).referenceById(messageId));
         else
             init(channel.sendMessage(start));
-    }
-
-    @Override
-    public void display(@Nonnull Message message) {
-        init(message.editMessage(start));
     }
 
     private void init(@Nonnull MessageAction messageAction) {
@@ -121,10 +123,10 @@ public class ButtonActionMenu extends Menu {
     }
 
     private void awaitEvents(@Nonnull JDA jda, long messageId, long channelId) {
-        waiter.waitForEvent(ButtonClickEvent.class,
+        getWaiter().waitForEvent(ButtonClickEvent.class,
                 e -> checkButtonClick(e, messageId),
                 this::handleButtonClick,
-                timeout, unit, FailLogger.logFail(() -> { // This is the only thing that will be executed on not JDA-WS thread. So exceptions may get swallowed
+                getTimeout(), getUnit(), FailLogger.logFail(() -> { // This is the only thing that will be executed on not JDA-WS thread. So exceptions may get swallowed
                     MessageChannel channel = jda.getTextChannelById(channelId);
                     if (channel == null) channel = jda.getPrivateChannelById(channelId);
                     timeoutAction.accept(channel, messageId);
@@ -171,7 +173,7 @@ public class ButtonActionMenu extends Menu {
                 });
     }
 
-    public static class Builder extends Menu.Builder<Builder, ButtonActionMenu> {
+    public static class Builder extends ActionMenu.Builder<Builder, ButtonActionMenu> {
         @Nonnull
         private final Set<Long> users;
         @Nonnull
@@ -187,6 +189,8 @@ public class ButtonActionMenu extends Menu {
          * Default timeout of 20 minutes
          */
         public Builder() {
+            super(Builder.class);
+
             users = new HashSet<>();
             buttonActions = new LinkedHashMap<>(); // Preserve order
             deletionButton = Button.danger("delete", Constants.CROSS_MARK);
@@ -194,13 +198,11 @@ public class ButtonActionMenu extends Menu {
         }
 
         /**
-         * USE THIS METHOD INSTEAD
-         * <p>
          * If the user list ends up empty, everyone can use it
          */
         @Nonnull
-        public Builder addUsers(Long... users) {
-            this.users.addAll(Arrays.asList(users));
+        public Builder addUsers(long... users) {
+            Arrays.stream(users).forEach(this.users::add);
             return this;
         }
 
@@ -241,16 +243,39 @@ public class ButtonActionMenu extends Menu {
             return this;
         }
 
+        @Nonnull
+        public Set<Long> getUsers() {
+            return users;
+        }
+
+        @Nonnull
+        public Map<Button, Function<ButtonClickEvent, OneOfTwo<Message, MenuAction>>> getButtonActions() {
+            return buttonActions;
+        }
+
+        @Nullable
+        public Message getStart() {
+            return start;
+        }
+
+        @Nullable
+        public Button getDeletionButton() {
+            return deletionButton;
+        }
+
+        @Nullable
+        public BiConsumer<MessageChannel, Long> getTimeoutAction() {
+            return timeoutAction;
+        }
+
         /**
          * @throws IllegalStateException if waiter or start is not set, or if super.users contains stuff to prevent accidents
          */
         @Nonnull
         @Override
         public synchronized ButtonActionMenu build() {
-            if (waiter == null) throw new IllegalStateException("Waiter must be set");
+            preBuild();
             if (start == null) throw new IllegalStateException("Start must be set");
-            if (!super.users.isEmpty())
-                throw new IllegalStateException("You likely tried to use addUsers(User...). Use addUsers(Long...) instead.");
 
             if (timeoutAction == null) {
                 timeoutAction = (channel, id) -> {
@@ -267,7 +292,9 @@ public class ButtonActionMenu extends Menu {
                 };
             }
 
-            return new ButtonActionMenu(waiter, users, timeout, unit, buttonActions, start, deletionButton, timeoutAction);
+            // preBuild checks for null on waiter
+            //noinspection ConstantConditions
+            return new ButtonActionMenu(getWaiter(), users, getTimeout(), getUnit(), buttonActions, start, deletionButton, timeoutAction);
         }
     }
 

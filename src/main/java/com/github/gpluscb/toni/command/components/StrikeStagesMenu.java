@@ -1,0 +1,373 @@
+package com.github.gpluscb.toni.command.components;
+
+import com.github.gpluscb.toni.util.MiscUtil;
+import com.github.gpluscb.toni.util.OneOfTwo;
+import com.github.gpluscb.toni.util.discord.ButtonActionMenu;
+import com.github.gpluscb.toni.util.discord.TwoUsersChoicesActionMenu;
+import com.github.gpluscb.toni.util.smash.Ruleset;
+import com.github.gpluscb.toni.util.smash.Stage;
+import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
+import net.dv8tion.jda.api.MessageBuilder;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.Button;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
+import static net.dv8tion.jda.api.interactions.components.Button.LABEL_MAX_LENGTH;
+
+public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
+    private static final Logger log = LogManager.getLogger(StrikeStagesMenu.class);
+
+    @Nonnull
+    private final Consumer<StrikeInfo> onStrike;
+    @Nonnull
+    private final Consumer<StrikeResult> onResult;
+
+    @Nonnull
+    private final Ruleset ruleset;
+
+    private long currentStriker;
+    private int currentStrikeIdx;
+    @Nonnull
+    private Set<Integer> currentStrikes;
+    @Nonnull
+    private final List<Set<Integer>> strikes;
+
+    @Nonnull
+    private final ButtonActionMenu underlying;
+
+    public StrikeStagesMenu(@Nonnull EventWaiter waiter, long timeout, @Nonnull TimeUnit unit, @Nonnull Consumer<StrikeInfo> onStrike, @Nonnull Consumer<StrikeResult> onResult, @Nonnull Ruleset ruleset, long striker1, long striker2, @Nonnull Consumer<StrikeStagesTimeoutEvent> onTimeout) {
+        super(waiter, striker1, striker2, timeout, unit);
+
+        this.onStrike = onStrike;
+        this.onResult = onResult;
+
+        this.ruleset = ruleset;
+
+        currentStriker = striker1;
+        currentStrikeIdx = 0;
+        currentStrikes = new LinkedHashSet<>();
+        strikes = new ArrayList<>();
+        strikes.add(currentStrikes);
+
+        int[] starterStrikePattern = ruleset.getStarterStrikePattern();
+
+        Message start;
+        if (starterStrikePattern.length == 0) {
+            start = new MessageBuilder(String.format("Wow that's just very simple, there is only one stage in the ruleset. You're going to %s.",
+                    ruleset.getStarters().get(0).getName())).build();
+        } else {
+            int firstStrikeAmount = starterStrikePattern[0];
+
+            start = new MessageBuilder(String.format(
+                    "Alright, time to strike stages. %s, you go first. Please strike %d stage%s from the list below.",
+                    MiscUtil.mentionUser(striker1),
+                    firstStrikeAmount,
+                    firstStrikeAmount > 1 ? "s" : ""
+            )).mentionUsers(striker1).build();
+        }
+
+        ButtonActionMenu.Builder underlyingBuilder = new ButtonActionMenu.Builder()
+                .setWaiter(waiter)
+                .addUsers(striker1, striker2)
+                .setStart(start)
+                .setTimeout(timeout, unit)
+                .setTimeoutAction((channel, messageId) -> onTimeout.accept(new StrikeStagesTimeoutEvent(strikes, currentStriker, channel, messageId)));
+
+        for (Stage starter : ruleset.getStarters()) {
+            int id = starter.getStageId();
+            underlyingBuilder.registerButton(
+                    Button.secondary(String.valueOf(id), StringUtils.abbreviate(starter.getName(), LABEL_MAX_LENGTH)),
+                    e -> handleStrike(e, id)
+            );
+        }
+
+        underlying = underlyingBuilder.build();
+    }
+
+    @Override
+    public void display(@Nonnull MessageChannel channel) {
+        underlying.display(channel);
+    }
+
+    @Override
+    public void display(@Nonnull Message message) {
+        underlying.display(message);
+    }
+
+    @Override
+    public void displayReplying(@Nonnull MessageChannel channel, long messageId) {
+        underlying.displayReplying(channel, messageId);
+    }
+
+    @Override
+    public void displaySlashReplying(@Nonnull SlashCommandEvent event) {
+        underlying.displaySlashReplying(event);
+    }
+
+    @Override
+    public void displayDeferredReplying(@Nonnull InteractionHook hook) {
+        underlying.displayDeferredReplying(hook);
+    }
+
+    @Nonnull
+    private OneOfTwo<Message, ButtonActionMenu.MenuAction> handleStrike(@Nonnull ButtonClickEvent e, int stageId) {
+        // TODO: I dislike that users of this class have no control over how these messages look
+        if (e.getUser().getIdLong() != currentStriker) {
+            e.reply("It's not your turn to strike right now!").setEphemeral(true).queue();
+            return OneOfTwo.ofU(ButtonActionMenu.MenuAction.NOTHING);
+        }
+
+        if (strikes.stream().anyMatch(struckStages -> struckStages.contains(stageId))) {
+            e.deferEdit().queue();
+            log.warn("Stage was double struck. Race condition or failure to set as disabled?");
+            return OneOfTwo.ofT(new MessageBuilder("That stage has already been struck. Please strike a different one.").build());
+        }
+
+        currentStrikes.add(stageId);
+        onStrike.accept(new StrikeInfo(currentStriker, stageId, e));
+
+        long striker1 = getUser1();
+        long striker2 = getUser2();
+
+        int[] starterStrikePattern = ruleset.getStarterStrikePattern();
+        if (currentStrikes.size() == starterStrikePattern[currentStrikeIdx]) {
+            if (strikes.size() == starterStrikePattern.length) {
+                onResult.accept(new StrikeResult(striker1, striker2, strikes, e));
+
+                return OneOfTwo.ofU(ButtonActionMenu.MenuAction.CANCEL);
+            }
+
+            currentStrikes = new HashSet<>();
+            strikes.add(currentStrikes);
+            currentStrikeIdx++;
+            currentStriker = currentStriker == striker1 ? striker2 : striker1; // Invert
+        }
+
+        e.deferEdit().queue();
+        int stagesToStrike = starterStrikePattern[currentStrikeIdx] - currentStrikes.size();
+        MessageBuilder builder = new MessageBuilder();
+        builder.appendFormat("%s, please strike %d stage%s from the list below.",
+                        MiscUtil.mentionUser(currentStriker),
+                        stagesToStrike,
+                        stagesToStrike > 1 ? "s" : "")
+                .mentionUsers(currentStriker);
+
+        List<Button> buttonsToAdd = ruleset.getStarters().stream()
+                .map(starter -> Button.secondary(
+                                String.valueOf(starter.getStageId()),
+                                StringUtils.abbreviate(starter.getName(), LABEL_MAX_LENGTH)
+                        ).withDisabled(strikes.stream().anyMatch(struckIds -> struckIds.contains(starter.getStageId())))
+                ).collect(Collectors.toList());
+
+        // Multiple ActionRows in case of > 5 buttons
+        List<List<Button>> splitButtonsToAdd = MiscUtil.splitList(buttonsToAdd, 5);
+
+        List<ActionRow> actionRows = splitButtonsToAdd.stream().map(ActionRow::of).collect(Collectors.toList());
+        builder.setActionRows(actionRows);
+
+        return OneOfTwo.ofT(builder.build());
+    }
+
+    public class StrikeInfo {
+        private final long strikingUser;
+        private final int struckStageId;
+        @Nonnull
+        private final ButtonClickEvent event;
+
+        public StrikeInfo(long strikingUser, int struckStageId, @Nonnull ButtonClickEvent event) {
+            this.strikingUser = strikingUser;
+            this.struckStageId = struckStageId;
+            this.event = event;
+        }
+
+        public long getStrikingUser() {
+            return strikingUser;
+        }
+
+        public int getStruckStageId() {
+            return struckStageId;
+        }
+
+        @Nonnull
+        public Stage getStruckStage() {
+            //noinspection OptionalGetWithoutIsPresent
+            return ruleset.getStagesStream().filter(stage -> stage.getStageId() == struckStageId).findAny().get();
+        }
+
+        @Nonnull
+        public ButtonClickEvent getEvent() {
+            return event;
+        }
+    }
+
+    private class StrikeResult {
+        private final long striker1;
+        private final long striker2;
+        @Nonnull
+        private final List<Set<Integer>> struckStageIds;
+        @Nonnull
+        private final ButtonClickEvent event;
+
+        public StrikeResult(long striker1, long striker2, @Nonnull List<Set<Integer>> struckStageIds, @Nonnull ButtonClickEvent event) {
+            this.striker1 = striker1;
+            this.striker2 = striker2;
+            this.struckStageIds = struckStageIds;
+            this.event = event;
+        }
+
+        public long getStriker1() {
+            return striker1;
+        }
+
+        public long getStriker2() {
+            return striker2;
+        }
+
+        @Nonnull
+        public List<Set<Integer>> getStruckStageIds() {
+            return struckStageIds;
+        }
+
+        @Nonnull
+        public ButtonClickEvent getEvent() {
+            return event;
+        }
+
+        /**
+         * This is only null in the case that the ruleset only has one stage
+         */
+        @Nullable
+        public Stage getLeftStage() {
+            return ruleset.getStagesStream()
+                    .filter(stage ->
+                            struckStageIds.stream()
+                                    .flatMap(Set::stream)
+                                    .noneMatch(struckStageId -> stage.getStageId() == struckStageId))
+                    .findAny()
+                    .orElse(null);
+        }
+    }
+
+    public static class StrikeStagesTimeoutEvent {
+        @Nonnull
+        private final List<Set<Integer>> strikesSoFar;
+        private final long currentStriker;
+        @Nullable
+        private final MessageChannel channel;
+        private final long messageId;
+
+        public StrikeStagesTimeoutEvent(@Nonnull List<Set<Integer>> strikesSoFar, long currentStriker, @Nullable MessageChannel channel, long messageId) {
+            this.strikesSoFar = strikesSoFar;
+            this.currentStriker = currentStriker;
+            this.channel = channel;
+            this.messageId = messageId;
+        }
+
+        @Nonnull
+        public List<Set<Integer>> getStrikesSoFar() {
+            return strikesSoFar;
+        }
+
+        public long getCurrentStriker() {
+            return currentStriker;
+        }
+
+        @Nullable
+        public MessageChannel getChannel() {
+            return channel;
+        }
+
+        public long getMessageId() {
+            return messageId;
+        }
+    }
+
+    public static class Builder extends TwoUsersChoicesActionMenu.Builder<Builder, StrikeStagesMenu> {
+        @Nullable
+        private Ruleset ruleset;
+        @Nonnull
+        private Consumer<StrikeInfo> onStrike;
+        @Nonnull
+        private Consumer<StrikeResult> onResult;
+        @Nonnull
+        private Consumer<StrikeStagesTimeoutEvent> onTimeout;
+
+        public Builder() {
+            super(Builder.class);
+
+            onStrike = info -> {};
+            onResult = result -> {};
+            onTimeout = timeout -> {};
+        }
+
+        @Nonnull
+        public Builder setRuleset(@Nonnull Ruleset ruleset) {
+            this.ruleset = ruleset;
+            return this;
+        }
+
+        @Nonnull
+        public Builder setOnStrike(@Nonnull Consumer<StrikeInfo> onStrike) {
+            this.onStrike = onStrike;
+            return this;
+        }
+
+        @Nonnull
+        public Builder setOnResult(@Nonnull Consumer<StrikeResult> onResult) {
+            this.onResult = onResult;
+            return this;
+        }
+
+        @Nonnull
+        public Builder setOnTimeout(@Nonnull Consumer<StrikeStagesTimeoutEvent> onTimeout) {
+            this.onTimeout = onTimeout;
+            return this;
+        }
+
+        @Nullable
+        public Ruleset getRuleset() {
+            return ruleset;
+        }
+
+        @Nonnull
+        public Consumer<StrikeInfo> getOnStrike() {
+            return onStrike;
+        }
+
+        @Nonnull
+        public Consumer<StrikeResult> getOnResult() {
+            return onResult;
+        }
+
+        @Nonnull
+        public Consumer<StrikeStagesTimeoutEvent> getOnTimeout() {
+            return onTimeout;
+        }
+
+        @Nonnull
+        @Override
+        public StrikeStagesMenu build() {
+            preBuild();
+
+            if (ruleset == null) throw new IllegalStateException("Ruleset must be set");
+
+            // We know because of preBuild nonnulls are not violated
+            //noinspection ConstantConditions
+            return new StrikeStagesMenu(getWaiter(), getTimeout(), getUnit(), onStrike, onResult, ruleset, getUser1(), getUser2(), onTimeout);
+        }
+    }
+}

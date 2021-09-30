@@ -119,6 +119,7 @@ public class UnrankedManager {
         return ret;
     }
 
+    // TODO: The deserializer thingy
     public static class UnrankedMatchmakingConfig {
         private final long guildId;
         private final long lfgRoleId;

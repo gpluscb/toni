@@ -61,7 +61,7 @@ public class UnrankedManager {
     public CompletableFuture<UpdateResult> updateMatchmakingConfig(@Nonnull UnrankedMatchmakingConfig config) {
         CompletableFuture<UpdateResult> ret = new CompletableFuture<>();
 
-        guilds.replaceOne(Filters.eq("id", config.guildId), config, (r, t) -> {
+        guilds.replaceOne(Filters.eq("id", config.getGuildId()), config, (r, t) -> {
             if (t != null) ret.completeExceptionally(t);
             else ret.complete(r);
         });

@@ -4,7 +4,8 @@ import com.github.gpluscb.toni.util.FailLogger;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
 import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.TextChannel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -47,12 +48,13 @@ public class CommandDispatcher {
                 ).findAny()
                 .ifPresent(command -> {
                     OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
-                    if (context.isT()) {
-                        MessageCommandContext msg = context.getTOrThrow();
-
-                        MessageReceivedEvent e = msg.getEvent();
+                    boolean isFromGuild = context.map(msg -> msg.getEvent().isFromGuild(), slash -> slash.getEvent().isFromGuild());
+                    if (isFromGuild) {
                         Permission[] perms = command.getInfo().getRequiredBotPerms();
-                        if (e.isFromGuild() && !e.getGuild().getSelfMember().hasPermission(e.getTextChannel(), perms)) {
+                        Guild guild = context.map(msg -> msg.getEvent().getGuild(), slash -> slash.getEvent().getGuild());
+                        TextChannel channel = context.map(msg -> msg.getEvent().getTextChannel(), slash -> slash.getEvent().getTextChannel());
+
+                        if (!guild.getSelfMember().hasPermission(channel, perms)) {
                             log.debug("Missing perms: {}", (Object) perms);
                             ctx.reply(String.format("I need the following permissions for this command: %s.",
                                             Arrays.stream(perms).map(MiscUtil::getPermName).collect(Collectors.joining(", "))))

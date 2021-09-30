@@ -1,5 +1,6 @@
 package com.github.gpluscb.toni.matchmaking;
 
+import com.mongodb.MongoClientSettings;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.InsertOneResult;
@@ -7,6 +8,10 @@ import com.mongodb.client.result.UpdateResult;
 import com.mongodb.reactivestreams.client.MongoClient;
 import com.mongodb.reactivestreams.client.MongoCollection;
 import org.bson.Document;
+import org.bson.codecs.configuration.CodecProvider;
+import org.bson.codecs.configuration.CodecRegistries;
+import org.bson.codecs.configuration.CodecRegistry;
+import org.bson.codecs.pojo.PojoCodecProvider;
 import reactor.core.publisher.Mono;
 
 import javax.annotation.Nonnull;
@@ -18,8 +23,13 @@ public class UnrankedManager {
     private final MongoCollection<UnrankedMatchmakingConfig> guilds;
 
     public UnrankedManager(@Nonnull MongoClient client) {
+        CodecProvider pojoProvider = PojoCodecProvider.builder().register(UnrankedMatchmakingConfig.class).build();
+        CodecRegistry registry = CodecRegistries.fromRegistries(MongoClientSettings.getDefaultCodecRegistry(),
+                CodecRegistries.fromProviders(pojoProvider));
+
         guilds = client.getDatabase("unrankedMatchmakingConfigs")
-                .getCollection("guilds", UnrankedMatchmakingConfig.class);
+                .getCollection("guilds", UnrankedMatchmakingConfig.class)
+                .withCodecRegistry(registry);
     }
 
     /**

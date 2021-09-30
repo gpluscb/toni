@@ -120,32 +120,26 @@ public class UnrankedConfigCommand implements Command {
         UnrankedManager.UnrankedMatchmakingConfig config = new UnrankedManager.UnrankedMatchmakingConfig(guildId, roleId, channelId);
 
         // TODO: You know maybe it would be nice to have an upsert here
-        manager.storeMatchmakingConfig(config).whenComplete((v, t) -> {
-            if (t != null) {
-                if (t instanceof MongoWriteException && ((MongoWriteException) t).getError().getCategory() == ErrorCategory.DUPLICATE_KEY) {
-                    // Matchmaking already existed here
-                    manager.updateMatchmakingConfig(config).whenComplete((r, t_) -> {
-                        if (t_ != null) {
-                            log.warn("Configuration was not stored and later was not updated. Guild: {}", guildId);
-                            ctx.reply("This is a bit weird, I somehow failed to update the matchmaking configuration..." +
-                                    " If this doesn't fix itself when you use the command again, please tell my dev. I've already told them about it," +
-                                    " but you can give them some context too.").queue();
-                            return;
-                        }
+        manager.storeMatchmakingConfig(config).subscribe(
+                r -> ctx.reply("Success! You are now set up with matchmaking.").queue(),
+                t -> {
+                    if (t instanceof MongoWriteException && ((MongoWriteException) t).getError().getCategory() == ErrorCategory.DUPLICATE_KEY) {
+                        // Matchmaking already existed here
+                        manager.updateMatchmakingConfig(config).subscribe(
+                                r -> ctx.reply("I have now changed the matchmaking configuration.").queue(),
+                                t_ -> {
+                                    log.error("Configuration was not stored and later was not updated. Guild: {}", guildId);
+                                    ctx.reply("This is a bit weird, I somehow failed to update the matchmaking configuration..." +
+                                            " If this doesn't fix itself when you use the command again, please tell my dev. I've already told them about it," +
+                                            " but you can give them some context too.").queue();
+                                });
+                        return;
+                    }
 
-                        ctx.reply("I have now changed the matchmaking configuration.").queue();
-                    });
-                    return;
-                }
-
-                log.error("Unrecoverable error storing matchmaking config", t);
-                ctx.reply("I failed to store the matchmaking config." +
-                        " I've told my dev about it already, but you can give them some context too if this keeps happening.").queue();
-                return;
-            }
-
-            ctx.reply("Success! You are now set up with matchmaking.").queue();
-        });
+                    log.error("Unrecoverable error storing matchmaking config", t);
+                    ctx.reply("I failed to store the matchmaking config." +
+                            " I've told my dev about it already, but you can give them some context too if this keeps happening.").queue();
+                });
 
     }
 
@@ -189,19 +183,16 @@ public class UnrankedConfigCommand implements Command {
 
         long guildId = context.map(msg -> msg.getEvent().getGuild(), slash -> slash.getEvent().getGuild()).getIdLong();
 
-        manager.updateMatchmakingChannel(guildId, channelId).whenComplete((r, t) -> {
-            if (t != null) {
-                log.error("Failure updating matchmaking channel", t);
-                ctx.reply("There was an error talking to the database." +
-                        " I've told my dev already, if this keeps happening you can give them some context too.").queue();
-                return;
-            }
-
+        manager.updateMatchmakingChannel(guildId, channelId).subscribe(r -> {
             if (r.getModifiedCount() > 0)
                 ctx.reply("Congrats! The configuration was changed successfully!").queue();
             else
                 ctx.reply("I can't set up a matchmaking channel if there is no matchmaking role already." +
                         " Use `toni, unrankedcfg <role mention> [channel mention]` to do both").queue();
+        }, t -> {
+            log.error("Failure updating matchmaking channel", t);
+            ctx.reply("There was an error talking to the database." +
+                    " I've told my dev already, if this keeps happening you can give them some context too.").queue();
         });
     }
 
@@ -236,31 +227,25 @@ public class UnrankedConfigCommand implements Command {
 
         context.onU(slash -> slash.getEvent().deferReply().queue());
 
-        manager.updateMatchmakingRole(guildId, roleId).whenComplete((r, t) -> {
-            if (t != null) {
-                log.error("Error updating matchmaking role", t);
-                ctx.reply("Something went wrong talking to my database." +
-                        " I've told my dev about it, but if this keeps happening you can give them some context too.").queue();
-                return;
-            }
-
+        manager.updateMatchmakingRole(guildId, roleId).subscribe(r -> {
             if (r.getModifiedCount() > 0) {
                 ctx.reply("Yay! The changes were made successfully!").queue();
                 return;
             }
 
             // If not present, create:
-            manager.storeMatchmakingConfig(new UnrankedManager.UnrankedMatchmakingConfig(guildId, roleId, null)).whenComplete((v, t_) -> {
-                if (t_ != null) {
-                    log.error("Error storing matchmaking config for role", t_);
-                    ctx.reply("There was an error storing the configuration." +
-                            " I've told my dev about it, but if this keeps happening you can give them some context too.").queue();
-                    return;
-                }
-
-                ctx.reply("I have now set up unranked matchmaking with the given role." +
-                        " If you want to restrict the matchmaking to a specific channel, use `toni, matchmakingcfg channel [channel mention]`").queue();
-            });
+            manager.storeMatchmakingConfig(new UnrankedManager.UnrankedMatchmakingConfig(guildId, roleId, null)).subscribe(
+                    r_ -> ctx.reply("I have now set up unranked matchmaking with the given role." +
+                            " If you want to restrict the matchmaking to a specific channel, use `toni, matchmakingcfg channel [channel mention]`").queue(),
+                    t -> {
+                        log.error("Error storing matchmaking config for role", t);
+                        ctx.reply("There was an error storing the configuration." +
+                                " I've told my dev about it, but if this keeps happening you can give them some context too.").queue();
+                    });
+        }, t -> {
+            log.error("Error updating matchmaking role", t);
+            ctx.reply("Something went wrong talking to my database." +
+                    " I've told my dev about it, but if this keeps happening you can give them some context too.").queue();
         });
     }
 
@@ -268,18 +253,15 @@ public class UnrankedConfigCommand implements Command {
         long guildId = ctx.getContext().map(msg -> msg.getEvent().getGuild(), slash -> slash.getEvent().getGuild()).getIdLong();
         ctx.getContext().onU(slash -> slash.getEvent().deferReply().queue());
 
-        manager.deleteMatchmakingConfig(guildId).whenComplete((r, t) -> {
-            if (t != null) {
-                log.error("Error deleting config", t);
-                ctx.reply("Something went horribly wrong trying to talk to my database!" +
-                        " Try again later, and if this keeps happening tell my dev. I've already told them about it, but it'll help if you can talk to them.").queue();
-                return;
-            }
-
+        manager.deleteMatchmakingConfig(guildId).subscribe(r -> {
             String response = r.getDeletedCount() > 0 ? "Ok I successfully deleted the configuration now."
                     : "There was no matchmaking configuration in the first place, what are you resetting it for?";
 
             ctx.reply(response).queue();
+        }, t -> {
+            log.error("Error deleting config", t);
+            ctx.reply("Something went horribly wrong trying to talk to my database!" +
+                    " Try again later, and if this keeps happening tell my dev. I've already told them about it, but it'll help if you can talk to them.").queue();
         });
     }
 

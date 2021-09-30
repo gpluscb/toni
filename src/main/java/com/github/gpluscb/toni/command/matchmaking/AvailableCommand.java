@@ -49,14 +49,7 @@ public class AvailableCommand implements Command {
 
         Guild guild = context.map(msg -> msg.getEvent().getGuild(), slash -> slash.getEvent().getGuild());
         long guildId = guild.getIdLong();
-        manager.loadMatchmakingConfig(guildId).whenComplete((config, t) -> {
-            if (t != null) {
-                log.error("Error loading matchmaking config", t);
-                ctx.reply("Oops, something went horribly wong talking to the database." +
-                        " I've told my dev, if this keeps happening you can give them some context too.").queue();
-                return;
-            }
-
+        manager.loadMatchmakingConfig(guildId).subscribe(config -> {
             if (config == null) {
                 ctx.reply("Looks like matchmaking isn't set up in this server. Moderators can use the `unrankedcfg` command to set it up.").queue();
                 return;
@@ -66,18 +59,15 @@ public class AvailableCommand implements Command {
             Role role = guild.getRoleById(roleId);
 
             if (role == null) {
-                manager.deleteMatchmakingConfig(guildId).whenComplete((r, t_) -> {
-                    if (t_ != null) {
-                        log.error("This is really bad: we have an inconsistent state in the db (role deleted), and the auto fix failed. Guild: {}, Role: {}", guildId, roleId);
-                        log.catching(t_);
-                        ctx.reply("Something went *really* wrong: it appears the matchmaking role I know has been deleted, but trying to reset the config for this server failed." +
-                                " This might fix itself if you use this command again, or if you use `toni, unrankedcfg reset`. If it doesn't, please contact my dev." +
-                                " I've told them already but it's probably good if they have some more context.").queue();
-                        return;
-                    }
-
-                    ctx.reply("Apparently, the matchmaking role has been deleted. I have reset the configuration for this guild now.").queue();
-                });
+                manager.deleteMatchmakingConfig(guildId).subscribe(
+                        r -> ctx.reply("Apparently, the matchmaking role has been deleted. I have reset the configuration for this guild now.").queue(),
+                        t -> {
+                            log.error("This is really bad: we have an inconsistent state in the db (role deleted), and the auto fix failed. Guild: {}, Role: {}", guildId, roleId);
+                            log.catching(t);
+                            ctx.reply("Something went *really* wrong: it appears the matchmaking role I know has been deleted, but trying to reset the config for this server failed." +
+                                    " This might fix itself if you use this command again, or if you use `toni, unrankedcfg reset`. If it doesn't, please contact my dev." +
+                                    " I've told them already but it's probably good if they have some more context.").queue();
+                        });
 
                 return;
             }
@@ -177,6 +167,10 @@ public class AvailableCommand implements Command {
                     ctx.reply("I couldn't give you the role because I lack permissions. Mods might be able to fix that.").queue();
                 }
             }
+        }, t -> {
+            log.error("Error loading matchmaking config", t);
+            ctx.reply("Oops, something went horribly wong talking to the database." +
+                    " I've told my dev, if this keeps happening you can give them some context too.").queue();
         });
     }
 

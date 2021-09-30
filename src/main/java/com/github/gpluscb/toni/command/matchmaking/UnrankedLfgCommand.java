@@ -62,13 +62,7 @@ public class UnrankedLfgCommand implements Command {
 
         context.onU(slash -> slash.getEvent().deferReply().queue());
 
-        manager.loadMatchmakingConfig(guild.getIdLong()).whenComplete((config, t) -> {
-            if (t != null) {
-                log.error("Error loading config", t);
-                ctx.reply("Something went wrong talking to my database. I've told my dev about this, if this keeps happening you should give them some context too.").queue();
-                return;
-            }
-
+        manager.loadMatchmakingConfig(guild.getIdLong()).subscribe(config -> {
             if (config == null) {
                 ctx.reply("Matchmaking is not set up in this server. A mod can use the `unrankedcfg` command to configure matchmaking.").queue();
                 return;
@@ -150,6 +144,9 @@ public class UnrankedLfgCommand implements Command {
             context
                     .onT(msg -> menu.displayReplying(msg.getMessage()))
                     .onU(slash -> menu.displaySlashCommandReplying(slash.getEvent()));
+        }, t -> {
+            log.error("Error loading config", t);
+            ctx.reply("Something went wrong talking to my database. I've told my dev about this, if this keeps happening you should give them some context too.").queue();
         });
     }
 

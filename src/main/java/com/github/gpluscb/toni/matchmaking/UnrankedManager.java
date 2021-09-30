@@ -1,11 +1,13 @@
 package com.github.gpluscb.toni.matchmaking;
 
-import com.mongodb.async.client.MongoClient;
-import com.mongodb.async.client.MongoCollection;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.result.DeleteResult;
+import com.mongodb.client.result.InsertOneResult;
 import com.mongodb.client.result.UpdateResult;
+import com.mongodb.reactivestreams.client.MongoClient;
+import com.mongodb.reactivestreams.client.MongoCollection;
 import org.bson.Document;
+import reactor.core.publisher.Mono;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -24,15 +26,8 @@ public class UnrankedManager {
      * {@link CompletableFuture} may complete with null
      */
     @Nonnull
-    public CompletableFuture<UnrankedMatchmakingConfig> loadMatchmakingConfig(long guildId) {
-        CompletableFuture<UnrankedMatchmakingConfig> ret = new CompletableFuture<>();
-
-        guilds.find(Filters.eq("guildId", guildId)).first((r, t) -> {
-            if (t != null) ret.completeExceptionally(t);
-            else ret.complete(r);
-        });
-
-        return ret;
+    public Mono<UnrankedMatchmakingConfig> loadMatchmakingConfig(long guildId) {
+        return Mono.from(guilds.find(Filters.eq("guildId", guildId)).first());
     }
 
     /**
@@ -41,15 +36,8 @@ public class UnrankedManager {
      * @throws com.mongodb.MongoException             returned via the {@link CompletableFuture}
      */
     @Nonnull
-    public CompletableFuture<Void> storeMatchmakingConfig(@Nonnull UnrankedMatchmakingConfig config) {
-        CompletableFuture<Void> ret = new CompletableFuture<>();
-
-        guilds.insertOne(config, (r, t) -> {
-            if (t != null) ret.completeExceptionally(t);
-            else ret.complete(null);
-        });
-
-        return ret;
+    public Mono<InsertOneResult> storeMatchmakingConfig(@Nonnull UnrankedMatchmakingConfig config) {
+        return Mono.from(guilds.insertOne(config));
     }
 
     /**
@@ -58,15 +46,8 @@ public class UnrankedManager {
      * @throws com.mongodb.MongoException             returned via the {@link CompletableFuture}
      */
     @Nonnull
-    public CompletableFuture<UpdateResult> updateMatchmakingConfig(@Nonnull UnrankedMatchmakingConfig config) {
-        CompletableFuture<UpdateResult> ret = new CompletableFuture<>();
-
-        guilds.replaceOne(Filters.eq("id", config.getGuildId()), config, (r, t) -> {
-            if (t != null) ret.completeExceptionally(t);
-            else ret.complete(r);
-        });
-
-        return ret;
+    public Mono<UpdateResult> updateMatchmakingConfig(@Nonnull UnrankedMatchmakingConfig config) {
+        return Mono.from(guilds.replaceOne(Filters.eq("id", config.getGuildId()), config));
     }
 
     /**
@@ -75,15 +56,8 @@ public class UnrankedManager {
      * @throws com.mongodb.MongoException             returned via the {@link CompletableFuture}
      */
     @Nonnull
-    public CompletableFuture<UpdateResult> updateMatchmakingRole(long guildId, long lfgRoleId) {
-        CompletableFuture<UpdateResult> ret = new CompletableFuture<>();
-
-        guilds.updateOne(Filters.eq("id", guildId), new Document("$set", new Document("lfgRoleId", lfgRoleId)), (r, t) -> {
-            if (t != null) ret.completeExceptionally(t);
-            else ret.complete(r);
-        });
-
-        return ret;
+    public Mono<UpdateResult> updateMatchmakingRole(long guildId, long lfgRoleId) {
+        return Mono.from(guilds.updateOne(Filters.eq("id", guildId), new Document("$set", new Document("lfgRoleId", lfgRoleId))));
     }
 
     /**
@@ -92,15 +66,8 @@ public class UnrankedManager {
      * @throws com.mongodb.MongoException             returned via the {@link CompletableFuture}
      */
     @Nonnull
-    public CompletableFuture<UpdateResult> updateMatchmakingChannel(long guildId, @Nullable Long channelId) {
-        CompletableFuture<UpdateResult> ret = new CompletableFuture<>();
-
-        guilds.updateOne(Filters.eq("id", guildId), new Document("$set", new Document("channelId", channelId)), (r, t) -> {
-            if (t != null) ret.completeExceptionally(t);
-            else ret.complete(r);
-        });
-
-        return ret;
+    public Mono<UpdateResult> updateMatchmakingChannel(long guildId, @Nullable Long channelId) {
+        return Mono.from(guilds.updateOne(Filters.eq("id", guildId), new Document("$set", new Document("channelId", channelId))));
     }
 
     /**
@@ -108,15 +75,8 @@ public class UnrankedManager {
      * @throws com.mongodb.MongoWriteConcernException returned via the {@link CompletableFuture}
      * @throws com.mongodb.MongoException             returned via the {@link CompletableFuture}
      */
-    public CompletableFuture<DeleteResult> deleteMatchmakingConfig(long guildId) {
-        CompletableFuture<DeleteResult> ret = new CompletableFuture<>();
-
-        guilds.deleteOne(Filters.eq("id", guildId), (r, t) -> {
-            if (t != null) ret.completeExceptionally(t);
-            else ret.complete(r);
-        });
-
-        return ret;
+    public Mono<DeleteResult> deleteMatchmakingConfig(long guildId) {
+        return Mono.from(guilds.deleteOne(Filters.eq("id", guildId)));
     }
 
     // TODO: The deserializer thingy

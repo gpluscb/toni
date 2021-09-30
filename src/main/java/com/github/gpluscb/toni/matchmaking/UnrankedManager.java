@@ -11,11 +11,14 @@ import org.bson.Document;
 import org.bson.codecs.configuration.CodecProvider;
 import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
+import org.bson.codecs.pojo.ClassModel;
+import org.bson.codecs.pojo.Conventions;
 import org.bson.codecs.pojo.PojoCodecProvider;
 import reactor.core.publisher.Mono;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 
 public class UnrankedManager {
@@ -23,7 +26,11 @@ public class UnrankedManager {
     private final MongoCollection<UnrankedMatchmakingConfig> guilds;
 
     public UnrankedManager(@Nonnull MongoClient client) {
-        CodecProvider pojoProvider = PojoCodecProvider.builder().register(UnrankedMatchmakingConfig.class).build();
+        CodecProvider pojoProvider = PojoCodecProvider.builder().register(
+                ClassModel.builder(UnrankedMatchmakingConfig.class)
+                        .conventions(Collections.singletonList(Conventions.SET_PRIVATE_FIELDS_CONVENTION))
+                        .build()
+        ).build();
         CodecRegistry registry = CodecRegistries.fromRegistries(MongoClientSettings.getDefaultCodecRegistry(),
                 CodecRegistries.fromProviders(pojoProvider));
 
@@ -32,10 +39,10 @@ public class UnrankedManager {
                 .withCodecRegistry(registry);
     }
 
-    // TODO: actually document throwing stuff and such and such
     /**
      * {@link CompletableFuture} may complete with null
      */
+    // TODO: actually document throwing stuff and such and such
     @Nonnull
     public Mono<UnrankedMatchmakingConfig> loadMatchmakingConfig(long guildId) {
         return Mono.from(guilds.find(Filters.eq("guildId", guildId)).first());
@@ -96,6 +103,12 @@ public class UnrankedManager {
         private final long lfgRoleId;
         @Nullable
         private final Long channelId;
+
+        public UnrankedMatchmakingConfig() {
+            guildId = 0;
+            lfgRoleId = 0;
+            channelId = null;
+        }
 
         public UnrankedMatchmakingConfig(long guildId, long lfgRoleId, @Nullable Long channelId) {
             this.guildId = guildId;

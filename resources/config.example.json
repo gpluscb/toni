@@ -14,7 +14,7 @@
   "devId": 1234567,
   "adminGuildId": 1234567,
   "stopwordListLocation": "/path/to/stopword/list.txt",
-  "stateDbLocation": "/path/to/toni_state.db",
+  "toniDb": "mongodb://user:password@database:port/?authSource=thingy",
   "smashdataDbLocation": "/path/to/ultimate_player_database.db",
   "charactersFileLocation": "/path/to/characters_file.json"
 }

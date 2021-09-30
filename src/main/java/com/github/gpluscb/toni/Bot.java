@@ -42,7 +42,9 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
+import com.mongodb.ConnectionString;
 import com.mongodb.async.client.MongoClient;
+import com.mongodb.async.client.MongoClientSettings;
 import com.mongodb.async.client.MongoClients;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Guild;
@@ -205,7 +207,7 @@ public class Bot {
         }
 
         log.trace("Loading mongodb database");
-        mongoClient = MongoClients.create();
+        mongoClient = MongoClients.create(cfg.getToniDb());
 
         log.trace("Loading unranked manager");
         UnrankedManager unrankedManager = new UnrankedManager(mongoClient);

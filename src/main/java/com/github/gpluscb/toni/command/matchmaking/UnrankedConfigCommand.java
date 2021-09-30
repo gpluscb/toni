@@ -15,7 +15,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
-import java.sql.SQLException;
 
 public class UnrankedConfigCommand implements Command {
     private static final Logger log = LogManager.getLogger(UnrankedConfigCommand.class);

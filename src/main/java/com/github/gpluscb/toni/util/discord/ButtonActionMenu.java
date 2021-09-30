@@ -87,6 +87,13 @@ public class ButtonActionMenu extends Menu {
         e.reply(start).addActionRow(buttons).flatMap(InteractionHook::retrieveOriginal).queue(this::awaitEvents);
     }
 
+    public void displaySlashCommandDeferred(@Nonnull SlashCommandEvent e) {
+        Set<Button> buttons = new LinkedHashSet<>(buttonsToAdd); // Preserve order
+        if (deletionButton != null) buttons.add(deletionButton);
+
+        e.getHook().sendMessage(start).addActionRow(buttons).queue(this::awaitEvents);
+    }
+
     public void displayReplying(Message reference) {
         displayReplying(reference.getChannel(), reference.getIdLong());
     }

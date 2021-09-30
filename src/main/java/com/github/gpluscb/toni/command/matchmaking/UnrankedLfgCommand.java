@@ -143,7 +143,7 @@ public class UnrankedLfgCommand implements Command {
 
             context
                     .onT(msg -> menu.displayReplying(msg.getMessage()))
-                    .onU(slash -> menu.displaySlashCommandReplying(slash.getEvent()));
+                    .onU(slash -> menu.displaySlashCommandDeferred(slash.getEvent()));
         }, t -> {
             log.error("Error loading config", t);
             ctx.reply("Something went wrong talking to my database. I've told my dev about this, if this keeps happening you should give them some context too.").queue();

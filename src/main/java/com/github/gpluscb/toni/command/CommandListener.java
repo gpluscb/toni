@@ -46,7 +46,11 @@ public class CommandListener extends ListenerAdapter {
     @Override
     public void onSlashCommand(@Nonnull SlashCommandEvent event) {
         CommandContext<?> ctx = CommandContext.fromSlashCommandEvent(event, config);
-        if (event.isFromGuild() && !event.getTextChannel().canTalk()) return;
+        if (event.isFromGuild() && !event.getTextChannel().canTalk()) {
+            event.reply("I don't have permissions in this channel.").queue();
+            return;
+        }
+
         log.trace("Slash command - ctx: {}", ctx);
 
         dispatcher.dispatch(ctx);

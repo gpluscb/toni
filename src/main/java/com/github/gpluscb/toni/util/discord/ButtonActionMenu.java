@@ -37,7 +37,7 @@ public class ButtonActionMenu extends ActionMenu {
     private final Set<Long> users;
 
     @Nonnull
-    private final List<Button> buttonsToAdd;
+    private final List<ActionRow> actionRows;
     @Nonnull
     private final Map<String, Function<ButtonClickEvent, OneOfTwo<Message, MenuAction>>> buttonActions;
     @Nonnull
@@ -51,11 +51,15 @@ public class ButtonActionMenu extends ActionMenu {
         super(waiter, timeout, unit);
         this.users = users;
 
-        buttonsToAdd = new ArrayList<>(buttonActions.keySet());
+        List<Button> buttonsToAdd = new ArrayList<>(buttonActions.keySet());
         if (deletionButton != null) buttonsToAdd.add(deletionButton);
 
         if (buttonsToAdd.stream().anyMatch(button -> button.getStyle() == ButtonStyle.LINK))
             throw new IllegalStateException("Buttons may not be link buttons");
+
+        // Multiple ActionRows in case of > 5 buttons
+        List<List<Button>> splitButtonsToAdd = MiscUtil.splitList(buttonsToAdd, 5);
+        actionRows = splitButtonsToAdd.stream().map(ActionRow::of).collect(Collectors.toList());
 
         // e.getKey.getId() cannot return null here since we don't allow link buttons
         //noinspection ConstantConditions
@@ -82,18 +86,12 @@ public class ButtonActionMenu extends ActionMenu {
 
     @Override
     public void displaySlashReplying(@Nonnull SlashCommandEvent e) {
-        Set<Button> buttons = new LinkedHashSet<>(buttonsToAdd); // Preserve order
-        if (deletionButton != null) buttons.add(deletionButton);
-
-        e.reply(start).addActionRow(buttons).flatMap(InteractionHook::retrieveOriginal).queue(this::awaitEvents);
+        e.reply(start).addActionRows(actionRows).flatMap(InteractionHook::retrieveOriginal).queue(this::awaitEvents);
     }
 
     @Override
     public void displayDeferredReplying(@Nonnull InteractionHook hook) {
-        Set<Button> buttons = new LinkedHashSet<>(buttonsToAdd); // Preserve order
-        if (deletionButton != null) buttons.add(deletionButton);
-
-        hook.sendMessage(start).addActionRow(buttons).queue(this::awaitEvents);
+        hook.sendMessage(start).addActionRows(actionRows).queue(this::awaitEvents);
     }
 
     @Override
@@ -111,10 +109,6 @@ public class ButtonActionMenu extends ActionMenu {
     }
 
     private void init(@Nonnull MessageAction messageAction) {
-        // Multiple ActionRows in case of > 5 buttons
-        List<List<Button>> splitButtonsToAdd = MiscUtil.splitList(buttonsToAdd, 5);
-        List<ActionRow> actionRows = splitButtonsToAdd.stream().map(ActionRow::of).collect(Collectors.toList());
-
         messageAction.setActionRows(actionRows).queue(this::awaitEvents);
     }
 

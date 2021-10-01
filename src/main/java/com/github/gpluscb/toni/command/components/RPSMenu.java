@@ -44,6 +44,7 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
                 .setWaiter(waiter)
                 .addUsers(user1, user2)
                 .setStart(start)
+                .setDeletionButton(null)
                 .registerButton(Button.secondary("rock", Emoji.fromUnicode(Constants.ROCK)), e -> choose(e, RPS.ROCK))
                 .registerButton(Button.secondary("paper", Emoji.fromUnicode(Constants.PAPER)), e -> choose(e, RPS.PAPER))
                 .registerButton(Button.secondary("scissors", Emoji.fromUnicode(Constants.SCISSORS)), e -> choose(e, RPS.SCISSORS))

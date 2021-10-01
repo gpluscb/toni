@@ -86,6 +86,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
                 .setWaiter(waiter)
                 .addUsers(striker1, striker2)
                 .setStart(start)
+                .setDeletionButton(null)
                 .setTimeout(timeout, unit)
                 .setTimeoutAction((channel, messageId) -> onTimeout.accept(new StrikeStagesTimeoutEvent(strikes, currentStriker, channel, messageId)));
 

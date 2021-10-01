@@ -48,7 +48,7 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
                 .registerButton(Button.secondary("paper", Emoji.fromUnicode(Constants.PAPER)), e -> choose(e, RPS.PAPER))
                 .registerButton(Button.secondary("scissors", Emoji.fromUnicode(Constants.SCISSORS)), e -> choose(e, RPS.SCISSORS))
                 .setTimeout(timeout, unit)
-                .setTimeoutAction((channel, messageId) -> onTimeout.accept(new RPSTimeoutEvent(choice1, choice2, channel, messageId)))
+                .setTimeoutAction((channel, messageId) -> onTimeout.accept(new RPSTimeoutEvent(user1, user2, choice1, choice2, channel, messageId)))
                 .build();
     }
 
@@ -92,7 +92,7 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
         else choice2 = choice;
 
         if (choice1 != null && choice2 != null) {
-            RPSResult outcome = RPS.determineWinner(choice1, choice2);
+            RPSResult outcome = RPS.determineWinner(getUser1(), getUser2(), choice1, choice2);
             onResult.accept(outcome, e);
 
             return OneOfTwo.ofU(ButtonActionMenu.MenuAction.CANCEL);
@@ -122,8 +122,8 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
         }
 
         @Nonnull
-        public static RPSResult determineWinner(@Nonnull RPS a, @Nonnull RPS b) {
-            if (a == b) return new RPSResult(RPSResult.Winner.Tie, a, b);
+        public static RPSResult determineWinner(long user1, long user2, @Nonnull RPS a, @Nonnull RPS b) {
+            if (a == b) return new RPSResult(RPSResult.Winner.Tie, null, null, a, b);
             RPSResult.Winner winner;
             switch (a) {
                 case ROCK:
@@ -139,7 +139,10 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
                     throw new IllegalStateException("Not all RPS options covered");
             }
 
-            return new RPSResult(winner, a, b);
+            long winnerId = winner == RPSResult.Winner.A ? user1 : user2;
+            long loserId = winnerId == user1 ? user2 : user1;
+
+            return new RPSResult(winner, winnerId, loserId, a, b);
         }
     }
 
@@ -152,13 +155,19 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
 
         @Nonnull
         private final RPSResult.Winner winner;
+        @Nullable
+        private final Long winnerId;
+        @Nullable
+        private final Long loserId;
         @Nonnull
         private final RPS choiceA;
         @Nonnull
         private final RPS choiceB;
 
-        public RPSResult(@Nonnull RPSResult.Winner winner, @Nonnull RPS choiceA, @Nonnull RPS choiceB) {
+        public RPSResult(@Nonnull Winner winner, @Nullable Long winnerId, @Nullable Long loserId, @Nonnull RPS choiceA, @Nonnull RPS choiceB) {
             this.winner = winner;
+            this.winnerId = winnerId;
+            this.loserId = loserId;
             this.choiceA = choiceA;
             this.choiceB = choiceB;
         }
@@ -166,6 +175,16 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
         @Nonnull
         public RPSResult.Winner getWinner() {
             return winner;
+        }
+
+        @Nullable
+        public Long getWinnerId() {
+            return winnerId;
+        }
+
+        @Nullable
+        public Long getLoserId() {
+            return loserId;
         }
 
         @Nonnull
@@ -180,6 +199,8 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
     }
 
     public static class RPSTimeoutEvent {
+        private final long user1;
+        private final long user2;
         @Nullable
         private final RPS choiceA;
         @Nullable
@@ -188,11 +209,21 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
         private final MessageChannel channel;
         private final long messageId;
 
-        public RPSTimeoutEvent(@Nullable RPS choiceA, @Nullable RPS choiceB, @Nullable MessageChannel channel, long messageId) {
+        public RPSTimeoutEvent(long user1, long user2, @Nullable RPS choiceA, @Nullable RPS choiceB, @Nullable MessageChannel channel, long messageId) {
+            this.user1 = user1;
+            this.user2 = user2;
             this.choiceA = choiceA;
             this.choiceB = choiceB;
             this.channel = channel;
             this.messageId = messageId;
+        }
+
+        public long getUser1() {
+            return user1;
+        }
+
+        public long getUser2() {
+            return user2;
         }
 
         @Nullable

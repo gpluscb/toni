@@ -23,6 +23,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -32,9 +33,9 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
     private static final Logger log = LogManager.getLogger(StrikeStagesMenu.class);
 
     @Nonnull
-    private final Consumer<StrikeInfo> onStrike;
+    private final BiConsumer<StrikeInfo, ButtonClickEvent> onStrike;
     @Nonnull
-    private final Consumer<StrikeResult> onResult;
+    private final BiConsumer<StrikeResult, ButtonClickEvent> onResult;
 
     @Nonnull
     private final Ruleset ruleset;
@@ -49,7 +50,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
     @Nonnull
     private final ButtonActionMenu underlying;
 
-    public StrikeStagesMenu(@Nonnull EventWaiter waiter, long timeout, @Nonnull TimeUnit unit, @Nonnull Consumer<StrikeInfo> onStrike, @Nonnull Consumer<StrikeResult> onResult, @Nonnull Ruleset ruleset, long striker1, long striker2, @Nonnull Consumer<StrikeStagesTimeoutEvent> onTimeout) {
+    public StrikeStagesMenu(@Nonnull EventWaiter waiter, long timeout, @Nonnull TimeUnit unit, @Nonnull BiConsumer<StrikeInfo, ButtonClickEvent> onStrike, @Nonnull BiConsumer<StrikeResult, ButtonClickEvent> onResult, @Nonnull Ruleset ruleset, long striker1, long striker2, @Nonnull Consumer<StrikeStagesTimeoutEvent> onTimeout) {
         super(waiter, striker1, striker2, timeout, unit);
 
         this.onStrike = onStrike;
@@ -67,6 +68,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
 
         Message start;
         if (starterStrikePattern.length == 0) {
+            // TODO: this doesn't really work yet. Maybe make underlying nullable and store start in a field?
             start = new MessageBuilder(String.format("Wow that's just very simple, there is only one stage in the ruleset. You're going to %s.",
                     ruleset.getStarters().get(0).getName())).build();
         } else {
@@ -138,7 +140,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
         }
 
         currentStrikes.add(stageId);
-        onStrike.accept(new StrikeInfo(currentStriker, stageId, e));
+        onStrike.accept(new StrikeInfo(currentStriker, stageId), e);
 
         long striker1 = getUser1();
         long striker2 = getUser2();
@@ -146,7 +148,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
         int[] starterStrikePattern = ruleset.getStarterStrikePattern();
         if (currentStrikes.size() == starterStrikePattern[currentStrikeIdx]) {
             if (strikes.size() == starterStrikePattern.length) {
-                onResult.accept(new StrikeResult(striker1, striker2, strikes, e));
+                onResult.accept(new StrikeResult(striker1, striker2, strikes), e);
 
                 return OneOfTwo.ofU(ButtonActionMenu.MenuAction.CANCEL);
             }
@@ -185,13 +187,10 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
     public class StrikeInfo {
         private final long strikingUser;
         private final int struckStageId;
-        @Nonnull
-        private final ButtonClickEvent event;
 
-        public StrikeInfo(long strikingUser, int struckStageId, @Nonnull ButtonClickEvent event) {
+        public StrikeInfo(long strikingUser, int struckStageId) {
             this.strikingUser = strikingUser;
             this.struckStageId = struckStageId;
-            this.event = event;
         }
 
         public long getStrikingUser() {
@@ -207,26 +206,18 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
             //noinspection OptionalGetWithoutIsPresent
             return ruleset.getStagesStream().filter(stage -> stage.getStageId() == struckStageId).findAny().get();
         }
-
-        @Nonnull
-        public ButtonClickEvent getEvent() {
-            return event;
-        }
     }
 
-    private class StrikeResult {
+    public class StrikeResult {
         private final long striker1;
         private final long striker2;
         @Nonnull
         private final List<Set<Integer>> struckStageIds;
-        @Nonnull
-        private final ButtonClickEvent event;
 
-        public StrikeResult(long striker1, long striker2, @Nonnull List<Set<Integer>> struckStageIds, @Nonnull ButtonClickEvent event) {
+        public StrikeResult(long striker1, long striker2, @Nonnull List<Set<Integer>> struckStageIds) {
             this.striker1 = striker1;
             this.striker2 = striker2;
             this.struckStageIds = struckStageIds;
-            this.event = event;
         }
 
         public long getStriker1() {
@@ -240,11 +231,6 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
         @Nonnull
         public List<Set<Integer>> getStruckStageIds() {
             return struckStageIds;
-        }
-
-        @Nonnull
-        public ButtonClickEvent getEvent() {
-            return event;
         }
 
         /**
@@ -300,18 +286,21 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
         @Nullable
         private Ruleset ruleset;
         @Nonnull
-        private Consumer<StrikeInfo> onStrike;
+        private BiConsumer<StrikeInfo, ButtonClickEvent> onStrike;
         @Nonnull
-        private Consumer<StrikeResult> onResult;
+        private BiConsumer<StrikeResult, ButtonClickEvent> onResult;
         @Nonnull
         private Consumer<StrikeStagesTimeoutEvent> onTimeout;
 
         public Builder() {
             super(Builder.class);
 
-            onStrike = info -> {};
-            onResult = result -> {};
-            onTimeout = timeout -> {};
+            onStrike = (info, e) -> {
+            };
+            onResult = (result, e) -> {
+            };
+            onTimeout = timeout -> {
+            };
         }
 
         @Nonnull
@@ -321,13 +310,13 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
         }
 
         @Nonnull
-        public Builder setOnStrike(@Nonnull Consumer<StrikeInfo> onStrike) {
+        public Builder setOnStrike(@Nonnull BiConsumer<StrikeInfo, ButtonClickEvent> onStrike) {
             this.onStrike = onStrike;
             return this;
         }
 
         @Nonnull
-        public Builder setOnResult(@Nonnull Consumer<StrikeResult> onResult) {
+        public Builder setOnResult(@Nonnull BiConsumer<StrikeResult, ButtonClickEvent> onResult) {
             this.onResult = onResult;
             return this;
         }
@@ -344,12 +333,12 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
         }
 
         @Nonnull
-        public Consumer<StrikeInfo> getOnStrike() {
+        public BiConsumer<StrikeInfo, ButtonClickEvent> getOnStrike() {
             return onStrike;
         }
 
         @Nonnull
-        public Consumer<StrikeResult> getOnResult() {
+        public BiConsumer<StrikeResult, ButtonClickEvent> getOnResult() {
             return onResult;
         }
 

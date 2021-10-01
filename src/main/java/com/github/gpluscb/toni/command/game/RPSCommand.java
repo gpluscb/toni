@@ -14,8 +14,6 @@ import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.TimeUnit;
@@ -114,18 +112,12 @@ public class RPSCommand implements Command {
         String user2Mention = MiscUtil.mentionUser(user2);
 
         String outcome;
-        switch (result.getWinner()) {
-            case Tie:
-                outcome = "It's a tie!";
-                break;
-            case A:
-                outcome = String.format("%s won!", user1Mention);
-                break;
-            case B:
-                outcome = String.format("%s won!", user2Mention);
-                break;
-            default:
-                throw new IllegalStateException("Not all results covered");
+        if (result.getWinner() == RPSMenu.RPSResult.Winner.Tie) {
+            outcome = "It's a tie!";
+        } else {
+            // We know it's not a tie
+            //noinspection ConstantConditions
+            outcome = String.format("%s won!", MiscUtil.mentionUser(result.getWinnerId()));
         }
 
         e.reply(String.format("It has been decided! %s chose %s, and %s chose %s. That means %s",

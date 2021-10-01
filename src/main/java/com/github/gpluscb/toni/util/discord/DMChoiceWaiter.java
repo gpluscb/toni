@@ -63,6 +63,11 @@ public class DMChoiceWaiter {
         }
     }
 
+    @Nonnull
+    public EventWaiter getEventWaiter() {
+        return waiter;
+    }
+
     // TODO: Have active users cached? Could speed thing up a little. For each command invocation in private messages, getActiveUsers is checked
     private static class WaitingElement<T> {
         @Nonnull

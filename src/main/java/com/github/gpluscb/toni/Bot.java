@@ -10,7 +10,6 @@ import com.github.gpluscb.toni.command.admin.EvalCommand;
 import com.github.gpluscb.toni.command.admin.ShutdownCommand;
 import com.github.gpluscb.toni.command.admin.StatusCommand;
 import com.github.gpluscb.toni.command.admin.UpdateSmashdataCommand;
-import com.github.gpluscb.toni.command.components.BlindPickComponent;
 import com.github.gpluscb.toni.command.game.*;
 import com.github.gpluscb.toni.command.help.HelpCommand;
 import com.github.gpluscb.toni.command.help.PingCommand;
@@ -338,8 +337,6 @@ public class Bot {
 
     @Nonnull
     private List<CommandCategory> loadCommands(@Nonnull UltimateframedataClient ufdClient, @Nonnull EventWaiter waiter, @Nonnull DMChoiceWaiter dmWaiter, /*@Nonnull ChallongeExtension challonge, @Nonnull TournamentListener listener, */@Nonnull CharacterTree characterTree, @Nonnull List<Ruleset> rulesets) {
-        BlindPickComponent blindPickComponent = new BlindPickComponent(dmWaiter, characterTree);
-
         List<CommandCategory> commands = new ArrayList<>();
 
         List<Command> adminCommands = new ArrayList<>();
@@ -359,7 +356,7 @@ public class Bot {
         gameCommands.add(new RandomCharacterCommand(characterTree));
         gameCommands.add(new RandomPlayerCommand());
         gameCommands.add(new RPSCommand(waiter));
-        gameCommands.add(new BlindPickCommand(blindPickComponent));
+        gameCommands.add(new BlindPickCommand(dmWaiter, characterTree));
         gameCommands.add(new StrikeStagesCommand(waiter, rulesets));
         commands.add(new CommandCategory("game", "Smash Bros. utility commands", gameCommands));
 

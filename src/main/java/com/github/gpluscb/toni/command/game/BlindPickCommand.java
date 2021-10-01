@@ -1,22 +1,29 @@
 package com.github.gpluscb.toni.command.game;
 
 import com.github.gpluscb.toni.command.*;
-import com.github.gpluscb.toni.command.components.BlindPickComponent;
+import com.github.gpluscb.toni.command.components.BlindPickMenu;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
+import com.github.gpluscb.toni.util.discord.DMChoiceWaiter;
 import com.github.gpluscb.toni.util.smash.Character;
+import com.github.gpluscb.toni.util.smash.CharacterTree;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.MessageBuilder;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.requests.restaction.MessageAction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -24,10 +31,13 @@ public class BlindPickCommand implements Command {
     private static final Logger log = LogManager.getLogger(BlindPickCommand.class);
 
     @Nonnull
-    private final BlindPickComponent component;
+    private final DMChoiceWaiter dmWaiter;
+    @Nonnull
+    private final List<Character> characters;
 
-    public BlindPickCommand(@Nonnull BlindPickComponent component) {
-        this.component = component;
+    public BlindPickCommand(@Nonnull DMChoiceWaiter dmWaiter, @Nonnull CharacterTree characterTree) {
+        this.dmWaiter = dmWaiter;
+        this.characters = characterTree.getAllCharacters();
     }
 
     @Override
@@ -98,39 +108,78 @@ public class BlindPickCommand implements Command {
         String userMentions = users.stream().map(id -> String.format("<@%d>", id)).collect(Collectors.joining(", "));
         long[] userMentionsArray = users.stream().mapToLong(u -> u).toArray(); // TODO: Could be a bit more efficient, do the two streams in one pass...
 
-        CompletableFuture<Map<Long, Character>> blindPickResult = component.initiateBlindPick(users);
-        if (blindPickResult == null) { // TODO: Trusts that this message will go through. Not that big an issue, but still iffy.
-            ctx.reply("Some of you fools already have a DM thing going on with me. I can't have you do multiple of those at the same time. That's just too complicated for me!").queue();
+        JDA jda = ctx.getJDA();
+        long channelId = ctx.getChannel().getIdLong();
+        Long referenceId = context.map(msg -> msg.getMessage().getIdLong(), slash -> null);
+
+        Message start = new MessageBuilder(String.format("Alright, %s, please send me a DM with your character choice now. You have three (3) minutes!", userMentions))
+                .mentionUsers(userMentionsArray)
+                .build();
+
+        BlindPickMenu menu = new BlindPickMenu.Builder()
+                .setDmWaiter(dmWaiter)
+                .setTimeout(3, TimeUnit.MINUTES)
+                .setUsers(users)
+                .setStart(start)
+                .setCharacters(characters)
+                .setOnResult(result -> onResult(result, jda, channelId, referenceId))
+                .setOnTimeout(timeout -> onTimeout(timeout, jda, channelId, referenceId))
+                .setOnFailedInit(() -> ctx.reply("Some of you fools already have a DM thing going on with me. I can't have you do multiple of those at the same time. That's just too complicated for me!").queue())
+                .build();
+
+        context
+                .onT(msg -> menu.displayReplying(msg.getMessage()))
+                .onU(slash -> menu.displaySlashReplying(slash.getEvent()));
+    }
+
+    private void onResult(@Nonnull BlindPickMenu.BlindPickResult result, @Nonnull JDA jda, long channelId, @Nullable Long referenceId) {
+        // TODO: Somehow edit here, sounds like a bit of a pain tho
+        MessageChannel channel = jda.getTextChannelById(channelId);
+        if (channel == null) channel = jda.getPrivateChannelById(channelId);
+        if (channel == null) {
+            log.warn("MessageChannel not in cache for blind pick result: {}", channelId);
             return;
         }
 
-        ctx.reply(String.format("Alright, %s, please send me a DM with your character choice now. You have three (3) minutes!", userMentions)).mentionUsers(userMentionsArray).queue();
+        List<Long> users = result.getUsers();
 
-        blindPickResult.whenComplete((map, timeout) -> {
-            if (timeout != null) {
-                if (!(timeout instanceof BlindPickComponent.BlindPickTimeoutException)) {
-                    log.error("Failed BlindPick completion not BlindPickTimeoutException", timeout);
-                    // TODO: Tell the user?
-                    return;
-                }
+        String choicesString = result.getUsers().stream().map(u -> {
+            Character c = result.getPicks().get(u);
+            return String.format("%s: %s(%s)", MiscUtil.mentionUser(u), MiscUtil.mentionEmote(c.getEmoteId()), c.getName());
+        }).collect(Collectors.joining("\n"));
 
-                Map<Long, Character> timeoutMap = ((BlindPickComponent.BlindPickTimeoutException) timeout).getPicksSoFar();
+        MessageAction action = channel.sendMessage(String.format("The characters have been decided:%n%n%s", choicesString));
 
-                // TODO: Variable naming
-                String lazyIdiots = users.stream().filter(Predicate.not(timeoutMap::containsKey)).map(MiscUtil::mentionUser).collect(Collectors.joining(", "));
+        for (long user : users) action = action.mentionUsers(user);
 
-                ctx.reply(String.format("The three (3) minutes are done. Not all of you have given me your characters. Shame on you, %s!", lazyIdiots)).mentionUsers(userMentionsArray).queue();
+        if (referenceId != null) action = action.referenceById(referenceId);
 
-                return;
-            }
+        action.queue();
+    }
 
-            String choices = users.stream().map(u -> {
-                Character c = map.get(u);
-                return String.format("%s: %s(%s)", MiscUtil.mentionUser(u), MiscUtil.mentionEmote(c.getEmoteId()), c.getName());
-            }).collect(Collectors.joining("\n"));
+    private void onTimeout(@Nonnull BlindPickMenu.BlindPickTimeoutEvent timeout, @Nonnull JDA jda, long channelId, @Nullable Long referenceId) {
+        MessageChannel channel = jda.getTextChannelById(channelId);
+        if (channel == null) channel = jda.getPrivateChannelById(channelId);
+        if (channel == null) {
+            log.warn("MessageChannel not in cache for timeout: {}", channelId);
+            return;
+        }
 
-            ctx.reply(String.format("The characters have been decided:%n%n%s", choices)).mentionUsers(userMentionsArray).queue();
-        });
+        List<Long> users = timeout.getUsers();
+
+        // TODO: Variable naming
+        String lazyIdiots = users.stream()
+                .filter(Predicate.not(timeout.getPicksSoFar()::containsKey))
+                .map(MiscUtil::mentionUser)
+                .collect(Collectors.joining(", "));
+
+        MessageAction action = channel.sendMessage(String.format("The three (3) minutes are done. Not all of you have given me your characters. Shame on you, %s!", lazyIdiots));
+
+        for (long user : users) action = action.mentionUsers(user);
+
+        if (referenceId != null) action = action.referenceById(referenceId);
+
+        action.queue();
     }
 
     @Nonnull

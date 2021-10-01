@@ -10,12 +10,15 @@ import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.Button;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+
+import static net.dv8tion.jda.api.interactions.components.Button.LABEL_MAX_LENGTH;
 
 public class ReportGameMenu extends TwoUsersChoicesActionMenu {
     @Nonnull
@@ -45,8 +48,8 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
                 .addUsers(user1, user2)
                 .setDeletionButton(null)
                 .setTimeout(timeout, unit)
-                .registerButton(Button.secondary("user1", user1Display), e -> onChoice(user1, e))
-                .registerButton(Button.secondary("user2", user2Display), e -> onChoice(user2, e))
+                .registerButton(Button.secondary("user1", StringUtils.abbreviate(user1Display, LABEL_MAX_LENGTH)),e -> onChoice(user1, e))
+                .registerButton(Button.secondary("user2", StringUtils.abbreviate(user2Display, LABEL_MAX_LENGTH)), e -> onChoice(user2, e))
                 .setTimeoutAction((channel, messageId) -> onTimeout.accept(new ReportGameTimeoutEvent(user1, user2, user1ReportedWinner, user2ReportedWinner, channel, messageId)))
                 .build();
     }

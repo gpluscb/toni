@@ -21,7 +21,7 @@ public class CommandContext<T extends RestAction<?> & AllowedMentions<T>> implem
     @Nonnull
     private final OneOfTwo<MessageCommandContext, SlashCommandContext> context;
 
-    public CommandContext(@Nonnull OneOfTwo<MessageCommandContext, SlashCommandContext> context) {
+    private CommandContext(@Nonnull OneOfTwo<MessageCommandContext, SlashCommandContext> context) {
         this.context = context;
     }
 

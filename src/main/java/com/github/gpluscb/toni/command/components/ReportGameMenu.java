@@ -1,26 +1,35 @@
 package com.github.gpluscb.toni.command.components;
 
+import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.discord.ButtonActionMenu;
 import com.github.gpluscb.toni.util.discord.TwoUsersChoicesActionMenu;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
+import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.Button;
+import net.dv8tion.jda.api.interactions.components.Component;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static net.dv8tion.jda.api.interactions.components.Button.LABEL_MAX_LENGTH;
 
 public class ReportGameMenu extends TwoUsersChoicesActionMenu {
+    @Nonnull
+    private final Button modButton;
     @Nonnull
     private final BiConsumer<ReportGameChoiceInfo, ButtonClickEvent> onChoice;
     @Nonnull
@@ -41,6 +50,7 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
         this.onChoice = onChoice;
         this.onConflict = onConflict;
         this.onResult = onResult;
+        modButton = Button.danger("mod", "Call Moderator");
 
         underlying = new ButtonActionMenu.Builder()
                 .setWaiter(waiter)
@@ -48,8 +58,9 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
                 .addUsers(user1, user2)
                 .setDeletionButton(null)
                 .setTimeout(timeout, unit)
-                .registerButton(Button.secondary("user1", StringUtils.abbreviate(user1Display, LABEL_MAX_LENGTH)),e -> onChoice(user1, e))
+                .registerButton(Button.secondary("user1", StringUtils.abbreviate(user1Display, LABEL_MAX_LENGTH)), e -> onChoice(user1, e))
                 .registerButton(Button.secondary("user2", StringUtils.abbreviate(user2Display, LABEL_MAX_LENGTH)), e -> onChoice(user2, e))
+                .registerButton(modButton, this::onCallMod, false)
                 .setTimeoutAction((channel, messageId) -> onTimeout.accept(new ReportGameTimeoutEvent(user1, user2, user1ReportedWinner, user2ReportedWinner, channel, messageId)))
                 .build();
     }
@@ -97,18 +108,43 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
 
         onChoice.accept(new ReportGameChoiceInfo(user1, user2, reportingUser, reportedWinner, updatedChoice), e);
 
-        if (user1ReportedWinner != null && user2ReportedWinner != null) {
-            if (user1ReportedWinner.equals(user2ReportedWinner)) {
-                onResult.accept(new ReportGameResult(user1, user2, user1ReportedWinner), e);
-                return OneOfTwo.ofU(ButtonActionMenu.MenuAction.CANCEL);
-            }
-
-            onConflict.accept(new ReportGameConflict(user1, user2, user1ReportedWinner), e);
-            e.reply("How do we actually handle conflicts lol??").queue(); // TODO
+        if (user1ReportedWinner == null || user2ReportedWinner == null) {
+            // Only one has reported
+            e.reply(String.format("I have %s your choice.", updatedChoice ? "updated" : "noted")).setEphemeral(true).queue();
             return OneOfTwo.ofU(ButtonActionMenu.MenuAction.NOTHING);
         }
 
-        e.reply(String.format("I have %s your choice.", updatedChoice ? "updated" : "noted")).setEphemeral(true).queue();
+        // Both have reported the winner
+        if (user1ReportedWinner.equals(user2ReportedWinner)) {
+            onResult.accept(new ReportGameResult(user1, user2, user1ReportedWinner), e);
+            return OneOfTwo.ofU(ButtonActionMenu.MenuAction.CANCEL);
+        }
+
+        // Conflict
+        onConflict.accept(new ReportGameConflict(user1, user2, user1ReportedWinner), e);
+
+        Message message = e.getMessage();
+        List<ActionRow> actionRows = MiscUtil.splitList(
+                Stream.concat(message.getButtons().stream(), Stream.of(modButton)).collect(Collectors.toList()), Component.Type.BUTTON.getMaxPerRow()
+        ).stream().map(ActionRow::of).collect(Collectors.toList());
+
+        Message newMessage = new MessageBuilder(
+                String.format("You reported different winners. %s reported %s and %s reported %s as the winner. " +
+                                "One of you can now either change your choice or you can call a moderator to sort this out.",
+                        MiscUtil.mentionUser(user1),
+                        MiscUtil.mentionUser(user1ReportedWinner),
+                        MiscUtil.mentionUser(user2),
+                        MiscUtil.mentionUser(user2ReportedWinner))
+        )
+                .setActionRows(actionRows)
+                .build();
+
+        return OneOfTwo.ofT(newMessage);
+    }
+
+    @Nonnull
+    private synchronized OneOfTwo<Message, ButtonActionMenu.MenuAction> onCallMod(@Nonnull ButtonClickEvent e) {
+        // TODO:
         return OneOfTwo.ofU(ButtonActionMenu.MenuAction.NOTHING);
     }
 

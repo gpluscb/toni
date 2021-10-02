@@ -1,6 +1,9 @@
 package com.github.gpluscb.toni.util.discord;
 
-import com.github.gpluscb.toni.util.*;
+import com.github.gpluscb.toni.util.Constants;
+import com.github.gpluscb.toni.util.FailLogger;
+import com.github.gpluscb.toni.util.MiscUtil;
+import com.github.gpluscb.toni.util.OneOfTwo;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.Permission;
@@ -14,6 +17,7 @@ import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.Button;
 import net.dv8tion.jda.api.interactions.components.ButtonStyle;
+import net.dv8tion.jda.api.interactions.components.Component;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.requests.restaction.MessageAction;
 import org.apache.logging.log4j.LogManager;
@@ -26,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * We override the validation to only allow specific users in users.
@@ -47,27 +52,29 @@ public class ButtonActionMenu extends ActionMenu {
     @Nonnull
     private final BiConsumer<MessageChannel, Long> timeoutAction;
 
-    public ButtonActionMenu(@Nonnull EventWaiter waiter, @Nonnull Set<Long> users, long timeout, @Nonnull TimeUnit unit, @Nonnull Map<Button, Function<ButtonClickEvent, OneOfTwo<Message, MenuAction>>> buttonActions, @Nonnull Message start, @Nullable Button deletionButton, @Nonnull BiConsumer<MessageChannel, Long> timeoutAction) {
+    public ButtonActionMenu(@Nonnull EventWaiter waiter, @Nonnull Set<Long> users, long timeout, @Nonnull TimeUnit unit, @Nonnull List<RegisteredButton> buttons, @Nonnull Message start, @Nullable Button deletionButton, @Nonnull BiConsumer<MessageChannel, Long> timeoutAction) {
         super(waiter, timeout, unit);
         this.users = users;
 
-        List<Button> buttonsToAdd = new ArrayList<>(buttonActions.keySet());
-        if (deletionButton != null) buttonsToAdd.add(deletionButton);
+        Stream<Button> buttonsStream = buttons.stream()
+                .filter(RegisteredButton::isDisplayInitially)
+                .map(RegisteredButton::getButton);
+
+        if (deletionButton != null) buttonsStream = Stream.concat(buttonsStream, Stream.of(deletionButton));
+
+        List<Button> buttonsToAdd = buttonsStream.collect(Collectors.toList());
 
         if (buttonsToAdd.stream().anyMatch(button -> button.getStyle() == ButtonStyle.LINK))
             throw new IllegalStateException("Buttons may not be link buttons");
 
         // Multiple ActionRows in case of > 5 buttons
-        List<List<Button>> splitButtonsToAdd = MiscUtil.splitList(buttonsToAdd, 5);
+        List<List<Button>> splitButtonsToAdd = MiscUtil.splitList(buttonsToAdd, Component.Type.BUTTON.getMaxPerRow());
         actionRows = splitButtonsToAdd.stream().map(ActionRow::of).collect(Collectors.toList());
 
         // e.getKey.getId() cannot return null here since we don't allow link buttons
-        //noinspection ConstantConditions
-        this.buttonActions = buttonActions
-                .entrySet()
+        this.buttonActions = buttons
                 .stream()
-                .map(e -> new PairNonnull<>(e.getKey().getId(), e.getValue()))
-                .collect(Collectors.toMap(PairNonnull::getT, PairNonnull::getU));
+                .collect(Collectors.toMap(reg -> reg.getButton().getId(), RegisteredButton::getOnClick));
 
         this.start = start;
         this.deletionButton = deletionButton;
@@ -167,11 +174,47 @@ public class ButtonActionMenu extends ActionMenu {
                 });
     }
 
+    public static class RegisteredButton {
+        @Nonnull
+        private final Button button;
+        @Nonnull
+        private final Function<ButtonClickEvent, OneOfTwo<Message, MenuAction>> onClick;
+        private final boolean displayInitially;
+
+        public RegisteredButton(@Nonnull Button button, @Nonnull Function<ButtonClickEvent, OneOfTwo<Message, MenuAction>> onClick, boolean displayInitially) {
+            this.button = button;
+            this.onClick = onClick;
+            this.displayInitially = displayInitially;
+        }
+
+        @Nonnull
+        public Button getButton() {
+            return button;
+        }
+
+        @Nonnull
+        public Function<ButtonClickEvent, OneOfTwo<Message, MenuAction>> getOnClick() {
+            return onClick;
+        }
+
+        public boolean isDisplayInitially() {
+            return displayInitially;
+        }
+    }
+
+    public enum MenuAction {
+        NOTHING,
+        /**
+         * Does not remove the buttons
+         */
+        CANCEL
+    }
+
     public static class Builder extends ActionMenu.Builder<Builder, ButtonActionMenu> {
         @Nonnull
         private final Set<Long> users;
         @Nonnull
-        private final Map<Button, Function<ButtonClickEvent, OneOfTwo<Message, MenuAction>>> buttonActions;
+        private final List<RegisteredButton> buttons;
         @Nullable
         private Message start;
         @Nullable
@@ -186,7 +229,7 @@ public class ButtonActionMenu extends ActionMenu {
             super(Builder.class);
 
             users = new HashSet<>();
-            buttonActions = new LinkedHashMap<>(); // Preserve order
+            buttons = new ArrayList<>();
             deletionButton = Button.danger("delete", Constants.CROSS_MARK);
             setTimeout(20, TimeUnit.MINUTES);
         }
@@ -200,13 +243,19 @@ public class ButtonActionMenu extends ActionMenu {
             return this;
         }
 
-        /**
-         * @throws IllegalArgumentException if button is already registered
-         */
         @Nonnull
         public synchronized Builder registerButton(@Nonnull Button button, @Nonnull Function<ButtonClickEvent, OneOfTwo<Message, MenuAction>> action) {
-            if (buttonActions.containsKey(button)) throw new IllegalArgumentException("Button already registered");
-            buttonActions.put(button, action);
+            return registerButton(button, action, true);
+        }
+
+        @Nonnull
+        public synchronized Builder registerButton(@Nonnull Button button, @Nonnull Function<ButtonClickEvent, OneOfTwo<Message, MenuAction>> action, boolean displayInitially) {
+            return registerButton(new RegisteredButton(button, action, displayInitially));
+        }
+
+        @Nonnull
+        public synchronized Builder registerButton(@Nonnull RegisteredButton reg) {
+            buttons.add(reg);
             return this;
         }
 
@@ -243,8 +292,8 @@ public class ButtonActionMenu extends ActionMenu {
         }
 
         @Nonnull
-        public Map<Button, Function<ButtonClickEvent, OneOfTwo<Message, MenuAction>>> getButtonActions() {
-            return buttonActions;
+        public List<RegisteredButton> getButtons() {
+            return buttons;
         }
 
         @Nullable
@@ -288,15 +337,7 @@ public class ButtonActionMenu extends ActionMenu {
 
             // preBuild checks for null on waiter
             //noinspection ConstantConditions
-            return new ButtonActionMenu(getWaiter(), users, getTimeout(), getUnit(), buttonActions, start, deletionButton, timeoutAction);
+            return new ButtonActionMenu(getWaiter(), users, getTimeout(), getUnit(), buttons, start, deletionButton, timeoutAction);
         }
-    }
-
-    public enum MenuAction {
-        NOTHING,
-        /**
-         * Does not remove the buttons
-         */
-        CANCEL
     }
 }

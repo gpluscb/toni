@@ -29,6 +29,8 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
     @Nonnull
     private final BiConsumer<RPSResult, ButtonClickEvent> onResult;
     @Nonnull
+    private final Consumer<RPSTimeoutEvent> onTimeout;
+    @Nonnull
     private final ButtonActionMenu underlying;
 
     @Nullable
@@ -38,8 +40,11 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
 
     public RPSMenu(@Nonnull EventWaiter waiter, long user1, long user2, long timeout, @Nonnull TimeUnit unit, @Nonnull BiConsumer<RPS, ButtonClickEvent> onChoiceMade, @Nonnull BiConsumer<RPSResult, ButtonClickEvent> onResult, @Nonnull Message start, @Nonnull Consumer<RPSTimeoutEvent> onTimeout) {
         super(waiter, user1, user2, timeout, unit);
+
         this.onChoiceMade = onChoiceMade;
         this.onResult = onResult;
+        this.onTimeout = onTimeout;
+
         underlying = new ButtonActionMenu.Builder()
                 .setWaiter(waiter)
                 .addUsers(user1, user2)
@@ -49,7 +54,7 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
                 .registerButton(Button.secondary("paper", Emoji.fromUnicode(Constants.PAPER)), e -> choose(e, RPS.PAPER))
                 .registerButton(Button.secondary("scissors", Emoji.fromUnicode(Constants.SCISSORS)), e -> choose(e, RPS.SCISSORS))
                 .setTimeout(timeout, unit)
-                .setTimeoutAction((channel, messageId) -> onTimeout.accept(new RPSTimeoutEvent(user1, user2, choice1, choice2, channel, messageId)))
+                .setTimeoutAction(this::onTimeout)
                 .build();
     }
 
@@ -101,6 +106,10 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
 
         e.reply("I have noted your choice...").setEphemeral(true).queue();
         return OneOfTwo.ofU(ButtonActionMenu.MenuAction.NOTHING);
+    }
+
+    private synchronized void onTimeout(@Nullable MessageChannel channel, long messageId) {
+        onTimeout.accept(new RPSTimeoutEvent(getUser1(), getUser2(), choice1, choice2, channel, messageId));
     }
 
     public enum RPS {

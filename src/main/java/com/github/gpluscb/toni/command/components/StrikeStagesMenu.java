@@ -36,6 +36,8 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
     private final BiConsumer<StrikeInfo, ButtonClickEvent> onStrike;
     @Nonnull
     private final BiConsumer<StrikeResult, ButtonClickEvent> onResult;
+    @Nonnull
+    private final Consumer<StrikeStagesTimeoutEvent> onTimeout;
 
     @Nonnull
     private final Ruleset ruleset;
@@ -55,6 +57,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
 
         this.onStrike = onStrike;
         this.onResult = onResult;
+        this.onTimeout = onTimeout;
 
         this.ruleset = ruleset;
 
@@ -88,7 +91,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
                 .setStart(start)
                 .setDeletionButton(null)
                 .setTimeout(timeout, unit)
-                .setTimeoutAction((channel, messageId) -> onTimeout.accept(new StrikeStagesTimeoutEvent(strikes, currentStriker, channel, messageId)));
+                .setTimeoutAction(this::onTimeout);
 
         for (Stage starter : ruleset.getStarters()) {
             int id = starter.getStageId();
@@ -183,6 +186,10 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
         builder.setActionRows(actionRows);
 
         return OneOfTwo.ofT(builder.build());
+    }
+
+    private synchronized void onTimeout(@Nullable MessageChannel channel, long messageId) {
+        onTimeout.accept(new StrikeStagesTimeoutEvent(strikes, currentStriker, channel, messageId));
     }
 
     public class StrikeInfo {

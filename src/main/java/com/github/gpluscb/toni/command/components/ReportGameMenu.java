@@ -37,6 +37,8 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
     @Nonnull
     private final BiConsumer<ReportGameResult, ButtonClickEvent> onResult;
     @Nonnull
+    private final Consumer<ReportGameTimeoutEvent> onTimeout;
+    @Nonnull
     private final ButtonActionMenu underlying;
 
     @Nullable
@@ -50,6 +52,7 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
         this.onChoice = onChoice;
         this.onConflict = onConflict;
         this.onResult = onResult;
+        this.onTimeout = onTimeout;
         modButton = Button.danger("mod", "Call Moderator");
 
         underlying = new ButtonActionMenu.Builder()
@@ -61,7 +64,8 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
                 .registerButton(Button.secondary("user1", StringUtils.abbreviate(user1Display, LABEL_MAX_LENGTH)), e -> onChoice(user1, e))
                 .registerButton(Button.secondary("user2", StringUtils.abbreviate(user2Display, LABEL_MAX_LENGTH)), e -> onChoice(user2, e))
                 .registerButton(modButton, this::onCallMod, false)
-                .setTimeoutAction((channel, messageId) -> onTimeout.accept(new ReportGameTimeoutEvent(user1, user2, user1ReportedWinner, user2ReportedWinner, channel, messageId)))
+                // Do these get captured too early??
+                .setTimeoutAction(this::onTimeout)
                 .build();
     }
 
@@ -146,6 +150,10 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
     private synchronized OneOfTwo<Message, ButtonActionMenu.MenuAction> onCallMod(@Nonnull ButtonClickEvent e) {
         // TODO:
         return OneOfTwo.ofU(ButtonActionMenu.MenuAction.NOTHING);
+    }
+
+    private synchronized void onTimeout(@Nullable MessageChannel channel, long messageId) {
+        onTimeout.accept(new ReportGameTimeoutEvent(getUser1(), getUser2(), user1ReportedWinner, user2ReportedWinner, channel, messageId));
     }
 
     public static class ReportGameChoiceInfo {

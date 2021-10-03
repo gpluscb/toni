@@ -98,7 +98,7 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
         else choice2 = choice;
 
         if (choice1 != null && choice2 != null) {
-            RPSResult outcome = RPS.determineWinner(getUser1(), getUser2(), choice1, choice2);
+            RPSResult outcome = determineWinner();
             onResult.accept(outcome, e);
 
             return OneOfTwo.ofU(ButtonActionMenu.MenuAction.CANCEL);
@@ -108,8 +108,31 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
         return OneOfTwo.ofU(ButtonActionMenu.MenuAction.NOTHING);
     }
 
+    @Nonnull
+    private synchronized RPSResult determineWinner() {
+        if (choice1 == choice2) return new RPSResult(Winner.Tie);
+        Winner winner;
+        // At this point choice1 and choice2 will be nonnull
+        //noinspection ConstantConditions
+        switch (choice1) {
+            case ROCK:
+                winner = choice2 == RPS.PAPER ? Winner.B : Winner.A;
+                break;
+            case PAPER:
+                winner = choice2 == RPS.SCISSORS ? Winner.B : Winner.A;
+                break;
+            case SCISSORS:
+                winner = choice2 == RPS.ROCK ? Winner.B : Winner.A;
+                break;
+            default:
+                throw new IllegalStateException("Not all RPS options covered");
+        }
+
+        return new RPSResult(winner);
+    }
+
     private synchronized void onTimeout(@Nullable MessageChannel channel, long messageId) {
-        onTimeout.accept(new RPSTimeoutEvent(getUser1(), getUser2(), choice1, choice2, channel, messageId));
+        onTimeout.accept(new RPSTimeoutEvent(choice1, choice2, channel, messageId));
     }
 
     public enum RPS {
@@ -130,87 +153,85 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
                     throw new IllegalStateException("Enum switch failed");
             }
         }
+    }
 
-        @Nonnull
-        public static RPSResult determineWinner(long user1, long user2, @Nonnull RPS a, @Nonnull RPS b) {
-            if (a == b) return new RPSResult(RPSResult.Winner.Tie, null, null, a, b);
-            RPSResult.Winner winner;
-            switch (a) {
-                case ROCK:
-                    winner = b == PAPER ? RPSResult.Winner.B : RPSResult.Winner.A;
-                    break;
-                case PAPER:
-                    winner = b == SCISSORS ? RPSResult.Winner.B : RPSResult.Winner.A;
-                    break;
-                case SCISSORS:
-                    winner = b == ROCK ? RPSResult.Winner.B : RPSResult.Winner.A;
-                    break;
-                default:
-                    throw new IllegalStateException("Not all RPS options covered");
-            }
+    public enum Winner {
+        A,
+        B,
+        Tie,
+    }
 
-            long winnerId = winner == RPSResult.Winner.A ? user1 : user2;
-            long loserId = winnerId == user1 ? user2 : user1;
+    private abstract class RPSStateInfo extends TwoUsersMenuStateInfo {
+        @Nullable
+        public RPS getChoice1() {
+            return choice1;
+        }
 
-            return new RPSResult(winner, winnerId, loserId, a, b);
+        @Nullable
+        public RPS getChoice2() {
+            return choice2;
         }
     }
 
-    public static class RPSResult {
-        public enum Winner {
-            A,
-            B,
-            Tie,
-        }
+    public class RPSResult extends RPSStateInfo {
+        @Nonnull
+        private final Winner winner;
 
-        @Nonnull
-        private final RPSResult.Winner winner;
-        @Nullable
-        private final Long winnerId;
-        @Nullable
-        private final Long loserId;
-        @Nonnull
-        private final RPS choiceA;
-        @Nonnull
-        private final RPS choiceB;
-
-        public RPSResult(@Nonnull Winner winner, @Nullable Long winnerId, @Nullable Long loserId, @Nonnull RPS choiceA, @Nonnull RPS choiceB) {
+        public RPSResult(@Nonnull Winner winner) {
             this.winner = winner;
-            this.winnerId = winnerId;
-            this.loserId = loserId;
-            this.choiceA = choiceA;
-            this.choiceB = choiceB;
         }
 
         @Nonnull
-        public RPSResult.Winner getWinner() {
+        public Winner getWinner() {
             return winner;
         }
 
         @Nullable
         public Long getWinnerId() {
-            return winnerId;
+            switch (winner) {
+                case A:
+                    return getUser1();
+                case B:
+                    return getUser2();
+                case Tie:
+                    return null;
+                default:
+                    throw new IllegalStateException("Non-exhaustive switch");
+            }
         }
 
         @Nullable
         public Long getLoserId() {
-            return loserId;
+            switch (winner) {
+                case A:
+                    return getUser2();
+                case B:
+                    return getUser1();
+                case Tie:
+                    return null;
+                default:
+                    throw new IllegalStateException("Non-exhaustive switch");
+            }
         }
 
+        @Override
         @Nonnull
-        public RPS getChoiceA() {
-            return choiceA;
+        public RPS getChoice1() {
+            // Should not be null here
+            //noinspection ConstantConditions
+            return super.getChoice1();
         }
 
+        @Override
         @Nonnull
-        public RPS getChoiceB() {
-            return choiceB;
+        public RPS getChoice2() {
+            // Should not be null here
+            //noinspection ConstantConditions
+            return super.getChoice2();
         }
     }
 
-    public static class RPSTimeoutEvent {
-        private final long user1;
-        private final long user2;
+    public class RPSTimeoutEvent extends TwoUsersMenuStateInfo implements TwoUsersMenuTimeoutEvent {
         @Nullable
         private final RPS choiceA;
         @Nullable
@@ -219,21 +240,11 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
         private final MessageChannel channel;
         private final long messageId;
 
-        public RPSTimeoutEvent(long user1, long user2, @Nullable RPS choiceA, @Nullable RPS choiceB, @Nullable MessageChannel channel, long messageId) {
-            this.user1 = user1;
-            this.user2 = user2;
+        public RPSTimeoutEvent(@Nullable RPS choiceA, @Nullable RPS choiceB, @Nullable MessageChannel channel, long messageId) {
             this.choiceA = choiceA;
             this.choiceB = choiceB;
             this.channel = channel;
             this.messageId = messageId;
-        }
-
-        public long getUser1() {
-            return user1;
-        }
-
-        public long getUser2() {
-            return user2;
         }
 
         @Nullable
@@ -246,11 +257,13 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
             return choiceB;
         }
 
+        @Override
         @Nullable
         public MessageChannel getChannel() {
             return channel;
         }
 
+        @Override
         public long getMessageId() {
             return messageId;
         }

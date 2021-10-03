@@ -77,9 +77,9 @@ public class BlindPickMenu extends ActionMenu {
                 users,
                 true,
                 this::verifyChoice,
-                map -> onResult.accept(new BlindPickResult(users, map)),
+                map -> onResult.accept(new BlindPickResult(map)),
                 getTimeout(), getUnit(),
-                map -> onTimeout.accept(new BlindPickTimeoutEvent(users, map))
+                map -> onTimeout.accept(new BlindPickTimeoutEvent(map))
         );
 
         if (!success) onFailedInit.run();
@@ -98,20 +98,19 @@ public class BlindPickMenu extends ActionMenu {
         return Optional.ofNullable(character);
     }
 
-    public static class BlindPickResult {
-        @Nonnull
-        private final List<Long> users;
-        @Nonnull
-        private final Map<Long, Character> picks;
-
-        public BlindPickResult(@Nonnull List<Long> users, @Nonnull Map<Long, Character> picks) {
-            this.users = users;
-            this.picks = picks;
-        }
-
+    private abstract class BlindPickMenuStateInfo extends MenuStateInfo {
         @Nonnull
         public List<Long> getUsers() {
             return users;
+        }
+    }
+
+    public class BlindPickResult extends BlindPickMenuStateInfo {
+        @Nonnull
+        private final Map<Long, Character> picks;
+
+        public BlindPickResult(@Nonnull Map<Long, Character> picks) {
+            this.picks = picks;
         }
 
         @Nonnull
@@ -120,20 +119,12 @@ public class BlindPickMenu extends ActionMenu {
         }
     }
 
-    public static class BlindPickTimeoutEvent {
-        @Nonnull
-        private final List<Long> users;
+    public class BlindPickTimeoutEvent extends BlindPickMenuStateInfo {
         @Nonnull
         private final Map<Long, Character> picksSoFar;
 
-        public BlindPickTimeoutEvent(@Nonnull List<Long> users, @Nonnull Map<Long, Character> picksSoFar) {
-            this.users = users;
+        public BlindPickTimeoutEvent(@Nonnull Map<Long, Character> picksSoFar) {
             this.picksSoFar = picksSoFar;
-        }
-
-        @Nonnull
-        public List<Long> getUsers() {
-            return users;
         }
 
         @Nonnull

@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 import static net.dv8tion.jda.api.interactions.components.Button.LABEL_MAX_LENGTH;
 
-public class BanStagesComponent {
+public class BanStagesComponent {/*
     @Nonnull
     private final EventWaiter waiter;
 
@@ -59,4 +59,4 @@ public class BanStagesComponent {
         ButtonActionMenu menu = builder.build();
         return new PairNonnull<>(banStagesOutcome, menu);
     }
-}
+*/}

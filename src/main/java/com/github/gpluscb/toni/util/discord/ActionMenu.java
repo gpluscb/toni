@@ -64,6 +64,28 @@ public abstract class ActionMenu {
 
     public abstract void displayDeferredReplying(@Nonnull InteractionHook hook);
 
+    public abstract class MenuStateInfo {
+        public EventWaiter getWaiter() {
+            return ActionMenu.this.getWaiter();
+        }
+
+        public long getTimeout() {
+            return ActionMenu.this.getTimeout();
+        }
+
+        @Nonnull
+        public TimeUnit getUnit() {
+            return ActionMenu.this.getUnit();
+        }
+    }
+
+    public interface MenuTimeoutEvent {
+        @Nullable
+        MessageChannel getChannel();
+
+        long getMessageId();
+    }
+
     @SuppressWarnings("unchecked")
     public static abstract class Builder<T extends Builder<T, V>, V extends ActionMenu> {
         @Nullable

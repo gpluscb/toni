@@ -15,6 +15,7 @@ import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.Button;
+import net.dv8tion.jda.api.interactions.components.Component;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -144,7 +145,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
         }
 
         currentStrikes.add(stageId);
-        onStrike.accept(new StrikeInfo(currentStriker, stageId), e);
+        onStrike.accept(new StrikeInfo(stageId), e);
 
         long striker1 = getUser1();
         long striker2 = getUser2();
@@ -152,7 +153,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
         int[] starterStrikePattern = ruleset.getStarterStrikePattern();
         if (currentStrikes.size() == starterStrikePattern[currentStrikeIdx]) {
             if (strikes.size() == starterStrikePattern.length) {
-                onResult.accept(new StrikeResult(striker1, striker2, strikes), e);
+                onResult.accept(new StrikeResult(), e);
 
                 return OneOfTwo.ofU(ButtonActionMenu.MenuAction.CANCEL);
             }
@@ -180,7 +181,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
                 ).collect(Collectors.toList());
 
         // Multiple ActionRows in case of > 5 buttons
-        List<List<Button>> splitButtonsToAdd = MiscUtil.splitList(buttonsToAdd, 5);
+        List<List<Button>> splitButtonsToAdd = MiscUtil.splitList(buttonsToAdd, Component.Type.BUTTON.getMaxPerRow());
 
         List<ActionRow> actionRows = splitButtonsToAdd.stream().map(ActionRow::of).collect(Collectors.toList());
         builder.setActionRows(actionRows);
@@ -189,20 +190,42 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
     }
 
     private synchronized void onTimeout(@Nullable MessageChannel channel, long messageId) {
-        onTimeout.accept(new StrikeStagesTimeoutEvent(strikes, currentStriker, channel, messageId));
+        onTimeout.accept(new StrikeStagesTimeoutEvent(channel, messageId));
     }
 
-    public class StrikeInfo {
-        private final long strikingUser;
-        private final int struckStageId;
-
-        public StrikeInfo(long strikingUser, int struckStageId) {
-            this.strikingUser = strikingUser;
-            this.struckStageId = struckStageId;
+    private abstract class StrikeStagesInfo extends TwoUsersMenuStateInfo {
+        public long getStriker1() {
+            return getUser1();
         }
 
-        public long getStrikingUser() {
-            return strikingUser;
+        public long getStriker2() {
+            return getUser2();
+        }
+
+        @Nonnull
+        public Ruleset getRuleset() {
+            return ruleset;
+        }
+
+        public long getCurrentStriker() {
+            return currentStriker;
+        }
+
+        public int getCurrentStrikeIdx() {
+            return currentStrikeIdx;
+        }
+
+        @Nonnull
+        public List<Set<Integer>> getStrikes() {
+            return strikes;
+        }
+    }
+
+    public class StrikeInfo extends StrikeStagesInfo {
+        private final int struckStageId;
+
+        public StrikeInfo(int struckStageId) {
+            this.struckStageId = struckStageId;
         }
 
         public int getStruckStageId() {
@@ -216,31 +239,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
         }
     }
 
-    public class StrikeResult {
-        private final long striker1;
-        private final long striker2;
-        @Nonnull
-        private final List<Set<Integer>> struckStageIds;
-
-        public StrikeResult(long striker1, long striker2, @Nonnull List<Set<Integer>> struckStageIds) {
-            this.striker1 = striker1;
-            this.striker2 = striker2;
-            this.struckStageIds = struckStageIds;
-        }
-
-        public long getStriker1() {
-            return striker1;
-        }
-
-        public long getStriker2() {
-            return striker2;
-        }
-
-        @Nonnull
-        public List<Set<Integer>> getStruckStageIds() {
-            return struckStageIds;
-        }
-
+    public class StrikeResult extends StrikeStagesInfo {
         /**
          * This is only null in the case that the ruleset only has one stage
          */
@@ -248,7 +247,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
         public Stage getLeftStage() {
             return ruleset.getStagesStream()
                     .filter(stage ->
-                            struckStageIds.stream()
+                            strikes.stream()
                                     .flatMap(Set::stream)
                                     .noneMatch(struckStageId -> stage.getStageId() == struckStageId))
                     .findAny()
@@ -256,35 +255,23 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
         }
     }
 
-    public static class StrikeStagesTimeoutEvent {
-        @Nonnull
-        private final List<Set<Integer>> strikesSoFar;
-        private final long currentStriker;
+    public class StrikeStagesTimeoutEvent extends StrikeStagesInfo implements TwoUsersMenuTimeoutEvent {
         @Nullable
         private final MessageChannel channel;
         private final long messageId;
 
-        public StrikeStagesTimeoutEvent(@Nonnull List<Set<Integer>> strikesSoFar, long currentStriker, @Nullable MessageChannel channel, long messageId) {
-            this.strikesSoFar = strikesSoFar;
-            this.currentStriker = currentStriker;
+        public StrikeStagesTimeoutEvent(@Nullable MessageChannel channel, long messageId) {
             this.channel = channel;
             this.messageId = messageId;
         }
 
-        @Nonnull
-        public List<Set<Integer>> getStrikesSoFar() {
-            return strikesSoFar;
-        }
-
-        public long getCurrentStriker() {
-            return currentStriker;
-        }
-
+        @Override
         @Nullable
         public MessageChannel getChannel() {
             return channel;
         }
 
+        @Override
         public long getMessageId() {
             return messageId;
         }

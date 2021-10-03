@@ -110,7 +110,7 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
             user2ReportedWinner = reportedWinner;
         }
 
-        onChoice.accept(new ReportGameChoiceInfo(user1, user2, reportingUser, reportedWinner, updatedChoice), e);
+        onChoice.accept(new ReportGameChoiceInfo(reportingUser, reportedWinner, updatedChoice), e);
 
         if (user1ReportedWinner == null || user2ReportedWinner == null) {
             // Only one has reported
@@ -120,12 +120,12 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
 
         // Both have reported the winner
         if (user1ReportedWinner.equals(user2ReportedWinner)) {
-            onResult.accept(new ReportGameResult(user1, user2, user1ReportedWinner), e);
+            onResult.accept(new ReportGameResult(), e);
             return OneOfTwo.ofU(ButtonActionMenu.MenuAction.CANCEL);
         }
 
         // Conflict
-        onConflict.accept(new ReportGameConflict(user1, user2, user1ReportedWinner), e);
+        onConflict.accept(new ReportGameConflict(), e);
 
         Message message = e.getMessage();
         List<ActionRow> actionRows = MiscUtil.splitList(
@@ -153,30 +153,30 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
     }
 
     private synchronized void onTimeout(@Nullable MessageChannel channel, long messageId) {
-        onTimeout.accept(new ReportGameTimeoutEvent(getUser1(), getUser2(), user1ReportedWinner, user2ReportedWinner, channel, messageId));
+        onTimeout.accept(new ReportGameTimeoutEvent(channel, messageId));
     }
 
-    public static class ReportGameChoiceInfo {
-        private final long user1;
-        private final long user2;
+    private abstract class ReportGameMenuStateInfo extends TwoUsersMenuStateInfo {
+        @Nullable
+        public Long getUser1ReportedWinner() {
+            return user1ReportedWinner;
+        }
+
+        @Nullable
+        public Long getUser2ReportedWinner() {
+            return user2ReportedWinner;
+        }
+    }
+
+    public class ReportGameChoiceInfo extends ReportGameMenuStateInfo {
         private final long reportingUser;
         private final long reportedWinner;
         private final boolean updatedChoice;
 
-        public ReportGameChoiceInfo(long user1, long user2, long reportingUser, long reportedWinner, boolean updatedChoice) {
-            this.user1 = user1;
-            this.user2 = user2;
+        public ReportGameChoiceInfo(long reportingUser, long reportedWinner, boolean updatedChoice) {
             this.reportingUser = reportingUser;
             this.reportedWinner = reportedWinner;
             this.updatedChoice = updatedChoice;
-        }
-
-        public long getUser1() {
-            return user1;
-        }
-
-        public long getUser2() {
-            return user2;
         }
 
         public long getReportingUser() {
@@ -192,103 +192,49 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
         }
     }
 
-    public static class ReportGameConflict {
-        private final long user1;
-        private final long user2;
-        private final long user1ReportedWinner;
-
-        public ReportGameConflict(long user1, long user2, long user1ReportedWinner) {
-            this.user1 = user1;
-            this.user2 = user2;
-            this.user1ReportedWinner = user1ReportedWinner;
+    public class ReportGameConflict extends ReportGameMenuStateInfo {
+        @Nonnull
+        public Long getUser1ReportedWinner() {
+            // Will not be null in conflict
+            //noinspection ConstantConditions
+            return super.getUser1ReportedWinner();
         }
 
-        public long getUser1() {
-            return user1;
+        @Nonnull
+        public Long getUser2ReportedWinner() {
+            // Will not be null in conflict
+            //noinspection ConstantConditions
+            return super.getUser2ReportedWinner();
         }
+    }
 
-        public long getUser2() {
-            return user2;
-        }
-
-        public long getUser1ReportedWinner() {
+    public class ReportGameResult extends ReportGameMenuStateInfo {
+        // TODO: were there conflicts?
+        public long getWinner() {
+            // Will not be null here
+            //noinspection ConstantConditions
             return user1ReportedWinner;
         }
-
-        public long getUser2ReportedWinner() {
-            return user1ReportedWinner == user1 ? user2 : user1;
-        }
     }
 
-    public static class ReportGameResult {
-        private final long user1;
-        private final long user2;
-        private final long winner;
-        // TODO: were there conflicts?
-
-        public ReportGameResult(long user1, long user2, long winner) {
-            this.user1 = user1;
-            this.user2 = user2;
-            this.winner = winner;
-        }
-
-        public long getUser1() {
-            return user1;
-        }
-
-        public long getUser2() {
-            return user2;
-        }
-
-        public long getWinner() {
-            return winner;
-        }
-    }
-
-    public static class ReportGameTimeoutEvent {
+    public class ReportGameTimeoutEvent extends ReportGameMenuStateInfo implements TwoUsersMenuTimeoutEvent {
         // TODO: Already conflicted?
-        private final long user1;
-        private final long user2;
-        @Nullable
-        private final Long user1ReportedWinner;
-        @Nullable
-        private final Long user2ReportedWinner;
         @Nullable
         private final MessageChannel channel;
         private final long messageId;
 
-        public ReportGameTimeoutEvent(long user1, long user2, @Nullable Long user1ReportedWinner, @Nullable Long user2ReportedWinner, @Nullable MessageChannel channel, long messageId) {
-            this.user1 = user1;
-            this.user2 = user2;
-            this.user1ReportedWinner = user1ReportedWinner;
-            this.user2ReportedWinner = user2ReportedWinner;
+        public ReportGameTimeoutEvent(@Nullable MessageChannel channel, long messageId) {
             this.channel = channel;
             this.messageId = messageId;
         }
 
-        public long getUser1() {
-            return user1;
-        }
-
-        public long getUser2() {
-            return user2;
-        }
-
-        @Nullable
-        public Long getUser1ReportedWinner() {
-            return user1ReportedWinner;
-        }
-
-        @Nullable
-        public Long getUser2ReportedWinner() {
-            return user2ReportedWinner;
-        }
-
+        @Override
         @Nullable
         public MessageChannel getChannel() {
             return channel;
         }
 
+        @Override
         public long getMessageId() {
             return messageId;
         }

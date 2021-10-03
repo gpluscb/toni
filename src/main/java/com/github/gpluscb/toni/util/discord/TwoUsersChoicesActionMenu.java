@@ -25,6 +25,19 @@ public abstract class TwoUsersChoicesActionMenu extends ActionMenu {
         return user1;
     }
 
+    public abstract class TwoUsersMenuStateInfo extends MenuStateInfo {
+        public long getUser1() {
+            return user1;
+        }
+
+        public long getUser2() {
+            return user2;
+        }
+    }
+
+    public interface TwoUsersMenuTimeoutEvent extends ActionMenu.MenuTimeoutEvent {
+    }
+
     public static abstract class Builder<T extends Builder<T, V>, V extends TwoUsersChoicesActionMenu> extends ActionMenu.Builder<T, V> {
         @Nullable
         private Long user1;

@@ -112,7 +112,7 @@ public class RPSCommand implements Command {
         String user2Mention = MiscUtil.mentionUser(user2);
 
         String outcome;
-        if (result.getWinner() == RPSMenu.RPSResult.Winner.Tie) {
+        if (result.getWinner() == RPSMenu.Winner.Tie) {
             outcome = "It's a tie!";
         } else {
             // We know it's not a tie
@@ -121,7 +121,7 @@ public class RPSCommand implements Command {
         }
 
         e.reply(String.format("It has been decided! %s chose %s, and %s chose %s. That means %s",
-                        user1Mention, result.getChoiceA().getDisplayName(), user2Mention, result.getChoiceB().getDisplayName(), outcome))
+                        user1Mention, result.getChoice1().getDisplayName(), user2Mention, result.getChoice2().getDisplayName(), outcome))
                 .mentionUsers(user1, user2)
                 .queue();
 

@@ -136,9 +136,9 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
         this.rpsResult = rpsResult;
         onRPSResult.accept(rpsResult, e);
 
-        if (rpsResult.getWinner() == RPSMenu.RPSResult.Winner.Tie) {
+        if (rpsResult.getWinner() == RPSMenu.Winner.Tie) {
             Message start = new MessageBuilder(String.format("Both of you chose %s. So please try again.",
-                    rpsResult.getChoiceA().getDisplayName()))
+                    rpsResult.getChoice1().getDisplayName()))
                     .build();
 
             RPSMenu rpsUnderlying = createRPS(start);
@@ -156,9 +156,9 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
         Message start = new MessageBuilder(String.format(
                 "%s chose %s, and %s chose %s. So %s, you won the RPS. Will you strike first or second?",
                 MiscUtil.mentionUser(user1),
-                rpsResult.getChoiceA().getDisplayName(),
+                rpsResult.getChoice1().getDisplayName(),
                 MiscUtil.mentionUser(user2),
-                rpsResult.getChoiceB().getDisplayName(),
+                rpsResult.getChoice2().getDisplayName(),
                 MiscUtil.mentionUser(winner)
         )).mentionUsers(user1, user2).build();
 
@@ -180,7 +180,7 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
                 .setTimeout(getTimeout(), getUnit())
                 .registerButton(Button.secondary("first", Emoji.fromUnicode(Constants.ONE)), onButtonFirst)
                 .registerButton(Button.secondary("second", Emoji.fromUnicode(Constants.TWO)), onButtonSecond)
-                .setTimeoutAction((channel, messageId) -> onStrikeFirstTimeout.accept(new StrikeFirstChoiceTimeoutEvent(user1, user2, winner, channel, messageId)))
+                .setTimeoutAction((channel, messageId) -> onStrikeFirstTimeout.accept(new StrikeFirstChoiceTimeoutEvent(winner, channel, messageId)))
                 .build();
 
         strikeFirstChoiceUnderlying.display(e.getMessage());
@@ -211,7 +211,7 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
         onResult.accept(new RPSAndStrikeStagesResult(rpsResult, strikeFirstChoiceResult, strikeResult), e);
     }
 
-    public static class StrikeFirstChoiceResult {
+    public class StrikeFirstChoiceResult extends TwoUsersMenuStateInfo {
         private final long userMakingChoice;
         private final long firstStriker;
         private final long secondStriker;
@@ -239,7 +239,7 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
         }
     }
 
-    public static class RPSAndStrikeStagesResult {
+    public class RPSAndStrikeStagesResult extends TwoUsersMenuStateInfo {
         @Nonnull
         private final RPSMenu.RPSResult rpsResult;
         @Nonnull
@@ -269,39 +269,29 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
         }
     }
 
-    public static class StrikeFirstChoiceTimeoutEvent {
-        private final long user1;
-        private final long user2;
+    public class StrikeFirstChoiceTimeoutEvent extends TwoUsersMenuStateInfo implements TwoUsersMenuTimeoutEvent {
         private final long userMakingChoice;
         @Nullable
         private final MessageChannel channel;
         private final long messageId;
 
-        public StrikeFirstChoiceTimeoutEvent(long user1, long user2, long userMakingChoice, @Nullable MessageChannel channel, long messageId) {
-            this.user1 = user1;
-            this.user2 = user2;
+        public StrikeFirstChoiceTimeoutEvent(long userMakingChoice, @Nullable MessageChannel channel, long messageId) {
             this.userMakingChoice = userMakingChoice;
             this.channel = channel;
             this.messageId = messageId;
-        }
-
-        public long getUser1() {
-            return user1;
-        }
-
-        public long getUser2() {
-            return user2;
         }
 
         public long getUserMakingChoice() {
             return userMakingChoice;
         }
 
+        @Override
         @Nullable
         public MessageChannel getChannel() {
             return channel;
         }
 
+        @Override
         public long getMessageId() {
             return messageId;
         }

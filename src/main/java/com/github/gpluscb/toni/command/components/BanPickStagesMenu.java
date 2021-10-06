@@ -93,6 +93,8 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
     }
 
     private synchronized void onBanResult(@Nonnull BanStagesMenu.BanResult result, @Nonnull ButtonClickEvent e) {
+        e.deferEdit().queue();
+
         banResult = result;
 
         long user1 = getUser1();
@@ -115,7 +117,6 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
                 .setOnTimeout(onPickTimeout)
                 .build();
 
-        // TODO: needs ack?
         pickUnderlying.display(e.getMessage());
     }
 

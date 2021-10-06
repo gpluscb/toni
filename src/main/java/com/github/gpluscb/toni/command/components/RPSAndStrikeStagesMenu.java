@@ -187,6 +187,8 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
     }
 
     private synchronized void onStrikeFirstChoice(@Nonnull StrikeFirstChoiceResult result, @Nonnull ButtonClickEvent event) {
+        event.deferEdit().queue();
+
         this.strikeFirstChoiceResult = result;
         onStrikeFirstChoice.accept(result, event);
 
@@ -200,7 +202,6 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
                 .setOnTimeout(onStrikeTimeout)
                 .build();
 
-        // TODO: needs ack?
         strikeUnderlying.display(event.getMessage());
     }
 

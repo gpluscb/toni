@@ -26,8 +26,6 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class StrikeStagesCommand implements Command {
-    private static final Logger log = LogManager.getLogger(StrikeStagesCommand.class);
-
     @Nonnull
     private final EventWaiter waiter;
     @Nonnull

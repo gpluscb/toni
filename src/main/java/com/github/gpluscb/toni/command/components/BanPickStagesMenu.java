@@ -13,6 +13,7 @@ import net.dv8tion.jda.api.interactions.InteractionHook;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -126,7 +127,7 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
         onResult.accept(new BanPickStagesResult(banResult, pickResult), e);
     }
 
-    public class BanPickStagesResult extends MenuStateInfo {
+    public class BanPickStagesResult extends TwoUsersMenuStateInfo {
         @Nonnull
         private final BanStagesMenu.BanResult banResult;
         @Nonnull
@@ -145,6 +146,32 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
         @Nonnull
         public PickStageMenu.PickStageResult getPickResult() {
             return pickResult;
+        }
+
+        public long getBanningUser() {
+            return getUser1();
+        }
+
+        public long getPickingUser() {
+            return getUser2();
+        }
+
+        public long getBanTimeout() {
+            return getTimeout();
+        }
+
+        @Nonnull
+        public TimeUnit getBanUnit() {
+            return getUnit();
+        }
+
+        public long getPickStageTimeout() {
+            return pickStageTimeout;
+        }
+
+        @Nonnull
+        public TimeUnit getPickStageUnit() {
+            return pickStageUnit;
         }
     }
 

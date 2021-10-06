@@ -140,6 +140,8 @@ public class BanStagesMenu extends ActionMenu {
             return OneOfTwo.ofU(ButtonActionMenu.MenuAction.CANCEL);
         }
 
+        e.deferEdit().queue();
+
         // More stages are to be banned
         int stagesToBan = ruleset.getStageBans() - bannedStageIds.size();
         MessageBuilder builder = new MessageBuilder();

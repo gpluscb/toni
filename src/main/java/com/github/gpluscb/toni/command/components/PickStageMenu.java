@@ -95,7 +95,7 @@ public class PickStageMenu extends ActionMenu {
     }
 
     @Nonnull
-    private OneOfTwo<Message, ButtonActionMenu.MenuAction> onPick(int stageId, @Nonnull ButtonClickEvent e) {
+    private synchronized OneOfTwo<Message, ButtonActionMenu.MenuAction> onPick(int stageId, @Nonnull ButtonClickEvent e) {
         if (bannedStageIds.contains(stageId)) {
             log.error("Banned stage was picked: {}", stageId);
             e.reply("This stage cannot be picked.").setEphemeral(true).queue();
@@ -106,7 +106,7 @@ public class PickStageMenu extends ActionMenu {
         return OneOfTwo.ofU(ButtonActionMenu.MenuAction.CANCEL);
     }
 
-    private void onTimeout(@Nullable MessageChannel channel, long messageId) {
+    private synchronized void onTimeout(@Nullable MessageChannel channel, long messageId) {
         onTimeout.accept(new PickStageTimeoutEvent(channel, messageId));
     }
 

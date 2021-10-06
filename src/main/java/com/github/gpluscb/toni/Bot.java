@@ -101,20 +101,35 @@ public class Bot {
     private final ScheduledExecutorService waiterPool;
 
     public static void main(String[] args) {
-        if (args.length != 1) {
-            log.error("Give config file as first argument");
+        if (args.length < 1) {
+            log.error("Give config file as first argument, and optionally \"--hook-slash-commands\" as second argument");
+            return;
+        }
+
+        boolean hookCommands = false;
+        if (args.length == 2) {
+            if (!args[1].equals("--hook-slash-commands")) {
+                log.error("Second arg can only be \"--hook-slash-commands\"");
+                return;
+            }
+
+            hookCommands = true;
+        }
+
+        if (args.length > 2) {
+            log.error("Give config file as first argument, and optionally \"--hook-slash-commands\" as second argument");
             return;
         }
 
         try {
             log.info("Booting...");
-            new Bot(args[0]);
+            new Bot(args[0], hookCommands);
         } catch (Exception e) {
             log.error("Exception caught while constructing bot: ", e);
         }
     }
 
-    public Bot(@Nonnull String configLocation) throws LoginException, SQLException, DataAccessException, IOException {
+    public Bot(@Nonnull String configLocation, boolean hookCommands) throws LoginException, SQLException, DataAccessException, IOException {
         log.trace("Loading config");
         Config cfg = loadConfig(configLocation);
 
@@ -237,12 +252,14 @@ public class Bot {
 
         // TODO: Somehow notice if slash commands could not be hooked?
         ShardsLoadListener loadListener = new ShardsLoadListener(jda -> {
-            Guild adminGuild = jda.getGuildById(adminGuildId);
+            if (hookCommands) {
+                Guild adminGuild = jda.getGuildById(adminGuildId);
 
-            if (adminGuild == null) return;
+                if (adminGuild == null) return;
 
-            log.trace("Admin guild loaded, hooking slash commands");
-            hookSlashCommands(adminGuild, commands);
+                log.trace("Admin guild loaded, hooking slash commands");
+                hookSlashCommands(adminGuild, commands);
+            }
         }, loadedShardManager -> {
             log.trace("Shards finished loading");
 

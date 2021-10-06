@@ -170,7 +170,7 @@ public class BanStagesMenu extends ActionMenu {
         onTimeout.accept(new BanStagesTimeoutEvent(channel, messageId));
     }
 
-    private abstract class BanStagesInfo extends ActionMenu.MenuStateInfo {
+    private abstract class BanStagesInfo extends MenuStateInfo {
         public long getBanningUser() {
             return banningUser;
         }

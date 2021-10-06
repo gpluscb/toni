@@ -121,7 +121,7 @@ public class CounterpickStagesCommand implements Command {
                 .build();
 
         context
-                .onT(msg -> menu.display(msg.getMessage()))
+                .onT(msg -> menu.displayReplying(msg.getMessage()))
                 .onU(slash -> menu.displaySlashReplying(slash.getEvent()));
     }
 

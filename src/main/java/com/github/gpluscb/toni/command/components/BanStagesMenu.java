@@ -43,7 +43,7 @@ public class BanStagesMenu extends ActionMenu {
     @Nonnull
     private final BiConsumer<StageBan, ButtonClickEvent> onBan;
     @Nonnull
-    private final BiConsumer<BanResult, ButtonClickEvent> onBanResult;
+    private final BiConsumer<BanResult, ButtonClickEvent> onResult;
     @Nonnull
     private final Consumer<BanStagesTimeoutEvent> onTimeout;
     @Nonnull
@@ -52,14 +52,14 @@ public class BanStagesMenu extends ActionMenu {
     @Nonnull
     private final List<Integer> bannedStageIds;
 
-    public BanStagesMenu(@Nonnull EventWaiter waiter, long banningUser, long timeout, @Nonnull TimeUnit unit, @Nonnull Ruleset ruleset, @Nonnull List<Integer> dsrIllegalStages, @Nonnull BiConsumer<StageBan, ButtonClickEvent> onBan, @Nonnull BiConsumer<BanResult, ButtonClickEvent> onBanResult, @Nonnull Consumer<BanStagesTimeoutEvent> onTimeout) {
+    public BanStagesMenu(@Nonnull EventWaiter waiter, long banningUser, long timeout, @Nonnull TimeUnit unit, @Nonnull Ruleset ruleset, @Nonnull List<Integer> dsrIllegalStages, @Nonnull BiConsumer<StageBan, ButtonClickEvent> onBan, @Nonnull BiConsumer<BanResult, ButtonClickEvent> onResult, @Nonnull Consumer<BanStagesTimeoutEvent> onTimeout) {
         super(waiter, timeout, unit);
 
         this.banningUser = banningUser;
         this.ruleset = ruleset;
         this.dsrIllegalStages = dsrIllegalStages;
         this.onBan = onBan;
-        this.onBanResult = onBanResult;
+        this.onResult = onResult;
         this.onTimeout = onTimeout;
 
         bannedStageIds = new ArrayList<>();
@@ -136,7 +136,7 @@ public class BanStagesMenu extends ActionMenu {
 
         if (bannedStageIds.size() == ruleset.getStageBans()) {
             // Our job here is done
-            onBanResult.accept(new BanResult(), e);
+            onResult.accept(new BanResult(), e);
             return OneOfTwo.ofU(ButtonActionMenu.MenuAction.CANCEL);
         }
 
@@ -274,7 +274,7 @@ public class BanStagesMenu extends ActionMenu {
         @Nonnull
         private BiConsumer<StageBan, ButtonClickEvent> onBan;
         @Nonnull
-        private BiConsumer<BanResult, ButtonClickEvent> onBanResult;
+        private BiConsumer<BanResult, ButtonClickEvent> onResult;
         @Nonnull
         private Consumer<BanStagesTimeoutEvent> onTimeout;
 
@@ -284,7 +284,7 @@ public class BanStagesMenu extends ActionMenu {
             dsrIllegalStages = new ArrayList<>();
             onBan = (ban, e) -> {
             };
-            onBanResult = (result, e) -> {
+            onResult = (result, e) -> {
             };
             onTimeout = timeout -> {
             };
@@ -315,8 +315,8 @@ public class BanStagesMenu extends ActionMenu {
         }
 
         @Nonnull
-        public Builder setOnBanResult(@Nonnull BiConsumer<BanResult, ButtonClickEvent> onBanResult) {
-            this.onBanResult = onBanResult;
+        public Builder setOnResult(@Nonnull BiConsumer<BanResult, ButtonClickEvent> onResult) {
+            this.onResult = onResult;
             return this;
         }
 
@@ -347,8 +347,8 @@ public class BanStagesMenu extends ActionMenu {
         }
 
         @Nonnull
-        public BiConsumer<BanResult, ButtonClickEvent> getOnBanResult() {
-            return onBanResult;
+        public BiConsumer<BanResult, ButtonClickEvent> getOnResult() {
+            return onResult;
         }
 
         @Nonnull
@@ -366,7 +366,7 @@ public class BanStagesMenu extends ActionMenu {
 
             // We know it's not null because preBuild
             //noinspection ConstantConditions
-            return new BanStagesMenu(getWaiter(), banningUser, getTimeout(), getUnit(), ruleset, dsrIllegalStages, onBan, onBanResult, onTimeout);
+            return new BanStagesMenu(getWaiter(), banningUser, getTimeout(), getUnit(), ruleset, dsrIllegalStages, onBan, onResult, onTimeout);
         }
     }
 }

@@ -358,6 +358,7 @@ public class Bot {
         gameCommands.add(new RPSCommand(waiter));
         gameCommands.add(new BlindPickCommand(dmWaiter, characterTree));
         gameCommands.add(new StrikeStagesCommand(waiter, rulesets));
+        gameCommands.add(new CounterpickStagesCommand(waiter, rulesets));
         commands.add(new CommandCategory("game", "Smash Bros. utility commands", gameCommands));
 
         List<Command> lookupCommands = new ArrayList<>();

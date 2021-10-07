@@ -32,7 +32,7 @@ import com.github.gpluscb.toni.statsposting.topgg.TopggClient;
 import com.github.gpluscb.toni.statsposting.topgg.TopggClientMock;
 import com.github.gpluscb.toni.ultimateframedata.UltimateframedataClient;
 import com.github.gpluscb.toni.util.Rulesets;
-import com.github.gpluscb.toni.util.discord.DMChoiceWaiter;
+import com.github.gpluscb.toni.util.discord.ChannelChoiceWaiter;
 import com.github.gpluscb.toni.util.discord.DiscordAppenderImpl;
 import com.github.gpluscb.toni.util.discord.ShardsLoadListener;
 import com.github.gpluscb.toni.util.smash.CharacterTree;
@@ -160,7 +160,7 @@ public class Bot {
         log.trace("Building EventWaiter");
         waiterPool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "EventWaiterPool [0 / 1] Waiter-Thread"));
         EventWaiter waiter = new EventWaiter(waiterPool, false);
-        DMChoiceWaiter dmWaiter = new DMChoiceWaiter(waiter);
+        ChannelChoiceWaiter channelWaiter = new ChannelChoiceWaiter(waiter);
 
         long botId = cfg.getBotId();
 
@@ -245,7 +245,7 @@ public class Bot {
         }
 
         log.trace("Loading commands");
-        List<CommandCategory> commands = loadCommands(ufdClient, waiter, dmWaiter, /*challonge, listener, */characterTree, rulesets);
+        List<CommandCategory> commands = loadCommands(ufdClient, waiter, channelWaiter, /*challonge, listener, */characterTree, rulesets);
 
         log.trace("Creating loadListener");
         long adminGuildId = cfg.getAdminGuildId();
@@ -304,7 +304,7 @@ public class Bot {
         log.trace("Starting command listener and dispatcher");
         dispatcher = new CommandDispatcher(commands);
 
-        CommandListener commandListener = new CommandListener(dmWaiter, dispatcher, cfg);
+        CommandListener commandListener = new CommandListener(channelWaiter, dispatcher, cfg);
         shardManager.addEventListener(commandListener);
 
         log.trace("Enabling discord appender");
@@ -336,7 +336,7 @@ public class Bot {
     }
 
     @Nonnull
-    private List<CommandCategory> loadCommands(@Nonnull UltimateframedataClient ufdClient, @Nonnull EventWaiter waiter, @Nonnull DMChoiceWaiter dmWaiter, /*@Nonnull ChallongeExtension challonge, @Nonnull TournamentListener listener, */@Nonnull CharacterTree characterTree, @Nonnull List<Ruleset> rulesets) {
+    private List<CommandCategory> loadCommands(@Nonnull UltimateframedataClient ufdClient, @Nonnull EventWaiter waiter, @Nonnull ChannelChoiceWaiter channelWaiter, /*@Nonnull ChallongeExtension challonge, @Nonnull TournamentListener listener, */@Nonnull CharacterTree characterTree, @Nonnull List<Ruleset> rulesets) {
         List<CommandCategory> commands = new ArrayList<>();
 
         List<Command> adminCommands = new ArrayList<>();
@@ -356,7 +356,7 @@ public class Bot {
         gameCommands.add(new RandomCharacterCommand(characterTree));
         gameCommands.add(new RandomPlayerCommand());
         gameCommands.add(new RPSCommand(waiter));
-        gameCommands.add(new BlindPickCommand(dmWaiter, characterTree));
+        gameCommands.add(new BlindPickCommand(channelWaiter, characterTree));
         gameCommands.add(new StrikeStagesCommand(waiter, rulesets));
         gameCommands.add(new CounterpickStagesCommand(waiter, rulesets));
         commands.add(new CommandCategory("game", "Smash Bros. utility commands", gameCommands));

@@ -1,27 +1,26 @@
 package com.github.gpluscb.toni.command.components;
 
 import com.github.gpluscb.toni.util.discord.ActionMenu;
-import com.github.gpluscb.toni.util.discord.DMChoiceWaiter;
+import com.github.gpluscb.toni.util.discord.ChannelChoiceWaiter;
 import com.github.gpluscb.toni.util.smash.Character;
 import com.github.gpluscb.toni.util.smash.CharacterTree;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
-import net.dv8tion.jda.api.events.message.priv.PrivateMessageReceivedEvent;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public class BlindPickMenu extends ActionMenu {
     @Nonnull
-    private final DMChoiceWaiter dmWaiter;
+    private final ChannelChoiceWaiter waiter;
     @Nonnull
     private final List<Long> users;
     @Nonnull
@@ -35,9 +34,9 @@ public class BlindPickMenu extends ActionMenu {
     @Nonnull
     private final Runnable onFailedInit;
 
-    public BlindPickMenu(@Nonnull DMChoiceWaiter dmWaiter, @Nonnull List<Long> users, long timeout, @Nonnull TimeUnit unit, @Nonnull Message start, @Nonnull List<Character> characters, @Nonnull Consumer<BlindPickResult> onResult, @Nonnull Consumer<BlindPickTimeoutEvent> onTimeout, @Nonnull Runnable onFailedInit) {
-        super(dmWaiter.getEventWaiter(), timeout, unit);
-        this.dmWaiter = dmWaiter;
+    public BlindPickMenu(@Nonnull ChannelChoiceWaiter waiter, @Nonnull List<Long> users, long timeout, @Nonnull TimeUnit unit, @Nonnull Message start, @Nonnull List<Character> characters, @Nonnull Consumer<BlindPickResult> onResult, @Nonnull Consumer<BlindPickTimeoutEvent> onTimeout, @Nonnull Runnable onFailedInit) {
+        super(waiter.getEventWaiter(), timeout, unit);
+        this.waiter = waiter;
         this.users = users;
         this.start = start;
         this.characters = characters;
@@ -73,13 +72,13 @@ public class BlindPickMenu extends ActionMenu {
     }
 
     private boolean initWaiter() {
-        boolean success = dmWaiter.waitForDMChoice(
+        boolean success = waiter.waitForDMChoice(
                 users,
                 true,
                 this::verifyChoice,
-                map -> onResult.accept(new BlindPickResult(map)),
+                choices -> onResult.accept(new BlindPickResult(choices)),
                 getTimeout(), getUnit(),
-                map -> onTimeout.accept(new BlindPickTimeoutEvent(map))
+                choices -> onTimeout.accept(new BlindPickTimeoutEvent(choices))
         );
 
         if (!success) onFailedInit.run();
@@ -87,7 +86,7 @@ public class BlindPickMenu extends ActionMenu {
     }
 
     @Nonnull
-    private Optional<Character> verifyChoice(@Nonnull PrivateMessageReceivedEvent event) {
+    private Optional<Character> verifyChoice(@Nonnull MessageReceivedEvent event) {
         Message message = event.getMessage();
         String choice = message.getContentRaw();
 
@@ -107,35 +106,35 @@ public class BlindPickMenu extends ActionMenu {
 
     public class BlindPickResult extends BlindPickMenuStateInfo {
         @Nonnull
-        private final Map<Long, Character> picks;
+        private final List<ChannelChoiceWaiter.UserChoiceInfo<Character>> picks;
 
-        public BlindPickResult(@Nonnull Map<Long, Character> picks) {
+        public BlindPickResult(@Nonnull List<ChannelChoiceWaiter.UserChoiceInfo<Character>> picks) {
             this.picks = picks;
         }
 
         @Nonnull
-        public Map<Long, Character> getPicks() {
+        public List<ChannelChoiceWaiter.UserChoiceInfo<Character>> getPicks() {
             return picks;
         }
     }
 
     public class BlindPickTimeoutEvent extends BlindPickMenuStateInfo {
         @Nonnull
-        private final Map<Long, Character> picksSoFar;
+        private final List<ChannelChoiceWaiter.UserChoiceInfo<Character>> picksSoFar;
 
-        public BlindPickTimeoutEvent(@Nonnull Map<Long, Character> picksSoFar) {
+        public BlindPickTimeoutEvent(@Nonnull List<ChannelChoiceWaiter.UserChoiceInfo<Character>> picksSoFar) {
             this.picksSoFar = picksSoFar;
         }
 
         @Nonnull
-        public Map<Long, Character> getPicksSoFar() {
+        public List<ChannelChoiceWaiter.UserChoiceInfo<Character>> getPicksSoFar() {
             return picksSoFar;
         }
     }
 
     public static class Builder extends ActionMenu.Builder<Builder, BlindPickMenu> {
         @Nullable
-        private DMChoiceWaiter dmWaiter;
+        private ChannelChoiceWaiter channelWaiter;
         @Nonnull
         private List<Long> users;
         @Nullable
@@ -162,9 +161,9 @@ public class BlindPickMenu extends ActionMenu {
         }
 
         @Nonnull
-        public Builder setDmWaiter(@Nonnull DMChoiceWaiter dmWaiter) {
-            this.dmWaiter = dmWaiter;
-            return setWaiter(dmWaiter.getEventWaiter());
+        public Builder setChannelWaiter(@Nonnull ChannelChoiceWaiter channelWaiter) {
+            this.channelWaiter = channelWaiter;
+            return setWaiter(channelWaiter.getEventWaiter());
         }
 
         @Nonnull
@@ -210,8 +209,8 @@ public class BlindPickMenu extends ActionMenu {
         }
 
         @Nullable
-        public DMChoiceWaiter getDmWaiter() {
-            return dmWaiter;
+        public ChannelChoiceWaiter getChannelWaiter() {
+            return channelWaiter;
         }
 
         @Nonnull
@@ -248,11 +247,11 @@ public class BlindPickMenu extends ActionMenu {
         @Override
         public BlindPickMenu build() {
             preBuild();
-            if (dmWaiter == null) throw new IllegalStateException("DMWaiter must be set");
+            if (channelWaiter == null) throw new IllegalStateException("DMWaiter must be set");
             if (start == null) throw new IllegalStateException("Start must be set");
             if (characters == null) throw new IllegalStateException("Characters must be set");
 
-            return new BlindPickMenu(dmWaiter, users, getTimeout(), getUnit(), start, characters, onResult, onTimeout, onFailedInit);
+            return new BlindPickMenu(channelWaiter, users, getTimeout(), getUnit(), start, characters, onResult, onTimeout, onFailedInit);
         }
     }
 }

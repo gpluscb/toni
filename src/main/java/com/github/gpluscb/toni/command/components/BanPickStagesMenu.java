@@ -13,7 +13,6 @@ import net.dv8tion.jda.api.interactions.InteractionHook;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.sql.Time;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;

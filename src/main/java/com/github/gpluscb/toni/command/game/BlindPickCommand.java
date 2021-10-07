@@ -4,7 +4,7 @@ import com.github.gpluscb.toni.command.*;
 import com.github.gpluscb.toni.command.components.BlindPickMenu;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
-import com.github.gpluscb.toni.util.discord.DMChoiceWaiter;
+import com.github.gpluscb.toni.util.discord.ChannelChoiceWaiter;
 import com.github.gpluscb.toni.util.smash.Character;
 import com.github.gpluscb.toni.util.smash.CharacterTree;
 import net.dv8tion.jda.api.JDA;
@@ -24,19 +24,18 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class BlindPickCommand implements Command {
     private static final Logger log = LogManager.getLogger(BlindPickCommand.class);
 
     @Nonnull
-    private final DMChoiceWaiter dmWaiter;
+    private final ChannelChoiceWaiter waiter;
     @Nonnull
     private final List<Character> characters;
 
-    public BlindPickCommand(@Nonnull DMChoiceWaiter dmWaiter, @Nonnull CharacterTree characterTree) {
-        this.dmWaiter = dmWaiter;
+    public BlindPickCommand(@Nonnull ChannelChoiceWaiter waiter, @Nonnull CharacterTree characterTree) {
+        this.waiter = waiter;
         this.characters = characterTree.getAllCharacters();
     }
 
@@ -117,7 +116,7 @@ public class BlindPickCommand implements Command {
                 .build();
 
         BlindPickMenu menu = new BlindPickMenu.Builder()
-                .setDmWaiter(dmWaiter)
+                .setChannelWaiter(waiter)
                 .setTimeout(3, TimeUnit.MINUTES)
                 .setUsers(users)
                 .setStart(start)
@@ -143,9 +142,14 @@ public class BlindPickCommand implements Command {
 
         List<Long> users = result.getUsers();
 
-        String choicesString = result.getUsers().stream().map(u -> {
-            Character c = result.getPicks().get(u);
-            return String.format("%s: %s(%s)", MiscUtil.mentionUser(u), MiscUtil.mentionEmote(c.getEmoteId()), c.getName());
+        String choicesString = result.getPicks().stream().map(choice -> {
+            Character character = choice.getChoice();
+            // Since we're done here choice will not be null
+            //noinspection ConstantConditions
+            return String.format("%s: %s(%s)",
+                    MiscUtil.mentionUser(choice.getUserId()),
+                    MiscUtil.mentionEmote(character.getEmoteId()),
+                    character.getName());
         }).collect(Collectors.joining("\n"));
 
         MessageAction action = channel.sendMessage(String.format("The characters have been decided:%n%n%s", choicesString));
@@ -165,15 +169,17 @@ public class BlindPickCommand implements Command {
             return;
         }
 
-        List<Long> users = timeout.getUsers();
-
         // TODO: Variable naming
-        String lazyIdiots = users.stream()
-                .filter(Predicate.not(timeout.getPicksSoFar()::containsKey))
+        String lazyIdiots = timeout.getPicksSoFar().stream()
+                .filter(choice -> choice.getChoice() == null)
+                .map(ChannelChoiceWaiter.UserChoiceInfo::getUserId)
                 .map(MiscUtil::mentionUser)
                 .collect(Collectors.joining(", "));
 
-        MessageAction action = channel.sendMessage(String.format("The three (3) minutes are done. Not all of you have given me your characters. Shame on you, %s!", lazyIdiots));
+        List<Long> users = timeout.getUsers();
+
+        MessageAction action = channel.sendMessage(String.format("The three (3) minutes are done." +
+                " Not all of you have given me your characters. Shame on you, %s!", lazyIdiots));
 
         for (long user : users) action = action.mentionUsers(user);
 

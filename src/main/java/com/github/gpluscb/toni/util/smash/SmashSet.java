@@ -11,9 +11,12 @@ import java.util.List;
 import java.util.Set;
 
 public class SmashSet {
+    // TODO: good toString
+
     @Nonnull
     private final Ruleset ruleset;
     private final int firstToWhatScore;
+    private final boolean doRPS;
     @Nullable
     private Player rpsWinner;
     @Nullable
@@ -25,9 +28,10 @@ public class SmashSet {
     @Nonnull
     private final List<GameData> games;
 
-    public SmashSet(@Nonnull Ruleset ruleset, int firstToWhatScore) {
+    public SmashSet(@Nonnull Ruleset ruleset, int firstToWhatScore, boolean doRPS) {
         this.ruleset = ruleset;
         this.firstToWhatScore = firstToWhatScore;
+        this.doRPS = doRPS;
         firstStageStriker = null;
         stageStrikingIdxHistory = new ArrayList<>(ruleset.getStarterStrikePattern().length);
         state = null;
@@ -39,11 +43,29 @@ public class SmashSet {
     }
 
     @Nonnull
-    public synchronized SetRPSState startRPS() {
+    public synchronized OneOfTwo<SetDoubleBlindState, SetRPSState> startSetWithRPS() {
         if (state != null) throw new IllegalStateException("Set already started");
-        SetRPSState state = new SetRPSState();
-        this.state = state;
-        return state;
+        if (!doRPS) throw new IllegalStateException("startSetWithRPS called on no RPS set");
+
+        if (ruleset.isBlindPickBeforeStage()) {
+            return OneOfTwo.ofT(switchState(new SetDoubleBlindState(new GameData(false))));
+        } else {
+            return OneOfTwo.ofU(switchState(new SetRPSState()));
+        }
+    }
+
+    @Nonnull
+    public synchronized OneOfTwo<SetDoubleBlindState, SetStarterStrikingState> startSetNoRPS(@Nonnull Player firstStageStriker) {
+        if (state != null) throw new IllegalStateException("Set already started");
+        if (doRPS) throw new IllegalStateException("startSetNoRPS called on RPS set");
+
+        this.firstStageStriker = firstStageStriker;
+
+        if (ruleset.isBlindPickBeforeStage()) {
+            return OneOfTwo.ofT(switchState(new SetDoubleBlindState(new GameData(false))));
+        } else {
+            return OneOfTwo.ofU(switchState(new SetStarterStrikingState(new GameData(false))));
+        }
     }
 
     public int getFirstToWhatScore() {
@@ -133,7 +155,7 @@ public class SmashSet {
             checkValid();
             SmashSet.this.rpsWinner = rpsWinner;
             SmashSet.this.firstStageStriker = firstStriker;
-            SetStarterStrikingState state = new SetStarterStrikingState(firstStriker, game);
+            SetStarterStrikingState state = new SetStarterStrikingState(game);
             return switchState(state);
         }
     }
@@ -145,7 +167,10 @@ public class SmashSet {
         @Nonnull
         private Player currentStriker;
 
-        public SetStarterStrikingState(@Nonnull Player firstStriker, @Nonnull GameData game) {
+        public SetStarterStrikingState(@Nonnull GameData game) {
+            Player firstStriker = getFirstStageStriker();
+            if (firstStriker == null)
+                throw new IllegalStateException("SetStarterStrikingState with firstStageStriker == null");
             currentStriker = firstStriker;
             this.game = game;
         }

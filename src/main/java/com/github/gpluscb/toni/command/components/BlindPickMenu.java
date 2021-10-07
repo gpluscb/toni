@@ -247,7 +247,8 @@ public class BlindPickMenu extends ActionMenu {
         @Override
         public BlindPickMenu build() {
             preBuild();
-            if (channelWaiter == null) throw new IllegalStateException("DMWaiter must be set");
+
+            if (channelWaiter == null) throw new IllegalStateException("ChannelWaiter must be set");
             if (start == null) throw new IllegalStateException("Start must be set");
             if (characters == null) throw new IllegalStateException("Characters must be set");
 

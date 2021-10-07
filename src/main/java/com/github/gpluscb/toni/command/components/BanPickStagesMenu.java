@@ -25,6 +25,8 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
     @Nonnull
     private final BanStagesMenu banUnderlying;
 
+    @Nonnull
+    private final BiConsumer<BanStagesMenu.BanResult, ButtonClickEvent> onBanResult;
     private final long pickStageTimeout;
     @Nonnull
     private final TimeUnit pickStageUnit;
@@ -39,10 +41,12 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
     @Nullable
     private BanStagesMenu.BanResult banResult;
 
-    public BanPickStagesMenu(@Nonnull EventWaiter waiter, long banningUser, long counterpickingUser, long banTimeout, @Nonnull TimeUnit banUnit, @Nonnull Ruleset ruleset, @Nonnull List<Integer> dsrIllegalStages, @Nonnull BiConsumer<BanStagesMenu.StageBan, ButtonClickEvent> onBan, @Nonnull Consumer<BanStagesMenu.BanStagesTimeoutEvent> onBanTimeout,
+    public BanPickStagesMenu(@Nonnull EventWaiter waiter, long banningUser, long counterpickingUser, long banTimeout, @Nonnull TimeUnit banUnit, @Nonnull Ruleset ruleset, @Nonnull List<Integer> dsrIllegalStages, @Nonnull BiConsumer<BanStagesMenu.StageBan, ButtonClickEvent> onBan, @Nonnull BiConsumer<BanStagesMenu.BanResult, ButtonClickEvent> onBanResult, @Nonnull Consumer<BanStagesMenu.BanStagesTimeoutEvent> onBanTimeout,
                              long pickStageTimeout, @Nonnull TimeUnit pickStageUnit, @Nonnull BiConsumer<PickStageMenu.PickStageResult, ButtonClickEvent> onPickResult, @Nonnull Consumer<PickStageMenu.PickStageTimeoutEvent> onPickTimeout,
                              @Nonnull BiConsumer<BanPickStagesResult, ButtonClickEvent> onResult) {
         super(waiter, banningUser, counterpickingUser, banTimeout, banUnit);
+
+        this.onBanResult = onBanResult;
 
         BanStagesMenu.Builder banUnderlyingBuilder = new BanStagesMenu.Builder()
                 .setWaiter(waiter)
@@ -93,6 +97,8 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
 
     private synchronized void onBanResult(@Nonnull BanStagesMenu.BanResult result, @Nonnull ButtonClickEvent e) {
         e.deferEdit().queue();
+
+        onBanResult.accept(result, e);
 
         banResult = result;
 
@@ -183,6 +189,8 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
         @Nonnull
         private BiConsumer<BanStagesMenu.StageBan, ButtonClickEvent> onBan;
         @Nonnull
+        private BiConsumer<BanStagesMenu.BanResult, ButtonClickEvent> onBanResult;
+        @Nonnull
         private Consumer<BanStagesMenu.BanStagesTimeoutEvent> onBanTimeout;
         private long pickStageTimeout;
         @Nonnull
@@ -199,6 +207,8 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
 
             dsrIllegalStages = new ArrayList<>();
             onBan = (ban, e) -> {
+            };
+            onBanResult = (result, e) -> {
             };
             onBanTimeout = timeout -> {
             };
@@ -239,6 +249,12 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
         @Nonnull
         public Builder setOnBan(@Nonnull BiConsumer<BanStagesMenu.StageBan, ButtonClickEvent> onBan) {
             this.onBan = onBan;
+            return this;
+        }
+
+        @Nonnull
+        public Builder setOnBanResult(@Nonnull BiConsumer<BanStagesMenu.BanResult, ButtonClickEvent> onBanResult) {
+            this.onBanResult = onBanResult;
             return this;
         }
 
@@ -335,7 +351,7 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
 
             // We know the nonullability because preBuild
             //noinspection ConstantConditions
-            return new BanPickStagesMenu(getWaiter(), getUser1(), getUser2(), getTimeout(), getUnit(), ruleset, dsrIllegalStages, onBan, onBanTimeout,
+            return new BanPickStagesMenu(getWaiter(), getUser1(), getUser2(), getTimeout(), getUnit(), ruleset, dsrIllegalStages, onBan, onBanResult, onBanTimeout,
                     pickStageTimeout, pickStageUnit, onPickResult, onPickTimeout,
                     onResult);
         }

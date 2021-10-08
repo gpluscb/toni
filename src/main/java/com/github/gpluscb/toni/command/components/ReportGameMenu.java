@@ -5,6 +5,7 @@ import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.discord.ButtonActionMenu;
 import com.github.gpluscb.toni.util.discord.TwoUsersChoicesActionMenu;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
@@ -152,8 +153,24 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
         return OneOfTwo.ofU(ButtonActionMenu.MenuAction.NOTHING);
     }
 
-    private synchronized void onTimeout(@Nullable MessageChannel channel, long messageId) {
-        onTimeout.accept(new ReportGameTimeoutEvent(channel, messageId));
+    private synchronized void onTimeout(@Nonnull ButtonActionMenu.ButtonActionMenuTimeoutEvent event) {
+        onTimeout.accept(new ReportGameTimeoutEvent());
+    }
+
+    @Nonnull
+    @Override
+    public JDA getJDA() {
+        return underlying.getJDA();
+    }
+
+    @Override
+    public long getMessageId() {
+        return underlying.getMessageId();
+    }
+
+    @Override
+    public long getChannelId() {
+        return underlying.getChannelId();
     }
 
     private abstract class ReportGameMenuStateInfo extends TwoUsersMenuStateInfo {
@@ -217,27 +234,8 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
         }
     }
 
-    public class ReportGameTimeoutEvent extends ReportGameMenuStateInfo implements TwoUsersMenuTimeoutEvent {
+    public class ReportGameTimeoutEvent extends ReportGameMenuStateInfo {
         // TODO: Already conflicted?
-        @Nullable
-        private final MessageChannel channel;
-        private final long messageId;
-
-        public ReportGameTimeoutEvent(@Nullable MessageChannel channel, long messageId) {
-            this.channel = channel;
-            this.messageId = messageId;
-        }
-
-        @Override
-        @Nullable
-        public MessageChannel getChannel() {
-            return channel;
-        }
-
-        @Override
-        public long getMessageId() {
-            return messageId;
-        }
     }
 
     public static class Builder extends TwoUsersChoicesActionMenu.Builder<Builder, ReportGameMenu> {

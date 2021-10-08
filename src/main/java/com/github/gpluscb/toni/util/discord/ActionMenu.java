@@ -1,6 +1,7 @@
 package com.github.gpluscb.toni.util.discord;
 
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
@@ -17,10 +18,21 @@ public abstract class ActionMenu {
     @Nonnull
     private final TimeUnit unit;
 
+    @Nullable
+    private JDA jda;
+    private long messageId;
+    private long channelId;
+
     public ActionMenu(@Nonnull EventWaiter waiter, long timeout, @Nonnull TimeUnit unit) {
         this.waiter = waiter;
         this.timeout = timeout;
         this.unit = unit;
+    }
+
+    protected void setMessageInfo(@Nonnull Message message) {
+        this.jda = message.getJDA();
+        this.messageId = message.getIdLong();
+        this.channelId = message.getChannel().getIdLong();
     }
 
     @Nonnull
@@ -35,6 +47,32 @@ public abstract class ActionMenu {
     @Nonnull
     public TimeUnit getUnit() {
         return unit;
+    }
+
+    @Nonnull
+    public JDA getJDA() {
+        if (jda == null) throw new IllegalStateException("Message info has not been initialized yet");
+        return jda;
+    }
+
+    public long getMessageId() {
+        if (jda == null) throw new IllegalStateException("Message info has not been initialized yet");
+        return messageId;
+    }
+
+    public long getChannelId() {
+        if (jda == null) throw new IllegalStateException("Message info has not been initialized yet");
+        return channelId;
+    }
+
+    @Nullable
+    public MessageChannel getChannel() {
+        if (jda == null) throw new IllegalStateException("Message info has not been initialized yet");
+
+        MessageChannel channel = jda.getTextChannelById(channelId);
+        if (channel == null) channel = jda.getPrivateChannelById(channelId);
+
+        return channel;
     }
 
     /**
@@ -82,13 +120,24 @@ public abstract class ActionMenu {
         public TimeUnit getUnit() {
             return ActionMenu.this.getUnit();
         }
-    }
 
-    public interface MenuTimeoutEvent {
+        @Nonnull
+        public JDA getJDA() {
+            return ActionMenu.this.getJDA();
+        }
+
+        public long getChannelId() {
+            return ActionMenu.this.getChannelId();
+        }
+
+        public long getMessageId() {
+            return ActionMenu.this.getMessageId();
+        }
+
         @Nullable
-        MessageChannel getChannel();
-
-        long getMessageId();
+        public MessageChannel getChannel() {
+            return ActionMenu.this.getChannel();
+        }
     }
 
     @SuppressWarnings("unchecked")

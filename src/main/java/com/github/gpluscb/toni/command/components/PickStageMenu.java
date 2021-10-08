@@ -6,6 +6,7 @@ import com.github.gpluscb.toni.util.discord.ButtonActionMenu;
 import com.github.gpluscb.toni.util.smash.Ruleset;
 import com.github.gpluscb.toni.util.smash.Stage;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
@@ -106,8 +107,24 @@ public class PickStageMenu extends ActionMenu {
         return OneOfTwo.ofU(ButtonActionMenu.MenuAction.CANCEL);
     }
 
-    private synchronized void onTimeout(@Nullable MessageChannel channel, long messageId) {
-        onTimeout.accept(new PickStageTimeoutEvent(channel, messageId));
+    private synchronized void onTimeout(@Nonnull ButtonActionMenu.ButtonActionMenuTimeoutEvent event) {
+        onTimeout.accept(new PickStageTimeoutEvent());
+    }
+
+    @Nonnull
+    @Override
+    public JDA getJDA() {
+        return underlying.getJDA();
+    }
+
+    @Override
+    public long getMessageId() {
+        return underlying.getMessageId();
+    }
+
+    @Override
+    public long getChannelId() {
+        return underlying.getChannelId();
     }
 
     private abstract class PickStageInfo extends MenuStateInfo {
@@ -148,26 +165,7 @@ public class PickStageMenu extends ActionMenu {
         }
     }
 
-    public class PickStageTimeoutEvent extends PickStageInfo implements MenuTimeoutEvent {
-        @Nullable
-        private final MessageChannel channel;
-        private final long messageId;
-
-        public PickStageTimeoutEvent(@Nullable MessageChannel channel, long messageId) {
-            this.channel = channel;
-            this.messageId = messageId;
-        }
-
-        @Nullable
-        @Override
-        public MessageChannel getChannel() {
-            return channel;
-        }
-
-        @Override
-        public long getMessageId() {
-            return messageId;
-        }
+    public class PickStageTimeoutEvent extends PickStageInfo {
     }
 
     public static class Builder extends ActionMenu.Builder<Builder, PickStageMenu> {

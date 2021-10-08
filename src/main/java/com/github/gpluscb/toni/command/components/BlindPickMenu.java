@@ -9,6 +9,9 @@ import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.requests.RestAction;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -19,6 +22,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public class BlindPickMenu extends ActionMenu {
+    private static final Logger log = LogManager.getLogger(BlindPickMenu.class);
+
     @Nonnull
     private final ChannelChoiceWaiter waiter;
     @Nonnull
@@ -47,32 +52,32 @@ public class BlindPickMenu extends ActionMenu {
 
     @Override
     public void display(@Nonnull MessageChannel channel) {
-        if (initWaiter()) channel.sendMessage(start).queue();
+        initWithMessageAction(channel.sendMessage(start));
     }
 
     @Override
     public void display(@Nonnull MessageChannel channel, long messageId) {
-        if (initWaiter()) channel.editMessageById(messageId, start).queue();
+        initWithMessageAction(channel.editMessageById(messageId, start));
     }
 
     @Override
     public void displayReplying(@Nonnull MessageChannel channel, long messageId) {
         // TODO: MESSAGE_HISTORY
-        if (initWaiter()) channel.sendMessage(start).referenceById(messageId).queue();
+        initWithMessageAction(channel.sendMessage(start).referenceById(messageId));
     }
 
     @Override
     public void displaySlashReplying(@Nonnull SlashCommandEvent event) {
-        if (initWaiter()) event.reply(start).queue();
+        initWithMessageAction(event.reply(start).flatMap(InteractionHook::retrieveOriginal));
     }
 
     @Override
     public void displayDeferredReplying(@Nonnull InteractionHook hook) {
-        if (initWaiter()) hook.sendMessage(start).queue();
+        initWithMessageAction(hook.sendMessage(start));
     }
 
-    private boolean initWaiter() {
-        boolean success = waiter.waitForDMChoice(
+    private void initWithMessageAction(@Nonnull RestAction<Message> action) {
+        ChannelChoiceWaiter.WaitChoiceHandle handle = waiter.waitForDMChoice(
                 users,
                 true,
                 this::verifyChoice,
@@ -81,8 +86,18 @@ public class BlindPickMenu extends ActionMenu {
                 choices -> onTimeout.accept(new BlindPickTimeoutEvent(choices))
         );
 
-        if (!success) onFailedInit.run();
-        return success;
+        if (handle == null) {
+            onFailedInit.run();
+            return;
+        }
+
+        action.queue(message -> {
+            setMessageInfo(message);
+            handle.startListening();
+        }, t -> {
+            log.catching(t);
+            handle.cancel();
+        });
     }
 
     @Nonnull

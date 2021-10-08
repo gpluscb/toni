@@ -4,6 +4,7 @@ import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.discord.TwoUsersChoicesActionMenu;
 import com.github.gpluscb.toni.util.smash.Ruleset;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
@@ -131,6 +132,22 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
         // banResult will be set at this point
         //noinspection ConstantConditions
         onResult.accept(new BanPickStagesResult(banResult, pickResult), e);
+    }
+
+    @Nonnull
+    @Override
+    public JDA getJDA() {
+        return banUnderlying.getJDA();
+    }
+
+    @Override
+    public long getMessageId() {
+        return banUnderlying.getMessageId();
+    }
+
+    @Override
+    public long getChannelId() {
+        return banUnderlying.getChannelId();
     }
 
     public class BanPickStagesResult extends TwoUsersMenuStateInfo {

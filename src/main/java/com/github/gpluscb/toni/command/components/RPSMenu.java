@@ -5,6 +5,7 @@ import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.discord.ButtonActionMenu;
 import com.github.gpluscb.toni.util.discord.TwoUsersChoicesActionMenu;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Emoji;
 import net.dv8tion.jda.api.entities.Message;
@@ -131,8 +132,24 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
         return new RPSResult(winner);
     }
 
-    private synchronized void onTimeout(@Nullable MessageChannel channel, long messageId) {
-        onTimeout.accept(new RPSTimeoutEvent(choice1, choice2, channel, messageId));
+    private synchronized void onTimeout(@Nonnull ButtonActionMenu.ButtonActionMenuTimeoutEvent event) {
+        onTimeout.accept(new RPSTimeoutEvent(choice1, choice2));
+    }
+
+    @Nonnull
+    @Override
+    public JDA getJDA() {
+        return underlying.getJDA();
+    }
+
+    @Override
+    public long getMessageId() {
+        return underlying.getMessageId();
+    }
+
+    @Override
+    public long getChannelId() {
+        return underlying.getChannelId();
     }
 
     public enum RPS {
@@ -231,20 +248,15 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
         }
     }
 
-    public class RPSTimeoutEvent extends TwoUsersMenuStateInfo implements TwoUsersMenuTimeoutEvent {
+    public class RPSTimeoutEvent extends TwoUsersMenuStateInfo {
         @Nullable
         private final RPS choiceA;
         @Nullable
         private final RPS choiceB;
-        @Nullable
-        private final MessageChannel channel;
-        private final long messageId;
 
-        public RPSTimeoutEvent(@Nullable RPS choiceA, @Nullable RPS choiceB, @Nullable MessageChannel channel, long messageId) {
+        public RPSTimeoutEvent(@Nullable RPS choiceA, @Nullable RPS choiceB) {
             this.choiceA = choiceA;
             this.choiceB = choiceB;
-            this.channel = channel;
-            this.messageId = messageId;
         }
 
         @Nullable
@@ -255,17 +267,6 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
         @Nullable
         public RPS getChoiceB() {
             return choiceB;
-        }
-
-        @Override
-        @Nullable
-        public MessageChannel getChannel() {
-            return channel;
-        }
-
-        @Override
-        public long getMessageId() {
-            return messageId;
         }
     }
 

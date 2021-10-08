@@ -26,7 +26,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.util.HashSet;
@@ -254,14 +253,15 @@ public class UnrankedLfgCommand implements Command {
             );
         }
 
-        public void timeout(@Nullable MessageChannel channel, long messageId) {
+        public void timeout(@Nonnull ButtonActionMenu.ButtonActionMenuTimeoutEvent event) {
             synchronized (currentlyLfgPerGuild) {
                 currentlyLfgPerGuild.remove(new PairNonnull<>(guildId, originalAuthorId));
             }
 
+            MessageChannel channel = event.getChannel();
             if (channel == null) return;
 
-            channel.editMessageById(messageId, String.format("%s, %s was looking for a game.",
+            channel.editMessageById(event.getMessageId(), String.format("%s, %s was looking for a game.",
                             MiscUtil.mentionRole(matchmakingRoleId), MiscUtil.mentionUser(originalAuthorId)))
                     .mentionRoles(matchmakingRoleId).mentionUsers(originalAuthorId)
                     .setActionRows()
@@ -301,10 +301,11 @@ public class UnrankedLfgCommand implements Command {
                 );
             }
 
-            public void timeout(@Nullable MessageChannel channel, long messageId) {
+            public void timeout(@Nonnull ButtonActionMenu.ButtonActionMenuTimeoutEvent event) {
+                MessageChannel channel = event.getChannel();
                 if (channel == null) return;
 
-                channel.editMessageById(messageId, String.format("%s, %s wants to play with you.", MiscUtil.mentionUser(originalAuthorId), MiscUtil.mentionUser(challengerId)))
+                channel.editMessageById(event.getMessageId(), String.format("%s, %s wants to play with you.", MiscUtil.mentionUser(originalAuthorId), MiscUtil.mentionUser(challengerId)))
                         .mentionUsers(originalAuthorId, challengerId)
                         .setActionRows()
                         .queue(null, new ErrorHandler().ignore(ErrorResponse.UNKNOWN_MESSAGE));

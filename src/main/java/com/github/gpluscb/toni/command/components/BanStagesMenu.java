@@ -7,6 +7,7 @@ import com.github.gpluscb.toni.util.discord.ButtonActionMenu;
 import com.github.gpluscb.toni.util.smash.Ruleset;
 import com.github.gpluscb.toni.util.smash.Stage;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
@@ -22,7 +23,6 @@ import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -170,8 +170,24 @@ public class BanStagesMenu extends ActionMenu {
         return OneOfTwo.ofT(builder.build());
     }
 
-    private synchronized void onTimeout(@Nullable MessageChannel channel, long messageId) {
-        onTimeout.accept(new BanStagesTimeoutEvent(channel, messageId));
+    private synchronized void onTimeout(@Nonnull ButtonActionMenu.ButtonActionMenuTimeoutEvent timeout) {
+        onTimeout.accept(new BanStagesTimeoutEvent());
+    }
+
+    @Nonnull
+    @Override
+    public JDA getJDA() {
+        return underlying.getJDA();
+    }
+
+    @Override
+    public long getMessageId() {
+        return underlying.getMessageId();
+    }
+
+    @Override
+    public long getChannelId() {
+        return underlying.getChannelId();
     }
 
     private abstract class BanStagesInfo extends MenuStateInfo {
@@ -246,26 +262,7 @@ public class BanStagesMenu extends ActionMenu {
     public class BanResult extends BanStagesInfo {
     }
 
-    public class BanStagesTimeoutEvent extends BanStagesInfo implements MenuTimeoutEvent {
-        @Nullable
-        private final MessageChannel channel;
-        private final long messageId;
-
-        public BanStagesTimeoutEvent(@Nullable MessageChannel channel, long messageId) {
-            this.channel = channel;
-            this.messageId = messageId;
-        }
-
-        @Nullable
-        @Override
-        public MessageChannel getChannel() {
-            return channel;
-        }
-
-        @Override
-        public long getMessageId() {
-            return messageId;
-        }
+    public class BanStagesTimeoutEvent extends BanStagesInfo {
     }
 
     public static class Builder extends ActionMenu.Builder<Builder, BanStagesMenu> {

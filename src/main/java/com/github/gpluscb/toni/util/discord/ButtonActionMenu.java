@@ -20,14 +20,13 @@ import net.dv8tion.jda.api.interactions.components.ButtonStyle;
 import net.dv8tion.jda.api.interactions.components.Component;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.requests.restaction.MessageAction;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -36,8 +35,6 @@ import java.util.stream.Stream;
  * We override the validation to only allow specific users in users.
  */
 public class ButtonActionMenu extends ActionMenu {
-    private static final Logger log = LogManager.getLogger(ButtonActionMenu.class);
-
     @Nonnull
     private final Set<Long> users;
 
@@ -50,9 +47,9 @@ public class ButtonActionMenu extends ActionMenu {
     @Nullable
     private final Button deletionButton;
     @Nonnull
-    private final BiConsumer<MessageChannel, Long> timeoutAction;
+    private final Consumer<ButtonActionMenuTimeoutEvent> timeoutAction;
 
-    public ButtonActionMenu(@Nonnull EventWaiter waiter, @Nonnull Set<Long> users, long timeout, @Nonnull TimeUnit unit, @Nonnull List<RegisteredButton> buttons, @Nonnull Message start, @Nullable Button deletionButton, @Nonnull BiConsumer<MessageChannel, Long> timeoutAction) {
+    public ButtonActionMenu(@Nonnull EventWaiter waiter, @Nonnull Set<Long> users, long timeout, @Nonnull TimeUnit unit, @Nonnull List<RegisteredButton> buttons, @Nonnull Message start, @Nullable Button deletionButton, @Nonnull Consumer<ButtonActionMenuTimeoutEvent> timeoutAction) {
         super(waiter, timeout, unit);
         this.users = users;
 
@@ -93,12 +90,12 @@ public class ButtonActionMenu extends ActionMenu {
 
     @Override
     public void displaySlashReplying(@Nonnull SlashCommandEvent e) {
-        e.reply(start).addActionRows(actionRows).flatMap(InteractionHook::retrieveOriginal).queue(this::awaitEvents);
+        e.reply(start).addActionRows(actionRows).flatMap(InteractionHook::retrieveOriginal).queue(this::initWithMessage);
     }
 
     @Override
     public void displayDeferredReplying(@Nonnull InteractionHook hook) {
-        hook.sendMessage(start).addActionRows(actionRows).queue(this::awaitEvents);
+        hook.sendMessage(start).addActionRows(actionRows).queue(this::initWithMessage);
     }
 
     @Override
@@ -116,7 +113,12 @@ public class ButtonActionMenu extends ActionMenu {
     }
 
     private void init(@Nonnull MessageAction messageAction) {
-        messageAction.setActionRows(actionRows).queue(this::awaitEvents);
+        messageAction.setActionRows(actionRows).queue(this::initWithMessage);
+    }
+
+    private void initWithMessage(@Nonnull Message message) {
+        setMessageInfo(message);
+        awaitEvents(message);
     }
 
     private void awaitEvents(@Nonnull Message message) {
@@ -128,10 +130,7 @@ public class ButtonActionMenu extends ActionMenu {
                 e -> checkButtonClick(e, messageId),
                 this::handleButtonClick,
                 getTimeout(), getUnit(), FailLogger.logFail(() -> { // This is the only thing that will be executed on not JDA-WS thread. So exceptions may get swallowed
-                    MessageChannel channel = jda.getTextChannelById(channelId);
-                    if (channel == null) channel = jda.getPrivateChannelById(channelId);
-                    timeoutAction.accept(channel, messageId);
-                    if (channel == null) log.warn("MessageChannel for timeoutAction not in cache for timeoutAction");
+                    timeoutAction.accept(new ButtonActionMenuTimeoutEvent());
                 }));
     }
 
@@ -172,6 +171,9 @@ public class ButtonActionMenu extends ActionMenu {
                             throw new IllegalStateException("Non exhaustive switch over MenuAction");
                     }
                 });
+    }
+
+    public class ButtonActionMenuTimeoutEvent extends MenuStateInfo {
     }
 
     public static class RegisteredButton {
@@ -220,7 +222,7 @@ public class ButtonActionMenu extends ActionMenu {
         @Nullable
         private Button deletionButton;
         @Nullable
-        private BiConsumer<MessageChannel, Long> timeoutAction;
+        private Consumer<ButtonActionMenuTimeoutEvent> timeoutAction;
 
         /**
          * Default timeout of 20 minutes
@@ -281,7 +283,7 @@ public class ButtonActionMenu extends ActionMenu {
          * Default: look at source lol it's too long for docs: {@link #build()}
          */
         @Nonnull
-        public Builder setTimeoutAction(@Nullable BiConsumer<MessageChannel, Long> timeoutAction) {
+        public Builder setTimeoutAction(@Nullable Consumer<ButtonActionMenuTimeoutEvent> timeoutAction) {
             this.timeoutAction = timeoutAction;
             return this;
         }
@@ -307,7 +309,7 @@ public class ButtonActionMenu extends ActionMenu {
         }
 
         @Nullable
-        public BiConsumer<MessageChannel, Long> getTimeoutAction() {
+        public Consumer<ButtonActionMenuTimeoutEvent> getTimeoutAction() {
             return timeoutAction;
         }
 
@@ -321,7 +323,8 @@ public class ButtonActionMenu extends ActionMenu {
             if (start == null) throw new IllegalStateException("Start must be set");
 
             if (timeoutAction == null) {
-                timeoutAction = (channel, id) -> {
+                timeoutAction = event -> {
+                    MessageChannel channel = event.getChannel();
                     if (channel == null) return;
                     if (channel instanceof TextChannel) {
                         TextChannel textChannel = (TextChannel) channel;
@@ -329,7 +332,7 @@ public class ButtonActionMenu extends ActionMenu {
                             return;
                     }
 
-                    channel.retrieveMessageById(id)
+                    channel.retrieveMessageById(event.getMessageId())
                             .flatMap(m -> m.editMessage(m).setActionRows())
                             .queue(null, new ErrorHandler().ignore(ErrorResponse.UNKNOWN_MESSAGE));
                 };

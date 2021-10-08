@@ -7,6 +7,7 @@ import com.github.gpluscb.toni.util.discord.TwoUsersChoicesActionMenu;
 import com.github.gpluscb.toni.util.smash.Ruleset;
 import com.github.gpluscb.toni.util.smash.Stage;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
@@ -55,7 +56,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
     @Nonnull
     private final ButtonActionMenu underlying;
 
-    public StrikeStagesMenu(@Nonnull EventWaiter waiter, long timeout, @Nonnull TimeUnit unit, @Nonnull BiConsumer<StrikeInfo, ButtonClickEvent> onStrike, BiConsumer<UserStrikesInfo, ButtonClickEvent> onUserStrikes, @Nonnull BiConsumer<StrikeResult, ButtonClickEvent> onResult, @Nonnull Ruleset ruleset, long striker1, long striker2, @Nonnull Consumer<StrikeStagesTimeoutEvent> onTimeout) {
+    public StrikeStagesMenu(@Nonnull EventWaiter waiter, long timeout, @Nonnull TimeUnit unit, @Nonnull BiConsumer<StrikeInfo, ButtonClickEvent> onStrike, @Nonnull BiConsumer<UserStrikesInfo, ButtonClickEvent> onUserStrikes, @Nonnull BiConsumer<StrikeResult, ButtonClickEvent> onResult, @Nonnull Ruleset ruleset, long striker1, long striker2, @Nonnull Consumer<StrikeStagesTimeoutEvent> onTimeout) {
         super(waiter, striker1, striker2, timeout, unit);
 
         this.onStrike = onStrike;
@@ -194,8 +195,24 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
         return OneOfTwo.ofT(builder.build());
     }
 
-    private synchronized void onTimeout(@Nullable MessageChannel channel, long messageId) {
-        onTimeout.accept(new StrikeStagesTimeoutEvent(channel, messageId));
+    private synchronized void onTimeout(@Nonnull ButtonActionMenu.ButtonActionMenuTimeoutEvent event) {
+        onTimeout.accept(new StrikeStagesTimeoutEvent());
+    }
+
+    @Nonnull
+    @Override
+    public JDA getJDA() {
+        return underlying.getJDA();
+    }
+
+    @Override
+    public long getMessageId() {
+        return underlying.getMessageId();
+    }
+
+    @Override
+    public long getChannelId() {
+        return underlying.getChannelId();
     }
 
     private abstract class StrikeStagesInfo extends TwoUsersMenuStateInfo {
@@ -281,26 +298,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
         }
     }
 
-    public class StrikeStagesTimeoutEvent extends StrikeStagesInfo implements TwoUsersMenuTimeoutEvent {
-        @Nullable
-        private final MessageChannel channel;
-        private final long messageId;
-
-        public StrikeStagesTimeoutEvent(@Nullable MessageChannel channel, long messageId) {
-            this.channel = channel;
-            this.messageId = messageId;
-        }
-
-        @Override
-        @Nullable
-        public MessageChannel getChannel() {
-            return channel;
-        }
-
-        @Override
-        public long getMessageId() {
-            return messageId;
-        }
+    public class StrikeStagesTimeoutEvent extends StrikeStagesInfo {
     }
 
     public static class Builder extends TwoUsersChoicesActionMenu.Builder<Builder, StrikeStagesMenu> {

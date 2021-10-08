@@ -96,11 +96,6 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
     @Nonnull
     private final ActionMenu startUnderlying;
 
-    @Nullable
-    private JDA jda;
-    private long channelId;
-    private long messageId;
-
     @Nonnull
     private final SmashSet set;
     @Nullable
@@ -164,35 +159,35 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
     @Override
     public void display(@Nonnull MessageChannel channel) {
-        throw new UnsupportedOperationException("Only operations where the message exists are supported"); // TODO
+        initSet();
+        startUnderlying.display(channel);
     }
 
     @Override
     public void display(MessageChannel channel, long messageId) {
-        init(channel.getJDA(), channel.getIdLong(), messageId);
+        initSet();
         startUnderlying.display(channel, messageId);
     }
 
     @Override
     public void displayReplying(@Nonnull MessageChannel channel, long messageId) {
-        throw new UnsupportedOperationException("Only operations where the message exists are supported"); // TODO
+        initSet();
+        startUnderlying.display(channel, messageId);
     }
 
     @Override
     public void displaySlashReplying(@Nonnull SlashCommandEvent event) {
-        throw new UnsupportedOperationException("Only operations where the message exists are supported"); // TODO
+        initSet();
+        startUnderlying.displaySlashReplying(event);
     }
 
     @Override
     public void displayDeferredReplying(@Nonnull InteractionHook hook) {
-        throw new UnsupportedOperationException("Only operations where the message exists are supported"); // TODO
+        initSet();
+        startUnderlying.displayDeferredReplying(hook);
     }
 
-    private void init(@Nonnull JDA jda, long channelId, long messageId) {
-        this.jda = jda;
-        this.channelId = channelId;
-        this.messageId = messageId;
-
+    private void initSet() {
         if (rpsInfo == null) {
             SmashSet.Player firstStriker = ThreadLocalRandom.current().nextBoolean() ?
                     SmashSet.Player.PLAYER1
@@ -269,7 +264,6 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
     @Nonnull
     private BanPickStagesMenu createBanPickStagesMenu() {
-        // TODO: Get info from args out of set??
         SmashSet.SetWinnerStageBanState banState = ((SmashSet.SetWinnerStageBanState) state);
         // At this point it will be displayed => not null
         @SuppressWarnings("ConstantConditions")
@@ -291,7 +285,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
     }
 
     @Nonnull
-    private CharPickMenu createWinnerCharPickMenu(long channelId) {
+    private CharPickMenu createWinnerCharPickMenu() {
         // At this point it will be displayed => not null
         @SuppressWarnings("ConstantConditions")
         long winner = userFromPlayer(((SmashSet.SetWinnerCharPickState) state).getPrevWinner());
@@ -301,7 +295,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         return new CharPickMenu.Builder()
                 .setChannelWaiter(channelWaiter)
                 .setUser(winner)
-                .setChannelId(channelId) // TODO: Maybe this will be changed later???
+                .setChannelId(getChannelId())
                 .setCharacters(characters)
                 .setStart(start)
                 .setTimeout(winnerCharPickTimeout, winnerCharPickUnit)
@@ -312,7 +306,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
     }
 
     @Nonnull
-    private CharPickMenu createLoserCharCounterpickMenu(long channelId) {
+    private CharPickMenu createLoserCharCounterpickMenu() {
         // At this point it will be displayed => not null
         @SuppressWarnings("ConstantConditions")
         long loser = userFromPlayer(((SmashSet.SetLoserCharCounterpickState) state).getPrevLoser());
@@ -322,7 +316,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         return new CharPickMenu.Builder()
                 .setChannelWaiter(channelWaiter)
                 .setUser(loser)
-                .setChannelId(channelId) // TODO: Maybe this will be changed later???
+                .setChannelId(getChannelId())
                 .setCharacters(characters)
                 .setStart(start)
                 .setTimeout(loserCharCounterpickTimeout, loserCharCounterpickUnit)
@@ -390,7 +384,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         newState.map(
                 rps -> createRPSAndStrikeStagesMenu(),
                 inGame -> createReportGameMenu()
-        ).display(channel, messageId);
+        ).display(channel, getMessageId());
     }
 
     private synchronized void onReportGameResult(@Nonnull ReportGameMenu.ReportGameResult result, @Nonnull ButtonClickEvent event) {
@@ -408,7 +402,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
             notComplete.map(
                     stageBan -> createBanPickStagesMenu(),
-                    charPick -> createWinnerCharPickMenu(event.getChannel().getIdLong())
+                    charPick -> createWinnerCharPickMenu()
             ).display(event.getMessage());
         }).onU(completed -> {
             // TODO
@@ -433,7 +427,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         state = newState.map(charPick -> charPick, inGame -> inGame);
 
         newState.map(
-                charPick -> createWinnerCharPickMenu(event.getChannel().getIdLong()),
+                charPick -> createWinnerCharPickMenu(),
                 inGame -> createReportGameMenu()
         ).display(event.getMessage());
     }
@@ -446,7 +440,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         MessageChannel channel = tryGetChannel();
         if (channel == null) return;
 
-        createLoserCharCounterpickMenu(channelId).display(channel, messageId);
+        createLoserCharCounterpickMenu().display(channel, getMessageId());
     }
 
     private synchronized void onLoserCharCounterpickResult(@Nonnull CharPickMenu.CharPickResult result) {
@@ -463,7 +457,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         newState.map(
                 stageBan -> createBanPickStagesMenu(),
                 inGame -> createReportGameMenu()
-        ).display(channel, messageId);
+        ).display(channel, getMessageId());
     }
 
     private void onRPSTimeout(@Nonnull RPSMenu.RPSTimeoutEvent event) {
@@ -532,16 +526,29 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
      */
     @Nullable
     private MessageChannel tryGetChannel() {
-        // JDA should not be null when this is called
-        //noinspection ConstantConditions
-        MessageChannel channel = jda.getTextChannelById(channelId);
-        if (channel == null) channel = jda.getPrivateChannelById(channelId);
+        MessageChannel channel = getChannel();
         if (channel == null) {
-            log.warn("MessageChannel in SmashSetMenu not in cache: {}", channelId);
+            log.warn("MessageChannel in SmashSetMenu not in cache: {}", getChannelId());
             onMessageChannelNotInCache.accept(new SmashSetStateInfo());
         }
 
         return channel;
+    }
+
+    @Nonnull
+    @Override
+    public JDA getJDA() {
+        return startUnderlying.getJDA();
+    }
+
+    @Override
+    public long getMessageId() {
+        return startUnderlying.getMessageId();
+    }
+
+    @Override
+    public long getChannelId() {
+        return startUnderlying.getChannelId();
     }
 
     public class SmashSetStateInfo extends TwoUsersMenuStateInfo {
@@ -631,21 +638,6 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         @Nonnull
         public TimeUnit getLoserCharCounterpickUnit() {
             return loserCharCounterpickUnit;
-        }
-
-        @Nonnull
-        public JDA getJDA() {
-            // Whenever this is constructed, display will already have been called
-            //noinspection ConstantConditions
-            return jda;
-        }
-
-        public long getChannelId() {
-            return channelId;
-        }
-
-        public long getMessageId() {
-            return messageId;
         }
 
         @Nonnull

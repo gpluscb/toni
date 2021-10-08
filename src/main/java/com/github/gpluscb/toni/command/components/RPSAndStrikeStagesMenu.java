@@ -7,6 +7,7 @@ import com.github.gpluscb.toni.util.discord.ButtonActionMenu;
 import com.github.gpluscb.toni.util.discord.TwoUsersChoicesActionMenu;
 import com.github.gpluscb.toni.util.smash.Ruleset;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Emoji;
@@ -183,7 +184,7 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
                 .setTimeout(getTimeout(), getUnit())
                 .registerButton(Button.secondary("first", Emoji.fromUnicode(Constants.ONE)), onButtonFirst)
                 .registerButton(Button.secondary("second", Emoji.fromUnicode(Constants.TWO)), onButtonSecond)
-                .setTimeoutAction((channel, messageId) -> onStrikeFirstTimeout.accept(new StrikeFirstChoiceTimeoutEvent(winner, channel, messageId)))
+                .setTimeoutAction(event -> onStrikeFirstTimeout.accept(new StrikeFirstChoiceTimeoutEvent(winner)))
                 .build();
 
         strikeFirstChoiceUnderlying.display(e.getMessage());
@@ -214,6 +215,22 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
         // We know onRPSResult was called before
         //noinspection ConstantConditions
         onResult.accept(new RPSAndStrikeStagesResult(rpsResult, strikeFirstChoiceResult, strikeResult), e);
+    }
+
+    @Nonnull
+    @Override
+    public JDA getJDA() {
+        return rpsUnderlying.getJDA();
+    }
+
+    @Override
+    public long getMessageId() {
+        return rpsUnderlying.getMessageId();
+    }
+
+    @Override
+    public long getChannelId() {
+        return rpsUnderlying.getChannelId();
     }
 
     public class StrikeFirstChoiceResult extends TwoUsersMenuStateInfo {
@@ -274,31 +291,15 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
         }
     }
 
-    public class StrikeFirstChoiceTimeoutEvent extends TwoUsersMenuStateInfo implements TwoUsersMenuTimeoutEvent {
+    public class StrikeFirstChoiceTimeoutEvent extends TwoUsersMenuStateInfo {
         private final long userMakingChoice;
-        @Nullable
-        private final MessageChannel channel;
-        private final long messageId;
 
-        public StrikeFirstChoiceTimeoutEvent(long userMakingChoice, @Nullable MessageChannel channel, long messageId) {
+        public StrikeFirstChoiceTimeoutEvent(long userMakingChoice) {
             this.userMakingChoice = userMakingChoice;
-            this.channel = channel;
-            this.messageId = messageId;
         }
 
         public long getUserMakingChoice() {
             return userMakingChoice;
-        }
-
-        @Override
-        @Nullable
-        public MessageChannel getChannel() {
-            return channel;
-        }
-
-        @Override
-        public long getMessageId() {
-            return messageId;
         }
     }
 

@@ -35,9 +35,6 @@ public abstract class TwoUsersChoicesActionMenu extends ActionMenu {
         }
     }
 
-    public interface TwoUsersMenuTimeoutEvent extends ActionMenu.MenuTimeoutEvent {
-    }
-
     public static abstract class Builder<T extends Builder<T, V>, V extends TwoUsersChoicesActionMenu> extends ActionMenu.Builder<T, V> {
         @Nullable
         private Long user1;

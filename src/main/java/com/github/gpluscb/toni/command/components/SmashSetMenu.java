@@ -12,6 +12,8 @@ import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.interactions.InteractionHook;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -19,6 +21,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -105,7 +108,14 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
     public SmashSetMenu(@Nonnull ChannelChoiceWaiter channelWaiter, long user1, long user2, @Nonnull Ruleset ruleset, @Nonnull List<Character> characters, int firstToWhatScore,
                         @Nullable RPSInfo rpsInfo,
-                        long strikeTimeout, @Nonnull TimeUnit strikeUnit) {
+                        long strikeTimeout, @Nonnull TimeUnit strikeUnit, @Nonnull Consumer<SmashSetStrikeTimeoutEvent> onStrikeTimeout,
+                        long doubleBlindTimeout, @Nonnull TimeUnit doubleBlindUnit, @Nonnull Consumer<SmashSetDoubleBlindTimeoutEvent> onDoubleBlindTimeout, @Nonnull Consumer<SmashSetStateInfo> onDoubleBlindFailedInit,
+                        long reportGameTimeout, @Nonnull TimeUnit reportGameUnit, @Nonnull String user1Display, @Nonnull String user2Display, @Nonnull Consumer<SmashSetReportGameTimeoutEvent> onReportGameTimeout,
+                        long banTimeout, @Nonnull TimeUnit banUnit, @Nonnull Consumer<SmashSetBanTimeoutEvent> onBanTimeout,
+                        long pickStageTimeout, @Nonnull TimeUnit pickStageUnit, @Nonnull Consumer<SmashSetPickStageTimeoutEvent> onPickStageTimeout,
+                        long winnerCharPickTimeout, @Nonnull TimeUnit winnerCharPickUnit, @Nonnull Consumer<SmashSetCharPickTimeoutEvent> onWinnerCharPickTimeout, @Nonnull Consumer<SmashSetStateInfo> onWinnerCharPickFailedInit,
+                        long loserCharCounterpickTimeout, @Nonnull TimeUnit loserCharCounterpickUnit, @Nonnull Consumer<SmashSetCharPickTimeoutEvent> onLoserCharCounterpickTimeout, @Nonnull Consumer<SmashSetStateInfo> onLoserCharCounterpickFailedInit,
+                        @Nonnull Consumer<SmashSetStateInfo> onMessageChannelNotInCache) {
         super(channelWaiter.getEventWaiter(), user1, user2, strikeTimeout, strikeUnit);
 
         this.channelWaiter = channelWaiter;
@@ -113,10 +123,35 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         this.ruleset = ruleset;
         this.characters = characters;
         this.rpsInfo = rpsInfo;
+        this.strikeTimeout = strikeTimeout;
+        this.strikeUnit = strikeUnit;
+        this.onStrikeTimeout = onStrikeTimeout;
+        this.doubleBlindTimeout = doubleBlindTimeout;
+        this.doubleBlindUnit = doubleBlindUnit;
+        this.onDoubleBlindTimeout = onDoubleBlindTimeout;
+        this.onDoubleBlindFailedInit = onDoubleBlindFailedInit;
+        this.reportGameTimeout = reportGameTimeout;
+        this.reportGameUnit = reportGameUnit;
+        this.user1Display = user1Display;
+        this.user2Display = user2Display;
+        this.onReportGameTimeout = onReportGameTimeout;
+        this.banTimeout = banTimeout;
+        this.banUnit = banUnit;
+        this.onBanTimeout = onBanTimeout;
+        this.pickStageTimeout = pickStageTimeout;
+        this.pickStageUnit = pickStageUnit;
+        this.onPickStageTimeout = onPickStageTimeout;
+        this.winnerCharPickTimeout = winnerCharPickTimeout;
+        this.winnerCharPickUnit = winnerCharPickUnit;
+        this.onWinnerCharPickTimeout = onWinnerCharPickTimeout;
+        this.onWinnerCharPickFailedInit = onWinnerCharPickFailedInit;
+        this.loserCharCounterpickTimeout = loserCharCounterpickTimeout;
+        this.loserCharCounterpickUnit = loserCharCounterpickUnit;
+        this.onLoserCharCounterpickTimeout = onLoserCharCounterpickTimeout;
+        this.onLoserCharCounterpickFailedInit = onLoserCharCounterpickFailedInit;
+        this.onMessageChannelNotInCache = onMessageChannelNotInCache;
 
         set = new SmashSet(ruleset, firstToWhatScore, rpsInfo != null);
-
-        // TODO: Potentially doubleblind first
 
         if (ruleset.isBlindPickBeforeStage()) {
             startUnderlying = createDoubleBlindMenu();
@@ -127,8 +162,52 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         }
     }
 
+    @Override
+    public void display(@Nonnull MessageChannel channel) {
+        throw new UnsupportedOperationException("Only operations where the message exists are supported"); // TODO
+    }
+
+    @Override
+    public void display(MessageChannel channel, long messageId) {
+        init(channel.getJDA(), channel.getIdLong(), messageId);
+        startUnderlying.display(channel, messageId);
+    }
+
+    @Override
+    public void displayReplying(@Nonnull MessageChannel channel, long messageId) {
+        throw new UnsupportedOperationException("Only operations where the message exists are supported"); // TODO
+    }
+
+    @Override
+    public void displaySlashReplying(@Nonnull SlashCommandEvent event) {
+        throw new UnsupportedOperationException("Only operations where the message exists are supported"); // TODO
+    }
+
+    @Override
+    public void displayDeferredReplying(@Nonnull InteractionHook hook) {
+        throw new UnsupportedOperationException("Only operations where the message exists are supported"); // TODO
+    }
+
+    private void init(@Nonnull JDA jda, long channelId, long messageId) {
+        this.jda = jda;
+        this.channelId = channelId;
+        this.messageId = messageId;
+
+        if (rpsInfo == null) {
+            SmashSet.Player firstStriker = ThreadLocalRandom.current().nextBoolean() ?
+                    SmashSet.Player.PLAYER1
+                    : SmashSet.Player.PLAYER2;
+
+            state = set.startSetNoRPS(firstStriker).map(doubleBlind -> doubleBlind, strike -> strike);
+        } else {
+            state = set.startSetWithRPS().map(doubleBlind -> doubleBlind, rps -> rps);
+        }
+    }
+
     @Nonnull
     private RPSAndStrikeStagesMenu createRPSAndStrikeStagesMenu() {
+        // Will only be called if we do rps
+        //noinspection ConstantConditions
         return new RPSAndStrikeStagesMenu.Builder()
                 .setWaiter(getWaiter())
                 .setUsers(getUser1(), getUser2())

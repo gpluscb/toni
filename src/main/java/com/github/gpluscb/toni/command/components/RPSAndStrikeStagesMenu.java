@@ -55,6 +55,8 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
     @Nonnull
     private final BiConsumer<StrikeStagesMenu.StrikeInfo, ButtonClickEvent> onStrike;
     @Nonnull
+    private final BiConsumer<StrikeStagesMenu.UserStrikesInfo, ButtonClickEvent> onUserStrikes;
+    @Nonnull
     private final BiConsumer<StrikeStagesMenu.StrikeResult, ButtonClickEvent> onStrikeResult;
     @Nonnull
     private final Ruleset ruleset;
@@ -69,7 +71,7 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
     public RPSAndStrikeStagesMenu(@Nonnull EventWaiter waiter, long user1, long user2,
                                   long strikeFirstChoiceTimeout, @Nonnull TimeUnit strikeFirstChoiceUnit, @Nonnull BiConsumer<StrikeFirstChoiceResult, ButtonClickEvent> onStrikeFirstChoice, @Nonnull Consumer<StrikeFirstChoiceTimeoutEvent> onStrikeFirstTimeout,
                                   long rpsTimeout, @Nonnull TimeUnit rpsUnit, @Nonnull BiConsumer<RPSMenu.RPS, ButtonClickEvent> onRPSChoiceMade, @Nonnull BiConsumer<RPSMenu.RPSResult, ButtonClickEvent> onRPSResult, @Nonnull Message start, @Nonnull Consumer<RPSMenu.RPSTimeoutEvent> onRPSTimeout,
-                                  long strikeTimeout, @Nonnull TimeUnit strikeUnit, @Nonnull BiConsumer<StrikeStagesMenu.StrikeInfo, ButtonClickEvent> onStrike, @Nonnull BiConsumer<StrikeStagesMenu.StrikeResult, ButtonClickEvent> onStrikeResult, @Nonnull Ruleset ruleset, @Nonnull Consumer<StrikeStagesMenu.StrikeStagesTimeoutEvent> onStrikeTimeout,
+                                  long strikeTimeout, @Nonnull TimeUnit strikeUnit, @Nonnull BiConsumer<StrikeStagesMenu.StrikeInfo, ButtonClickEvent> onStrike, @Nonnull BiConsumer<StrikeStagesMenu.UserStrikesInfo, ButtonClickEvent> onUserStrikes, @Nonnull BiConsumer<StrikeStagesMenu.StrikeResult, ButtonClickEvent> onStrikeResult, @Nonnull Ruleset ruleset, @Nonnull Consumer<StrikeStagesMenu.StrikeStagesTimeoutEvent> onStrikeTimeout,
                                   @Nonnull BiConsumer<RPSAndStrikeStagesResult, ButtonClickEvent> onResult) {
         super(waiter, user1, user2, strikeFirstChoiceTimeout, strikeFirstChoiceUnit);
 
@@ -87,6 +89,7 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
         this.strikeTimeout = strikeTimeout;
         this.strikeUnit = strikeUnit;
         this.onStrike = onStrike;
+        this.onUserStrikes = onUserStrikes;
         this.onStrikeResult = onStrikeResult;
         this.ruleset = ruleset;
         this.onStrikeTimeout = onStrikeTimeout;
@@ -198,6 +201,7 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
                 .setTimeout(strikeTimeout, strikeUnit)
                 .setRuleset(ruleset)
                 .setOnStrike(onStrike)
+                .setOnUserStrikes(onUserStrikes)
                 .setOnResult(this::onStrikeResult)
                 .setOnTimeout(onStrikeTimeout)
                 .build();
@@ -323,6 +327,8 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
         @Nonnull
         private BiConsumer<StrikeStagesMenu.StrikeInfo, ButtonClickEvent> onStrike;
         @Nonnull
+        private BiConsumer<StrikeStagesMenu.UserStrikesInfo, ButtonClickEvent> onUserStrikes;
+        @Nonnull
         private BiConsumer<StrikeStagesMenu.StrikeResult, ButtonClickEvent> onStrikeResult;
         @Nonnull
         private Consumer<StrikeStagesMenu.StrikeStagesTimeoutEvent> onStrikeTimeout;
@@ -360,6 +366,8 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
             strikeTimeout = 5;
             strikeUnit = TimeUnit.MINUTES;
             onStrike = (info, e) -> {
+            };
+            onUserStrikes = (info, e) -> {
             };
             onStrikeResult = (result, e) -> {
             };
@@ -438,6 +446,12 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
         @Nonnull
         public Builder setOnStrike(@Nonnull BiConsumer<StrikeStagesMenu.StrikeInfo, ButtonClickEvent> onStrike) {
             this.onStrike = onStrike;
+            return this;
+        }
+
+        @Nonnull
+        public Builder setOnUserStrikes(@Nonnull BiConsumer<StrikeStagesMenu.UserStrikesInfo, ButtonClickEvent> onUserStrikes) {
+            this.onUserStrikes = onUserStrikes;
             return this;
         }
 
@@ -523,6 +537,11 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
         }
 
         @Nonnull
+        public BiConsumer<StrikeStagesMenu.UserStrikesInfo, ButtonClickEvent> getOnUserStrikes() {
+            return onUserStrikes;
+        }
+
+        @Nonnull
         public Consumer<StrikeStagesMenu.StrikeStagesTimeoutEvent> getOnStrikeTimeout() {
             return onStrikeTimeout;
         }
@@ -543,7 +562,7 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
             //noinspection ConstantConditions
             return new RPSAndStrikeStagesMenu(getWaiter(), getUser1(), getUser2(), getTimeout(), getUnit(), onStrikeFirstChoice, onStrikeFirstTimeout,
                     rpsTimeout, rpsUnit, onRPSChoiceMade, onRPSResult, start, onRPSTimeout,
-                    strikeTimeout, strikeUnit, onStrike, onStrikeResult, ruleset, onStrikeTimeout,
+                    strikeTimeout, strikeUnit, onStrike, onUserStrikes, onStrikeResult, ruleset, onStrikeTimeout,
                     onResult);
         }
     }

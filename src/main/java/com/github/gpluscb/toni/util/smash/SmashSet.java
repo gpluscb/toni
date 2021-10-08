@@ -140,7 +140,7 @@ public class SmashSet {
         @Nonnull
         private final GameData game;
 
-        public SetRPSState() {
+        private SetRPSState() {
             game = new GameData(false);
             games.add(game);
         }
@@ -167,7 +167,7 @@ public class SmashSet {
         @Nonnull
         private Player currentStriker;
 
-        public SetStarterStrikingState(@Nonnull GameData game) {
+        private SetStarterStrikingState(@Nonnull GameData game) {
             Player firstStriker = getFirstStageStriker();
             if (firstStriker == null)
                 throw new IllegalStateException("SetStarterStrikingState with firstStageStriker == null");
@@ -226,7 +226,7 @@ public class SmashSet {
         @Nonnull
         private final GameData game;
 
-        public SetDoubleBlindState(@Nonnull GameData game) {
+        private SetDoubleBlindState(@Nonnull GameData game) {
             this.game = game;
         }
 
@@ -249,7 +249,7 @@ public class SmashSet {
         @Nonnull
         private final GameData game;
 
-        public SetInGameState(@Nonnull GameData game) {
+        private SetInGameState(@Nonnull GameData game) {
             this.game = game;
         }
 
@@ -282,7 +282,7 @@ public class SmashSet {
         @Nonnull
         private final Player prevWinner;
 
-        public SetWinnerCharPickState(@Nonnull GameData game, @Nonnull Player prevWinner) {
+        private SetWinnerCharPickState(@Nonnull GameData game, @Nonnull Player prevWinner) {
             this.game = game;
             this.prevWinner = prevWinner;
         }
@@ -302,6 +302,16 @@ public class SmashSet {
             SetLoserCharCounterpickState state = new SetLoserCharCounterpickState(game, prevWinner);
             return switchState(state);
         }
+
+        @Nonnull
+        public Player getPrevWinner() {
+            return prevWinner;
+        }
+
+        @Nonnull
+        public Player getPrevLoser() {
+            return prevWinner.invert();
+        }
     }
 
     public class SetLoserCharCounterpickState extends SetState {
@@ -310,7 +320,7 @@ public class SmashSet {
         @Nonnull
         private final Player prevWinner;
 
-        public SetLoserCharCounterpickState(@Nonnull GameData game, @Nonnull Player prevWinner) {
+        private SetLoserCharCounterpickState(@Nonnull GameData game, @Nonnull Player prevWinner) {
             this.game = game;
             this.prevWinner = prevWinner;
         }
@@ -336,6 +346,16 @@ public class SmashSet {
                 return OneOfTwo.ofT(switchState(state));
             }
         }
+
+        @Nonnull
+        public Player getPrevWinner() {
+            return prevWinner;
+        }
+
+        @Nonnull
+        public Player getPrevLoser() {
+            return prevWinner.invert();
+        }
     }
 
     public class SetWinnerStageBanState extends SetState {
@@ -344,7 +364,7 @@ public class SmashSet {
         @Nonnull
         private final Player prevWinner;
 
-        public SetWinnerStageBanState(@Nonnull GameData game, @Nonnull Player prevWinner) {
+        private SetWinnerStageBanState(@Nonnull GameData game, @Nonnull Player prevWinner) {
             this.game = game;
             this.prevWinner = prevWinner;
         }
@@ -361,6 +381,22 @@ public class SmashSet {
             SetLoserStageCounterpickState state = new SetLoserStageCounterpickState(game, prevWinner);
             return switchState(state);
         }
+
+        @Nonnull
+        public Player getPrevWinner() {
+            return prevWinner;
+        }
+
+        @Nonnull
+        public Player getPrevLoser() {
+            return prevWinner.invert();
+        }
+
+        @Nonnull
+        public List<Integer> getDSRIllegalStageIndizes() {
+            // TODO
+            return new ArrayList<>();
+        }
     }
 
     public class SetLoserStageCounterpickState extends SetState {
@@ -369,7 +405,7 @@ public class SmashSet {
         @Nonnull
         private final Player prevWinner;
 
-        public SetLoserStageCounterpickState(@Nonnull GameData game, @Nonnull Player prevWinner) {
+        private SetLoserStageCounterpickState(@Nonnull GameData game, @Nonnull Player prevWinner) {
             this.game = game;
             this.prevWinner = prevWinner;
         }
@@ -377,6 +413,11 @@ public class SmashSet {
         @Nonnull
         public synchronized OneOfTwo<SetWinnerCharPickState, SetInGameState> pickStage(int stageIdx) {
             checkValid();
+
+            // This will only be called once bans were done
+            //noinspection ConstantConditions
+            if (game.getStageBanIndices().contains(stageIdx)) throw new IllegalStateException("StageIdx is banned");
+
             game.setStageIdx(stageIdx);
 
             if (ruleset.isStageBeforeCharacter()) {
@@ -387,9 +428,27 @@ public class SmashSet {
                 return OneOfTwo.ofU(switchState(state));
             }
         }
+
+        @Nonnull
+        public Player getPrevWinner() {
+            return prevWinner;
+        }
+
+        @Nonnull
+        public Player getPrevLoser() {
+            return prevWinner.invert();
+        }
+
+        @Nonnull
+        public List<Integer> getDSRIllegalStageIndizes() {
+            // TODO
+            return new ArrayList<>();
+        }
     }
 
     public class SetCompletedState extends SetState {
+        private SetCompletedState() {
+        }
         // TODO: Maybe check validity in constructor??
     }
 
@@ -451,7 +510,7 @@ public class SmashSet {
         }
 
         /**
-         * @return Null if this is the first game in the set (see strikes)
+         * @return Null if this is the first game in the set (see strikes) or if bans haven't taken place yet
          */
         @Nullable
         public Set<Integer> getStageBanIndices() {

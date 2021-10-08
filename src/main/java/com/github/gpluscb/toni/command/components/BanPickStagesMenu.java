@@ -76,8 +76,8 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
     }
 
     @Override
-    public void display(@Nonnull Message message) {
-        banUnderlying.display(message);
+    public void display(@Nonnull MessageChannel channel, long messageId) {
+        banUnderlying.display(channel, messageId);
     }
 
     @Override

@@ -113,8 +113,8 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
     }
 
     @Override
-    public void display(@Nonnull Message message) {
-        rpsUnderlying.display(message);
+    public void display(@Nonnull MessageChannel channel, long messageId) {
+        rpsUnderlying.display(channel, messageId);
     }
 
     @Override

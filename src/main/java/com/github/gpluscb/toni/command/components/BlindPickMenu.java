@@ -51,8 +51,8 @@ public class BlindPickMenu extends ActionMenu {
     }
 
     @Override
-    public void display(@Nonnull Message message) {
-        if (initWaiter()) message.editMessage(start).queue();
+    public void display(@Nonnull MessageChannel channel, long messageId) {
+        if (initWaiter()) channel.editMessageById(messageId, start).queue();
     }
 
     @Override

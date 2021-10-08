@@ -59,8 +59,8 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
     }
 
     @Override
-    public void display(@Nonnull Message message) {
-        underlying.display(message);
+    public void display(@Nonnull MessageChannel channel, long messageId) {
+        underlying.display(channel, messageId);
     }
 
     @Override

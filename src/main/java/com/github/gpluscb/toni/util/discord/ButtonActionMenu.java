@@ -87,8 +87,8 @@ public class ButtonActionMenu extends ActionMenu {
     }
 
     @Override
-    public void display(@Nonnull Message message) {
-        init(message.editMessage(start));
+    public void display(@Nonnull MessageChannel channel, long messageId) {
+        init(channel.editMessageById(messageId, start));
     }
 
     @Override

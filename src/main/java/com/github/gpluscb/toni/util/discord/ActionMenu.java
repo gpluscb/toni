@@ -52,7 +52,11 @@ public abstract class ActionMenu {
      *
      * @param message The Message to display this Menu as
      */
-    public abstract void display(@Nonnull Message message);
+    public void display(@Nonnull Message message) {
+        display(message.getChannel(), message.getIdLong());
+    }
+
+    public abstract void display(MessageChannel channel, long messageId);
 
     public void displayReplying(@Nonnull Message reference) {
         displayReplying(reference.getChannel(), reference.getIdLong());
@@ -63,6 +67,7 @@ public abstract class ActionMenu {
     public abstract void displaySlashReplying(@Nonnull SlashCommandEvent event);
 
     public abstract void displayDeferredReplying(@Nonnull InteractionHook hook);
+
 
     public abstract class MenuStateInfo {
         public EventWaiter getWaiter() {

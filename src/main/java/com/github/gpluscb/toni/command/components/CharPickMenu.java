@@ -52,8 +52,8 @@ public class CharPickMenu extends ActionMenu {
     }
 
     @Override
-    public void display(@Nonnull Message message) {
-        if (initWaiter(channelId)) message.editMessage(start).queue();
+    public void display(@Nonnull MessageChannel channel, long messageId) {
+        if (initWaiter(channelId)) channel.editMessageById(messageId, start).queue();
     }
 
     @Override

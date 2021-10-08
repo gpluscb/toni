@@ -13,8 +13,8 @@ import net.dv8tion.jda.api.interactions.InteractionHook;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -41,7 +41,7 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
     @Nullable
     private BanStagesMenu.BanResult banResult;
 
-    public BanPickStagesMenu(@Nonnull EventWaiter waiter, long banningUser, long counterpickingUser, long banTimeout, @Nonnull TimeUnit banUnit, @Nonnull Ruleset ruleset, @Nonnull List<Integer> dsrIllegalStages, @Nonnull BiConsumer<BanStagesMenu.StageBan, ButtonClickEvent> onBan, @Nonnull BiConsumer<BanStagesMenu.BanResult, ButtonClickEvent> onBanResult, @Nonnull Consumer<BanStagesMenu.BanStagesTimeoutEvent> onBanTimeout,
+    public BanPickStagesMenu(@Nonnull EventWaiter waiter, long banningUser, long counterpickingUser, long banTimeout, @Nonnull TimeUnit banUnit, @Nonnull Ruleset ruleset, @Nonnull Set<Integer> dsrIllegalStages, @Nonnull BiConsumer<BanStagesMenu.StageBan, ButtonClickEvent> onBan, @Nonnull BiConsumer<BanStagesMenu.BanResult, ButtonClickEvent> onBanResult, @Nonnull Consumer<BanStagesMenu.BanStagesTimeoutEvent> onBanTimeout,
                              long pickStageTimeout, @Nonnull TimeUnit pickStageUnit, @Nonnull BiConsumer<PickStageMenu.PickStageResult, ButtonClickEvent> onPickResult, @Nonnull Consumer<PickStageMenu.PickStageTimeoutEvent> onPickTimeout,
                              @Nonnull BiConsumer<BanPickStagesResult, ButtonClickEvent> onResult) {
         super(waiter, banningUser, counterpickingUser, banTimeout, banUnit);
@@ -185,7 +185,7 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
         @Nullable
         private Ruleset ruleset;
         @Nonnull
-        private List<Integer> dsrIllegalStages;
+        private Set<Integer> dsrIllegalStages;
         @Nonnull
         private BiConsumer<BanStagesMenu.StageBan, ButtonClickEvent> onBan;
         @Nonnull
@@ -205,7 +205,7 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
         public Builder() {
             super(Builder.class);
 
-            dsrIllegalStages = new ArrayList<>();
+            dsrIllegalStages = new HashSet<>();
             onBan = (ban, e) -> {
             };
             onBanResult = (result, e) -> {
@@ -241,7 +241,7 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
         }
 
         @Nonnull
-        public Builder setDsrIllegalStages(@Nonnull List<Integer> dsrIllegalStages) {
+        public Builder setDsrIllegalStages(@Nonnull Set<Integer> dsrIllegalStages) {
             this.dsrIllegalStages = dsrIllegalStages;
             return this;
         }
@@ -304,7 +304,7 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
         }
 
         @Nonnull
-        public List<Integer> getDsrIllegalStages() {
+        public Set<Integer> getDsrIllegalStages() {
             return dsrIllegalStages;
         }
 

@@ -5,10 +5,7 @@ import com.github.gpluscb.toni.util.OneOfTwo;
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class SmashSet {
     // TODO: good toString
@@ -393,9 +390,9 @@ public class SmashSet {
         }
 
         @Nonnull
-        public List<Integer> getDSRIllegalStageIndizes() {
+        public Set<Integer> getDSRIllegalStageIndizes() {
             // TODO
-            return new ArrayList<>();
+            return new HashSet<>();
         }
     }
 
@@ -440,9 +437,9 @@ public class SmashSet {
         }
 
         @Nonnull
-        public List<Integer> getDSRIllegalStageIndizes() {
+        public Set<Integer> getDSRIllegalStageIndizes() {
             // TODO
-            return new ArrayList<>();
+            return new HashSet<>();
         }
     }
 

@@ -23,7 +23,9 @@ import org.apache.logging.log4j.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -39,7 +41,7 @@ public class BanStagesMenu extends ActionMenu {
     @Nonnull
     private final Ruleset ruleset;
     @Nonnull
-    private final List<Integer> dsrIllegalStages;
+    private final Set<Integer> dsrIllegalStages;
     @Nonnull
     private final BiConsumer<StageBan, ButtonClickEvent> onBan;
     @Nonnull
@@ -50,9 +52,9 @@ public class BanStagesMenu extends ActionMenu {
     private final ButtonActionMenu underlying;
 
     @Nonnull
-    private final List<Integer> bannedStageIds;
+    private final Set<Integer> bannedStageIds;
 
-    public BanStagesMenu(@Nonnull EventWaiter waiter, long banningUser, long timeout, @Nonnull TimeUnit unit, @Nonnull Ruleset ruleset, @Nonnull List<Integer> dsrIllegalStages, @Nonnull BiConsumer<StageBan, ButtonClickEvent> onBan, @Nonnull BiConsumer<BanResult, ButtonClickEvent> onResult, @Nonnull Consumer<BanStagesTimeoutEvent> onTimeout) {
+    public BanStagesMenu(@Nonnull EventWaiter waiter, long banningUser, long timeout, @Nonnull TimeUnit unit, @Nonnull Ruleset ruleset, @Nonnull Set<Integer> dsrIllegalStages, @Nonnull BiConsumer<StageBan, ButtonClickEvent> onBan, @Nonnull BiConsumer<BanResult, ButtonClickEvent> onResult, @Nonnull Consumer<BanStagesTimeoutEvent> onTimeout) {
         super(waiter, timeout, unit);
 
         this.banningUser = banningUser;
@@ -62,7 +64,7 @@ public class BanStagesMenu extends ActionMenu {
         this.onResult = onResult;
         this.onTimeout = onTimeout;
 
-        bannedStageIds = new ArrayList<>();
+        bannedStageIds = new HashSet<>();
 
         // TODO: What if no bans??
         int banAmount = ruleset.getStageBans();
@@ -178,12 +180,12 @@ public class BanStagesMenu extends ActionMenu {
         }
 
         @Nonnull
-        public List<Integer> getBannedStageIds() {
+        public Set<Integer> getBannedStageIds() {
             return bannedStageIds;
         }
 
         @Nonnull
-        public List<Integer> getDsrIllegalStages() {
+        public Set<Integer> getDsrIllegalStages() {
             return dsrIllegalStages;
         }
 
@@ -202,12 +204,12 @@ public class BanStagesMenu extends ActionMenu {
         }
 
         @Nonnull
-        public List<Integer> getRemainingStageIds() {
+        public Set<Integer> getRemainingStageIds() {
             return ruleset.getStagesStream()
                     .map(Stage::getStageId)
                     .filter(Predicate.not(bannedStageIds::contains))
                     .filter(Predicate.not(dsrIllegalStages::contains))
-                    .collect(Collectors.toList());
+                    .collect(Collectors.toSet());
         }
 
         @Nonnull
@@ -272,7 +274,7 @@ public class BanStagesMenu extends ActionMenu {
         @Nullable
         private Ruleset ruleset;
         @Nonnull
-        private List<Integer> dsrIllegalStages;
+        private Set<Integer> dsrIllegalStages;
         @Nonnull
         private BiConsumer<StageBan, ButtonClickEvent> onBan;
         @Nonnull
@@ -283,7 +285,7 @@ public class BanStagesMenu extends ActionMenu {
         public Builder() {
             super(Builder.class);
 
-            dsrIllegalStages = new ArrayList<>();
+            dsrIllegalStages = new HashSet<>();
             onBan = (ban, e) -> {
             };
             onResult = (result, e) -> {
@@ -305,7 +307,7 @@ public class BanStagesMenu extends ActionMenu {
         }
 
         @Nonnull
-        public Builder setDsrIllegalStages(@Nonnull List<Integer> dsrIllegalStages) {
+        public Builder setDsrIllegalStages(@Nonnull Set<Integer> dsrIllegalStages) {
             this.dsrIllegalStages = dsrIllegalStages;
             return this;
         }
@@ -339,7 +341,7 @@ public class BanStagesMenu extends ActionMenu {
         }
 
         @Nonnull
-        public List<Integer> getDsrIllegalStages() {
+        public Set<Integer> getDsrIllegalStages() {
             return dsrIllegalStages;
         }
 

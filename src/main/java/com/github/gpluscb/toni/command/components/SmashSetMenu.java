@@ -267,7 +267,31 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
     }
 
     @Nonnull
-    private ReportGameMenu createReportGameMenu(@Nonnull Message start) {
+    private ReportGameMenu createReportGameMenu() {
+        SmashSet.SetInGameState inGameState = ((SmashSet.SetInGameState) state);
+        // At this point it will be displayed => not null
+        @SuppressWarnings("ConstantConditions")
+        SmashSet.GameData game = inGameState.getGame();
+
+        Character user1Char = game.getPlayer1Char();
+        Character user2Char = game.getPlayer2Char();
+
+        // Stage is already chosen here
+        @SuppressWarnings("ConstantConditions")
+        Stage stage = ruleset.getStageAtIdx(game.getStageIdx());
+
+        // Characters are already chosen here
+        @SuppressWarnings("ConstantConditions")
+        Message start = new MessageBuilder(String.format("You will play your next game on %s. " +
+                        "%s will play as %s, and %s will play as %s. You can start the game now, report the winner here once you're done.",
+                stage.getName(),
+                MiscUtil.mentionUser(getUser1()),
+                user1Char.getName(),
+                MiscUtil.mentionUser(getUser2()),
+                user2Char.getName()))
+                .mentionUsers(getUser1(), getUser2())
+                .build();
+
         return new ReportGameMenu.Builder()
                 .setWaiter(getWaiter())
                 .setUsers(getUser1(), getUser2())
@@ -376,17 +400,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
                     return createDoubleBlindMenu(start);
                 },
-                inGame -> {
-                    Message start = new MessageBuilder(String.format("You have struck to %s, " +
-                                    "so %s and %s, you can now play your next game on that stage. Please report the game winner here once you're done.",
-                            remainingStage.getName(),
-                            MiscUtil.mentionUser(getUser1()),
-                            MiscUtil.mentionUser(getUser2())))
-                            .mentionUsers(getUser1(), getUser2())
-                            .build();
-
-                    return createReportGameMenu(start);
-                }
+                inGame -> createReportGameMenu()
         ).display(event.getMessage());
     }
 
@@ -433,18 +447,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                         },
                         strike -> createStrikeStagesMenu()
                 ),
-                inGame -> {
-                    Message start = new MessageBuilder(String.format("The characters are decided, %s plays %s, and %s plays %s next game. " +
-                                    "You can play the game now, report the winner here when you're done.",
-                            MiscUtil.mentionUser(getUser1()),
-                            user1Choice.getName(),
-                            MiscUtil.mentionUser(getUser2()),
-                            user2Choice.getName()))
-                            .mentionUsers(getUser1(), getUser2())
-                            .build();
-
-                    return createReportGameMenu(start);
-                }
+                inGame -> createReportGameMenu()
         ).display(channel, getMessageId());
     }
 
@@ -509,17 +512,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
                     return createWinnerCharPickMenu(start);
                 },
-                inGame -> {
-                    Message start = new MessageBuilder(String.format("%s and %s, you will play the next game on %s. " +
-                                    "Report the winner of that game here.",
-                            MiscUtil.mentionUser(getUser1()),
-                            MiscUtil.mentionUser(getUser2()),
-                            result.getPickedStage().getName()))
-                            .mentionUsers(getUser1(), getUser2())
-                            .build();
-
-                    return createReportGameMenu(start);
-                }
+                inGame -> createReportGameMenu()
         ).display(event.getMessage());
     }
 
@@ -558,23 +551,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
         newState.map(
                 stageBan -> createBanPickStagesMenu(),
-                inGame -> {
-                    Character user1Char = inGame.getGame().getPlayer1Char();
-                    Character user2Char = inGame.getGame().getPlayer2Char();
-
-                    // We're in game, the characters have been decided
-                    @SuppressWarnings("ConstantConditions")
-                    Message start = new MessageBuilder(String.format("Alright, %s will pick %s, and %s will pick %s next game. " +
-                            "You can start the game now, report the winner here after you're done.",
-                            MiscUtil.mentionUser(getUser1()),
-                            user1Char.getName(),
-                            MiscUtil.mentionUser(getUser2()),
-                            user2Char.getName()))
-                            .mentionUsers(getUser1(), getUser2())
-                            .build();
-
-                    return createReportGameMenu(start);
-                }
+                inGame -> createReportGameMenu()
         ).display(channel, getMessageId());
     }
 

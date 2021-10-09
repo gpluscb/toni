@@ -1,5 +1,6 @@
 package com.github.gpluscb.toni.command.components;
 
+import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.discord.ActionMenu;
 import com.github.gpluscb.toni.util.discord.ChannelChoiceWaiter;
@@ -178,7 +179,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
     @Override
     public void displayReplying(@Nonnull MessageChannel channel, long messageId) {
         initSet();
-        startUnderlying.display(channel, messageId);
+        startUnderlying.displayReplying(channel, messageId);
     }
 
     @Override
@@ -239,7 +240,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
     @Nonnull
     private BlindPickMenu createDoubleBlindMenu() {
-        Message start = new MessageBuilder().build(); // TODO
+        Message start = new MessageBuilder("DM me with your character choice now!").build(); // TODO
 
         return new BlindPickMenu.Builder()
                 .setChannelWaiter(channelWaiter)
@@ -255,7 +256,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
     @Nonnull
     private ReportGameMenu createReportGameMenu() {
-        Message start = new MessageBuilder().build(); // TODO
+        Message start = new MessageBuilder("Report the game winner result here").build(); // TODO
 
         return new ReportGameMenu.Builder()
                 .setWaiter(getWaiter())
@@ -296,7 +297,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         @SuppressWarnings("ConstantConditions")
         long winner = userFromPlayer(((SmashSet.SetWinnerCharPickState) state).getPrevWinner());
 
-        Message start = new MessageBuilder().build(); // TODO
+        Message start = new MessageBuilder(String.format("%s, please write which character you want to play next in this channel.", MiscUtil.mentionUser(winner))).build(); // TODO
 
         return new CharPickMenu.Builder()
                 .setChannelWaiter(channelWaiter)
@@ -317,7 +318,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         @SuppressWarnings("ConstantConditions")
         long loser = userFromPlayer(((SmashSet.SetLoserCharCounterpickState) state).getPrevLoser());
 
-        Message start = new MessageBuilder().build(); // TODO
+        Message start = new MessageBuilder(String.format("%s, please write which character you want to play next in this channel.", MiscUtil.mentionUser(loser))).build(); // TODO
 
         return new CharPickMenu.Builder()
                 .setChannelWaiter(channelWaiter)
@@ -379,16 +380,19 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
         // At this point it will be displayed => not null
         @SuppressWarnings("ConstantConditions")
-        OneOfTwo<SmashSet.SetRPSState, SmashSet.SetInGameState> newState = ((SmashSet.SetDoubleBlindState) state)
+        OneOfTwo<OneOfTwo<SmashSet.SetRPSState, SmashSet.SetStarterStrikingState>, SmashSet.SetInGameState> newState = ((SmashSet.SetDoubleBlindState) state)
                 .completeDoubleBlind(user1Choice, user2Choice);
 
-        state = newState.map(rps -> rps, inGame -> inGame);
+        state = newState.map(notInGame -> notInGame.map(rps -> rps, striking -> striking), inGame -> inGame);
 
         MessageChannel channel = tryGetChannel();
         if (channel == null) return;
 
         newState.map(
-                rps -> createRPSAndStrikeStagesMenu(),
+                notInGame -> notInGame.map(
+                        rps -> createRPSAndStrikeStagesMenu(),
+                        strike -> createStrikeStagesMenu()
+                ),
                 inGame -> createReportGameMenu()
         ).display(channel, getMessageId());
     }
@@ -912,7 +916,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
             onDoubleBlindFailedInit = info -> {
             };
 
-            reportGameTimeout = 5;
+            reportGameTimeout = 40;
             reportGameUnit = TimeUnit.MINUTES;
             onReportGameTimeout = timeout -> {
             };

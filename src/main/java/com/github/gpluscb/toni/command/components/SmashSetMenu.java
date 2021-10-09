@@ -541,7 +541,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                 .mentionUsers(getUser1(), getUser2())
                 .build();
 
-        createLoserCharCounterpickMenu(start).display(channel, result.getMessageId());
+        createLoserCharCounterpickMenu(start).displayReplying(channel, result.getMessageId());
     }
 
     private synchronized void onLoserCharCounterpickResult(@Nonnull CharPickMenu.CharPickResult result) {
@@ -561,7 +561,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         newState.map(
                 stageBan -> createBanPickStagesMenu(),
                 inGame -> createReportGameMenu()
-        ).display(channel, result.getMessageId());
+        ).displayReplying(channel, result.getMessageId());
     }
 
     private void onResult(@Nonnull ButtonClickEvent event) {

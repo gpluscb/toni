@@ -401,7 +401,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                     return createDoubleBlindMenu(start);
                 },
                 inGame -> createReportGameMenu()
-        ).display(event.getMessage());
+        ).displayReplying(event.getMessage());
     }
 
     private synchronized void onDoubleBlindResult(@Nonnull BlindPickMenu.BlindPickResult result) {
@@ -428,8 +428,11 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
         state = newState.map(notInGame -> notInGame.map(rps -> rps, striking -> striking), inGame -> inGame);
 
-        MessageChannel channel = tryGetChannel();
-        if (channel == null) return;
+        MessageChannel channel = result.getChannel();
+        if (channel == null) {
+            onMessageChannelNotInCache.accept(new SmashSetStateInfo());
+            return;
+        }
 
         newState.map(
                 notInGame -> notInGame.map(
@@ -448,7 +451,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                         strike -> createStrikeStagesMenu()
                 ),
                 inGame -> createReportGameMenu()
-        ).display(channel, getMessageId());
+        ).displayReplying(channel, result.getMessageId());
     }
 
     private synchronized void onReportGameResult(@Nonnull ReportGameMenu.ReportGameResult result, @Nonnull ButtonClickEvent event) {
@@ -477,7 +480,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
                         return createWinnerCharPickMenu(start);
                     }
-            ).display(event.getMessage());
+            ).displayReplying(event.getMessage());
         }).onU(completed -> this.onResult(event));
     }
 
@@ -513,7 +516,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                     return createWinnerCharPickMenu(start);
                 },
                 inGame -> createReportGameMenu()
-        ).display(event.getMessage());
+        ).displayReplying(event.getMessage());
     }
 
     private synchronized void onWinnerCharPickResult(@Nonnull CharPickMenu.CharPickResult result) {
@@ -522,8 +525,11 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         SmashSet.SetLoserCharCounterpickState newState = ((SmashSet.SetWinnerCharPickState) state).pickCharacter(result.getPickedCharacter());
         state = newState;
 
-        MessageChannel channel = tryGetChannel();
-        if (channel == null) return;
+        MessageChannel channel = result.getChannel();
+        if (channel == null) {
+            onMessageChannelNotInCache.accept(new SmashSetStateInfo());
+            return;
+        }
 
         long prevLoser = userFromPlayer(newState.getPrevLoser());
 
@@ -535,7 +541,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                 .mentionUsers(getUser1(), getUser2())
                 .build();
 
-        createLoserCharCounterpickMenu(start).display(channel, getMessageId());
+        createLoserCharCounterpickMenu(start).display(channel, result.getMessageId());
     }
 
     private synchronized void onLoserCharCounterpickResult(@Nonnull CharPickMenu.CharPickResult result) {
@@ -546,13 +552,16 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
         state = newState.map(ban -> ban, inGame -> inGame);
 
-        MessageChannel channel = tryGetChannel();
-        if (channel == null) return;
+        MessageChannel channel = result.getChannel();
+        if (channel == null) {
+            onMessageChannelNotInCache.accept(new SmashSetStateInfo());
+            return;
+        }
 
         newState.map(
                 stageBan -> createBanPickStagesMenu(),
                 inGame -> createReportGameMenu()
-        ).display(channel, getMessageId());
+        ).display(channel, result.getMessageId());
     }
 
     private void onResult(@Nonnull ButtonClickEvent event) {

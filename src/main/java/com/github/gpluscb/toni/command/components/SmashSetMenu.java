@@ -297,7 +297,9 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         @SuppressWarnings("ConstantConditions")
         long winner = userFromPlayer(((SmashSet.SetWinnerCharPickState) state).getPrevWinner());
 
-        Message start = new MessageBuilder(String.format("%s, please write which character you want to play next in this channel.", MiscUtil.mentionUser(winner))).build(); // TODO
+        Message start = new MessageBuilder(String.format("%s, please write which character you want to play next in this channel.", MiscUtil.mentionUser(winner)))
+                .mentionUsers(winner)
+                .build(); // TODO
 
         return new CharPickMenu.Builder()
                 .setChannelWaiter(channelWaiter)
@@ -318,7 +320,9 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         @SuppressWarnings("ConstantConditions")
         long loser = userFromPlayer(((SmashSet.SetLoserCharCounterpickState) state).getPrevLoser());
 
-        Message start = new MessageBuilder(String.format("%s, please write which character you want to play next in this channel.", MiscUtil.mentionUser(loser))).build(); // TODO
+        Message start = new MessageBuilder(String.format("%s, please write which character you want to play next in this channel.", MiscUtil.mentionUser(loser)))
+                .mentionUsers(loser)
+                .build(); // TODO
 
         return new CharPickMenu.Builder()
                 .setChannelWaiter(channelWaiter)

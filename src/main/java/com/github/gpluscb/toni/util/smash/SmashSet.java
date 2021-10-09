@@ -228,13 +228,18 @@ public class SmashSet {
         }
 
         @Nonnull
-        public OneOfTwo<SetRPSState, SetInGameState> completeDoubleBlind(@Nonnull Character player1Char, @Nonnull Character player2Char) {
+        public OneOfTwo<OneOfTwo<SetRPSState, SetStarterStrikingState>, SetInGameState> completeDoubleBlind(@Nonnull Character player1Char, @Nonnull Character player2Char) {
             checkValid();
             game.setPlayer1Char(player1Char);
             game.setPlayer2Char(player2Char);
             if (ruleset.isBlindPickBeforeStage()) {
-                SetRPSState state = new SetRPSState(game);
-                return OneOfTwo.ofT(switchState(state));
+                if (doRPS) {
+                    SetRPSState state = new SetRPSState(game);
+                    return OneOfTwo.ofT(OneOfTwo.ofT(switchState(state)));
+                } else {
+                    SetStarterStrikingState state = new SetStarterStrikingState(game);
+                    return OneOfTwo.ofT(OneOfTwo.ofU(switchState(state)));
+                }
             } else {
                 SetInGameState state = new SetInGameState(game);
                 return OneOfTwo.ofU(switchState(state));

@@ -2,6 +2,7 @@ package com.github.gpluscb.toni.util.discord;
 
 import com.github.gpluscb.toni.util.FailLogger;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
+import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 import javax.annotation.CheckReturnValue;
@@ -48,7 +49,7 @@ public class ChannelChoiceWaiter {
             if (participants.stream().anyMatch(activeDMUsers::contains)) return null;
 
             List<UserChoiceInfo<T>> choices = participants.stream()
-                    .map(id -> new UserChoiceInfo<T>(id, id))
+                    .map(id -> new UserChoiceInfo<T>(id, null))
                     .collect(Collectors.toList());
 
             return putElement(choices, ignoreDoubleChoice, verifyChoice, onChoicesDone, timeout, unit, timeoutAction);
@@ -104,7 +105,10 @@ public class ChannelChoiceWaiter {
             return activeElements.values().stream()
                     .map(WaitingElement::getChoices)
                     .flatMap(List::stream)
-                    .filter(choice -> choice.getChannelId() == channelId)
+                    .filter(choice -> {
+                        Long choiceChannelId = choice.getChannelId();
+                        return choiceChannelId != null && choiceChannelId == channelId;
+                    })
                     .map(UserChoiceInfo::getUserId)
                     .collect(Collectors.toList());
         }
@@ -116,7 +120,7 @@ public class ChannelChoiceWaiter {
             return activeElements.values().stream()
                     .map(WaitingElement::getChoices)
                     .flatMap(List::stream)
-                    .filter(choice -> choice.getChannelId() == choice.getUserId())
+                    .filter(choice -> choice.getChannelId() == null)
                     .map(UserChoiceInfo::getUserId)
                     .collect(Collectors.toList());
         }
@@ -161,7 +165,12 @@ public class ChannelChoiceWaiter {
             synchronized (choices) {
                 UserChoiceInfo<T> userChoice = findUserChoiceById(userId);
                 if (userChoice == null) return false;
-                if (channelId != userChoice.getChannelId()) return false;
+                Long choiceChannelId = userChoice.getChannelId();
+                if (choiceChannelId != null) {
+                    if (channelId != choiceChannelId) return false;
+                } else if (!event.isFromType(ChannelType.PRIVATE) || event.getPrivateChannel().getUser().getIdLong() != userId) {
+                    return false;
+                }
                 if (!isActive(userChoice)) return false;
 
                 Optional<T> choice = verifyChoice.apply(event);
@@ -201,7 +210,7 @@ public class ChannelChoiceWaiter {
          * helper
          */
         private boolean isActive(@Nonnull UserChoiceInfo<T> userChoice) {
-            return userChoice.getChoice() != null || !ignoreDoubleChoices;
+            return userChoice.getChoice() == null || !ignoreDoubleChoices;
         }
 
         @Nullable
@@ -263,11 +272,15 @@ public class ChannelChoiceWaiter {
 
     public static class UserChoiceInfo<T> {
         private final long userId;
-        private final long channelId;
+        @Nullable
+        private final Long channelId;
         @Nullable
         private T choice;
 
-        public UserChoiceInfo(long userId, long channelId) {
+        /**
+         * @param channelId null for DMs
+         */
+        public UserChoiceInfo(long userId, @Nullable Long channelId) {
             this.userId = userId;
             this.channelId = channelId;
         }
@@ -280,7 +293,11 @@ public class ChannelChoiceWaiter {
             return userId;
         }
 
-        public long getChannelId() {
+        /**
+         * @return null for DMs
+         */
+        @Nullable
+        public Long getChannelId() {
             return channelId;
         }
 

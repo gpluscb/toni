@@ -384,9 +384,11 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
         state = newState.map(doubleBlind -> doubleBlind, inGame -> inGame);
 
-        event.deferEdit().queue();
-
         Stage remainingStage = info.getRemainingStages().get(0);
+
+        event.editMessage(String.format("You struck to %s", remainingStage.getName()))
+                .setActionRows()
+                .queue();
 
         newState.map(
                 doubleBlind -> {
@@ -434,6 +436,15 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
             return;
         }
 
+        long messageId = result.getMessageId();
+
+        channel.editMessageById(messageId, String.format("%s chose %s and %s chose %s.",
+                        MiscUtil.mentionUser(getUser1()),
+                        user1Choice.getName(),
+                        MiscUtil.mentionUser(getUser2()),
+                        user2Choice.getName()))
+                .queue();
+
         newState.map(
                 notInGame -> notInGame.map(
                         rps -> {
@@ -451,7 +462,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                         strike -> createStrikeStagesMenu()
                 ),
                 inGame -> createReportGameMenu()
-        ).displayReplying(channel, result.getMessageId());
+        ).displayReplying(channel, messageId);
     }
 
     private synchronized void onReportGameResult(@Nonnull ReportGameMenu.ReportGameResult result, @Nonnull ButtonClickEvent event) {
@@ -464,24 +475,28 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
         state = newState.map(notComplete -> notComplete.map(ban -> ban, chars -> chars), complete -> complete);
 
-        newState.onT(notComplete -> {
-            event.deferEdit().queue();
+        event.editMessage(new MessageBuilder(String.format("%s won, and %s lost the last game.",
+                        MiscUtil.mentionUser(result.getWinner()),
+                        MiscUtil.mentionUser(result.getLoser())))
+                        .mentionUsers(getUser1(), getUser2())
+                        .build())
+                .setActionRows()
+                .queue();
 
-            notComplete.map(
-                    stageBan -> createBanPickStagesMenu(),
-                    charPick -> {
-                        Message start = new MessageBuilder(String.format("It has been determined that %s won, and %s lost the last game. " +
-                                        "Now, %s, you have to pick the character you will play next game first. Please type the character you'll play in this channel.",
-                                MiscUtil.mentionUser(result.getWinner()),
-                                MiscUtil.mentionUser(result.getLoser()),
-                                MiscUtil.mentionUser(result.getWinner())))
-                                .mentionUsers(getUser1(), getUser2())
-                                .build();
+        newState.onT(notComplete -> notComplete.map(
+                stageBan -> createBanPickStagesMenu(),
+                charPick -> {
+                    Message start = new MessageBuilder(String.format("It has been determined that %s won, and %s lost the last game. " +
+                                    "Now, %s, you have to pick the character you will play next game first. Please type the character you'll play in this channel.",
+                            MiscUtil.mentionUser(result.getWinner()),
+                            MiscUtil.mentionUser(result.getLoser()),
+                            MiscUtil.mentionUser(result.getWinner())))
+                            .mentionUsers(getUser1(), getUser2())
+                            .build();
 
-                        return createWinnerCharPickMenu(start);
-                    }
-            ).displayReplying(event.getMessage());
-        }).onU(completed -> this.onResult(event));
+                    return createWinnerCharPickMenu(start);
+                }
+        ).displayReplying(event.getMessage())).onU(completed -> this.onResult(event));
     }
 
     private synchronized void onBanResult(@Nonnull BanStagesMenu.BanResult result, @Nonnull ButtonClickEvent event) {
@@ -498,7 +513,9 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
         state = newState.map(charPick -> charPick, inGame -> inGame);
 
-        event.deferEdit().queue();
+        event.editMessage(String.format("You will play the next game on %s.", result.getPickedStage().getName()))
+                .setActionRows()
+                .queue();
 
         newState.map(
                 charPick -> {
@@ -531,6 +548,14 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
             return;
         }
 
+        long messageId = result.getMessageId();
+
+        channel.editMessageById(messageId, String.format("%s picked %s.",
+                        MiscUtil.mentionUser(result.getUser()),
+                        result.getPickedCharacter().getName()))
+                .mentionUsers(result.getUser())
+                .queue();
+
         long prevLoser = userFromPlayer(newState.getPrevLoser());
 
         Message start = new MessageBuilder(String.format("%s chose %s as their character, so %s, you can now counterpick their character. " +
@@ -541,7 +566,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                 .mentionUsers(getUser1(), getUser2())
                 .build();
 
-        createLoserCharCounterpickMenu(start).displayReplying(channel, result.getMessageId());
+        createLoserCharCounterpickMenu(start).displayReplying(channel, messageId);
     }
 
     private synchronized void onLoserCharCounterpickResult(@Nonnull CharPickMenu.CharPickResult result) {
@@ -558,10 +583,18 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
             return;
         }
 
+        long messageId = result.getMessageId();
+
+        channel.editMessageById(messageId, String.format("%s counterpicked %s.",
+                        MiscUtil.mentionUser(result.getUser()),
+                        result.getPickedCharacter().getName()))
+                .mentionUsers(result.getUser())
+                .queue();
+
         newState.map(
                 stageBan -> createBanPickStagesMenu(),
                 inGame -> createReportGameMenu()
-        ).displayReplying(channel, result.getMessageId());
+        ).displayReplying(channel, messageId);
     }
 
     private void onResult(@Nonnull ButtonClickEvent event) {

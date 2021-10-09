@@ -386,7 +386,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
         Stage remainingStage = info.getRemainingStages().get(0);
 
-        event.editMessage(String.format("You struck to %s", remainingStage.getName()))
+        event.editMessage(String.format("Stage Striking: You struck to %s", remainingStage.getName()))
                 .setActionRows()
                 .queue();
 
@@ -438,7 +438,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
         long messageId = result.getMessageId();
 
-        channel.editMessageById(messageId, String.format("%s chose %s and %s chose %s.",
+        channel.editMessageById(messageId, String.format("Double Blind Pick: %s chose %s and %s chose %s.",
                         MiscUtil.mentionUser(getUser1()),
                         user1Choice.getName(),
                         MiscUtil.mentionUser(getUser2()),
@@ -475,7 +475,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
         state = newState.map(notComplete -> notComplete.map(ban -> ban, chars -> chars), complete -> complete);
 
-        event.editMessage(new MessageBuilder(String.format("%s won, and %s lost this game.",
+        event.editMessage(new MessageBuilder(String.format("Match Reporting: %s won, and %s lost this game.",
                         MiscUtil.mentionUser(result.getWinner()),
                         MiscUtil.mentionUser(result.getLoser())))
                         .mentionUsers(getUser1(), getUser2())
@@ -513,7 +513,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
         state = newState.map(charPick -> charPick, inGame -> inGame);
 
-        event.editMessage(String.format("You will play the next game on %s.", result.getPickedStage().getName()))
+        event.editMessage(String.format("Stage Ban/Counterpicking: You will play the next game on %s.", result.getPickedStage().getName()))
                 .setActionRows()
                 .queue();
 
@@ -550,7 +550,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
         long messageId = result.getMessageId();
 
-        channel.editMessageById(messageId, String.format("%s picked %s.",
+        channel.editMessageById(messageId, String.format("Winner Character Pick: %s picked %s.",
                         MiscUtil.mentionUser(result.getUser()),
                         result.getPickedCharacter().getName()))
                 .mentionUsers(result.getUser())
@@ -585,7 +585,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
         long messageId = result.getMessageId();
 
-        channel.editMessageById(messageId, String.format("%s counterpicked %s.",
+        channel.editMessageById(messageId, String.format("Loser Character Counterpick: %s counterpicked %s.",
                         MiscUtil.mentionUser(result.getUser()),
                         result.getPickedCharacter().getName()))
                 .mentionUsers(result.getUser())

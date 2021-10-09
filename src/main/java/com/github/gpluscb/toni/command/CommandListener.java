@@ -35,8 +35,9 @@ public class CommandListener extends ListenerAdapter {
     public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
         if (event.isFromGuild() && !event.getTextChannel().canTalk()) return;
         // Don't listen to commands when currently listening to other things in that channel
-        // TODO: This doesn't work for DMs yet
-        if (waiter.getActiveUsers(event.getChannel().getIdLong()).contains(event.getAuthor().getIdLong())) return;
+        if (event.isFromGuild() && waiter.getActiveUsers(event.getChannel().getIdLong()).contains(event.getAuthor().getIdLong()))
+            return;
+        if (!event.isFromGuild() && waiter.getActiveDMUsers().contains(event.getAuthor().getIdLong())) return;
         if (event.getAuthor().isBot() || !prefixPattern.matcher(event.getMessage().getContentRaw()).matches()) return;
 
         CommandContext<?> ctx = CommandContext.fromMessageReceivedEvent(event, config);

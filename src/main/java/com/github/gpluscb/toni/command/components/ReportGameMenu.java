@@ -125,6 +125,8 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
             return OneOfTwo.ofU(ButtonActionMenu.MenuAction.CANCEL);
         }
 
+        e.deferEdit().queue();
+
         // Conflict
         onConflict.accept(new ReportGameConflict(), e);
 
@@ -141,6 +143,7 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
                         MiscUtil.mentionUser(user2),
                         MiscUtil.mentionUser(user2ReportedWinner))
         )
+                .mentionUsers(user1, user2)
                 .setActionRows(actionRows)
                 .build();
 

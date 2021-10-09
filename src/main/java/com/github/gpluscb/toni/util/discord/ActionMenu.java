@@ -67,7 +67,10 @@ public abstract class ActionMenu {
 
     @Nullable
     public MessageChannel getChannel() {
-        if (jda == null) throw new IllegalStateException("Message info has not been initialized yet");
+        // TODO: Overriding that and having unused data here is kinda ugly, maybe an interface?
+        // Shadowing so we can override and not error
+        long channelId = getChannelId();
+        JDA jda = getJDA();
 
         MessageChannel channel = jda.getTextChannelById(channelId);
         if (channel == null) channel = jda.getPrivateChannelById(channelId);

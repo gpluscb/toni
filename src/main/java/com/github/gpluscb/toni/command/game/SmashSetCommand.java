@@ -65,7 +65,7 @@ public class SmashSetCommand implements Command {
             winner = result.getUser2();
         }
 
-        event.editMessage(new MessageBuilder(String.format("Wowee %s you won!!!!", MiscUtil.mentionUser(winner))).mentionUsers(winner).build()).setActionRows().queue();
+        event.getHook().sendMessage(String.format("Wowee %s you won the set congrats!!!!!!!!", MiscUtil.mentionUser(winner))).mentionUsers(winner).queue();
     }
 
     @Nonnull

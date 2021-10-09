@@ -103,13 +103,13 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
 
         banResult = result;
 
-        long user1 = getUser1();
-        long user2 = getUser2();
+        long banningUser = getUser1();
+        long counterpickingUser = getUser2();
 
         Message start = new MessageBuilder(String.format("%s, since %s has chosen their bans, you can now pick one stage from the remaining stages.",
-                MiscUtil.mentionUser(user1),
-                MiscUtil.mentionUser(user2)))
-                .mentionUsers(user1, user2)
+                MiscUtil.mentionUser(counterpickingUser),
+                MiscUtil.mentionUser(banningUser)))
+                .mentionUsers(banningUser, counterpickingUser)
                 .build();
 
         PickStageMenu pickUnderlying = new PickStageMenu.Builder()

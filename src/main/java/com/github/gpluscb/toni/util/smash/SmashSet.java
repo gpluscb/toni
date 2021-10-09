@@ -44,10 +44,13 @@ public class SmashSet {
         if (state != null) throw new IllegalStateException("Set already started");
         if (!doRPS) throw new IllegalStateException("startSetWithRPS called on no RPS set");
 
+        GameData firstGame = new GameData(false);
+        games.add(firstGame);
+
         if (ruleset.isBlindPickBeforeStage()) {
-            return OneOfTwo.ofT(switchState(new SetDoubleBlindState(new GameData(false))));
+            return OneOfTwo.ofT(switchState(new SetDoubleBlindState(firstGame)));
         } else {
-            return OneOfTwo.ofU(switchState(new SetRPSState()));
+            return OneOfTwo.ofU(switchState(new SetRPSState(firstGame)));
         }
     }
 
@@ -58,10 +61,13 @@ public class SmashSet {
 
         this.firstStageStriker = firstStageStriker;
 
+        GameData firstGame = new GameData(false);
+        games.add(firstGame);
+
         if (ruleset.isBlindPickBeforeStage()) {
-            return OneOfTwo.ofT(switchState(new SetDoubleBlindState(new GameData(false))));
+            return OneOfTwo.ofT(switchState(new SetDoubleBlindState(firstGame)));
         } else {
-            return OneOfTwo.ofU(switchState(new SetStarterStrikingState(new GameData(false))));
+            return OneOfTwo.ofU(switchState(new SetStarterStrikingState(firstGame)));
         }
     }
 
@@ -137,14 +143,8 @@ public class SmashSet {
         @Nonnull
         private final GameData game;
 
-        private SetRPSState() {
-            game = new GameData(false);
-            games.add(game);
-        }
-
         public SetRPSState(@Nonnull GameData game) {
             this.game = game;
-            games.add(game);
         }
 
         @Nonnull

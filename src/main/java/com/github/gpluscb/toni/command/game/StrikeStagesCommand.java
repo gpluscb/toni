@@ -247,7 +247,7 @@ public class StrikeStagesCommand implements Command {
     }
 
     private void onStrikeResult(@Nonnull StrikeStagesMenu.StrikeResult result, @Nonnull ButtonClickEvent event) {
-        Stage resultingStage = result.getLeftStage();
+        Stage resultingStage = result.getRemainingStage();
         // In that case we have already printed the message
         if (resultingStage == null) return;
 

@@ -241,6 +241,19 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
         public List<Set<Integer>> getStrikes() {
             return strikes;
         }
+
+        /**
+         * This may only be empty in the case that the ruleset only has one stage
+         */
+        @Nonnull
+        public List<Stage> getRemainingStages() {
+            return ruleset.getStagesStream()
+                    .filter(stage ->
+                            strikes.stream()
+                                    .flatMap(Set::stream)
+                                    .noneMatch(struckStageId -> stage.getStageId() == struckStageId))
+                    .collect(Collectors.toList());
+        }
     }
 
     public class StrikeInfo extends StrikeStagesInfo {
@@ -287,7 +300,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
          * This is only null in the case that the ruleset only has one stage
          */
         @Nullable
-        public Stage getLeftStage() {
+        public Stage getRemainingStage() {
             return ruleset.getStagesStream()
                     .filter(stage ->
                             strikes.stream()

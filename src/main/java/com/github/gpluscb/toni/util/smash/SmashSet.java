@@ -276,6 +276,11 @@ public class SmashSet {
                 return OneOfTwo.ofT(OneOfTwo.ofU(switchState(state)));
             }
         }
+
+        @Nonnull
+        public GameData getGame() {
+            return game;
+        }
     }
 
     public class SetWinnerCharPickState extends SetState {

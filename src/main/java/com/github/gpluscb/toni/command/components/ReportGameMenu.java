@@ -232,6 +232,10 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
             //noinspection ConstantConditions
             return user1ReportedWinner;
         }
+
+        public long getLoser() {
+            return getWinner() == getUser1() ? getUser2() : getUser1();
+        }
     }
 
     public class ReportGameTimeoutEvent extends ReportGameMenuStateInfo {

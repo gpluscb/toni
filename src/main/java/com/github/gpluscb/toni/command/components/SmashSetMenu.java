@@ -5,6 +5,7 @@ import com.github.gpluscb.toni.util.discord.ActionMenu;
 import com.github.gpluscb.toni.util.discord.ChannelChoiceWaiter;
 import com.github.gpluscb.toni.util.discord.TwoUsersChoicesActionMenu;
 import com.github.gpluscb.toni.util.smash.Character;
+import com.github.gpluscb.toni.util.smash.CharacterTree;
 import com.github.gpluscb.toni.util.smash.Ruleset;
 import com.github.gpluscb.toni.util.smash.SmashSet;
 import net.dv8tion.jda.api.JDA;
@@ -23,6 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class SmashSetMenu extends TwoUsersChoicesActionMenu {
@@ -94,6 +96,9 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
     private final Consumer<SmashSetStateInfo> onMessageChannelNotInCache;
 
     @Nonnull
+    private final BiConsumer<SmashSetResult, ButtonClickEvent> onResult;
+
+    @Nonnull
     private final ActionMenu startUnderlying;
 
     @Nonnull
@@ -110,7 +115,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                         long pickStageTimeout, @Nonnull TimeUnit pickStageUnit, @Nonnull Consumer<SmashSetPickStageTimeoutEvent> onPickStageTimeout,
                         long winnerCharPickTimeout, @Nonnull TimeUnit winnerCharPickUnit, @Nonnull Consumer<SmashSetCharPickTimeoutEvent> onWinnerCharPickTimeout, @Nonnull Consumer<SmashSetStateInfo> onWinnerCharPickFailedInit,
                         long loserCharCounterpickTimeout, @Nonnull TimeUnit loserCharCounterpickUnit, @Nonnull Consumer<SmashSetCharPickTimeoutEvent> onLoserCharCounterpickTimeout, @Nonnull Consumer<SmashSetStateInfo> onLoserCharCounterpickFailedInit,
-                        @Nonnull Consumer<SmashSetStateInfo> onMessageChannelNotInCache) {
+                        @Nonnull Consumer<SmashSetStateInfo> onMessageChannelNotInCache, @Nonnull BiConsumer<SmashSetResult, ButtonClickEvent> onResult) {
         super(channelWaiter.getEventWaiter(), user1, user2, strikeTimeout, strikeUnit);
 
         this.channelWaiter = channelWaiter;
@@ -145,6 +150,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         this.onLoserCharCounterpickTimeout = onLoserCharCounterpickTimeout;
         this.onLoserCharCounterpickFailedInit = onLoserCharCounterpickFailedInit;
         this.onMessageChannelNotInCache = onMessageChannelNotInCache;
+        this.onResult = onResult;
 
         set = new SmashSet(ruleset, firstToWhatScore, rpsInfo != null);
 
@@ -404,10 +410,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                     stageBan -> createBanPickStagesMenu(),
                     charPick -> createWinnerCharPickMenu()
             ).display(event.getMessage());
-        }).onU(completed -> {
-            // TODO
-            event.editMessage("Wowee you completed the match!!").queue();
-        });
+        }).onU(completed -> this.onResult(event));
     }
 
     private synchronized void onBanResult(@Nonnull BanStagesMenu.BanResult result, @Nonnull ButtonClickEvent event) {
@@ -458,6 +461,10 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                 stageBan -> createBanPickStagesMenu(),
                 inGame -> createReportGameMenu()
         ).display(channel, getMessageId());
+    }
+
+    private void onResult(@Nonnull ButtonClickEvent event) {
+        onResult.accept(new SmashSetResult(), event);
     }
 
     private void onRPSTimeout(@Nonnull RPSMenu.RPSTimeoutEvent event) {
@@ -653,6 +660,9 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         }
     }
 
+    public class SmashSetResult extends SmashSetStateInfo {
+    }
+
     public class SmashSetStrikeFirstChoiceTimeoutEvent extends SmashSetStateInfo {
         @Nonnull
         private final RPSAndStrikeStagesMenu.StrikeFirstChoiceTimeoutEvent timeoutEvent;
@@ -818,6 +828,459 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         @Nonnull
         public Consumer<SmashSetRPSTimeoutEvent> getOnRPSTimeout() {
             return onRPSTimeout;
+        }
+    }
+
+    public static class Builder extends TwoUsersChoicesActionMenu.Builder<Builder, SmashSetMenu> {
+        @Nullable
+        private ChannelChoiceWaiter channelWaiter;
+
+        @Nullable
+        private Ruleset ruleset;
+        @Nullable
+        private List<Character> characters;
+        @Nullable
+        private Integer firstToWhatScore;
+
+        @Nullable
+        private RPSInfo rpsInfo;
+
+        @Nonnull
+        private Consumer<SmashSetStrikeTimeoutEvent> onStrikeTimeout;
+
+        private long doubleBlindTimeout;
+        @Nonnull
+        private TimeUnit doubleBlindUnit;
+        @Nonnull
+        private Consumer<SmashSetDoubleBlindTimeoutEvent> onDoubleBlindTimeout;
+        @Nonnull
+        private Consumer<SmashSetStateInfo> onDoubleBlindFailedInit;
+
+        private long reportGameTimeout;
+        @Nonnull
+        private TimeUnit reportGameUnit;
+        @Nullable
+        private String user1Display;
+        @Nullable
+        private String user2Display;
+        @Nonnull
+        private Consumer<SmashSetReportGameTimeoutEvent> onReportGameTimeout;
+
+        private long banTimeout;
+        @Nonnull
+        private TimeUnit banUnit;
+        @Nonnull
+        private Consumer<SmashSetBanTimeoutEvent> onBanTimeout;
+        private long pickStageTimeout;
+        @Nonnull
+        private TimeUnit pickStageUnit;
+        @Nonnull
+        private Consumer<SmashSetPickStageTimeoutEvent> onPickStageTimeout;
+
+        private long winnerCharPickTimeout;
+        @Nonnull
+        private TimeUnit winnerCharPickUnit;
+        @Nonnull
+        private Consumer<SmashSetCharPickTimeoutEvent> onWinnerCharPickTimeout;
+        @Nonnull
+        private Consumer<SmashSetStateInfo> onWinnerCharPickFailedInit;
+
+        private long loserCharCounterpickTimeout;
+        @Nonnull
+        private TimeUnit loserCharCounterpickUnit;
+        @Nonnull
+        private Consumer<SmashSetCharPickTimeoutEvent> onLoserCharCounterpickTimeout;
+        @Nonnull
+        private Consumer<SmashSetStateInfo> onLoserCharCounterpickFailedInit;
+
+        @Nonnull
+        private Consumer<SmashSetStateInfo> onMessageChannelNotInCache;
+
+        @Nonnull
+        private BiConsumer<SmashSetResult, ButtonClickEvent> onResult;
+
+        public Builder() {
+            super(Builder.class);
+
+            onStrikeTimeout = timeout -> {
+            };
+
+            doubleBlindTimeout = 5;
+            doubleBlindUnit = TimeUnit.MINUTES;
+            onDoubleBlindTimeout = timeout -> {
+            };
+            onDoubleBlindFailedInit = info -> {
+            };
+
+            reportGameTimeout = 5;
+            reportGameUnit = TimeUnit.MINUTES;
+            onReportGameTimeout = timeout -> {
+            };
+
+            banTimeout = 5;
+            banUnit = TimeUnit.MINUTES;
+            onBanTimeout = timeout -> {
+            };
+            pickStageTimeout = 5;
+            pickStageUnit = TimeUnit.MINUTES;
+            onPickStageTimeout = timeout -> {
+            };
+
+            winnerCharPickTimeout = 5;
+            winnerCharPickUnit = TimeUnit.MINUTES;
+            onWinnerCharPickTimeout = timeout -> {
+            };
+            onWinnerCharPickFailedInit = info -> {
+            };
+
+            loserCharCounterpickTimeout = 5;
+            loserCharCounterpickUnit = TimeUnit.MINUTES;
+            onLoserCharCounterpickTimeout = timeout -> {
+            };
+            onLoserCharCounterpickFailedInit = info -> {
+            };
+
+            onMessageChannelNotInCache = info -> {
+            };
+
+            onResult = (result, event) -> {
+            };
+        }
+
+        @Nonnull
+        public Builder setStrikeTimeout(long strikeTimeout, @Nonnull TimeUnit strikeUnit) {
+            return setTimeout(strikeTimeout, strikeUnit);
+        }
+
+        @Nonnull
+        public Builder setChannelWaiter(@Nonnull ChannelChoiceWaiter channelWaiter) {
+            this.channelWaiter = channelWaiter;
+            return setWaiter(channelWaiter.getEventWaiter());
+        }
+
+        @Nonnull
+        public Builder setRuleset(@Nonnull Ruleset ruleset) {
+            this.ruleset = ruleset;
+            return this;
+        }
+
+        @Nonnull
+        public Builder setFirstToWhatScore(@Nullable Integer firstToWhatScore) {
+            this.firstToWhatScore = firstToWhatScore;
+            return this;
+        }
+
+        @Nonnull
+        public Builder setCharacters(@Nonnull List<Character> characters) {
+            this.characters = characters;
+            return this;
+        }
+
+        @Nonnull
+        public Builder setCharacterTree(@Nonnull CharacterTree characterTree) {
+            return setCharacters(characterTree.getAllCharacters());
+        }
+
+        @Nonnull
+        public Builder setRpsInfo(@Nonnull RPSInfo rpsInfo) {
+            this.rpsInfo = rpsInfo;
+            return this;
+        }
+
+        @Nonnull
+        public Builder setOnStrikeTimeout(@Nonnull Consumer<SmashSetStrikeTimeoutEvent> onStrikeTimeout) {
+            this.onStrikeTimeout = onStrikeTimeout;
+            return this;
+        }
+
+        @Nonnull
+        public Builder setDoubleBlindTimeout(long doubleBlindTimeout, @Nonnull TimeUnit doubleBlindUnit) {
+            this.doubleBlindTimeout = doubleBlindTimeout;
+            this.doubleBlindUnit = doubleBlindUnit;
+            return this;
+        }
+
+        @Nonnull
+        public Builder setOnDoubleBlindTimeout(@Nonnull Consumer<SmashSetDoubleBlindTimeoutEvent> onDoubleBlindTimeout) {
+            this.onDoubleBlindTimeout = onDoubleBlindTimeout;
+            return this;
+        }
+
+        @Nonnull
+        public Builder setOnDoubleBlindFailedInit(@Nonnull Consumer<SmashSetStateInfo> onDoubleBlindFailedInit) {
+            this.onDoubleBlindFailedInit = onDoubleBlindFailedInit;
+            return this;
+        }
+
+        @Nonnull
+        public Builder setReportGameTimeout(long reportGameTimeout, @Nonnull TimeUnit reportGameUnit) {
+            this.reportGameTimeout = reportGameTimeout;
+            this.reportGameUnit = reportGameUnit;
+            return this;
+        }
+
+        @Nonnull
+        public Builder setUsersDisplay(@Nonnull String user1Display, @Nonnull String user2Display) {
+            this.user1Display = user1Display;
+            this.user2Display = user2Display;
+            return this;
+        }
+
+        @Nonnull
+        public Builder setOnReportGameTimeout(@Nonnull Consumer<SmashSetReportGameTimeoutEvent> onReportGameTimeout) {
+            this.onReportGameTimeout = onReportGameTimeout;
+            return this;
+        }
+
+        @Nonnull
+        public Builder setBanTimeout(long banTimeout, @Nonnull TimeUnit banUnit) {
+            this.banTimeout = banTimeout;
+            this.banUnit = banUnit;
+            return this;
+        }
+
+        @Nonnull
+        public Builder setOnBanTimeout(@Nonnull Consumer<SmashSetBanTimeoutEvent> onBanTimeout) {
+            this.onBanTimeout = onBanTimeout;
+            return this;
+        }
+
+        @Nonnull
+        public Builder setPickStageTimeout(long pickStageTimeout, @Nonnull TimeUnit pickStageUnit) {
+            this.pickStageTimeout = pickStageTimeout;
+            this.pickStageUnit = pickStageUnit;
+            return this;
+        }
+
+        @Nonnull
+        public Builder setOnPickStageTimeout(@Nonnull Consumer<SmashSetPickStageTimeoutEvent> onPickStageTimeout) {
+            this.onPickStageTimeout = onPickStageTimeout;
+            return this;
+        }
+
+        @Nonnull
+        public Builder setWinnerCharPickTimeout(long winnerCharPickTimeout, @Nonnull TimeUnit winnerCharPickUnit) {
+            this.winnerCharPickTimeout = winnerCharPickTimeout;
+            this.winnerCharPickUnit = winnerCharPickUnit;
+            return this;
+        }
+
+        @Nonnull
+        public Builder setOnWinnerCharPickTimeout(@Nonnull Consumer<SmashSetCharPickTimeoutEvent> onWinnerCharPickTimeout) {
+            this.onWinnerCharPickTimeout = onWinnerCharPickTimeout;
+            return this;
+        }
+
+        @Nonnull
+        public Builder setOnWinnerCharPickFailedInit(@Nonnull Consumer<SmashSetStateInfo> onWinnerCharPickFailedInit) {
+            this.onWinnerCharPickFailedInit = onWinnerCharPickFailedInit;
+            return this;
+        }
+
+        @Nonnull
+        public Builder setLoserCharCounterpickTimeout(long loserCharCounterpickTimeout, @Nonnull TimeUnit loserCharCounterpickUnit) {
+            this.loserCharCounterpickTimeout = loserCharCounterpickTimeout;
+            this.loserCharCounterpickUnit = loserCharCounterpickUnit;
+            return this;
+        }
+
+        @Nonnull
+        public Builder setOnLoserCharCounterpickTimeout(@Nonnull Consumer<SmashSetCharPickTimeoutEvent> onLoserCharCounterpickTimeout) {
+            this.onLoserCharCounterpickTimeout = onLoserCharCounterpickTimeout;
+            return this;
+        }
+
+        @Nonnull
+        public Builder setOnLoserCharCounterpickFailedInit(@Nonnull Consumer<SmashSetStateInfo> onLoserCharCounterpickFailedInit) {
+            this.onLoserCharCounterpickFailedInit = onLoserCharCounterpickFailedInit;
+            return this;
+        }
+
+        @Nonnull
+        public Builder setOnMessageChannelNotInCache(@Nonnull Consumer<SmashSetStateInfo> onMessageChannelNotInCache) {
+            this.onMessageChannelNotInCache = onMessageChannelNotInCache;
+            return this;
+        }
+
+        @Nonnull
+        public Builder setOnResult(@Nonnull BiConsumer<SmashSetResult, ButtonClickEvent> onResult) {
+            this.onResult = onResult;
+            return this;
+        }
+
+        @Nullable
+        public ChannelChoiceWaiter getChannelWaiter() {
+            return channelWaiter;
+        }
+
+        @Nullable
+        public Ruleset getRuleset() {
+            return ruleset;
+        }
+
+        @Nullable
+        public Integer getFirstToWhatScore() {
+            return firstToWhatScore;
+        }
+
+        @Nullable
+        public List<Character> getCharacters() {
+            return characters;
+        }
+
+        @Nullable
+        public RPSInfo getRpsInfo() {
+            return rpsInfo;
+        }
+
+        @Nonnull
+        public Consumer<SmashSetStrikeTimeoutEvent> getOnStrikeTimeout() {
+            return onStrikeTimeout;
+        }
+
+        public long getDoubleBlindTimeout() {
+            return doubleBlindTimeout;
+        }
+
+        @Nonnull
+        public TimeUnit getDoubleBlindUnit() {
+            return doubleBlindUnit;
+        }
+
+        @Nonnull
+        public Consumer<SmashSetDoubleBlindTimeoutEvent> getOnDoubleBlindTimeout() {
+            return onDoubleBlindTimeout;
+        }
+
+        @Nonnull
+        public Consumer<SmashSetStateInfo> getOnDoubleBlindFailedInit() {
+            return onDoubleBlindFailedInit;
+        }
+
+        public long getReportGameTimeout() {
+            return reportGameTimeout;
+        }
+
+        @Nonnull
+        public TimeUnit getReportGameUnit() {
+            return reportGameUnit;
+        }
+
+        @Nullable
+        public String getUser1Display() {
+            return user1Display;
+        }
+
+        @Nullable
+        public String getUser2Display() {
+            return user2Display;
+        }
+
+        @Nonnull
+        public Consumer<SmashSetReportGameTimeoutEvent> getOnReportGameTimeout() {
+            return onReportGameTimeout;
+        }
+
+        public long getBanTimeout() {
+            return banTimeout;
+        }
+
+        @Nonnull
+        public TimeUnit getBanUnit() {
+            return banUnit;
+        }
+
+        @Nonnull
+        public Consumer<SmashSetBanTimeoutEvent> getOnBanTimeout() {
+            return onBanTimeout;
+        }
+
+        public long getPickStageTimeout() {
+            return pickStageTimeout;
+        }
+
+        @Nonnull
+        public TimeUnit getPickStageUnit() {
+            return pickStageUnit;
+        }
+
+        @Nonnull
+        public Consumer<SmashSetPickStageTimeoutEvent> getOnPickStageTimeout() {
+            return onPickStageTimeout;
+        }
+
+        public long getWinnerCharPickTimeout() {
+            return winnerCharPickTimeout;
+        }
+
+        @Nonnull
+        public TimeUnit getWinnerCharPickUnit() {
+            return winnerCharPickUnit;
+        }
+
+        @Nonnull
+        public Consumer<SmashSetCharPickTimeoutEvent> getOnWinnerCharPickTimeout() {
+            return onWinnerCharPickTimeout;
+        }
+
+        @Nonnull
+        public Consumer<SmashSetStateInfo> getOnWinnerCharPickFailedInit() {
+            return onWinnerCharPickFailedInit;
+        }
+
+        public long getLoserCharCounterpickTimeout() {
+            return loserCharCounterpickTimeout;
+        }
+
+        @Nonnull
+        public TimeUnit getLoserCharCounterpickUnit() {
+            return loserCharCounterpickUnit;
+        }
+
+        @Nonnull
+        public Consumer<SmashSetCharPickTimeoutEvent> getOnLoserCharCounterpickTimeout() {
+            return onLoserCharCounterpickTimeout;
+        }
+
+        @Nonnull
+        public Consumer<SmashSetStateInfo> getOnLoserCharCounterpickFailedInit() {
+            return onLoserCharCounterpickFailedInit;
+        }
+
+        @Nonnull
+        public Consumer<SmashSetStateInfo> getOnMessageChannelNotInCache() {
+            return onMessageChannelNotInCache;
+        }
+
+        @Nonnull
+        public BiConsumer<SmashSetResult, ButtonClickEvent> getOnResult() {
+            return onResult;
+        }
+
+        @Nonnull
+        @Override
+        public SmashSetMenu build() {
+            preBuild();
+
+            if (channelWaiter == null) throw new IllegalStateException("ChannelWaiter must be set");
+            if (ruleset == null) throw new IllegalStateException("Ruleset must be set");
+            if (characters == null) throw new IllegalStateException("Characters must be set");
+            if (firstToWhatScore == null) throw new IllegalStateException("FirstToWhatScore must be set");
+            if (user1Display == null || user2Display == null)
+                throw new IllegalStateException("UsersDisplay must be set");
+
+            // We know user1, user2 nonnull because preBuild
+            //noinspection ConstantConditions
+            return new SmashSetMenu(channelWaiter, getUser1(), getUser2(), ruleset, characters, firstToWhatScore,
+                    rpsInfo,
+                    getTimeout(), getUnit(), onStrikeTimeout,
+                    doubleBlindTimeout, doubleBlindUnit, onDoubleBlindTimeout, onDoubleBlindFailedInit,
+                    reportGameTimeout, reportGameUnit, user1Display, user2Display, onReportGameTimeout,
+                    banTimeout, banUnit, onBanTimeout,
+                    pickStageTimeout, pickStageUnit, onPickStageTimeout,
+                    winnerCharPickTimeout, winnerCharPickUnit, onWinnerCharPickTimeout, onWinnerCharPickFailedInit,
+                    loserCharCounterpickTimeout, loserCharCounterpickUnit, onLoserCharCounterpickTimeout, onLoserCharCounterpickFailedInit,
+                    onMessageChannelNotInCache, onResult);
         }
     }
 }

@@ -475,7 +475,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
         state = newState.map(notComplete -> notComplete.map(ban -> ban, chars -> chars), complete -> complete);
 
-        event.editMessage(new MessageBuilder(String.format("%s won, and %s lost the last game.",
+        event.editMessage(new MessageBuilder(String.format("%s won, and %s lost this game.",
                         MiscUtil.mentionUser(result.getWinner()),
                         MiscUtil.mentionUser(result.getLoser())))
                         .mentionUsers(getUser1(), getUser2())

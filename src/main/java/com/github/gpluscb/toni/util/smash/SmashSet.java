@@ -205,6 +205,8 @@ public class SmashSet {
                 if (stageIdx < 0)
                     throw new IllegalStateException("No stage left after striking, the ruleset validation might be broken");
 
+                game.setStageIdx(stageIdx);
+
                 if (ruleset.isBlindPickBeforeStage()) {
                     SetInGameState state = new SetInGameState(game);
                     return OneOfTwo.ofU(switchState(state));

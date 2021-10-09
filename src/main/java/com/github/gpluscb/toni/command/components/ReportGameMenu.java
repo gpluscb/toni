@@ -130,6 +130,7 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
         // Conflict
         onConflict.accept(new ReportGameConflict(), e);
 
+        // FIXME: this doesn't work: "Component custom id was already specified", we actually need to do correct stuff
         Message message = e.getMessage();
         List<ActionRow> actionRows = MiscUtil.splitList(
                 Stream.concat(message.getButtons().stream(), Stream.of(modButton)).collect(Collectors.toList()), Component.Type.BUTTON.getMaxPerRow()

@@ -33,19 +33,22 @@ public class CharPickMenu extends ActionMenu {
     @Nonnull
     private final List<Character> characters;
     @Nonnull
+    private final Consumer<Character> onChoice;
+    @Nonnull
     private final Consumer<CharPickResult> onResult;
     @Nonnull
     private final Consumer<CharPickTimeoutEvent> onTimeout;
     @Nonnull
     private final Runnable onFailedInit;
 
-    public CharPickMenu(@Nonnull ChannelChoiceWaiter waiter, long timeout, @Nonnull TimeUnit unit, long user, long channelId, @Nonnull Message start, @Nonnull List<Character> characters, @Nonnull Consumer<CharPickResult> onResult, @Nonnull Consumer<CharPickTimeoutEvent> onTimeout, @Nonnull Runnable onFailedInit) {
+    public CharPickMenu(@Nonnull ChannelChoiceWaiter waiter, long timeout, @Nonnull TimeUnit unit, long user, long channelId, @Nonnull Message start, @Nonnull List<Character> characters, @Nonnull Consumer<Character> onChoice, @Nonnull Consumer<CharPickResult> onResult, @Nonnull Consumer<CharPickTimeoutEvent> onTimeout, @Nonnull Runnable onFailedInit) {
         super(waiter.getEventWaiter(), timeout, unit);
         this.waiter = waiter;
         this.user = user;
         this.channelId = channelId;
         this.start = start;
         this.characters = characters;
+        this.onChoice = onChoice;
         this.onResult = onResult;
         this.onTimeout = onTimeout;
         this.onFailedInit = onFailedInit;
@@ -109,7 +112,7 @@ public class CharPickMenu extends ActionMenu {
 
         Character character = characters.stream().filter(c -> c.getAltNames().contains(choice.toLowerCase())).findAny().orElse(null);
         if (character == null) message.reply("I don't know that character.").queue();
-        else message.reply("Accepted!").queue();
+        else onChoice.accept(character);
 
         return Optional.ofNullable(character);
     }
@@ -173,6 +176,8 @@ public class CharPickMenu extends ActionMenu {
         @Nullable
         private List<Character> characters;
         @Nonnull
+        private Consumer<Character> onChoice;
+        @Nonnull
         private Consumer<CharPickResult> onResult;
         @Nonnull
         private Consumer<CharPickTimeoutEvent> onTimeout;
@@ -182,6 +187,8 @@ public class CharPickMenu extends ActionMenu {
         public Builder() {
             super(Builder.class);
 
+            onChoice = character -> {
+            };
             onResult = result -> {
             };
             onTimeout = timeout -> {
@@ -223,6 +230,12 @@ public class CharPickMenu extends ActionMenu {
         @Nonnull
         public Builder setCharacterTree(@Nonnull CharacterTree characterTree) {
             characters = characterTree.getAllCharacters();
+            return this;
+        }
+
+        @Nonnull
+        public Builder setOnChoice(@Nonnull Consumer<Character> onChoice) {
+            this.onChoice = onChoice;
             return this;
         }
 
@@ -295,7 +308,7 @@ public class CharPickMenu extends ActionMenu {
             if (start == null) throw new IllegalStateException("Start must be set");
             if (characters == null) throw new IllegalStateException("Characters must be set");
 
-            return new CharPickMenu(channelWaiter, getTimeout(), getUnit(), user, channelId, start, characters, onResult, onTimeout, onFailedInit);
+            return new CharPickMenu(channelWaiter, getTimeout(), getUnit(), user, channelId, start, characters, onChoice, onResult, onTimeout, onFailedInit);
         }
     }
 }

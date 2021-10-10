@@ -27,6 +27,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static net.dv8tion.jda.api.interactions.components.Button.LABEL_MAX_LENGTH;
@@ -34,6 +35,8 @@ import static net.dv8tion.jda.api.interactions.components.Button.LABEL_MAX_LENGT
 public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
     private static final Logger log = LogManager.getLogger(StrikeStagesMenu.class);
 
+    @Nonnull
+    private final Function<UpcomingStrikeInfo, MessageBuilder> strikeMessageProducer;
     @Nonnull
     private final BiConsumer<StrikeInfo, ButtonClickEvent> onStrike;
     @Nonnull
@@ -56,9 +59,10 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
     @Nonnull
     private final ButtonActionMenu underlying;
 
-    public StrikeStagesMenu(@Nonnull EventWaiter waiter, long timeout, @Nonnull TimeUnit unit, @Nonnull BiConsumer<StrikeInfo, ButtonClickEvent> onStrike, @Nonnull BiConsumer<UserStrikesInfo, ButtonClickEvent> onUserStrikes, @Nonnull BiConsumer<StrikeResult, ButtonClickEvent> onResult, @Nonnull Ruleset ruleset, long striker1, long striker2, @Nonnull Consumer<StrikeStagesTimeoutEvent> onTimeout) {
+    public StrikeStagesMenu(@Nonnull EventWaiter waiter, long timeout, @Nonnull TimeUnit unit, @Nonnull Function<UpcomingStrikeInfo, MessageBuilder> strikeMessageProducer, @Nonnull BiConsumer<StrikeInfo, ButtonClickEvent> onStrike, @Nonnull BiConsumer<UserStrikesInfo, ButtonClickEvent> onUserStrikes, @Nonnull BiConsumer<StrikeResult, ButtonClickEvent> onResult, @Nonnull Ruleset ruleset, long striker1, long striker2, @Nonnull Consumer<StrikeStagesTimeoutEvent> onTimeout) {
         super(waiter, striker1, striker2, timeout, unit);
 
+        this.strikeMessageProducer = strikeMessageProducer;
         this.onStrike = onStrike;
         this.onUserStrikes = onUserStrikes;
         this.onResult = onResult;
@@ -72,23 +76,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
         strikes = new ArrayList<>();
         strikes.add(currentStrikes);
 
-        int[] starterStrikePattern = ruleset.getStarterStrikePattern();
-
-        Message start;
-        if (starterStrikePattern.length == 0) {
-            // TODO: this doesn't really work yet. Maybe make underlying nullable and store start in a field?
-            start = new MessageBuilder(String.format("Wow that's just very simple, there is only one stage in the ruleset. You're going to %s.",
-                    ruleset.getStarters().get(0).getName())).build();
-        } else {
-            int firstStrikeAmount = starterStrikePattern[0];
-
-            start = new MessageBuilder(String.format(
-                    "Alright, time to strike stages. %s, you go first. Please strike %d stage%s from the list below.",
-                    MiscUtil.mentionUser(striker1),
-                    firstStrikeAmount,
-                    firstStrikeAmount > 1 ? "s" : ""
-            )).mentionUsers(striker1).build();
-        }
+        Message start = strikeMessageProducer.apply(new UpcomingStrikeInfo()).build();
 
         ButtonActionMenu.Builder underlyingBuilder = new ButtonActionMenu.Builder()
                 .setWaiter(waiter)
@@ -136,7 +124,6 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
 
     @Nonnull
     private OneOfTwo<Message, ButtonActionMenu.MenuAction> handleStrike(@Nonnull ButtonClickEvent e, int stageId) {
-        // TODO: I dislike that users of this class have no control over how these messages look
         if (e.getUser().getIdLong() != currentStriker) {
             e.reply("It's not your turn to strike right now!").setEphemeral(true).queue();
             return OneOfTwo.ofU(ButtonActionMenu.MenuAction.NOTHING);
@@ -171,13 +158,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
         }
 
         e.deferEdit().queue();
-        int stagesToStrike = starterStrikePattern[currentStrikeIdx] - currentStrikes.size();
-        MessageBuilder builder = new MessageBuilder();
-        builder.appendFormat("%s, please strike %d stage%s from the list below.",
-                        MiscUtil.mentionUser(currentStriker),
-                        stagesToStrike,
-                        stagesToStrike > 1 ? "s" : "")
-                .mentionUsers(currentStriker);
+        MessageBuilder builder = strikeMessageProducer.apply(new UpcomingStrikeInfo());
 
         List<Button> buttonsToAdd = ruleset.getStarters().stream()
                 .map(starter -> Button.secondary(
@@ -256,6 +237,12 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
         }
     }
 
+    public class UpcomingStrikeInfo extends StrikeStagesInfo {
+        public int getStagesToStrike() {
+            return ruleset.getStarterStrikePattern()[currentStrikeIdx] - currentStrikes.size();
+        }
+    }
+
     public class StrikeInfo extends StrikeStagesInfo {
         private final int struckStageId;
 
@@ -318,6 +305,8 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
         @Nullable
         private Ruleset ruleset;
         @Nonnull
+        private Function<UpcomingStrikeInfo, MessageBuilder> strikeMessageProducer;
+        @Nonnull
         private BiConsumer<StrikeInfo, ButtonClickEvent> onStrike;
         @Nonnull
         private BiConsumer<UserStrikesInfo, ButtonClickEvent> onUserStrikes;
@@ -329,6 +318,31 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
         public Builder() {
             super(Builder.class);
 
+            strikeMessageProducer = info -> {
+                long currentStriker = info.getCurrentStriker();
+                int stagesToStrike = info.getStagesToStrike();
+
+                Ruleset ruleset = info.getRuleset();
+                if (ruleset.getStarterStrikePattern().length == 0) {
+                    return new MessageBuilder(String.format("Wow that's just very simple, there is only one stage in the ruleset. You're going to %s.",
+                            ruleset.getStarters().get(0).getName()));
+                }
+
+                if (info.getStrikes().get(0).isEmpty()) {
+                    return new MessageBuilder(String.format(
+                            "Alright, time to strike stages. %s, you go first. Please strike %d stage%s from the list below.",
+                            MiscUtil.mentionUser(currentStriker),
+                            stagesToStrike,
+                            stagesToStrike > 1 ? "s" : ""
+                    )).mentionUsers(currentStriker);
+                } else {
+                    return new MessageBuilder(String.format("%s, please strike %d stage%s from the list below.",
+                            MiscUtil.mentionUser(currentStriker),
+                            stagesToStrike,
+                            stagesToStrike > 1 ? "s" : ""))
+                            .mentionUsers(currentStriker);
+                }
+            };
             onStrike = (info, e) -> {
             };
             onUserStrikes = (info, e) -> {
@@ -342,6 +356,12 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
         @Nonnull
         public Builder setRuleset(@Nonnull Ruleset ruleset) {
             this.ruleset = ruleset;
+            return this;
+        }
+
+        @Nonnull
+        public Builder setStrikeMessageProducer(@Nonnull Function<UpcomingStrikeInfo, MessageBuilder> strikeMessageProducer) {
+            this.strikeMessageProducer = strikeMessageProducer;
             return this;
         }
 
@@ -375,6 +395,11 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
         }
 
         @Nonnull
+        public Function<UpcomingStrikeInfo, MessageBuilder> getStrikeMessageProducer() {
+            return strikeMessageProducer;
+        }
+
+        @Nonnull
         public BiConsumer<StrikeInfo, ButtonClickEvent> getOnStrike() {
             return onStrike;
         }
@@ -403,7 +428,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
 
             // We know because of preBuild nonnulls are not violated
             //noinspection ConstantConditions
-            return new StrikeStagesMenu(getWaiter(), getTimeout(), getUnit(), onStrike, onUserStrikes, onResult, ruleset, getUser1(), getUser2(), onTimeout);
+            return new StrikeStagesMenu(getWaiter(), getTimeout(), getUnit(), strikeMessageProducer, onStrike, onUserStrikes, onResult, ruleset, getUser1(), getUser2(), onTimeout);
         }
     }
 }

@@ -25,6 +25,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class SmashSetMenu extends TwoUsersChoicesActionMenu {
     private static final Logger log = LogManager.getLogger(SmashSetMenu.class);
@@ -173,7 +174,26 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
             startUnderlying = createRPSAndStrikeStagesMenu(start);
         } else {
-            startUnderlying = createStrikeStagesMenu();
+            Function<StrikeStagesMenu.UpcomingStrikeInfo, MessageBuilder> strikeMessageProducer = info -> {
+                long currentStriker = info.getCurrentStriker();
+                int stagesToStrike = info.getStagesToStrike();
+
+                if (info.getStrikes().get(0).isEmpty()) {
+                    return new MessageBuilder(String.format("Alright, let's start by striking stages. %s, you start by striking %s stage%s from the list below.",
+                            MiscUtil.mentionUser(currentStriker),
+                            stagesToStrike,
+                            stagesToStrike == 1 ? "" : "s"))
+                            .mentionUsers(currentStriker);
+                } else {
+                    return new MessageBuilder(String.format("%s, please strike %s stage%s from the list below.",
+                            MiscUtil.mentionUser(currentStriker),
+                            stagesToStrike,
+                            stagesToStrike == 1 ? "" : "s"))
+                            .mentionUsers(currentStriker);
+                }
+            };
+
+            startUnderlying = createStrikeStagesMenu(strikeMessageProducer);
         }
     }
 
@@ -240,12 +260,12 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
     }
 
     @Nonnull
-    private StrikeStagesMenu createStrikeStagesMenu() {
-        // TODO: Maybe we should do start here?
+    private StrikeStagesMenu createStrikeStagesMenu(@Nonnull Function<StrikeStagesMenu.UpcomingStrikeInfo, MessageBuilder> strikeMessageProducer) {
         return new StrikeStagesMenu.Builder()
                 .setWaiter(getWaiter())
                 .setUsers(getUser1(), getUser2())
                 .setRuleset(ruleset)
+                .setStrikeMessageProducer(strikeMessageProducer)
                 .setTimeout(strikeTimeout, strikeUnit)
                 .setOnTimeout(this::onStrikeTimeout)
                 .setOnUserStrikes(this::onUserStrikes)
@@ -304,19 +324,20 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
     }
 
     @Nonnull
-    private BanPickStagesMenu createBanPickStagesMenu() {
+    private BanPickStagesMenu createBanPickStagesMenu(@Nonnull Function<BanStagesMenu.UpcomingBanInfo, MessageBuilder> banMessageProducer, @Nonnull Message pickStageStart) {
         SmashSet.SetWinnerStageBanState banState = ((SmashSet.SetWinnerStageBanState) state);
         // At this point it will be displayed => not null
         @SuppressWarnings("ConstantConditions")
         long banningUser = userFromPlayer(banState.getPrevWinner());
         long pickingUser = userFromPlayer(banState.getPrevLoser());
 
-        // TODO: Start message somehow??
         return new BanPickStagesMenu.Builder()
                 .setWaiter(getWaiter())
                 .setUsers(banningUser, pickingUser)
                 .setRuleset(ruleset)
                 .setDsrIllegalStages(banState.getDSRIllegalStageIndizes())
+                .setBanMessageProducer(banMessageProducer)
+                .setPickStageStart(pickStageStart)
                 .setBanTimeout(banTimeout, banUnit)
                 .setPickTimeout(pickStageTimeout, pickStageUnit)
                 .setOnBanResult(this::onBanResult)
@@ -448,7 +469,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         newState.map(
                 notInGame -> notInGame.map(
                         rps -> {
-                            Message start = new MessageBuilder(String.format("The characters are decided, %s plays %s, and %s plays %s next game. " +
+                            Message start = new MessageBuilder(String.format("The characters are decided. %s plays %s, and %s plays %s next game. " +
                                             "Now we'll play a game of RPS to determine who will strike first.",
                                     MiscUtil.mentionUser(getUser1()),
                                     user1Choice.getName(),
@@ -459,7 +480,22 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
                             return createRPSAndStrikeStagesMenu(start);
                         },
-                        strike -> createStrikeStagesMenu()
+                        strike -> {
+                            Function<StrikeStagesMenu.UpcomingStrikeInfo, MessageBuilder> strikeMessageProducer = info ->
+                                    new MessageBuilder(String.format("The characters for the next game have been decided. %s plays %s, and %s plays %s. " +
+                                                    "Now we'll strike stages.\n" +
+                                                    "%s, please strike %d stage%s from the list below.",
+                                            MiscUtil.mentionUser(getUser1()),
+                                            user1Choice.getName(),
+                                            MiscUtil.mentionUser(getUser2()),
+                                            user2Choice.getName(),
+                                            MiscUtil.mentionUser(info.getCurrentStriker()),
+                                            info.getStagesToStrike(),
+                                            info.getStagesToStrike() == 1 ? "" : "s"))
+                                            .mentionUsers(getUser1(), getUser2());
+
+                            return createStrikeStagesMenu(strikeMessageProducer);
+                        }
                 ),
                 inGame -> createReportGameMenu()
         ).displayReplying(channel, messageId);
@@ -484,10 +520,30 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                 .queue();
 
         newState.onT(notComplete -> notComplete.map(
-                stageBan -> createBanPickStagesMenu(),
+                stageBan -> {
+                    Function<BanStagesMenu.UpcomingBanInfo, MessageBuilder> banMessageProducer = info ->
+                            new MessageBuilder(String.format("It has been determined that %s won, and %s lost the last game. Now, %s, you get to ban stages.\n" +
+                                            "Please ban %d stages from the list below.",
+                                    MiscUtil.mentionUser(result.getWinner()),
+                                    MiscUtil.mentionUser(result.getLoser()),
+                                    MiscUtil.mentionUser(result.getWinner()),
+                                    info.getStagesToBan()))
+                                    .mentionUsers(getUser1(), getUser2());
+
+                    Message pickStagesStart = new MessageBuilder(String.format("It has been determined that %s won, and %s lost the last game and the stages have been banned.\n" +
+                                    "So %s, please counterpick one of the remaining stages.",
+                            MiscUtil.mentionUser(result.getWinner()),
+                            MiscUtil.mentionUser(result.getLoser()),
+                            MiscUtil.mentionUser(result.getLoser())))
+                            .mentionUsers(getUser1(), getUser2())
+                            .build();
+
+                    return createBanPickStagesMenu(banMessageProducer, pickStagesStart);
+                },
                 charPick -> {
                     Message start = new MessageBuilder(String.format("It has been determined that %s won, and %s lost the last game. " +
-                                    "Now, %s, you have to pick the character you will play next game first. Please type the character you'll play in this channel.",
+                                    "Now, %s, you have to pick the character you will play next game first.\n" +
+                                    "Please type the character you'll play in this channel.",
                             MiscUtil.mentionUser(result.getWinner()),
                             MiscUtil.mentionUser(result.getLoser()),
                             MiscUtil.mentionUser(result.getWinner())))
@@ -522,7 +578,8 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                     long prevWinner = userFromPlayer(charPick.getPrevWinner());
 
                     Message start = new MessageBuilder(String.format("%s and %s, you will play the next game on %s. " +
-                                    "Now %s, you have to pick the character. Please type the character you'll play next game in this channel.",
+                                    "Now %s, you have to pick the character.\n" +
+                                    "Please type the character you'll play next game in this channel.",
                             MiscUtil.mentionUser(getUser1()),
                             MiscUtil.mentionUser(getUser2()),
                             result.getPickedStage().getName(),
@@ -558,7 +615,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
         long prevLoser = userFromPlayer(newState.getPrevLoser());
 
-        Message start = new MessageBuilder(String.format("%s chose %s as their character, so %s, you can now counterpick their character. " +
+        Message start = new MessageBuilder(String.format("%s chose %s as their character, so %s, you can now counterpick their character.\n" +
                         "Type the character you will use next game in this channel.",
                 MiscUtil.mentionUser(result.getUser()),
                 result.getPickedCharacter().getName(),
@@ -592,7 +649,39 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                 .queue();
 
         newState.map(
-                stageBan -> createBanPickStagesMenu(),
+                stageBan -> {
+                    Character user1Char = stageBan.getGame().getPlayer1Char();
+                    Character user2Char = stageBan.getGame().getPlayer2Char();
+                    long prevWinner = userFromPlayer(stageBan.getPrevWinner());
+                    long prevLoser = userFromPlayer(stageBan.getPrevLoser());
+
+                    // Characters will have been determined at this point
+                    @SuppressWarnings("ConstantConditions")
+                    Function<BanStagesMenu.UpcomingBanInfo, MessageBuilder> banMessageProducer = info ->
+                            new MessageBuilder(String.format("So %s picked %s and %s picked %s. Now, %s, you get to ban stages.\n" +
+                                    "Please ban %d stages from the list below.",
+                                    MiscUtil.mentionUser(getUser1()),
+                                    user1Char.getName(),
+                                    MiscUtil.mentionUser(getUser2()),
+                                    user2Char.getName(),
+                                    MiscUtil.mentionUser(prevWinner),
+                                    info.getStagesToBan()))
+                                    .mentionUsers(getUser1(), getUser2());
+
+                    // Characters will have been determined at this point
+                    @SuppressWarnings("ConstantConditions")
+                    Message pickStageStart = new MessageBuilder(String.format("So %s picked %s and %s picked %s and the stages have been banned.\n" +
+                            "Now, %s, please counterpick a stage from the list below.",
+                            MiscUtil.mentionUser(getUser1()),
+                            user1Char.getName(),
+                            MiscUtil.mentionUser(getUser2()),
+                            user2Char.getName(),
+                            MiscUtil.mentionUser(prevLoser)))
+                            .mentionUsers(getUser1(), getUser2())
+                            .build();
+
+                    return createBanPickStagesMenu(banMessageProducer, pickStageStart);
+                },
                 inGame -> createReportGameMenu()
         ).displayReplying(channel, messageId);
     }

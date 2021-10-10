@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -32,6 +33,8 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
     @Nonnull
     private final TimeUnit pickStageUnit;
     @Nonnull
+    private final Message pickStageStart;
+    @Nonnull
     private final BiConsumer<PickStageMenu.PickStageResult, ButtonClickEvent> onPickResult;
     @Nonnull
     private final Consumer<PickStageMenu.PickStageTimeoutEvent> onPickTimeout;
@@ -42,8 +45,8 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
     @Nullable
     private BanStagesMenu.BanResult banResult;
 
-    public BanPickStagesMenu(@Nonnull EventWaiter waiter, long banningUser, long counterpickingUser, long banTimeout, @Nonnull TimeUnit banUnit, @Nonnull Ruleset ruleset, @Nonnull Set<Integer> dsrIllegalStages, @Nonnull BiConsumer<BanStagesMenu.StageBan, ButtonClickEvent> onBan, @Nonnull BiConsumer<BanStagesMenu.BanResult, ButtonClickEvent> onBanResult, @Nonnull Consumer<BanStagesMenu.BanStagesTimeoutEvent> onBanTimeout,
-                             long pickStageTimeout, @Nonnull TimeUnit pickStageUnit, @Nonnull BiConsumer<PickStageMenu.PickStageResult, ButtonClickEvent> onPickResult, @Nonnull Consumer<PickStageMenu.PickStageTimeoutEvent> onPickTimeout,
+    public BanPickStagesMenu(@Nonnull EventWaiter waiter, long banningUser, long counterpickingUser, long banTimeout, @Nonnull TimeUnit banUnit, @Nonnull Ruleset ruleset, @Nonnull Set<Integer> dsrIllegalStages, @Nonnull BiConsumer<BanStagesMenu.StageBan, ButtonClickEvent> onBan, @Nonnull Function<BanStagesMenu.UpcomingBanInfo, MessageBuilder> banMessageProducer, @Nonnull BiConsumer<BanStagesMenu.BanResult, ButtonClickEvent> onBanResult, @Nonnull Consumer<BanStagesMenu.BanStagesTimeoutEvent> onBanTimeout,
+                             long pickStageTimeout, @Nonnull TimeUnit pickStageUnit, @Nonnull Message pickStageStart, @Nonnull BiConsumer<PickStageMenu.PickStageResult, ButtonClickEvent> onPickResult, @Nonnull Consumer<PickStageMenu.PickStageTimeoutEvent> onPickTimeout,
                              @Nonnull BiConsumer<BanPickStagesResult, ButtonClickEvent> onResult) {
         super(waiter, banningUser, counterpickingUser, banTimeout, banUnit);
 
@@ -53,6 +56,7 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
                 .setWaiter(waiter)
                 .setBanningUser(banningUser)
                 .setRuleset(ruleset)
+                .setBanMessageProducer(banMessageProducer)
                 .setDsrIllegalStages(dsrIllegalStages)
                 .setTimeout(banTimeout, banUnit)
                 .setOnTimeout(onBanTimeout)
@@ -65,6 +69,7 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
 
         this.pickStageTimeout = pickStageTimeout;
         this.pickStageUnit = pickStageUnit;
+        this.pickStageStart = pickStageStart;
         this.onPickResult = onPickResult;
         this.onPickTimeout = onPickTimeout;
 
@@ -103,22 +108,13 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
 
         banResult = result;
 
-        long banningUser = getUser1();
-        long counterpickingUser = getUser2();
-
-        Message start = new MessageBuilder(String.format("%s, since %s has chosen their bans, you can now pick one stage from the remaining stages.",
-                MiscUtil.mentionUser(counterpickingUser),
-                MiscUtil.mentionUser(banningUser)))
-                .mentionUsers(banningUser, counterpickingUser)
-                .build();
-
         PickStageMenu pickUnderlying = new PickStageMenu.Builder()
                 .setWaiter(getWaiter())
                 .setPickingUser(getUser2())
                 .setRuleset(result.getRuleset())
                 .setTimeout(pickStageTimeout, pickStageUnit)
                 .setBannedStageIds(Stream.concat(result.getBannedStageIds().stream(), result.getDsrIllegalStages().stream()).collect(Collectors.toList()))
-                .setStart(start)
+                .setStart(pickStageStart)
                 .setOnResult(this::onPickResult)
                 .setOnTimeout(onPickTimeout)
                 .build();
@@ -204,6 +200,8 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
         @Nonnull
         private Set<Integer> dsrIllegalStages;
         @Nonnull
+        private Function<BanStagesMenu.UpcomingBanInfo, MessageBuilder> banMessageProducer;
+        @Nonnull
         private BiConsumer<BanStagesMenu.StageBan, ButtonClickEvent> onBan;
         @Nonnull
         private BiConsumer<BanStagesMenu.BanResult, ButtonClickEvent> onBanResult;
@@ -212,6 +210,8 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
         private long pickStageTimeout;
         @Nonnull
         private TimeUnit pickStageUnit;
+        @Nullable
+        private Message pickStageStart;
         @Nonnull
         private BiConsumer<PickStageMenu.PickStageResult, ButtonClickEvent> onPickResult;
         @Nonnull
@@ -223,6 +223,24 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
             super(Builder.class);
 
             dsrIllegalStages = new HashSet<>();
+            banMessageProducer = info -> {
+                long banningUser = info.getBanningUser();
+                int stagesToBan = info.getStagesToBan();
+
+                if (info.getBannedStageIds().isEmpty()) {
+                    return new MessageBuilder(String.format("%s, it is your turn to ban stages. Please ban %d stage%s from the list below.",
+                            MiscUtil.mentionUser(banningUser),
+                            stagesToBan,
+                            stagesToBan == 1 ? "" : "s"))
+                            .mentionUsers(banningUser);
+                } else {
+                    return new MessageBuilder(String.format("%s, please ban %d more stage%s from the list below.",
+                            MiscUtil.mentionUser(banningUser),
+                            stagesToBan,
+                            stagesToBan == 1 ? "" : "s"))
+                            .mentionUsers(banningUser);
+                }
+            };
             onBan = (ban, e) -> {
             };
             onBanResult = (result, e) -> {
@@ -264,6 +282,12 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
         }
 
         @Nonnull
+        public Builder setBanMessageProducer(@Nonnull Function<BanStagesMenu.UpcomingBanInfo, MessageBuilder> banMessageProducer) {
+            this.banMessageProducer = banMessageProducer;
+            return this;
+        }
+
+        @Nonnull
         public Builder setOnBan(@Nonnull BiConsumer<BanStagesMenu.StageBan, ButtonClickEvent> onBan) {
             this.onBan = onBan;
             return this;
@@ -285,6 +309,12 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
         public Builder setPickTimeout(long pickStageTimeout, @Nonnull TimeUnit pickStageUnit) {
             this.pickStageTimeout = pickStageTimeout;
             this.pickStageUnit = pickStageUnit;
+            return this;
+        }
+
+        @Nonnull
+        public Builder setPickStageStart(@Nullable Message pickStageStart) {
+            this.pickStageStart = pickStageStart;
             return this;
         }
 
@@ -344,6 +374,11 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
             return pickStageUnit;
         }
 
+        @Nullable
+        public Message getPickStageStart() {
+            return pickStageStart;
+        }
+
         @Nonnull
         public BiConsumer<PickStageMenu.PickStageResult, ButtonClickEvent> getOnPickResult() {
             return onPickResult;
@@ -365,11 +400,12 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
             preBuild();
 
             if (ruleset == null) throw new IllegalStateException("Ruleset must be set");
+            if (pickStageStart == null) throw new IllegalStateException("PickStageStart must be set");
 
             // We know the nonullability because preBuild
             //noinspection ConstantConditions
-            return new BanPickStagesMenu(getWaiter(), getUser1(), getUser2(), getTimeout(), getUnit(), ruleset, dsrIllegalStages, onBan, onBanResult, onBanTimeout,
-                    pickStageTimeout, pickStageUnit, onPickResult, onPickTimeout,
+            return new BanPickStagesMenu(getWaiter(), getUser1(), getUser2(), getTimeout(), getUnit(), ruleset, dsrIllegalStages, onBan, banMessageProducer, onBanResult, onBanTimeout,
+                    pickStageTimeout, pickStageUnit, pickStageStart, onPickResult, onPickTimeout,
                     onResult);
         }
     }

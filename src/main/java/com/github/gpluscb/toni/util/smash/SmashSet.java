@@ -392,6 +392,11 @@ public class SmashSet {
         }
 
         @Nonnull
+        public GameData getGame() {
+            return game;
+        }
+
+        @Nonnull
         public Player getPrevWinner() {
             return prevWinner;
         }

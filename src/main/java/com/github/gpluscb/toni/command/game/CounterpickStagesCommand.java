@@ -9,6 +9,8 @@ import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.smash.Ruleset;
 import com.github.gpluscb.toni.util.smash.Stage;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
+import net.dv8tion.jda.api.MessageBuilder;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
@@ -111,10 +113,17 @@ public class CounterpickStagesCommand implements Command {
             }
         }
 
+        Message pickStagesStart = new MessageBuilder(String.format("%s, since %s has chosen their bans, you can now pick one stage from the remaining stages.",
+                MiscUtil.mentionUser(pickingUser),
+                MiscUtil.mentionUser(banningUser)))
+                .mentionUsers(banningUser, pickingUser)
+                .build();
+
         BanPickStagesMenu menu = new BanPickStagesMenu.Builder()
                 .setWaiter(waiter)
                 .setUsers(banningUser, pickingUser)
                 .setRuleset(ruleset)
+                .setPickStageStart(pickStagesStart)
                 .setOnResult(this::onResult)
                 .setOnBanTimeout(this::onBanTimeout)
                 .setOnPickTimeout(this::onPickTimeout)

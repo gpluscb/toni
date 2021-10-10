@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -43,6 +44,8 @@ public class BanStagesMenu extends ActionMenu {
     @Nonnull
     private final Set<Integer> dsrIllegalStages;
     @Nonnull
+    private final Function<UpcomingBanInfo, MessageBuilder> banMessageProducer;
+    @Nonnull
     private final BiConsumer<StageBan, ButtonClickEvent> onBan;
     @Nonnull
     private final BiConsumer<BanResult, ButtonClickEvent> onResult;
@@ -54,12 +57,13 @@ public class BanStagesMenu extends ActionMenu {
     @Nonnull
     private final Set<Integer> bannedStageIds;
 
-    public BanStagesMenu(@Nonnull EventWaiter waiter, long banningUser, long timeout, @Nonnull TimeUnit unit, @Nonnull Ruleset ruleset, @Nonnull Set<Integer> dsrIllegalStages, @Nonnull BiConsumer<StageBan, ButtonClickEvent> onBan, @Nonnull BiConsumer<BanResult, ButtonClickEvent> onResult, @Nonnull Consumer<BanStagesTimeoutEvent> onTimeout) {
+    public BanStagesMenu(@Nonnull EventWaiter waiter, long banningUser, long timeout, @Nonnull TimeUnit unit, @Nonnull Ruleset ruleset, @Nonnull Set<Integer> dsrIllegalStages, @Nonnull Function<UpcomingBanInfo, MessageBuilder> banMessageProducer, @Nonnull BiConsumer<StageBan, ButtonClickEvent> onBan, @Nonnull BiConsumer<BanResult, ButtonClickEvent> onResult, @Nonnull Consumer<BanStagesTimeoutEvent> onTimeout) {
         super(waiter, timeout, unit);
 
         this.banningUser = banningUser;
         this.ruleset = ruleset;
         this.dsrIllegalStages = dsrIllegalStages;
+        this.banMessageProducer = banMessageProducer;
         this.onBan = onBan;
         this.onResult = onResult;
         this.onTimeout = onTimeout;
@@ -67,13 +71,7 @@ public class BanStagesMenu extends ActionMenu {
         bannedStageIds = new HashSet<>();
 
         // TODO: What if no bans??
-        int banAmount = ruleset.getStageBans();
-        Message start = new MessageBuilder(String.format("%s, it is your turn to ban stages. Please ban %d stage%s from the list below.",
-                MiscUtil.mentionUser(banningUser),
-                banAmount,
-                banAmount == 1 ? "" : "s"))
-                .mentionUsers(banningUser)
-                .build();
+        Message start = banMessageProducer.apply(new UpcomingBanInfo()).build();
 
         ButtonActionMenu.Builder underlyingBuilder = new ButtonActionMenu.Builder()
                 .setWaiter(waiter)
@@ -145,13 +143,7 @@ public class BanStagesMenu extends ActionMenu {
         e.deferEdit().queue();
 
         // More stages are to be banned
-        int stagesToBan = ruleset.getStageBans() - bannedStageIds.size();
-        MessageBuilder builder = new MessageBuilder();
-        builder.appendFormat("%s, please ban %d more stage%s from the list below.",
-                        MiscUtil.mentionUser(banningUser),
-                        stagesToBan,
-                        stagesToBan == 1 ? "" : "s")
-                .mentionUsers(banningUser);
+        MessageBuilder builder = banMessageProducer.apply(new UpcomingBanInfo());
 
         List<Button> buttonsToAdd = ruleset.getStagesStream()
                 .map(stage -> Button.secondary(
@@ -237,6 +229,12 @@ public class BanStagesMenu extends ActionMenu {
         }
     }
 
+    public class UpcomingBanInfo extends BanStagesInfo {
+        public int getStagesToBan() {
+            return ruleset.getStageBans() - bannedStageIds.size();
+        }
+    }
+
     public class StageBan extends BanStagesInfo {
         private final int bannedStageId;
 
@@ -273,6 +271,8 @@ public class BanStagesMenu extends ActionMenu {
         @Nonnull
         private Set<Integer> dsrIllegalStages;
         @Nonnull
+        private Function<UpcomingBanInfo, MessageBuilder> banMessageProducer;
+        @Nonnull
         private BiConsumer<StageBan, ButtonClickEvent> onBan;
         @Nonnull
         private BiConsumer<BanResult, ButtonClickEvent> onResult;
@@ -283,6 +283,24 @@ public class BanStagesMenu extends ActionMenu {
             super(Builder.class);
 
             dsrIllegalStages = new HashSet<>();
+            banMessageProducer = info -> {
+                long banningUser = info.getBanningUser();
+                int stagesToBan = info.getStagesToBan();
+
+                if (info.getBannedStageIds().isEmpty()) {
+                    return new MessageBuilder(String.format("%s, it is your turn to ban stages. Please ban %d stage%s from the list below.",
+                            MiscUtil.mentionUser(banningUser),
+                            stagesToBan,
+                            stagesToBan == 1 ? "" : "s"))
+                            .mentionUsers(banningUser);
+                } else {
+                    return new MessageBuilder(String.format("%s, please ban %d more stage%s from the list below.",
+                            MiscUtil.mentionUser(banningUser),
+                            stagesToBan,
+                            stagesToBan == 1 ? "" : "s"))
+                            .mentionUsers(banningUser);
+                }
+            };
             onBan = (ban, e) -> {
             };
             onResult = (result, e) -> {
@@ -306,6 +324,12 @@ public class BanStagesMenu extends ActionMenu {
         @Nonnull
         public Builder setDsrIllegalStages(@Nonnull Set<Integer> dsrIllegalStages) {
             this.dsrIllegalStages = dsrIllegalStages;
+            return this;
+        }
+
+        @Nonnull
+        public Builder setBanMessageProducer(@Nonnull Function<UpcomingBanInfo, MessageBuilder> banMessageProducer) {
+            this.banMessageProducer = banMessageProducer;
             return this;
         }
 
@@ -367,7 +391,7 @@ public class BanStagesMenu extends ActionMenu {
 
             // We know it's not null because preBuild
             //noinspection ConstantConditions
-            return new BanStagesMenu(getWaiter(), banningUser, getTimeout(), getUnit(), ruleset, dsrIllegalStages, onBan, onResult, onTimeout);
+            return new BanStagesMenu(getWaiter(), banningUser, getTimeout(), getUnit(), ruleset, dsrIllegalStages, banMessageProducer, onBan, onResult, onTimeout);
         }
     }
 }

@@ -1033,18 +1033,18 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         private final TimeUnit unit;
         private final long strikeFirstChoiceTimeout;
         @Nonnull
-        private final Consumer<SmashSetStrikeFirstChoiceTimeoutEvent> onFirstChoiceTimeout;
-        @Nonnull
         private final TimeUnit strikeFirstChoiceUnit;
+        @Nonnull
+        private final Consumer<SmashSetStrikeFirstChoiceTimeoutEvent> onFirstChoiceTimeout;
         @Nonnull
         private final Consumer<SmashSetRPSTimeoutEvent> onRPSTimeout;
 
-        public RPSInfo(long timeout, @Nonnull TimeUnit unit, long strikeFirstChoiceTimeout, @Nonnull Consumer<SmashSetStrikeFirstChoiceTimeoutEvent> onFirstChoiceTimeout, @Nonnull TimeUnit strikeFirstChoiceUnit, @Nonnull Consumer<SmashSetRPSTimeoutEvent> onRPSTimeout) {
+        public RPSInfo(long timeout, @Nonnull TimeUnit unit, long strikeFirstChoiceTimeout, @Nonnull TimeUnit strikeFirstChoiceUnit, @Nonnull Consumer<SmashSetStrikeFirstChoiceTimeoutEvent> onFirstChoiceTimeout, @Nonnull Consumer<SmashSetRPSTimeoutEvent> onRPSTimeout) {
             this.timeout = timeout;
             this.unit = unit;
             this.strikeFirstChoiceTimeout = strikeFirstChoiceTimeout;
-            this.onFirstChoiceTimeout = onFirstChoiceTimeout;
             this.strikeFirstChoiceUnit = strikeFirstChoiceUnit;
+            this.onFirstChoiceTimeout = onFirstChoiceTimeout;
             this.onRPSTimeout = onRPSTimeout;
         }
 
@@ -1062,13 +1062,13 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         }
 
         @Nonnull
-        public Consumer<SmashSetStrikeFirstChoiceTimeoutEvent> getOnFirstChoiceTimeout() {
-            return onFirstChoiceTimeout;
+        public TimeUnit getStrikeFirstChoiceUnit() {
+            return strikeFirstChoiceUnit;
         }
 
         @Nonnull
-        public TimeUnit getStrikeFirstChoiceUnit() {
-            return strikeFirstChoiceUnit;
+        public Consumer<SmashSetStrikeFirstChoiceTimeoutEvent> getOnFirstChoiceTimeout() {
+            return onFirstChoiceTimeout;
         }
 
         @Nonnull

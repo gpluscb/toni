@@ -62,8 +62,8 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
                 .addUsers(user1, user2)
                 .setDeletionButton(null)
                 .setTimeout(timeout, unit)
-                .registerButton(Button.primary("user1", StringUtils.abbreviate(user1Display, LABEL_MAX_LENGTH)), e -> onChoice(user1, e))
-                .registerButton(Button.primary("user2", StringUtils.abbreviate(user2Display, LABEL_MAX_LENGTH)), e -> onChoice(user2, e))
+                .registerButton(Button.primary("user1", StringUtils.abbreviate(String.format("%s won", user1Display), LABEL_MAX_LENGTH)), e -> onChoice(user1, e))
+                .registerButton(Button.primary("user2", StringUtils.abbreviate(String.format("%s won", user2Display), LABEL_MAX_LENGTH)), e -> onChoice(user2, e))
                 .registerButton(modButton, this::onCallMod, false)
                 // Do these get captured too early??
                 .setTimeoutAction(this::onTimeout)

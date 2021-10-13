@@ -1,12 +1,13 @@
 package com.github.gpluscb.toni.command.components;
 
-import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.discord.ActionMenu;
 import com.github.gpluscb.toni.util.discord.ChannelChoiceWaiter;
+import com.github.gpluscb.toni.util.discord.EmbedUtil;
 import com.github.gpluscb.toni.util.discord.TwoUsersChoicesActionMenu;
 import com.github.gpluscb.toni.util.smash.Character;
 import com.github.gpluscb.toni.util.smash.*;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
@@ -14,8 +15,6 @@ import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -28,8 +27,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class SmashSetMenu extends TwoUsersChoicesActionMenu {
-    private static final Logger log = LogManager.getLogger(SmashSetMenu.class);
-
     @Nonnull
     private final ChannelChoiceWaiter channelWaiter;
 
@@ -154,22 +151,19 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
         set = new SmashSet(ruleset, firstToWhatScore, rpsInfo != null);
 
-        String user1Mention = MiscUtil.mentionUser(user1);
-        String user2Mention = MiscUtil.mentionUser(user2);
-
         if (ruleset.isBlindPickBeforeStage()) {
-            Message start = new MessageBuilder(String.format("Alright %s and %s, we start by doing a double blind pick. Please DM me the character you will play in the first game now.",
-                    user1Mention,
-                    user2Mention))
-                    .mentionUsers(user1, user2)
+            // Manually set game number because we haven't tarted set yet
+            Message start = new MessageBuilder(prepareEmbed("Double Blind Pick", 1)
+                    .setDescription("Alright, we start by doing a double blind pick. Please DM me the character you will play in the first game now.")
+                    .build())
                     .build();
 
             startUnderlying = createDoubleBlindMenu(start);
         } else if (rpsInfo != null) {
-            Message start = new MessageBuilder(String.format("Alright %s and %s, we start by playing RPS for who gets to strike first. Please choose what you pick below.",
-                    user1Mention,
-                    user2Mention))
-                    .mentionUsers(user1, user2)
+            // Manually set game number because we haven't tarted set yet
+            Message start = new MessageBuilder(prepareEmbed("RPS", 1)
+                    .setDescription("Alright, we start by playing RPS for who gets to strike first. Please choose what you pick below.")
+                    .build())
                     .build();
 
             startUnderlying = createRPSAndStrikeStagesMenu(start);
@@ -179,17 +173,19 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                 int stagesToStrike = info.getStagesToStrike();
 
                 if (info.getStrikes().get(0).isEmpty()) {
-                    return new MessageBuilder(String.format("Alright, let's start by striking stages. %s, you start by striking %s stage%s from the list below.",
-                            MiscUtil.mentionUser(currentStriker),
-                            stagesToStrike,
-                            stagesToStrike == 1 ? "" : "s"))
-                            .mentionUsers(currentStriker);
+                    return new MessageBuilder(prepareEmbed("Stage Striking")
+                            .setDescription(String.format("Alright, let's start by striking stages. %s, you start by striking %s stage%s from the list below.",
+                                    displayFromUser(currentStriker),
+                                    stagesToStrike,
+                                    stagesToStrike == 1 ? "" : "s"))
+                            .build());
                 } else {
-                    return new MessageBuilder(String.format("%s, please strike %s stage%s from the list below.",
-                            MiscUtil.mentionUser(currentStriker),
-                            stagesToStrike,
-                            stagesToStrike == 1 ? "" : "s"))
-                            .mentionUsers(currentStriker);
+                    return new MessageBuilder(prepareEmbed("Stage Striking")
+                            .setDescription(String.format("%s, please strike %s stage%s from the list below.",
+                                    displayFromUser(currentStriker),
+                                    stagesToStrike,
+                                    stagesToStrike == 1 ? "" : "s"))
+                            .build());
                 }
             };
 
@@ -302,14 +298,15 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
         // Characters are already chosen here
         @SuppressWarnings("ConstantConditions")
-        Message start = new MessageBuilder(String.format("You will play your next game on %s. " +
-                        "%s will play as %s, and %s will play as %s. You can start the game now, report the winner here once you're done.",
-                stage.getName(),
-                MiscUtil.mentionUser(getUser1()),
-                user1Char.getName(),
-                MiscUtil.mentionUser(getUser2()),
-                user2Char.getName()))
-                .mentionUsers(getUser1(), getUser2())
+        Message start = new MessageBuilder(prepareEmbed("Game Reporting")
+                .setDescription(String.format("You will play your next game on %s. " +
+                                "%s will play as %s, and %s will play as %s. You can start the game now, report the winner here once you're done.",
+                        stage.getName(),
+                        user1Display,
+                        user1Char.getName(),
+                        user2Display,
+                        user2Char.getName()))
+                .build())
                 .build();
 
         return new ReportGameMenu.Builder()
@@ -407,18 +404,20 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
         Stage remainingStage = info.getRemainingStages().get(0);
 
-        event.editMessage(String.format("Stage Striking: You struck to %s", remainingStage.getName()))
+        event.editMessageEmbeds(prepareEmbed("Stage Striking")
+                        .setDescription(String.format("Stage Striking: You struck to %s", remainingStage.getName()))
+                        .build())
                 .setActionRows()
                 .queue();
 
         newState.map(
                 doubleBlind -> {
-                    Message start = new MessageBuilder(String.format("You have struck to %s, " +
-                                    "so now we'll determine the characters you play by doing a double blind pick. %s and %s, please DM me the character you'll play next game.",
-                            remainingStage.getName(),
-                            MiscUtil.mentionUser(getUser1()),
-                            MiscUtil.mentionUser(getUser2())))
-                            .mentionUsers(getUser1(), getUser2())
+                    Message start = new MessageBuilder(prepareEmbed("Double Blind Pick")
+                            .setDescription(String.format("You have struck to %s, " +
+                                            "so now we'll determine the characters you play by doing a double blind pick. " +
+                                            "So please DM me the character you'll play next game.",
+                                    remainingStage.getName()))
+                            .build())
                             .build();
 
                     return createDoubleBlindMenu(start);
@@ -459,40 +458,44 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
         long messageId = result.getMessageId();
 
-        channel.editMessageById(messageId, String.format("Double Blind Pick: %s chose %s and %s chose %s.",
-                        MiscUtil.mentionUser(getUser1()),
-                        user1Choice.getName(),
-                        MiscUtil.mentionUser(getUser2()),
-                        user2Choice.getName()))
+        channel.editMessageEmbedsById(messageId, prepareEmbed("Double Blind Pick")
+                        .setDescription(String.format("%s chose %s and %s chose %s.",
+                                user1Display,
+                                user1Choice.getName(),
+                                user2Display,
+                                user2Choice.getName()))
+                        .build())
                 .queue();
 
         newState.map(
                 notInGame -> notInGame.map(
                         rps -> {
-                            Message start = new MessageBuilder(String.format("The characters are decided. %s plays %s, and %s plays %s next game. " +
-                                            "Now we'll play a game of RPS to determine who will strike first.",
-                                    MiscUtil.mentionUser(getUser1()),
-                                    user1Choice.getName(),
-                                    MiscUtil.mentionUser(getUser2()),
-                                    user2Choice.getName()))
-                                    .mentionUsers(getUser1(), getUser2())
+                            Message start = new MessageBuilder(prepareEmbed("RPS")
+                                    .setDescription(String.format("The characters are decided. %s plays %s, and %s plays %s next game. " +
+                                                    "Now we'll play a game of RPS to determine who will strike first.",
+                                            user1Display,
+                                            user1Choice.getName(),
+                                            user2Display,
+                                            user2Choice.getName()))
+                                    .build())
                                     .build();
 
                             return createRPSAndStrikeStagesMenu(start);
                         },
                         strike -> {
                             Function<StrikeStagesMenu.UpcomingStrikeInfo, MessageBuilder> strikeMessageProducer = info ->
-                                    new MessageBuilder(String.format("The characters for the next game have been decided. %s plays %s, and %s plays %s. " +
-                                                    "Now we'll strike stages.\n" +
-                                                    "%s, please strike %d stage%s from the list below.",
-                                            MiscUtil.mentionUser(getUser1()),
-                                            user1Choice.getName(),
-                                            MiscUtil.mentionUser(getUser2()),
-                                            user2Choice.getName(),
-                                            MiscUtil.mentionUser(info.getCurrentStriker()),
-                                            info.getStagesToStrike(),
-                                            info.getStagesToStrike() == 1 ? "" : "s"))
-                                            .mentionUsers(getUser1(), getUser2());
+                                    new MessageBuilder(prepareEmbed("Stage Striking")
+                                            .setDescription(String.format("The characters for the next game have been decided. %s plays %s, and %s plays %s. " +
+                                                            "Now we'll strike stages.\n" +
+                                                            "%s, please strike %d stage%s from the list below.",
+                                                    user1Display,
+                                                    user1Choice.getName(),
+                                                    user2Display,
+                                                    user2Choice.getName(),
+                                                    displayFromUser(info.getCurrentStriker()),
+                                                    info.getStagesToStrike(),
+                                                    info.getStagesToStrike() == 1 ? "" : "s"))
+                                            .build());
 
                             return createStrikeStagesMenu(strikeMessageProducer);
                         }
@@ -511,10 +514,20 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
         state = newState.map(notComplete -> notComplete.map(ban -> ban, chars -> chars), complete -> complete);
 
-        event.editMessage(new MessageBuilder(String.format("Match Reporting: %s won, and %s lost this game.",
-                        MiscUtil.mentionUser(result.getWinner()),
-                        MiscUtil.mentionUser(result.getLoser())))
-                        .mentionUsers(getUser1(), getUser2())
+        List<SmashSet.GameData> games = set.getGames();
+        long user1Score = games.stream().filter(game -> game.getWinner() == SmashSet.Player.PLAYER1).count();
+        long user2Score = games.stream().filter(game -> game.getWinner() == SmashSet.Player.PLAYER2).count();
+
+        // -1 to not count the game we just started with completeGame()
+        event.editMessageEmbeds(prepareEmbed("Game Reporting", games.size() - 1)
+                        .setDescription(String.format("%s won, and %s lost this game. The current score of this BO%d is `%s -- %d to %d -- %s`.",
+                                displayFromUser(result.getWinner()),
+                                displayFromUser(result.getLoser()),
+                                set.getBestOfWhatScore(),
+                                user1Display,
+                                user1Score,
+                                user2Score,
+                                user2Display))
                         .build())
                 .setActionRows()
                 .queue();
@@ -522,32 +535,35 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         newState.onT(notComplete -> notComplete.map(
                 stageBan -> {
                     Function<BanStagesMenu.UpcomingBanInfo, MessageBuilder> banMessageProducer = info ->
-                            new MessageBuilder(String.format("It has been determined that %s won, and %s lost the last game. Now, %s, you get to ban stages.\n" +
-                                            "Please ban %d stages from the list below.",
-                                    MiscUtil.mentionUser(result.getWinner()),
-                                    MiscUtil.mentionUser(result.getLoser()),
-                                    MiscUtil.mentionUser(result.getWinner()),
-                                    info.getStagesToBan()))
-                                    .mentionUsers(getUser1(), getUser2());
+                            new MessageBuilder(prepareEmbed("Stage Ban / Counterpick")
+                                    .setDescription(String.format("It has been determined that %s won, and %s lost the last game. Now, %s, you get to ban stages.\n" +
+                                                    "Please ban %d stages from the list below.",
+                                            displayFromUser(result.getWinner()),
+                                            displayFromUser(result.getLoser()),
+                                            displayFromUser(result.getWinner()),
+                                            info.getStagesToBan()))
+                                    .build());
 
-                    Message pickStagesStart = new MessageBuilder(String.format("It has been determined that %s won, and %s lost the last game and the stages have been banned.\n" +
-                                    "So %s, please counterpick one of the remaining stages.",
-                            MiscUtil.mentionUser(result.getWinner()),
-                            MiscUtil.mentionUser(result.getLoser()),
-                            MiscUtil.mentionUser(result.getLoser())))
-                            .mentionUsers(getUser1(), getUser2())
+                    Message pickStagesStart = new MessageBuilder(prepareEmbed("Stage Ban / Counterpick")
+                            .setDescription(String.format("It has been determined that %s won, and %s lost the last game and the stages have been banned.\n" +
+                                            "So %s, please counterpick one of the remaining stages.",
+                                    displayFromUser(result.getWinner()),
+                                    displayFromUser(result.getLoser()),
+                                    displayFromUser(result.getLoser()))
+                            ).build())
                             .build();
 
                     return createBanPickStagesMenu(banMessageProducer, pickStagesStart);
                 },
                 charPick -> {
-                    Message start = new MessageBuilder(String.format("It has been determined that %s won, and %s lost the last game. " +
-                                    "Now, %s, you have to pick the character you will play next game first.\n" +
-                                    "Please type the character you'll play in this channel.",
-                            MiscUtil.mentionUser(result.getWinner()),
-                            MiscUtil.mentionUser(result.getLoser()),
-                            MiscUtil.mentionUser(result.getWinner())))
-                            .mentionUsers(getUser1(), getUser2())
+                    Message start = new MessageBuilder(prepareEmbed("Winner Character Pick")
+                            .setDescription(String.format("It has been determined that %s won, and %s lost the last game. " +
+                                            "Now, %s, you have to pick the character you will play next game first.\n" +
+                                            "Please type the character you'll play in this channel.",
+                                    displayFromUser(result.getWinner()),
+                                    displayFromUser(result.getLoser()),
+                                    displayFromUser(result.getWinner())))
+                            .build())
                             .build();
 
                     return createWinnerCharPickMenu(start);
@@ -569,7 +585,9 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
         state = newState.map(charPick -> charPick, inGame -> inGame);
 
-        event.editMessage(String.format("Stage Ban/Counterpicking: You will play the next game on %s.", result.getPickedStage().getName()))
+        event.editMessageEmbeds(prepareEmbed("Stage Ban / Counterpick")
+                        .setDescription(String.format("You will play the next game on %s.", result.getPickedStage().getName()))
+                        .build())
                 .setActionRows()
                 .queue();
 
@@ -577,14 +595,13 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                 charPick -> {
                     long prevWinner = userFromPlayer(charPick.getPrevWinner());
 
-                    Message start = new MessageBuilder(String.format("%s and %s, you will play the next game on %s. " +
-                                    "Now %s, you have to pick the character.\n" +
-                                    "Please type the character you'll play next game in this channel.",
-                            MiscUtil.mentionUser(getUser1()),
-                            MiscUtil.mentionUser(getUser2()),
-                            result.getPickedStage().getName(),
-                            MiscUtil.mentionUser(prevWinner)))
-                            .mentionUsers(getUser1(), getUser2())
+                    Message start = new MessageBuilder(prepareEmbed("Winner Character Pick")
+                            .setDescription(String.format("You will play the next game on %s. " +
+                                            "Now %s, you have to pick the character.\n" +
+                                            "Please type the character you'll play next game in this channel.",
+                                    result.getPickedStage().getName(),
+                                    displayFromUser(prevWinner)))
+                            .build())
                             .build();
 
                     return createWinnerCharPickMenu(start);
@@ -607,20 +624,22 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
         long messageId = result.getMessageId();
 
-        channel.editMessageById(messageId, String.format("Winner Character Pick: %s picked %s.",
-                        MiscUtil.mentionUser(result.getUser()),
-                        result.getPickedCharacter().getName()))
-                .mentionUsers(result.getUser())
+        channel.editMessageEmbedsById(messageId, prepareEmbed("Winner Character Pick")
+                        .setDescription(String.format("%s picked %s.",
+                                displayFromUser(result.getUser()),
+                                result.getPickedCharacter().getName()))
+                        .build())
                 .queue();
 
         long prevLoser = userFromPlayer(newState.getPrevLoser());
 
-        Message start = new MessageBuilder(String.format("%s chose %s as their character, so %s, you can now counterpick their character.\n" +
-                        "Type the character you will use next game in this channel.",
-                MiscUtil.mentionUser(result.getUser()),
-                result.getPickedCharacter().getName(),
-                MiscUtil.mentionUser(prevLoser)))
-                .mentionUsers(getUser1(), getUser2())
+        Message start = new MessageBuilder(prepareEmbed("Loser Character Counterpick")
+                .setDescription(String.format("%s chose %s as their character, so %s, you can now counterpick their character.\n" +
+                                "Type the character you will use next game in this channel.",
+                        displayFromUser(result.getUser()),
+                        result.getPickedCharacter().getName(),
+                        displayFromUser(prevLoser)))
+                .build())
                 .build();
 
         createLoserCharCounterpickMenu(start).displayReplying(channel, messageId);
@@ -642,10 +661,11 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
         long messageId = result.getMessageId();
 
-        channel.editMessageById(messageId, String.format("Loser Character Counterpick: %s counterpicked %s.",
-                        MiscUtil.mentionUser(result.getUser()),
-                        result.getPickedCharacter().getName()))
-                .mentionUsers(result.getUser())
+        channel.editMessageEmbedsById(messageId, prepareEmbed("Loser Character Counterpick")
+                        .setDescription(String.format("%s counterpicked %s.",
+                                displayFromUser(result.getUser()),
+                                result.getPickedCharacter().getName()))
+                        .build())
                 .queue();
 
         newState.map(
@@ -658,26 +678,28 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                     // Characters will have been determined at this point
                     @SuppressWarnings("ConstantConditions")
                     Function<BanStagesMenu.UpcomingBanInfo, MessageBuilder> banMessageProducer = info ->
-                            new MessageBuilder(String.format("So %s picked %s and %s picked %s. Now, %s, you get to ban stages.\n" +
-                                    "Please ban %d stages from the list below.",
-                                    MiscUtil.mentionUser(getUser1()),
-                                    user1Char.getName(),
-                                    MiscUtil.mentionUser(getUser2()),
-                                    user2Char.getName(),
-                                    MiscUtil.mentionUser(prevWinner),
-                                    info.getStagesToBan()))
-                                    .mentionUsers(getUser1(), getUser2());
+                            new MessageBuilder(prepareEmbed("Stage Ban / Counterpick")
+                                    .setDescription(String.format("So %s picked %s and %s picked %s. Now, %s, you get to ban stages.\n" +
+                                                    "Please ban %d stages from the list below.",
+                                            user1Display,
+                                            user1Char.getName(),
+                                            user2Display,
+                                            user2Char.getName(),
+                                            displayFromUser(prevWinner),
+                                            info.getStagesToBan()))
+                                    .build());
 
                     // Characters will have been determined at this point
                     @SuppressWarnings("ConstantConditions")
-                    Message pickStageStart = new MessageBuilder(String.format("So %s picked %s and %s picked %s and the stages have been banned.\n" +
-                            "Now, %s, please counterpick a stage from the list below.",
-                            MiscUtil.mentionUser(getUser1()),
-                            user1Char.getName(),
-                            MiscUtil.mentionUser(getUser2()),
-                            user2Char.getName(),
-                            MiscUtil.mentionUser(prevLoser)))
-                            .mentionUsers(getUser1(), getUser2())
+                    Message pickStageStart = new MessageBuilder(prepareEmbed("Stage Ban / Counterpick")
+                            .setDescription(String.format("So %s picked %s and %s picked %s and the stages have been banned.\n" +
+                                            "Now, %s, please counterpick a stage from the list below.",
+                                    user1Display,
+                                    user1Char.getName(),
+                                    user2Display,
+                                    user2Char.getName(),
+                                    displayFromUser(prevLoser)))
+                            .build())
                             .build();
 
                     return createBanPickStagesMenu(banMessageProducer, pickStageStart);
@@ -751,18 +773,25 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         return user == getUser1() ? SmashSet.Player.PLAYER1 : SmashSet.Player.PLAYER2;
     }
 
-    /**
-     * @return null if MessageChannel not in cache. Will already be logged and called onChannelNotInCache by then
-     */
-    @Nullable
-    private MessageChannel tryGetChannel() {
-        MessageChannel channel = getChannel();
-        if (channel == null) {
-            log.warn("MessageChannel in SmashSetMenu not in cache: {}", getChannelId());
-            onMessageChannelNotInCache.accept(new SmashSetStateInfo());
-        }
+    @Nonnull
+    private String displayFromUser(long user) {
+        return user == getUser1() ? user1Display : user2Display;
+    }
 
-        return channel;
+    @Nonnull
+    private EmbedBuilder prepareEmbed(@Nonnull String title) {
+        return prepareEmbed(title, set.getGames().size());
+    }
+
+    @Nonnull
+    private EmbedBuilder prepareEmbed(@Nonnull String title, int gameNumber) {
+        return EmbedUtil.getPrepared()
+                .setTitle(String.format("%s vs %s | Game %d | %s",
+                        user1Display,
+                        user2Display,
+                        gameNumber,
+                        title))
+                .setFooter(String.format("%s vs %s", user1Display, user2Display));
     }
 
     @Nonnull

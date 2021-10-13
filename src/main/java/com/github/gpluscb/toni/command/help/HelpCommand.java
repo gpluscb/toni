@@ -43,7 +43,7 @@ public class HelpCommand implements Command {
             return;
         }
 
-        EmbedBuilder builder = EmbedUtil.getPrepared(ctx.getMember(), ctx.getUser());
+        EmbedBuilder builder = EmbedUtil.getPreparedAuthor(ctx.getMember(), ctx.getUser());
 
         CommandCategory requestedCategory = commands.stream()
                 .filter(category -> commandArg.equals(category.getCategoryName()))
@@ -92,7 +92,7 @@ public class HelpCommand implements Command {
     private void generalHelp(@Nonnull CommandContext<?> ctx) {
         Config config = ctx.getConfig();
 
-        EmbedBuilder builder = EmbedUtil.getPrepared(ctx.getMember(), ctx.getUser()).setTitle("Toni's general help");
+        EmbedBuilder builder = EmbedUtil.getPreparedAuthor(ctx.getMember(), ctx.getUser()).setTitle("Toni's general help");
 
         builder.setDescription("My prefixes are `!t`, `noti` and `toni`, but you can mention me instead too.\n")
                 .appendDescription("`|` means \"or\", `[brackets]` mean \"optional\", and `...` means that an argument is allowed to have spaces. ")

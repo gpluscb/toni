@@ -75,6 +75,10 @@ public class SmashSet {
         return firstToWhatScore;
     }
 
+    public int getBestOfWhatScore() {
+        return firstToWhatScore * 2 - 1;
+    }
+
     @Nonnull
     public List<GameData> getGames() {
         return games;

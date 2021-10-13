@@ -10,6 +10,7 @@ import com.github.gpluscb.toni.util.smash.Character;
 import com.github.gpluscb.toni.util.smash.CharacterTree;
 import com.github.gpluscb.toni.util.smash.Ruleset;
 import com.github.gpluscb.toni.util.smash.SmashSet;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
@@ -71,6 +72,7 @@ public class SmashSetCommand implements Command {
     @Override
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
+                .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_HISTORY, Permission.MESSAGE_EMBED_LINKS})
                 .setAliases(new String[]{"set", "playset"})
                 // TODO: Help
                 .setCommandData(new CommandData("playset", "Helps you play a set in a specific ruleset")

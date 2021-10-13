@@ -17,24 +17,30 @@ public class EmbedUtil {
     public static final String UFD_ICON_URL = "https://ultimateframedata.com/ogimage.png";
     public static final String SMASHDATA_ICON_URL = "https://pbs.twimg.com/profile_images/1225945446226350080/3V1FENbf_400x400.jpg";
 
+
     @Nonnull
-    public static EmbedBuilder getPrepared(@Nullable Member member, @Nonnull User author) {
-        return applyColor(applyTimestamp(applyAuthor(new EmbedBuilder(), member, author)));
+    public static EmbedBuilder getPrepared() {
+        return applyColor(applyTimestamp(new EmbedBuilder()));
+    }
+
+    @Nonnull
+    public static EmbedBuilder getPreparedAuthor(@Nullable Member member, @Nonnull User author) {
+        return applyAuthor(getPrepared(), member, author);
     }
 
     @Nonnull
     public static EmbedBuilder getPreparedGG(@Nullable Member member, @Nonnull User author) {
-        return applySmashGGFooter(getPrepared(member, author));
+        return applySmashGGFooter(getPreparedAuthor(member, author));
     }
 
     @Nonnull
     public static EmbedBuilder getPreparedUFD(@Nullable Member member, @Nonnull User author) {
-        return applyUFDFooter(getPrepared(member, author));
+        return applyUFDFooter(getPreparedAuthor(member, author));
     }
 
     @Nonnull
     public static EmbedBuilder getPreparedSmashdata(@Nullable Member member, @Nonnull User author) {
-        return applySmashdataFooter(getPrepared(member, author));
+        return applySmashdataFooter(getPreparedAuthor(member, author));
     }
 
     @Nonnull

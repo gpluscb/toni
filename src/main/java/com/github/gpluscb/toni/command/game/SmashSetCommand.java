@@ -10,7 +10,6 @@ import com.github.gpluscb.toni.util.smash.Character;
 import com.github.gpluscb.toni.util.smash.CharacterTree;
 import com.github.gpluscb.toni.util.smash.Ruleset;
 import com.github.gpluscb.toni.util.smash.SmashSet;
-import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;

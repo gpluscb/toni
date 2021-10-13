@@ -17,6 +17,7 @@ import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class SmashSetCommand implements Command {
     @Nonnull
@@ -45,6 +46,9 @@ public class SmashSetCommand implements Command {
                 .setCharacters(characters)
                 .setRuleset(ruleset)
                 .setFirstToWhatScore(firstToWhatScore)
+                .setRpsInfo(new SmashSetMenu.RPSInfo(20, TimeUnit.MINUTES, 20, TimeUnit.MINUTES, a -> {
+                }, a -> {
+                }))
                 .setUsersDisplay("Mrü", "MarRueTest")
                 .setOnResult(this::onResult)
                 .build();

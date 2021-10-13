@@ -302,6 +302,34 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
     }
 
     public static class Builder extends TwoUsersChoicesActionMenu.Builder<Builder, StrikeStagesMenu> {
+        // TODO: Defaults like this for everything in every builder?
+        @Nonnull
+        public static final Function<UpcomingStrikeInfo, MessageBuilder> DEFAULT_STRIKE_MESSAGE_PRODUCER = info -> {
+            long currentStriker = info.getCurrentStriker();
+            int stagesToStrike = info.getStagesToStrike();
+
+            Ruleset ruleset = info.getRuleset();
+            if (ruleset.getStarterStrikePattern().length == 0) {
+                return new MessageBuilder(String.format("Wow that's just very simple, there is only one stage in the ruleset. You're going to %s.",
+                        ruleset.getStarters().get(0).getName()));
+            }
+
+            if (info.getStrikes().get(0).isEmpty()) {
+                return new MessageBuilder(String.format(
+                        "Alright, time to strike stages. %s, you go first. Please strike %d stage%s from the list below.",
+                        MiscUtil.mentionUser(currentStriker),
+                        stagesToStrike,
+                        stagesToStrike > 1 ? "s" : ""
+                )).mentionUsers(currentStriker);
+            } else {
+                return new MessageBuilder(String.format("%s, please strike %d stage%s from the list below.",
+                        MiscUtil.mentionUser(currentStriker),
+                        stagesToStrike,
+                        stagesToStrike > 1 ? "s" : ""))
+                        .mentionUsers(currentStriker);
+            }
+        };
+
         @Nullable
         private Ruleset ruleset;
         @Nonnull
@@ -318,31 +346,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
         public Builder() {
             super(Builder.class);
 
-            strikeMessageProducer = info -> {
-                long currentStriker = info.getCurrentStriker();
-                int stagesToStrike = info.getStagesToStrike();
-
-                Ruleset ruleset = info.getRuleset();
-                if (ruleset.getStarterStrikePattern().length == 0) {
-                    return new MessageBuilder(String.format("Wow that's just very simple, there is only one stage in the ruleset. You're going to %s.",
-                            ruleset.getStarters().get(0).getName()));
-                }
-
-                if (info.getStrikes().get(0).isEmpty()) {
-                    return new MessageBuilder(String.format(
-                            "Alright, time to strike stages. %s, you go first. Please strike %d stage%s from the list below.",
-                            MiscUtil.mentionUser(currentStriker),
-                            stagesToStrike,
-                            stagesToStrike > 1 ? "s" : ""
-                    )).mentionUsers(currentStriker);
-                } else {
-                    return new MessageBuilder(String.format("%s, please strike %d stage%s from the list below.",
-                            MiscUtil.mentionUser(currentStriker),
-                            stagesToStrike,
-                            stagesToStrike > 1 ? "s" : ""))
-                            .mentionUsers(currentStriker);
-                }
-            };
+            strikeMessageProducer = DEFAULT_STRIKE_MESSAGE_PRODUCER;
             onStrike = (info, e) -> {
             };
             onUserStrikes = (info, e) -> {

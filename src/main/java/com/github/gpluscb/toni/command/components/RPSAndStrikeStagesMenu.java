@@ -25,6 +25,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -39,12 +40,16 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
     @Nonnull
     private final TimeUnit rpsUnit;
     @Nonnull
+    private final BiFunction<RPSMenu.RPSResult, ButtonClickEvent, Message> rpsTieMessageProvider;
+    @Nonnull
     private final BiConsumer<RPSMenu.RPS, ButtonClickEvent> onRPSChoiceMade;
     @Nonnull
     private final BiConsumer<RPSMenu.RPSResult, ButtonClickEvent> onRPSResult;
     @Nonnull
     private final Consumer<RPSMenu.RPSTimeoutEvent> onRPSTimeout;
 
+    @Nonnull
+    private final BiFunction<RPSMenu.RPSResult, ButtonClickEvent, Message> strikeFirstMessageProvider;
     @Nonnull
     private final BiConsumer<StrikeFirstChoiceResult, ButtonClickEvent> onStrikeFirstChoice;
     @Nonnull
@@ -53,6 +58,8 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
     private final long strikeTimeout;
     @Nonnull
     private final TimeUnit strikeUnit;
+    @Nonnull
+    private final Function<StrikeStagesMenu.UpcomingStrikeInfo, MessageBuilder> strikeMessageProducer;
     @Nonnull
     private final BiConsumer<StrikeStagesMenu.StrikeInfo, ButtonClickEvent> onStrike;
     @Nonnull
@@ -70,9 +77,9 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
     private StrikeFirstChoiceResult strikeFirstChoiceResult;
 
     public RPSAndStrikeStagesMenu(@Nonnull EventWaiter waiter, long user1, long user2,
-                                  long strikeFirstChoiceTimeout, @Nonnull TimeUnit strikeFirstChoiceUnit, @Nonnull BiConsumer<StrikeFirstChoiceResult, ButtonClickEvent> onStrikeFirstChoice, @Nonnull Consumer<StrikeFirstChoiceTimeoutEvent> onStrikeFirstTimeout,
-                                  long rpsTimeout, @Nonnull TimeUnit rpsUnit, @Nonnull BiConsumer<RPSMenu.RPS, ButtonClickEvent> onRPSChoiceMade, @Nonnull BiConsumer<RPSMenu.RPSResult, ButtonClickEvent> onRPSResult, @Nonnull Message start, @Nonnull Consumer<RPSMenu.RPSTimeoutEvent> onRPSTimeout,
-                                  long strikeTimeout, @Nonnull TimeUnit strikeUnit, @Nonnull BiConsumer<StrikeStagesMenu.StrikeInfo, ButtonClickEvent> onStrike, @Nonnull BiConsumer<StrikeStagesMenu.UserStrikesInfo, ButtonClickEvent> onUserStrikes, @Nonnull BiConsumer<StrikeStagesMenu.StrikeResult, ButtonClickEvent> onStrikeResult, @Nonnull Ruleset ruleset, @Nonnull Consumer<StrikeStagesMenu.StrikeStagesTimeoutEvent> onStrikeTimeout,
+                                  long strikeFirstChoiceTimeout, @Nonnull TimeUnit strikeFirstChoiceUnit, @Nonnull BiFunction<RPSMenu.RPSResult, ButtonClickEvent, Message> strikeFirstMessageProvider, @Nonnull BiConsumer<StrikeFirstChoiceResult, ButtonClickEvent> onStrikeFirstChoice, @Nonnull Consumer<StrikeFirstChoiceTimeoutEvent> onStrikeFirstTimeout,
+                                  long rpsTimeout, @Nonnull TimeUnit rpsUnit, @Nonnull BiFunction<RPSMenu.RPSResult, ButtonClickEvent, Message> rpsTieMessageProvider, @Nonnull BiConsumer<RPSMenu.RPS, ButtonClickEvent> onRPSChoiceMade, @Nonnull BiConsumer<RPSMenu.RPSResult, ButtonClickEvent> onRPSResult, @Nonnull Message start, @Nonnull Consumer<RPSMenu.RPSTimeoutEvent> onRPSTimeout,
+                                  long strikeTimeout, @Nonnull TimeUnit strikeUnit, @Nonnull Function<StrikeStagesMenu.UpcomingStrikeInfo, MessageBuilder> strikeMessageProducer, @Nonnull BiConsumer<StrikeStagesMenu.StrikeInfo, ButtonClickEvent> onStrike, @Nonnull BiConsumer<StrikeStagesMenu.UserStrikesInfo, ButtonClickEvent> onUserStrikes, @Nonnull BiConsumer<StrikeStagesMenu.StrikeResult, ButtonClickEvent> onStrikeResult, @Nonnull Ruleset ruleset, @Nonnull Consumer<StrikeStagesMenu.StrikeStagesTimeoutEvent> onStrikeTimeout,
                                   @Nonnull BiConsumer<RPSAndStrikeStagesResult, ButtonClickEvent> onResult) {
         super(waiter, user1, user2, strikeFirstChoiceTimeout, strikeFirstChoiceUnit);
 
@@ -80,15 +87,18 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
 
         this.rpsTimeout = rpsTimeout;
         this.rpsUnit = rpsUnit;
+        this.rpsTieMessageProvider = rpsTieMessageProvider;
         this.onRPSChoiceMade = onRPSChoiceMade;
         this.onRPSResult = onRPSResult;
         this.onRPSTimeout = onRPSTimeout;
 
+        this.strikeFirstMessageProvider = strikeFirstMessageProvider;
         this.onStrikeFirstChoice = onStrikeFirstChoice;
         this.onStrikeFirstTimeout = onStrikeFirstTimeout;
 
         this.strikeTimeout = strikeTimeout;
         this.strikeUnit = strikeUnit;
+        this.strikeMessageProducer = strikeMessageProducer;
         this.onStrike = onStrike;
         this.onUserStrikes = onUserStrikes;
         this.onStrikeResult = onStrikeResult;
@@ -141,9 +151,7 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
         onRPSResult.accept(rpsResult, e);
 
         if (rpsResult.getWinner() == RPSMenu.Winner.Tie) {
-            Message start = new MessageBuilder(String.format("Both of you chose %s. So please try again.",
-                    rpsResult.getChoice1().getDisplayName()))
-                    .build();
+            Message start = rpsTieMessageProvider.apply(rpsResult, e);
 
             RPSMenu rpsUnderlying = createRPS(start);
 
@@ -154,17 +162,8 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
         // We know it's not null because we checked for tie earlier
         @SuppressWarnings("ConstantConditions") long winner = rpsResult.getWinnerId();
         @SuppressWarnings("ConstantConditions") long loser = rpsResult.getLoserId();
-        long user1 = getUser1();
-        long user2 = getUser2();
 
-        Message start = new MessageBuilder(String.format(
-                "%s chose %s, and %s chose %s. So %s, you won the RPS. Will you strike first or second?",
-                MiscUtil.mentionUser(user1),
-                rpsResult.getChoice1().getDisplayName(),
-                MiscUtil.mentionUser(user2),
-                rpsResult.getChoice2().getDisplayName(),
-                MiscUtil.mentionUser(winner)
-        )).mentionUsers(user1, user2).build();
+        Message start = strikeFirstMessageProvider.apply(rpsResult, e);
 
         Function<ButtonClickEvent, OneOfTwo<Message, ButtonActionMenu.MenuAction>> onButtonFirst = event -> {
             onStrikeFirstChoice(new StrikeFirstChoiceResult(winner, winner, loser), event);
@@ -200,6 +199,7 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
                 .setWaiter(getWaiter())
                 .setUsers(result.getFirstStriker(), result.getSecondStriker())
                 .setTimeout(strikeTimeout, strikeUnit)
+                .setStrikeMessageProducer(strikeMessageProducer)
                 .setRuleset(ruleset)
                 .setOnStrike(onStrike)
                 .setOnUserStrikes(onUserStrikes)
@@ -305,6 +305,8 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
 
     public static class Builder extends TwoUsersChoicesActionMenu.Builder<Builder, RPSAndStrikeStagesMenu> {
         @Nonnull
+        private BiFunction<RPSMenu.RPSResult, ButtonClickEvent, Message> strikeFirstMessageProvider;
+        @Nonnull
         private BiConsumer<StrikeFirstChoiceResult, ButtonClickEvent> onStrikeFirstChoice;
         @Nonnull
         private Consumer<StrikeFirstChoiceTimeoutEvent> onStrikeFirstTimeout;
@@ -312,6 +314,8 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
         @Nullable
         private Message start;
         private long rpsTimeout;
+        @Nonnull
+        private BiFunction<RPSMenu.RPSResult, ButtonClickEvent, Message> rpsTieMessageProvider;
         @Nonnull
         private TimeUnit rpsUnit;
         @Nonnull
@@ -325,6 +329,8 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
         private long strikeTimeout;
         @Nonnull
         private TimeUnit strikeUnit;
+        @Nonnull
+        private Function<StrikeStagesMenu.UpcomingStrikeInfo, MessageBuilder> strikeMessageProducer;
         @Nonnull
         private BiConsumer<StrikeStagesMenu.StrikeInfo, ButtonClickEvent> onStrike;
         @Nonnull
@@ -340,6 +346,23 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
         public Builder() {
             super(Builder.class);
 
+            rpsTieMessageProvider = (rpsResult, e) ->
+                    new MessageBuilder(String.format("Both of you chose %s. So please try again.",
+                            rpsResult.getChoice1().getDisplayName()))
+                            .build();
+
+            strikeFirstMessageProvider = (rpsResult, e) -> {
+                // This will be decisive at this point
+                //noinspection ConstantConditions
+                return new MessageBuilder(String.format(
+                        "%s chose %s, and %s chose %s. So %s, you won the RPS. Will you strike first or second?",
+                        MiscUtil.mentionUser(rpsResult.getUser1()),
+                        rpsResult.getChoice1().getDisplayName(),
+                        MiscUtil.mentionUser(rpsResult.getUser2()),
+                        rpsResult.getChoice2().getDisplayName(),
+                        MiscUtil.mentionUser(rpsResult.getWinnerId())
+                )).mentionUsers(rpsResult.getUser1(), rpsResult.getUser2()).build();
+            };
             onStrikeFirstChoice = (r, e) -> {
             };
             onStrikeFirstTimeout = e -> {
@@ -366,6 +389,7 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
             };
             strikeTimeout = 5;
             strikeUnit = TimeUnit.MINUTES;
+            strikeMessageProducer = StrikeStagesMenu.Builder.DEFAULT_STRIKE_MESSAGE_PRODUCER;
             onStrike = (info, e) -> {
             };
             onUserStrikes = (info, e) -> {
@@ -376,6 +400,12 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
             };
             onResult = (r, e) -> {
             };
+        }
+
+        @Nonnull
+        public Builder setStrikeFirstMessageProvider(@Nonnull BiFunction<RPSMenu.RPSResult, ButtonClickEvent, Message> strikeFirstMessageProvider) {
+            this.strikeFirstMessageProvider = strikeFirstMessageProvider;
+            return this;
         }
 
         @Nonnull
@@ -405,6 +435,12 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
         public Builder setRpsTimeout(long rpsTimeout, @Nonnull TimeUnit rpsUnit) {
             this.rpsTimeout = rpsTimeout;
             this.rpsUnit = rpsUnit;
+            return this;
+        }
+
+        @Nonnull
+        public Builder setRpsTieMessageProvider(@Nonnull BiFunction<RPSMenu.RPSResult, ButtonClickEvent, Message> rpsTieMessageProvider) {
+            this.rpsTieMessageProvider = rpsTieMessageProvider;
             return this;
         }
 
@@ -445,6 +481,12 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
         }
 
         @Nonnull
+        public Builder setStrikeMessageProducer(@Nonnull Function<StrikeStagesMenu.UpcomingStrikeInfo, MessageBuilder> strikeMessageProducer) {
+            this.strikeMessageProducer = strikeMessageProducer;
+            return this;
+        }
+
+        @Nonnull
         public Builder setOnStrike(@Nonnull BiConsumer<StrikeStagesMenu.StrikeInfo, ButtonClickEvent> onStrike) {
             this.onStrike = onStrike;
             return this;
@@ -475,6 +517,11 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
         }
 
         @Nonnull
+        public BiFunction<RPSMenu.RPSResult, ButtonClickEvent, Message> getStrikeFirstMessageProvider() {
+            return strikeFirstMessageProvider;
+        }
+
+        @Nonnull
         public BiConsumer<StrikeFirstChoiceResult, ButtonClickEvent> getOnStrikeFirstChoice() {
             return onStrikeFirstChoice;
         }
@@ -496,6 +543,11 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
         @Nonnull
         public TimeUnit getRpsUnit() {
             return rpsUnit;
+        }
+
+        @Nonnull
+        public BiFunction<RPSMenu.RPSResult, ButtonClickEvent, Message> getRpsTieMessageProvider() {
+            return rpsTieMessageProvider;
         }
 
         @Nonnull
@@ -525,6 +577,11 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
         @Nonnull
         public TimeUnit getStrikeUnit() {
             return strikeUnit;
+        }
+
+        @Nonnull
+        public Function<StrikeStagesMenu.UpcomingStrikeInfo, MessageBuilder> getStrikeMessageProducer() {
+            return strikeMessageProducer;
         }
 
         @Nonnull
@@ -561,9 +618,9 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
 
             // We know nonnullablility because preBuild
             //noinspection ConstantConditions
-            return new RPSAndStrikeStagesMenu(getWaiter(), getUser1(), getUser2(), getTimeout(), getUnit(), onStrikeFirstChoice, onStrikeFirstTimeout,
-                    rpsTimeout, rpsUnit, onRPSChoiceMade, onRPSResult, start, onRPSTimeout,
-                    strikeTimeout, strikeUnit, onStrike, onUserStrikes, onStrikeResult, ruleset, onStrikeTimeout,
+            return new RPSAndStrikeStagesMenu(getWaiter(), getUser1(), getUser2(), getTimeout(), getUnit(), strikeFirstMessageProvider, onStrikeFirstChoice, onStrikeFirstTimeout,
+                    rpsTimeout, rpsUnit, rpsTieMessageProvider, onRPSChoiceMade, onRPSResult, start, onRPSTimeout,
+                    strikeTimeout, strikeUnit, strikeMessageProducer, onStrike, onUserStrikes, onStrikeResult, ruleset, onStrikeTimeout,
                     onResult);
         }
     }

@@ -168,59 +168,9 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                     .build())
                     .build();
 
-            BiFunction<RPSMenu.RPSResult, ButtonClickEvent, Message> rpsTieMessageProvider = (rpsResult, e) ->
-                    new MessageBuilder(prepareEmbed("RPS")
-                            .setDescription(String.format("Both of you chose %s making this game a tie, so please try again.",
-                                    rpsResult.getChoice1().getDisplayName()))
-                            .build())
-                            .build();
-
-            BiFunction<RPSMenu.RPSResult, ButtonClickEvent, Message> strikeFirstMessageProvider = (rpsResult, e) -> {
-                // winnerId is definitely not null here, because the result will be decisive
-                //noinspection ConstantConditions
-                return new MessageBuilder(prepareEmbed("RPS")
-                        .setDescription(String.format("%s won the RPS, so you'll get to decide if you want to strike first. " +
-                                        "Do you want to strike first (%s), or second (%s)?",
-                                displayFromUser(rpsResult.getWinnerId()),
-                                Constants.ONE,
-                                Constants.TWO))
-                        .build())
-                        .build();
-            };
-
-            // TODO: Some prettier
-            Function<StrikeStagesMenu.UpcomingStrikeInfo, MessageBuilder> strikeMessageProducer = info ->
-                    new MessageBuilder(prepareEmbed("Stage Striking")
-                            .setDescription(String.format("Let's strike stages then. %s, please strike %s stage%s from the list below.",
-                                    displayFromUser(info.getCurrentStriker()),
-                                    info.getStagesToStrike(),
-                                    info.getStagesToStrike() == 1 ? "" : "s"))
-                            .build());
-
-            startUnderlying = createRPSAndStrikeStagesMenu(start, rpsTieMessageProvider, strikeFirstMessageProvider, strikeMessageProducer);
+            startUnderlying = createRPSAndStrikeStagesMenu(start, null, null, "Let's strike stages then.");
         } else {
-            Function<StrikeStagesMenu.UpcomingStrikeInfo, MessageBuilder> strikeMessageProducer = info -> {
-                long currentStriker = info.getCurrentStriker();
-                int stagesToStrike = info.getStagesToStrike();
-
-                if (info.getStrikes().get(0).isEmpty()) {
-                    return new MessageBuilder(prepareEmbed("Stage Striking")
-                            .setDescription(String.format("Alright, let's start by striking stages. %s, you start by striking %s stage%s from the list below.",
-                                    displayFromUser(currentStriker),
-                                    stagesToStrike,
-                                    stagesToStrike == 1 ? "" : "s"))
-                            .build());
-                } else {
-                    return new MessageBuilder(prepareEmbed("Stage Striking")
-                            .setDescription(String.format("%s, please strike %s stage%s from the list below.",
-                                    displayFromUser(currentStriker),
-                                    stagesToStrike,
-                                    stagesToStrike == 1 ? "" : "s"))
-                            .build());
-                }
-            };
-
-            startUnderlying = createStrikeStagesMenu(strikeMessageProducer);
+            startUnderlying = createStrikeStagesMenu((String) null);
         }
     }
 
@@ -267,6 +217,69 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
     }
 
     @Nonnull
+    private Message createRPSTieMessage(@Nonnull RPSMenu.RPSResult rpsResult, @Nullable String messagePrepend) {
+        return new MessageBuilder(prepareEmbed("RPS")
+                .setDescription(String.format("%s" +
+                                "The RPS was a tie (both of you chose %s), so please try that again.",
+                        messagePrepend == null ? "" : String.format("%s%n", messagePrepend),
+                        rpsResult.getChoice1().getDisplayName()))
+                .build())
+                .build();
+    }
+
+    @Nonnull
+    private Message createStrikeFirstMessage(@Nonnull RPSMenu.RPSResult rpsResult, @Nullable String messagePrepend) {
+        // This will be a decisive result
+        //noinspection ConstantConditions
+        return new MessageBuilder(prepareEmbed("RPS")
+                .setDescription(String.format("%s" +
+                                "%s chose %s, and %s chose %s in the rps, meaning %s won the RPS. " +
+                                "%s, you can now decide if you want to strike first (%s), or second (%s) now.",
+                        messagePrepend == null ? "" : String.format("%s%n", messagePrepend),
+                        user1Display,
+                        rpsResult.getChoice1().getDisplayName(),
+                        user2Display,
+                        rpsResult.getChoice2().getDisplayName(),
+                        displayFromUser(rpsResult.getWinnerId()),
+                        displayFromUser(rpsResult.getWinnerId()),
+                        Constants.ONE,
+                        Constants.TWO))
+                .build())
+                .build();
+    }
+
+    @Nonnull
+    private MessageBuilder createStrikeMessage(@Nonnull StrikeStagesMenu.UpcomingStrikeInfo info, @Nullable String messagePrepend) {
+        long currentStriker = info.getCurrentStriker();
+        int stagesToStrike = info.getStagesToStrike();
+
+        EmbedBuilder builder = prepareEmbed("Stage Striking");
+        if (messagePrepend != null) builder.appendDescription(messagePrepend).appendDescription("\n");
+
+        if (info.isFirstStrike()) {
+            builder.appendDescription(String.format("%s, you start by striking %d stage%s.",
+                    displayFromUser(currentStriker),
+                    stagesToStrike,
+                    stagesToStrike == 1 ? "" : "s"));
+        } else {
+            builder.appendDescription(String.format("%s, please strike %s stage%s from the list below.",
+                    displayFromUser(currentStriker),
+                    stagesToStrike,
+                    stagesToStrike == 1 ? "" : "s"));
+        }
+
+        return new MessageBuilder(builder.build());
+    }
+
+    @Nonnull
+    private RPSAndStrikeStagesMenu createRPSAndStrikeStagesMenu(@Nonnull Message start, @Nullable String rpsTieMessagePrepend, @Nullable String strikeFirstMessagePrepend, @Nonnull String strikeMessagePrepend) {
+        return createRPSAndStrikeStagesMenu(start,
+                (rpsResult, event) -> createRPSTieMessage(rpsResult, rpsTieMessagePrepend),
+                (rpsResult, event) -> createStrikeFirstMessage(rpsResult, strikeFirstMessagePrepend),
+                info -> createStrikeMessage(info, strikeMessagePrepend));
+    }
+
+    @Nonnull
     private RPSAndStrikeStagesMenu createRPSAndStrikeStagesMenu(@Nonnull Message start, @Nonnull BiFunction<RPSMenu.RPSResult, ButtonClickEvent, Message> rpsTieMessageProvider, @Nonnull BiFunction<RPSMenu.RPSResult, ButtonClickEvent, Message> strikeFirstMessageProvider, @Nonnull Function<StrikeStagesMenu.UpcomingStrikeInfo, MessageBuilder> strikeMessageProducer) {
         // Will only be called if we do rps
         //noinspection ConstantConditions
@@ -287,6 +300,11 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                 .setOnUserStrikes(this::onUserStrikes)
                 .setOnStrikeTimeout(this::onStrikeTimeout)
                 .build();
+    }
+
+    @Nonnull
+    private StrikeStagesMenu createStrikeStagesMenu(@Nullable String messagePrepend) {
+        return createStrikeStagesMenu(info -> createStrikeMessage(info, messagePrepend));
     }
 
     @Nonnull
@@ -502,82 +520,33 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                 .queue();
 
         newState.map(
-                notInGame -> notInGame.map(
-                        rps -> {
-                            Message start = new MessageBuilder(prepareEmbed("RPS")
-                                    .setDescription(String.format("The characters are decided. %s plays %s, and %s plays %s next game.\n" +
-                                                    "Now we'll play a game of RPS to determine who will strike first.",
-                                            user1Display,
-                                            user1Choice.getName(),
-                                            user2Display,
-                                            user2Choice.getName()))
-                                    .build())
-                                    .build();
+                notInGame -> {
+                    String messagePrepend = String.format("The characters are decided. %s plays %s, and %s plays %s next game.",
+                            user1Display,
+                            user1Choice.getName(),
+                            user2Display,
+                            user2Choice.getName());
 
-                            BiFunction<RPSMenu.RPSResult, ButtonClickEvent, Message> rpsTieMessageProvider = (rpsResult, e) ->
-                                    new MessageBuilder(prepareEmbed("RPS")
-                                            .setDescription(String.format("The characters are decided. %s plays %s, and %s plays %s next game.\n" +
-                                                            "The RPS was a tie (both of you chose %s), so please try that again.",
-                                                    user1Display,
-                                                    user1Choice.getName(),
-                                                    user2Display,
-                                                    user2Choice.getName(),
-                                                    rpsResult.getChoice1().getDisplayName()))
-                                            .build())
-                                            .build();
-
-                            BiFunction<RPSMenu.RPSResult, ButtonClickEvent, Message> strikeFirstMessageProvider = (rpsResult, e) -> {
-                                // This result will be decisive, so getWinnerId will not be null
-                                //noinspection ConstantConditions
-                                return new MessageBuilder(prepareEmbed("RPS")
+                    return notInGame.map(
+                            rps -> {
+                                Message start = new MessageBuilder(prepareEmbed("RPS")
                                         .setDescription(String.format("The characters are decided. %s plays %s, and %s plays %s next game.\n" +
-                                                        "%s chose %s, and %s chose %s in the rps, meaning %s won the RPS. " +
-                                                        "%s, you can now decide if you want to strike first (%s), or second (%s) now.",
+                                                        "Now we'll play a game of RPS to determine who will strike first.",
                                                 user1Display,
                                                 user1Choice.getName(),
                                                 user2Display,
-                                                user2Choice.getName(),
-                                                user1Display,
-                                                rpsResult.getChoice1().getDisplayName(),
-                                                user2Display,
-                                                rpsResult.getChoice2().getDisplayName(),
-                                                displayFromUser(rpsResult.getWinnerId()),
-                                                displayFromUser(rpsResult.getWinnerId()),
-                                                Constants.ONE,
-                                                Constants.TWO))
+                                                user2Choice.getName()))
                                         .build())
                                         .build();
-                            };
 
-                            // TODO: Some prettier
-                            Function<StrikeStagesMenu.UpcomingStrikeInfo, MessageBuilder> strikeMessageProducer = info ->
-                                    new MessageBuilder(prepareEmbed("Stage Striking")
-                                            .setDescription(String.format("Alright, we're striking stages now. %s, please strike %d stage%s from the list below.",
-                                                    displayFromUser(info.getCurrentStriker()),
-                                                    info.getStagesToStrike(),
-                                                    info.getStagesToStrike() == 1 ? "" : "s"))
-                                            .build());
-
-                            return createRPSAndStrikeStagesMenu(start, rpsTieMessageProvider, strikeFirstMessageProvider, strikeMessageProducer);
-                        },
-                        strike -> {
-                            Function<StrikeStagesMenu.UpcomingStrikeInfo, MessageBuilder> strikeMessageProducer = info ->
-                                    new MessageBuilder(prepareEmbed("Stage Striking")
-                                            .setDescription(String.format("The characters for the next game have been decided. %s plays %s, and %s plays %s. " +
-                                                            "Now we'll strike stages.\n" +
-                                                            "%s, please strike %d stage%s from the list below.",
-                                                    user1Display,
-                                                    user1Choice.getName(),
-                                                    user2Display,
-                                                    user2Choice.getName(),
-                                                    displayFromUser(info.getCurrentStriker()),
-                                                    info.getStagesToStrike(),
-                                                    info.getStagesToStrike() == 1 ? "" : "s"))
-                                            .build());
-
-                            return createStrikeStagesMenu(strikeMessageProducer);
-                        }
-                ),
+                                return createRPSAndStrikeStagesMenu(start,
+                                        messagePrepend,
+                                        messagePrepend,
+                                        String.format("%s So let's strike stages now.", messagePrepend));
+                            },
+                            strike -> createStrikeStagesMenu(messagePrepend)
+                    );
+                },
                 inGame -> createReportGameMenu()
         ).displayReplying(channel, messageId);
     }

@@ -241,6 +241,17 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
         public int getStagesToStrike() {
             return ruleset.getStarterStrikePattern()[currentStrikeIdx] - currentStrikes.size();
         }
+
+        public boolean isNoStrikeRuleset() {
+            return ruleset.getStarterStrikePattern().length == 0;
+        }
+
+        /**
+         * @return true if this is the first strike or if strikes are skipped in this ruleset
+         */
+        public boolean isFirstStrike() {
+            return strikes.isEmpty() || strikes.get(0).isEmpty();
+        }
     }
 
     public class StrikeInfo extends StrikeStagesInfo {
@@ -309,12 +320,10 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
             int stagesToStrike = info.getStagesToStrike();
 
             Ruleset ruleset = info.getRuleset();
-            if (ruleset.getStarterStrikePattern().length == 0) {
+            if (info.isNoStrikeRuleset()) {
                 return new MessageBuilder(String.format("Wow that's just very simple, there is only one stage in the ruleset. You're going to %s.",
                         ruleset.getStarters().get(0).getName()));
-            }
-
-            if (info.getStrikes().get(0).isEmpty()) {
+            } else if (info.isFirstStrike()) {
                 return new MessageBuilder(String.format(
                         "Alright, time to strike stages. %s, you go first. Please strike %d stage%s from the list below.",
                         MiscUtil.mentionUser(currentStriker),

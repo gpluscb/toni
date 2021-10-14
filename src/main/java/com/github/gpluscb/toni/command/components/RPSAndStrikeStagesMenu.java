@@ -150,6 +150,8 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
         this.rpsResult = rpsResult;
         onRPSResult.accept(rpsResult, e);
 
+        e.deferEdit().queue();
+
         if (rpsResult.getWinner() == RPSMenu.Winner.Tie) {
             Message start = rpsTieMessageProvider.apply(rpsResult, e);
 

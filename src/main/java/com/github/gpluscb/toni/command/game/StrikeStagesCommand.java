@@ -153,7 +153,7 @@ public class StrikeStagesCommand implements Command {
         if (starterStrikePattern.length == 0) {
             // Has exactly one element in this case
             Stage stage = ruleset.getStarters().get(0);
-            ctx.reply(String.format("This ruleset only has one starter weirdly. You're going to ~~Brazil~~ %s.", stage.getName())).queue();
+            ctx.reply(String.format("This ruleset only has one starter weirdly. You're going to ~~Brazil~~ %s.", stage.getDisplayName())).queue();
         }
 
         ActionMenu menu;
@@ -251,7 +251,7 @@ public class StrikeStagesCommand implements Command {
         // In that case we have already printed the message
         if (resultingStage == null) return;
 
-        event.editMessage(String.format("You have struck to %s.", resultingStage.getName())).setActionRows().queue();
+        event.editMessage(String.format("You have struck to %s.", resultingStage.getDisplayName())).setActionRows().queue();
     }
 
     @Nonnull

@@ -163,7 +163,7 @@ public class CounterpickStagesCommand implements Command {
     private void onResult(@Nonnull BanPickStagesMenu.BanPickStagesResult result, @Nonnull ButtonClickEvent event) {
         Stage pickedStage = result.getPickResult().getPickedStage();
 
-        event.editMessage(String.format("You will be playing your next game on %s!", pickedStage.getName()))
+        event.editMessage(String.format("You will be playing your next game on %s!", pickedStage.getDisplayName()))
                 .setActionRows()
                 .queue();
     }

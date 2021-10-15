@@ -322,7 +322,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
             Ruleset ruleset = info.getRuleset();
             if (info.isNoStrikeRuleset()) {
                 return new MessageBuilder(String.format("Wow that's just very simple, there is only one stage in the ruleset. You're going to %s.",
-                        ruleset.getStarters().get(0).getName()));
+                        ruleset.getStarters().get(0).getDisplayName()));
             } else if (info.isFirstStrike()) {
                 return new MessageBuilder(String.format(
                         "Alright, time to strike stages. %s, you go first. Please strike %d stage%s from the list below.",

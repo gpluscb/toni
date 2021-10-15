@@ -1,5 +1,6 @@
 package com.github.gpluscb.toni.util.smash;
 
+import com.github.gpluscb.toni.util.MiscUtil;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
@@ -62,6 +63,11 @@ public class Character {
     @Nullable
     public Short getId() {
         return id;
+    }
+
+    @Nonnull
+    public String getDisplayName() {
+        return String.format("%s(%s)", MiscUtil.mentionEmote(getEmoteId()), getName());
     }
 
     @Nonnull

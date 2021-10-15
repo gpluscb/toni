@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 
 public class Constants {
     @Nonnull
-    public static final Color BRAND_COLOR = new Color(0xDC22B4);
+        public static final Color BRAND_COLOR = new Color(0xDC22B4);
     @Nonnull
     public static final ZoneId TIME_ZONE = ZoneId.of("UTC");
     @Nonnull

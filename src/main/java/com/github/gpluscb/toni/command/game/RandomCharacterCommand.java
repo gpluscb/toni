@@ -167,7 +167,7 @@ public class RandomCharacterCommand implements Command {
 
     private void sendResponse(@Nonnull CommandContext<?> ctx, @Nonnull List<Character> selectedCharacters) {
         String emotes = selectedCharacters.stream()
-                .map(character -> String.format("%s(%s)", MiscUtil.mentionEmote(character.getEmoteId()), character.getName()))
+                .map(Character::getDisplayName)
                 .collect(Collectors.joining("/"));
 
         ctx.reply(emotes).queue();

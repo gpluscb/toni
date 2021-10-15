@@ -15,6 +15,12 @@ public class Stage {
     }
 
     @Nonnull
+    public String getDisplayName() {
+        // TODO: Change once we have emotes
+        return getName();
+    }
+
+    @Nonnull
     public String getName() {
         return name;
     }

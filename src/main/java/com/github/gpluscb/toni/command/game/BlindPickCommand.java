@@ -146,10 +146,9 @@ public class BlindPickCommand implements Command {
             Character character = choice.getChoice();
             // Since we're done here choice will not be null
             //noinspection ConstantConditions
-            return String.format("%s: %s(%s)",
+            return String.format("%s: %s",
                     MiscUtil.mentionUser(choice.getUserId()),
-                    MiscUtil.mentionEmote(character.getEmoteId()),
-                    character.getName());
+                    character.getDisplayName());
         }).collect(Collectors.joining("\n"));
 
         MessageAction action = channel.sendMessage(String.format("The characters have been decided:%n%n%s", choicesString));

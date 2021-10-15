@@ -368,11 +368,11 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                 .setDescription(String.format("You will play your next game on %s. " +
                                 "**%s** will play as %s, and **%s** will play as %s.%n" +
                                 "You can start the game now, report the winner here once you're done.",
-                        stage.getName(),
+                        stage.getDisplayName(),
                         user1Display,
-                        user1Char.getName(),
+                        user1Char.getDisplayName(),
                         user2Display,
-                        user2Char.getName()))
+                        user2Char.getDisplayName()))
                 .build())
                 .build();
 
@@ -477,7 +477,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         Stage remainingStage = info.getRemainingStages().get(0);
 
         event.editMessageEmbeds(prepareEmbed("Stage Striking")
-                        .setDescription(String.format("Stage Striking: You struck to %s", remainingStage.getName()))
+                        .setDescription(String.format("Stage Striking: You struck to %s", remainingStage.getDisplayName()))
                         .build())
                 .setActionRows()
                 .queue();
@@ -488,7 +488,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                             .setDescription(String.format("You have struck to %s, " +
                                             "so now we'll determine the characters you play by doing a double blind pick.%n" +
                                             "Please DM me the character you'll play next game.",
-                                    remainingStage.getName()))
+                                    remainingStage.getDisplayName()))
                             .build())
                             .build();
 
@@ -533,9 +533,9 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         channel.editMessageEmbedsById(messageId, prepareEmbed("Double Blind Pick")
                         .setDescription(String.format("**%s** chose %s and **%s** chose %s.",
                                 user1Display,
-                                user1Choice.getName(),
+                                user1Choice.getDisplayName(),
                                 user2Display,
-                                user2Choice.getName()))
+                                user2Choice.getDisplayName()))
                         .build())
                 .queue();
 
@@ -543,9 +543,9 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                 notInGame -> {
                     String messagePrepend = String.format("The characters are decided. **%s** plays %s, and **%s** plays %s next game.",
                             user1Display,
-                            user1Choice.getName(),
+                            user1Choice.getDisplayName(),
                             user2Display,
-                            user2Choice.getName());
+                            user2Choice.getDisplayName());
 
                     return notInGame.map(
                             rps -> {
@@ -553,9 +553,9 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                                         .setDescription(String.format("The characters are decided. **%s** plays %s, and **%s** plays %s next game.%n" +
                                                         "Now we'll play a game of RPS to determine who will strike first.",
                                                 user1Display,
-                                                user1Choice.getName(),
+                                                user1Choice.getDisplayName(),
                                                 user2Display,
-                                                user2Choice.getName()))
+                                                user2Choice.getDisplayName()))
                                         .build())
                                         .build();
 
@@ -650,7 +650,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         state = newState.map(charPick -> charPick, inGame -> inGame);
 
         event.editMessageEmbeds(prepareEmbed("Stage Ban / Counterpick")
-                        .setDescription(String.format("You will play the next game on %s.", result.getPickedStage().getName()))
+                        .setDescription(String.format("You will play the next game on %s.", result.getPickedStage().getDisplayName()))
                         .build())
                 .setActionRows()
                 .queue();
@@ -663,7 +663,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                             .setDescription(String.format("You will play the next game on %s. " +
                                             "Now the winner of the previous game will have to pick the character.%n" +
                                             "**%s**, please type the character you'll play next game in this channel.",
-                                    result.getPickedStage().getName(),
+                                    result.getPickedStage().getDisplayName(),
                                     displayFromUser(prevWinner)))
                             .build())
                             .build();
@@ -691,7 +691,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         channel.editMessageEmbedsById(messageId, prepareEmbed("Winner Character Pick")
                         .setDescription(String.format("**%s** picked %s.",
                                 displayFromUser(result.getUser()),
-                                result.getPickedCharacter().getName()))
+                                result.getPickedCharacter().getDisplayName()))
                         .build())
                 .queue();
 
@@ -701,7 +701,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                 .setDescription(String.format("**%s** chose %s as their character, so now the loser of the previous game has to state their character.%n" +
                                 "**%s**, please type the character you will use next game in this channel.",
                         displayFromUser(result.getUser()),
-                        result.getPickedCharacter().getName(),
+                        result.getPickedCharacter().getDisplayName(),
                         displayFromUser(prevLoser)))
                 .build())
                 .build();
@@ -728,7 +728,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         channel.editMessageEmbedsById(messageId, prepareEmbed("Loser Character Counterpick")
                         .setDescription(String.format("**%s** counterpicked %s.",
                                 displayFromUser(result.getUser()),
-                                result.getPickedCharacter().getName()))
+                                result.getPickedCharacter().getDisplayName()))
                         .build())
                 .queue();
 
@@ -742,17 +742,17 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                     @SuppressWarnings("ConstantConditions")
                     String banMessagePrepend = String.format("**%s** picked %s and **%s** picked %s. Now, onto stage banning.",
                             user1Display,
-                            user1Char.getName(),
+                            user1Char.getDisplayName(),
                             user2Display,
-                            user2Char.getName());
+                            user2Char.getDisplayName());
 
                     Message pickStageStart = new MessageBuilder(prepareEmbed("Stage Ban / Counterpick")
                             .setDescription(String.format("**%s** picked %s, **%s** picked %s, and the stages have been banned.%n" +
                                             "%s, please counterpick a stage from the list below now.",
                                     user1Display,
-                                    user1Char.getName(),
+                                    user1Char.getDisplayName(),
                                     user2Display,
-                                    user2Char.getName(),
+                                    user2Char.getDisplayName(),
                                     displayFromUser(prevLoser)))
                             .build())
                             .build();

@@ -30,7 +30,7 @@ public class PingCommand implements Command {
     @Nonnull
     private String calculateResponse(long sendTime) {
         int ping = (int) (System.currentTimeMillis() - sendTime);
-        // Idea of repeating 'o's stolen from Lewdcario's FloofBot without permission or shame
+        // Idea of repeating 'o's stolen from FloofBot without permission or shame
         return String.format("Po%sng! My ping is %dms.", StringUtils.repeat('o', Math.min(ping / 50, 29)), ping);
     }
 
@@ -45,8 +45,7 @@ public class PingCommand implements Command {
                         "Keep in mind that for some commands I need to crunch some numbers and even look at other web services, " +
                         "so I might take a bit longer to respond than my ping would suggest (I also have to respect Discords rate limits *yikes*).\n" +
                         "**Keep in mind that this might yield inaccurate results during leap seconds!**\n" +
-                        // TODO: Look deeper into the allegations to see if linking lewds patreon is appropriate
-                        "*(Idea of repeating 'o's stolen from [Lewdcario's FloofBot](https://www.patreon.com/lewdcario) with no permission and no shame (Floof's a really really good bot for the smash community and you should check it out))*\n" +
+                        "*(Idea of repeating 'o's stolen from [FloofBot](https://top.gg/bot/177222984157757440) with no permission and no shame (Floof's a really really good bot for the smash community and you should check him out))*\n" +
                         "Aliases: `ping`, `rtt`")
                 .setCommandData(new CommandData("ping", "Displays my current ping"))
                 .build();

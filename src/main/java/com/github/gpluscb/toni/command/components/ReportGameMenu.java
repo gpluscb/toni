@@ -105,6 +105,9 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
         long user1 = getUser1();
         long user2 = getUser2();
 
+        Long previousUser1ReportedWinner = user1ReportedWinner;
+        Long previousUser2ReportedWinner = user2ReportedWinner;
+
         if (reportingUser == user1) {
             updatedChoice = user1ReportedWinner != null;
             user1ReportedWinner = reportedWinner;
@@ -132,10 +135,18 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
         // Conflict
         onConflict.accept(new ReportGameConflict(), e);
 
-        // FIXME: this doesn't work: "Component custom id was already specified", we actually need to do correct stuff
-        Message message = e.getMessage();
+        // We only need to update ActionRows if a choice was *changed*
+        // If we try to update the ActionRows otherwise it'll error
+        // We also can't update the message with a full Message because of that reason
+        // Tho it'd be possible with a MessageBuilder
+        // Either way the conflict hasn't changed, so we don't update the message.
+        if ((reportingUser == user1 && user1ReportedWinner.equals(previousUser1ReportedWinner)) || user2ReportedWinner.equals(previousUser2ReportedWinner)) {
+            e.reply("You have selected the same user you have already reported as the winner.").setEphemeral(true).queue();
+            return ButtonActionMenu.MenuAction.CONTINUE;
+        }
+
         List<ActionRow> actionRows = MiscUtil.splitList(
-                Stream.concat(message.getButtons().stream(), Stream.of(modButton)).collect(Collectors.toList()), Component.Type.BUTTON.getMaxPerRow()
+                Stream.concat(e.getMessage().getButtons().stream(), Stream.of(modButton)).collect(Collectors.toList()), Component.Type.BUTTON.getMaxPerRow()
         ).stream().map(ActionRow::of).collect(Collectors.toList());
 
         e.editMessage(conflictMessageProvider.apply(new ReportGameConflict(), e))

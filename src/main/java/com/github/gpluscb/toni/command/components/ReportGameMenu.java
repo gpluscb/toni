@@ -21,6 +21,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -30,6 +31,8 @@ import static net.dv8tion.jda.api.interactions.components.Button.LABEL_MAX_LENGT
 public class ReportGameMenu extends TwoUsersChoicesActionMenu {
     @Nonnull
     private final Button modButton;
+    @Nonnull
+    private final BiFunction<ReportGameConflict, ButtonClickEvent, Message> conflictMessageProvider;
     @Nonnull
     private final BiConsumer<ReportGameChoiceInfo, ButtonClickEvent> onChoice;
     @Nonnull
@@ -46,9 +49,10 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
     @Nullable
     private Long user2ReportedWinner;
 
-    public ReportGameMenu(@Nonnull EventWaiter waiter, long user1, long user2, @Nonnull String user1Display, @Nonnull String user2Display, long timeout, @Nonnull TimeUnit unit, @Nonnull BiConsumer<ReportGameChoiceInfo, ButtonClickEvent> onChoice, @Nonnull BiConsumer<ReportGameConflict, ButtonClickEvent> onConflict, @Nonnull BiConsumer<ReportGameResult, ButtonClickEvent> onResult, @Nonnull Message start, @Nonnull Consumer<ReportGameTimeoutEvent> onTimeout) {
+    public ReportGameMenu(@Nonnull EventWaiter waiter, long user1, long user2, @Nonnull String user1Display, @Nonnull String user2Display, long timeout, @Nonnull TimeUnit unit, @Nonnull BiFunction<ReportGameConflict, ButtonClickEvent, Message> conflictMessageProvider, @Nonnull BiConsumer<ReportGameChoiceInfo, ButtonClickEvent> onChoice, @Nonnull BiConsumer<ReportGameConflict, ButtonClickEvent> onConflict, @Nonnull BiConsumer<ReportGameResult, ButtonClickEvent> onResult, @Nonnull Message start, @Nonnull Consumer<ReportGameTimeoutEvent> onTimeout) {
         super(waiter, user1, user2, timeout, unit);
 
+        this.conflictMessageProvider = conflictMessageProvider;
         this.onChoice = onChoice;
         this.onConflict = onConflict;
         this.onResult = onResult;
@@ -134,20 +138,9 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
                 Stream.concat(message.getButtons().stream(), Stream.of(modButton)).collect(Collectors.toList()), Component.Type.BUTTON.getMaxPerRow()
         ).stream().map(ActionRow::of).collect(Collectors.toList());
 
-        // TODO: Provider for this message
-        Message newMessage = new MessageBuilder(
-                String.format("You reported different winners. %s reported %s and %s reported %s as the winner. " +
-                                "One of you can now either change your choice or you can call a moderator to sort this out.",
-                        MiscUtil.mentionUser(user1),
-                        MiscUtil.mentionUser(user1ReportedWinner),
-                        MiscUtil.mentionUser(user2),
-                        MiscUtil.mentionUser(user2ReportedWinner))
-        )
-                .mentionUsers(user1, user2)
+        e.editMessage(conflictMessageProvider.apply(new ReportGameConflict(), e))
                 .setActionRows(actionRows)
-                .build();
-
-        e.editMessage(newMessage).queue();
+                .queue();
 
         return ButtonActionMenu.MenuAction.CONTINUE;
     }
@@ -253,6 +246,8 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
         @Nullable
         private String user2Display;
         @Nonnull
+        private BiFunction<ReportGameConflict, ButtonClickEvent, Message> conflictMessageProvider;
+        @Nonnull
         private BiConsumer<ReportGameChoiceInfo, ButtonClickEvent> onChoice;
         @Nonnull
         private BiConsumer<ReportGameConflict, ButtonClickEvent> onConflict;
@@ -265,6 +260,16 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
 
         public Builder() {
             super(Builder.class);
+
+            conflictMessageProvider = (conflict, e) ->
+                    new MessageBuilder(String.format("You reported different winners. %s reported %s and %s reported %s as the winner. " +
+                                    "One of you can now either change your choice or you can call a moderator to sort this out.",
+                            MiscUtil.mentionUser(conflict.getUser1()),
+                            MiscUtil.mentionUser(conflict.getUser1ReportedWinner()),
+                            MiscUtil.mentionUser(conflict.getUser2()),
+                            MiscUtil.mentionUser(conflict.getUser2ReportedWinner())))
+                            .mentionUsers(conflict.getUser1(), conflict.getUser2())
+                            .build();
 
             onChoice = (info, e) -> {
             };
@@ -280,6 +285,12 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
         public Builder setUsersDisplay(@Nonnull String user1Display, @Nonnull String user2Display) {
             this.user1Display = user1Display;
             this.user2Display = user2Display;
+            return this;
+        }
+
+        @Nonnull
+        public Builder setConflictMessageProvider(@Nonnull BiFunction<ReportGameConflict, ButtonClickEvent, Message> conflictMessageProvider) {
+            this.conflictMessageProvider = conflictMessageProvider;
             return this;
         }
 
@@ -324,6 +335,11 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
         }
 
         @Nonnull
+        public BiFunction<ReportGameConflict, ButtonClickEvent, Message> getConflictMessageProvider() {
+            return conflictMessageProvider;
+        }
+
+        @Nonnull
         public BiConsumer<ReportGameChoiceInfo, ButtonClickEvent> getOnChoice() {
             return onChoice;
         }
@@ -359,7 +375,7 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
 
             // preBuild insures nonnullability
             //noinspection ConstantConditions
-            return new ReportGameMenu(getWaiter(), getUser1(), getUser2(), user1Display, user2Display, getTimeout(), getUnit(), onChoice, onConflict, onResult, start, onTimeout);
+            return new ReportGameMenu(getWaiter(), getUser1(), getUser2(), user1Display, user2Display, getTimeout(), getUnit(), conflictMessageProvider, onChoice, onConflict, onResult, start, onTimeout);
         }
     }
 }

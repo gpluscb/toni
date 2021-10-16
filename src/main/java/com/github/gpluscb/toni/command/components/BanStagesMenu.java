@@ -42,7 +42,7 @@ public class BanStagesMenu extends ActionMenu {
     @Nonnull
     private final Set<Integer> dsrIllegalStages;
     @Nonnull
-    private final Function<UpcomingBanInfo, MessageBuilder> banMessageProducer;
+    private final Function<UpcomingBanInfo, Message> banMessageProducer;
     @Nonnull
     private final BiConsumer<StageBan, ButtonClickEvent> onBan;
     @Nonnull
@@ -55,7 +55,7 @@ public class BanStagesMenu extends ActionMenu {
     @Nonnull
     private final Set<Integer> bannedStageIds;
 
-    public BanStagesMenu(@Nonnull EventWaiter waiter, long banningUser, long timeout, @Nonnull TimeUnit unit, @Nonnull Ruleset ruleset, @Nonnull Set<Integer> dsrIllegalStages, @Nonnull Function<UpcomingBanInfo, MessageBuilder> banMessageProducer, @Nonnull BiConsumer<StageBan, ButtonClickEvent> onBan, @Nonnull BiConsumer<BanResult, ButtonClickEvent> onResult, @Nonnull Consumer<BanStagesTimeoutEvent> onTimeout) {
+    public BanStagesMenu(@Nonnull EventWaiter waiter, long banningUser, long timeout, @Nonnull TimeUnit unit, @Nonnull Ruleset ruleset, @Nonnull Set<Integer> dsrIllegalStages, @Nonnull Function<UpcomingBanInfo, Message> banMessageProducer, @Nonnull BiConsumer<StageBan, ButtonClickEvent> onBan, @Nonnull BiConsumer<BanResult, ButtonClickEvent> onResult, @Nonnull Consumer<BanStagesTimeoutEvent> onTimeout) {
         super(waiter, timeout, unit);
 
         this.banningUser = banningUser;
@@ -69,7 +69,7 @@ public class BanStagesMenu extends ActionMenu {
         bannedStageIds = new HashSet<>();
 
         // TODO: What if no bans??
-        Message start = banMessageProducer.apply(new UpcomingBanInfo()).build();
+        Message start = banMessageProducer.apply(new UpcomingBanInfo());
 
         ButtonActionMenu.Builder underlyingBuilder = new ButtonActionMenu.Builder()
                 .setWaiter(waiter)
@@ -142,8 +142,7 @@ public class BanStagesMenu extends ActionMenu {
         // More stages are to be banned
         List<ActionRow> actionRows = MiscUtil.disabledButtonActionRows(e);
 
-        Message newMessage = banMessageProducer.apply(new UpcomingBanInfo())
-                .build();
+        Message newMessage = banMessageProducer.apply(new UpcomingBanInfo());
 
         e.editMessage(newMessage).setActionRows(actionRows).queue();
 
@@ -259,7 +258,7 @@ public class BanStagesMenu extends ActionMenu {
         @Nonnull
         private Set<Integer> dsrIllegalStages;
         @Nonnull
-        private Function<UpcomingBanInfo, MessageBuilder> banMessageProducer;
+        private Function<UpcomingBanInfo, Message> banMessageProducer;
         @Nonnull
         private BiConsumer<StageBan, ButtonClickEvent> onBan;
         @Nonnull
@@ -280,13 +279,15 @@ public class BanStagesMenu extends ActionMenu {
                             MiscUtil.mentionUser(banningUser),
                             stagesToBan,
                             stagesToBan == 1 ? "" : "s"))
-                            .mentionUsers(banningUser);
+                            .mentionUsers(banningUser)
+                            .build();
                 } else {
                     return new MessageBuilder(String.format("%s, please ban %d more stage%s from the list below.",
                             MiscUtil.mentionUser(banningUser),
                             stagesToBan,
                             stagesToBan == 1 ? "" : "s"))
-                            .mentionUsers(banningUser);
+                            .mentionUsers(banningUser)
+                            .build();
                 }
             };
             onBan = (ban, e) -> {
@@ -316,7 +317,7 @@ public class BanStagesMenu extends ActionMenu {
         }
 
         @Nonnull
-        public Builder setBanMessageProducer(@Nonnull Function<UpcomingBanInfo, MessageBuilder> banMessageProducer) {
+        public Builder setBanMessageProducer(@Nonnull Function<UpcomingBanInfo, Message> banMessageProducer) {
             this.banMessageProducer = banMessageProducer;
             return this;
         }

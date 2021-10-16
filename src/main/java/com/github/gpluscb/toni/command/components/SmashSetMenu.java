@@ -249,7 +249,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
     }
 
     @Nonnull
-    private MessageBuilder createStrikeMessage(@Nonnull StrikeStagesMenu.UpcomingStrikeInfo info, @Nullable String messagePrepend) {
+    private Message createStrikeMessage(@Nonnull StrikeStagesMenu.UpcomingStrikeInfo info, @Nullable String messagePrepend) {
         long currentStriker = info.getCurrentStriker();
         int stagesToStrike = info.getStagesToStrike();
 
@@ -268,11 +268,11 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                     stagesToStrike == 1 ? "" : "s"));
         }
 
-        return new MessageBuilder(builder.build());
+        return new MessageBuilder(builder.build()).build();
     }
 
     @Nonnull
-    private MessageBuilder createBanMessage(@Nonnull BanStagesMenu.UpcomingBanInfo info, @Nullable String messagePrepend) {
+    private Message createBanMessage(@Nonnull BanStagesMenu.UpcomingBanInfo info, @Nullable String messagePrepend) {
         int stagesToBan = info.getStagesToBan();
 
         return new MessageBuilder(prepareEmbed("Stage Ban / Counterpick")
@@ -282,7 +282,8 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                         displayFromUser(info.getBanningUser()),
                         stagesToBan,
                         stagesToBan == 1 ? "" : "s"))
-                .build());
+                .build())
+                .build();
     }
 
     @Nonnull
@@ -294,7 +295,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
     }
 
     @Nonnull
-    private RPSAndStrikeStagesMenu createRPSAndStrikeStagesMenu(@Nonnull Message start, @Nonnull BiFunction<RPSMenu.RPSResult, ButtonClickEvent, Message> rpsTieMessageProvider, @Nonnull BiFunction<RPSMenu.RPSResult, ButtonClickEvent, Message> strikeFirstMessageProvider, @Nonnull Function<StrikeStagesMenu.UpcomingStrikeInfo, MessageBuilder> strikeMessageProducer) {
+    private RPSAndStrikeStagesMenu createRPSAndStrikeStagesMenu(@Nonnull Message start, @Nonnull BiFunction<RPSMenu.RPSResult, ButtonClickEvent, Message> rpsTieMessageProvider, @Nonnull BiFunction<RPSMenu.RPSResult, ButtonClickEvent, Message> strikeFirstMessageProvider, @Nonnull Function<StrikeStagesMenu.UpcomingStrikeInfo, Message> strikeMessageProducer) {
         // Will only be called if we do rps
         //noinspection ConstantConditions
         return new RPSAndStrikeStagesMenu.Builder()
@@ -322,7 +323,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
     }
 
     @Nonnull
-    private StrikeStagesMenu createStrikeStagesMenu(@Nonnull Function<StrikeStagesMenu.UpcomingStrikeInfo, MessageBuilder> strikeMessageProducer) {
+    private StrikeStagesMenu createStrikeStagesMenu(@Nonnull Function<StrikeStagesMenu.UpcomingStrikeInfo, Message> strikeMessageProducer) {
         return new StrikeStagesMenu.Builder()
                 .setWaiter(getWaiter())
                 .setUsers(getUser1(), getUser2())
@@ -393,7 +394,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
     }
 
     @Nonnull
-    private BanPickStagesMenu createBanPickStagesMenu(@Nonnull Function<BanStagesMenu.UpcomingBanInfo, MessageBuilder> banMessageProducer, @Nonnull Message pickStageStart) {
+    private BanPickStagesMenu createBanPickStagesMenu(@Nonnull Function<BanStagesMenu.UpcomingBanInfo, Message> banMessageProducer, @Nonnull Message pickStageStart) {
         SmashSet.SetWinnerStageBanState banState = ((SmashSet.SetWinnerStageBanState) state);
         // At this point it will be displayed => not null
         @SuppressWarnings("ConstantConditions")

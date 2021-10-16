@@ -58,7 +58,7 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
     @Nonnull
     private final TimeUnit strikeUnit;
     @Nonnull
-    private final Function<StrikeStagesMenu.UpcomingStrikeInfo, MessageBuilder> strikeMessageProducer;
+    private final Function<StrikeStagesMenu.UpcomingStrikeInfo, Message> strikeMessageProducer;
     @Nonnull
     private final BiConsumer<StrikeStagesMenu.StrikeInfo, ButtonClickEvent> onStrike;
     @Nonnull
@@ -78,7 +78,7 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
     public RPSAndStrikeStagesMenu(@Nonnull EventWaiter waiter, long user1, long user2,
                                   long strikeFirstChoiceTimeout, @Nonnull TimeUnit strikeFirstChoiceUnit, @Nonnull BiFunction<RPSMenu.RPSResult, ButtonClickEvent, Message> strikeFirstMessageProvider, @Nonnull BiConsumer<StrikeFirstChoiceResult, ButtonClickEvent> onStrikeFirstChoice, @Nonnull Consumer<StrikeFirstChoiceTimeoutEvent> onStrikeFirstTimeout,
                                   long rpsTimeout, @Nonnull TimeUnit rpsUnit, @Nonnull BiFunction<RPSMenu.RPSResult, ButtonClickEvent, Message> rpsTieMessageProvider, @Nonnull BiConsumer<RPSMenu.RPS, ButtonClickEvent> onRPSChoiceMade, @Nonnull BiConsumer<RPSMenu.RPSResult, ButtonClickEvent> onRPSResult, @Nonnull Message start, @Nonnull Consumer<RPSMenu.RPSTimeoutEvent> onRPSTimeout,
-                                  long strikeTimeout, @Nonnull TimeUnit strikeUnit, @Nonnull Function<StrikeStagesMenu.UpcomingStrikeInfo, MessageBuilder> strikeMessageProducer, @Nonnull BiConsumer<StrikeStagesMenu.StrikeInfo, ButtonClickEvent> onStrike, @Nonnull BiConsumer<StrikeStagesMenu.UserStrikesInfo, ButtonClickEvent> onUserStrikes, @Nonnull BiConsumer<StrikeStagesMenu.StrikeResult, ButtonClickEvent> onStrikeResult, @Nonnull Ruleset ruleset, @Nonnull Consumer<StrikeStagesMenu.StrikeStagesTimeoutEvent> onStrikeTimeout,
+                                  long strikeTimeout, @Nonnull TimeUnit strikeUnit, @Nonnull Function<StrikeStagesMenu.UpcomingStrikeInfo, Message> strikeMessageProducer, @Nonnull BiConsumer<StrikeStagesMenu.StrikeInfo, ButtonClickEvent> onStrike, @Nonnull BiConsumer<StrikeStagesMenu.UserStrikesInfo, ButtonClickEvent> onUserStrikes, @Nonnull BiConsumer<StrikeStagesMenu.StrikeResult, ButtonClickEvent> onStrikeResult, @Nonnull Ruleset ruleset, @Nonnull Consumer<StrikeStagesMenu.StrikeStagesTimeoutEvent> onStrikeTimeout,
                                   @Nonnull BiConsumer<RPSAndStrikeStagesResult, ButtonClickEvent> onResult) {
         super(waiter, user1, user2, strikeFirstChoiceTimeout, strikeFirstChoiceUnit);
 
@@ -331,7 +331,7 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
         @Nonnull
         private TimeUnit strikeUnit;
         @Nonnull
-        private Function<StrikeStagesMenu.UpcomingStrikeInfo, MessageBuilder> strikeMessageProducer;
+        private Function<StrikeStagesMenu.UpcomingStrikeInfo, Message> strikeMessageProducer;
         @Nonnull
         private BiConsumer<StrikeStagesMenu.StrikeInfo, ButtonClickEvent> onStrike;
         @Nonnull
@@ -482,7 +482,7 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
         }
 
         @Nonnull
-        public Builder setStrikeMessageProducer(@Nonnull Function<StrikeStagesMenu.UpcomingStrikeInfo, MessageBuilder> strikeMessageProducer) {
+        public Builder setStrikeMessageProducer(@Nonnull Function<StrikeStagesMenu.UpcomingStrikeInfo, Message> strikeMessageProducer) {
             this.strikeMessageProducer = strikeMessageProducer;
             return this;
         }
@@ -581,7 +581,7 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
         }
 
         @Nonnull
-        public Function<StrikeStagesMenu.UpcomingStrikeInfo, MessageBuilder> getStrikeMessageProducer() {
+        public Function<StrikeStagesMenu.UpcomingStrikeInfo, Message> getStrikeMessageProducer() {
             return strikeMessageProducer;
         }
 

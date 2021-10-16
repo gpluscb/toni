@@ -45,7 +45,7 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
     @Nullable
     private BanStagesMenu.BanResult banResult;
 
-    public BanPickStagesMenu(@Nonnull EventWaiter waiter, long banningUser, long counterpickingUser, long banTimeout, @Nonnull TimeUnit banUnit, @Nonnull Ruleset ruleset, @Nonnull Set<Integer> dsrIllegalStages, @Nonnull BiConsumer<BanStagesMenu.StageBan, ButtonClickEvent> onBan, @Nonnull Function<BanStagesMenu.UpcomingBanInfo, MessageBuilder> banMessageProducer, @Nonnull BiConsumer<BanStagesMenu.BanResult, ButtonClickEvent> onBanResult, @Nonnull Consumer<BanStagesMenu.BanStagesTimeoutEvent> onBanTimeout,
+    public BanPickStagesMenu(@Nonnull EventWaiter waiter, long banningUser, long counterpickingUser, long banTimeout, @Nonnull TimeUnit banUnit, @Nonnull Ruleset ruleset, @Nonnull Set<Integer> dsrIllegalStages, @Nonnull BiConsumer<BanStagesMenu.StageBan, ButtonClickEvent> onBan, @Nonnull Function<BanStagesMenu.UpcomingBanInfo, Message> banMessageProducer, @Nonnull BiConsumer<BanStagesMenu.BanResult, ButtonClickEvent> onBanResult, @Nonnull Consumer<BanStagesMenu.BanStagesTimeoutEvent> onBanTimeout,
                              long pickStageTimeout, @Nonnull TimeUnit pickStageUnit, @Nonnull Message pickStageStart, @Nonnull BiConsumer<PickStageMenu.PickStageResult, ButtonClickEvent> onPickResult, @Nonnull Consumer<PickStageMenu.PickStageTimeoutEvent> onPickTimeout,
                              @Nonnull BiConsumer<BanPickStagesResult, ButtonClickEvent> onResult) {
         super(waiter, banningUser, counterpickingUser, banTimeout, banUnit);
@@ -200,7 +200,7 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
         @Nonnull
         private Set<Integer> dsrIllegalStages;
         @Nonnull
-        private Function<BanStagesMenu.UpcomingBanInfo, MessageBuilder> banMessageProducer;
+        private Function<BanStagesMenu.UpcomingBanInfo, Message> banMessageProducer;
         @Nonnull
         private BiConsumer<BanStagesMenu.StageBan, ButtonClickEvent> onBan;
         @Nonnull
@@ -232,13 +232,15 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
                             MiscUtil.mentionUser(banningUser),
                             stagesToBan,
                             stagesToBan == 1 ? "" : "s"))
-                            .mentionUsers(banningUser);
+                            .mentionUsers(banningUser)
+                            .build();
                 } else {
                     return new MessageBuilder(String.format("%s, please ban %d more stage%s from the list below.",
                             MiscUtil.mentionUser(banningUser),
                             stagesToBan,
                             stagesToBan == 1 ? "" : "s"))
-                            .mentionUsers(banningUser);
+                            .mentionUsers(banningUser)
+                            .build();
                 }
             };
             onBan = (ban, e) -> {
@@ -282,7 +284,7 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
         }
 
         @Nonnull
-        public Builder setBanMessageProducer(@Nonnull Function<BanStagesMenu.UpcomingBanInfo, MessageBuilder> banMessageProducer) {
+        public Builder setBanMessageProducer(@Nonnull Function<BanStagesMenu.UpcomingBanInfo, Message> banMessageProducer) {
             this.banMessageProducer = banMessageProducer;
             return this;
         }

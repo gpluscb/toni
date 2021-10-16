@@ -34,7 +34,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
     private static final Logger log = LogManager.getLogger(StrikeStagesMenu.class);
 
     @Nonnull
-    private final Function<UpcomingStrikeInfo, MessageBuilder> strikeMessageProducer;
+    private final Function<UpcomingStrikeInfo, Message> strikeMessageProducer;
     @Nonnull
     private final BiConsumer<StrikeInfo, ButtonClickEvent> onStrike;
     @Nonnull
@@ -57,7 +57,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
     @Nonnull
     private final ButtonActionMenu underlying;
 
-    public StrikeStagesMenu(@Nonnull EventWaiter waiter, long timeout, @Nonnull TimeUnit unit, @Nonnull Function<UpcomingStrikeInfo, MessageBuilder> strikeMessageProducer, @Nonnull BiConsumer<StrikeInfo, ButtonClickEvent> onStrike, @Nonnull BiConsumer<UserStrikesInfo, ButtonClickEvent> onUserStrikes, @Nonnull BiConsumer<StrikeResult, ButtonClickEvent> onResult, @Nonnull Ruleset ruleset, long striker1, long striker2, @Nonnull Consumer<StrikeStagesTimeoutEvent> onTimeout) {
+    public StrikeStagesMenu(@Nonnull EventWaiter waiter, long timeout, @Nonnull TimeUnit unit, @Nonnull Function<UpcomingStrikeInfo, Message> strikeMessageProducer, @Nonnull BiConsumer<StrikeInfo, ButtonClickEvent> onStrike, @Nonnull BiConsumer<UserStrikesInfo, ButtonClickEvent> onUserStrikes, @Nonnull BiConsumer<StrikeResult, ButtonClickEvent> onResult, @Nonnull Ruleset ruleset, long striker1, long striker2, @Nonnull Consumer<StrikeStagesTimeoutEvent> onTimeout) {
         super(waiter, striker1, striker2, timeout, unit);
 
         this.strikeMessageProducer = strikeMessageProducer;
@@ -74,7 +74,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
         strikes = new ArrayList<>();
         strikes.add(currentStrikes);
 
-        Message start = strikeMessageProducer.apply(new UpcomingStrikeInfo()).build();
+        Message start = strikeMessageProducer.apply(new UpcomingStrikeInfo());
 
         ButtonActionMenu.Builder underlyingBuilder = new ButtonActionMenu.Builder()
                 .setWaiter(waiter)
@@ -157,8 +157,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
 
         List<ActionRow> actionRows = MiscUtil.disabledButtonActionRows(e);
 
-        Message newMessage = strikeMessageProducer.apply(new UpcomingStrikeInfo())
-                .build();
+        Message newMessage = strikeMessageProducer.apply(new UpcomingStrikeInfo());
 
         e.editMessage(newMessage).setActionRows(actionRows).queue();
 
@@ -304,34 +303,36 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
     public static class Builder extends TwoUsersChoicesActionMenu.Builder<Builder, StrikeStagesMenu> {
         // TODO: Defaults like this for everything in every builder?
         @Nonnull
-        public static final Function<UpcomingStrikeInfo, MessageBuilder> DEFAULT_STRIKE_MESSAGE_PRODUCER = info -> {
+        public static final Function<UpcomingStrikeInfo, Message> DEFAULT_STRIKE_MESSAGE_PRODUCER = info -> {
             long currentStriker = info.getCurrentStriker();
             int stagesToStrike = info.getStagesToStrike();
 
             Ruleset ruleset = info.getRuleset();
             if (info.isNoStrikeRuleset()) {
                 return new MessageBuilder(String.format("Wow that's just very simple, there is only one stage in the ruleset. You're going to %s.",
-                        ruleset.getStarters().get(0).getDisplayName()));
+                        ruleset.getStarters().get(0).getDisplayName()))
+                        .build();
             } else if (info.isFirstStrike()) {
-                return new MessageBuilder(String.format(
-                        "Alright, time to strike stages. %s, you go first. Please strike %d stage%s from the list below.",
+                return new MessageBuilder(String.format("Alright, time to strike stages. %s, you go first. Please strike %d stage%s from the list below.",
                         MiscUtil.mentionUser(currentStriker),
                         stagesToStrike,
-                        stagesToStrike > 1 ? "s" : ""
-                )).mentionUsers(currentStriker);
+                        stagesToStrike > 1 ? "s" : ""))
+                        .mentionUsers(currentStriker)
+                        .build();
             } else {
                 return new MessageBuilder(String.format("%s, please strike %d stage%s from the list below.",
                         MiscUtil.mentionUser(currentStriker),
                         stagesToStrike,
                         stagesToStrike > 1 ? "s" : ""))
-                        .mentionUsers(currentStriker);
+                        .mentionUsers(currentStriker)
+                        .build();
             }
         };
 
         @Nullable
         private Ruleset ruleset;
         @Nonnull
-        private Function<UpcomingStrikeInfo, MessageBuilder> strikeMessageProducer;
+        private Function<UpcomingStrikeInfo, Message> strikeMessageProducer;
         @Nonnull
         private BiConsumer<StrikeInfo, ButtonClickEvent> onStrike;
         @Nonnull
@@ -362,7 +363,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
         }
 
         @Nonnull
-        public Builder setStrikeMessageProducer(@Nonnull Function<UpcomingStrikeInfo, MessageBuilder> strikeMessageProducer) {
+        public Builder setStrikeMessageProducer(@Nonnull Function<UpcomingStrikeInfo, Message> strikeMessageProducer) {
             this.strikeMessageProducer = strikeMessageProducer;
             return this;
         }
@@ -397,7 +398,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
         }
 
         @Nonnull
-        public Function<UpcomingStrikeInfo, MessageBuilder> getStrikeMessageProducer() {
+        public Function<UpcomingStrikeInfo, Message> getStrikeMessageProducer() {
             return strikeMessageProducer;
         }
 

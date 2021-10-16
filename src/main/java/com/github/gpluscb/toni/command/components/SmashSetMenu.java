@@ -1,7 +1,6 @@
 package com.github.gpluscb.toni.command.components;
 
 import com.github.gpluscb.toni.util.Constants;
-import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.discord.ActionMenu;
 import com.github.gpluscb.toni.util.discord.ChannelChoiceWaiter;
@@ -380,13 +379,13 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
         BiFunction<ReportGameMenu.ReportGameConflict, ButtonClickEvent, Message> conflictMessageProvider = (conflict, e) ->
                 new MessageBuilder(prepareEmbed("Game Reporting")
-                        .setDescription(String.format("You reported different winners. %s reported %s and %s reported %s as the winner. " +
+                        .setDescription(String.format("You reported different winners. **%s** reported **%s**, and **%s** reported **%s** as the winner. " +
                                         "One of you can now either change your choice or you can call a moderator to sort this out.",
-                                MiscUtil.mentionUser(conflict.getUser1()),
-                                MiscUtil.mentionUser(conflict.getUser1ReportedWinner()),
-                                MiscUtil.mentionUser(conflict.getUser2()),
-                                MiscUtil.mentionUser(conflict.getUser2ReportedWinner()))))
-                        .mentionUsers(conflict.getUser1(), conflict.getUser2())
+                                displayFromUser(conflict.getUser1()),
+                                displayFromUser(conflict.getUser1ReportedWinner()),
+                                displayFromUser(conflict.getUser2()),
+                                displayFromUser(conflict.getUser2ReportedWinner())))
+                        .build())
                         .build();
 
         return new ReportGameMenu.Builder()

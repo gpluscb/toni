@@ -273,7 +273,7 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
             super(Builder.class);
 
             conflictMessageProvider = (conflict, e) ->
-                    new MessageBuilder(String.format("You reported different winners. %s reported %s and %s reported %s as the winner. " +
+                    new MessageBuilder(String.format("You reported different winners. %s reported %s, and %s reported %s as the winner. " +
                                     "One of you can now either change your choice or you can call a moderator to sort this out.",
                             MiscUtil.mentionUser(conflict.getUser1()),
                             MiscUtil.mentionUser(conflict.getUser1ReportedWinner()),

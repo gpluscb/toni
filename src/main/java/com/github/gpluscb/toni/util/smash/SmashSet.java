@@ -146,6 +146,82 @@ public class SmashSet {
         }
     }
 
+    private abstract class GameAssociatedState extends SetState {
+        @Nonnull
+        private final GameData game;
+
+        public GameAssociatedState(@Nonnull GameData game) {
+            this.game = game;
+        }
+
+        @Nonnull
+        public GameData getGame() {
+            return game;
+        }
+    }
+
+    private abstract class DSRAffectedState extends GameAssociatedState {
+        @Nonnull
+        private final Player prevWinner;
+
+        public DSRAffectedState(@Nonnull GameData game, @Nonnull Player prevWinner) {
+            super(game);
+            this.prevWinner = prevWinner;
+        }
+
+        @Nonnull
+        public Player getPrevWinner() {
+            checkValid();
+            return prevWinner;
+        }
+
+        @Nonnull
+        public Player getPrevLoser() {
+            checkValid();
+            return prevWinner.invert();
+        }
+
+        @Nonnull
+        public Set<Integer> getDSRIllegalStageIndizes() {
+            checkValid();
+
+            switch (ruleset.getDsrMode()) {
+                case NONE:
+                    return Collections.emptySet();
+                case MODIFIED_DSR:
+                    // Find last stage the loser of the last game won on
+                    return getPreviousLoserWinningStagesStream()
+                            .reduce((first, second) -> second)
+                            .stream()
+                            .collect(Collectors.toSet());
+                case GAME_RESTRICTED:
+                    return games.stream()
+                            .map(GameData::getStageIdx)
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toSet());
+                case WINNERS_VARIATION:
+                    return getPreviousLoserWinningStagesStream()
+                            .collect(Collectors.toSet());
+                case STAGE_DISMISSAL_RULE:
+                    List<Stage> counterpicks = ruleset.getCounterpicks();
+                    return getPreviousLoserWinningStagesStream()
+                            .filter(idx -> counterpicks.stream()
+                                    .map(Stage::getStageId)
+                                    .anyMatch(idx::equals))
+                            .collect(Collectors.toSet());
+                default:
+                    throw new IllegalStateException("Incomplete switch over DSR Mode");
+            }
+        }
+
+        @Nonnull
+        private Stream<Integer> getPreviousLoserWinningStagesStream() {
+            return games.stream()
+                    .filter(game -> game.getWinner() != null && game.getWinner() == getPrevLoser())
+                    .map(GameData::getStageIdx);
+        }
+    }
+
     public class SetRPSState extends GameAssociatedState {
         public SetRPSState(@Nonnull GameData game) {
             super(game);
@@ -399,82 +475,6 @@ public class SmashSet {
         private SetCompletedState() {
         }
         // TODO: Maybe check validity in constructor??
-    }
-
-    private abstract class GameAssociatedState extends SetState {
-        @Nonnull
-        private final GameData game;
-
-        public GameAssociatedState(@Nonnull GameData game) {
-            this.game = game;
-        }
-
-        @Nonnull
-        public GameData getGame() {
-            return game;
-        }
-    }
-
-    private abstract class DSRAffectedState extends GameAssociatedState {
-        @Nonnull
-        private final Player prevWinner;
-
-        public DSRAffectedState(@Nonnull GameData game, @Nonnull Player prevWinner) {
-            super(game);
-            this.prevWinner = prevWinner;
-        }
-
-        @Nonnull
-        public Player getPrevWinner() {
-            checkValid();
-            return prevWinner;
-        }
-
-        @Nonnull
-        public Player getPrevLoser() {
-            checkValid();
-            return prevWinner.invert();
-        }
-
-        @Nonnull
-        public Set<Integer> getDSRIllegalStageIndizes() {
-            checkValid();
-
-            switch (ruleset.getDsrMode()) {
-                case NONE:
-                    return Collections.emptySet();
-                case MODIFIED_DSR:
-                    // Find last stage the loser of the last game won on
-                    return getPreviousLoserWinningStagesStream()
-                            .reduce((first, second) -> second)
-                            .stream()
-                            .collect(Collectors.toSet());
-                case GAME_RESTRICTED:
-                    return games.stream()
-                            .map(GameData::getStageIdx)
-                            .filter(Objects::nonNull)
-                            .collect(Collectors.toSet());
-                case WINNERS_VARIATION:
-                    return getPreviousLoserWinningStagesStream()
-                            .collect(Collectors.toSet());
-                case STAGE_DISMISSAL_RULE:
-                    List<Stage> counterpicks = ruleset.getCounterpicks();
-                    return getPreviousLoserWinningStagesStream()
-                            .filter(idx -> counterpicks.stream()
-                                    .map(Stage::getStageId)
-                                    .anyMatch(idx::equals))
-                            .collect(Collectors.toSet());
-                default:
-                    throw new IllegalStateException("Incomplete switch over DSR Mode");
-            }
-        }
-
-        @Nonnull
-        private Stream<Integer> getPreviousLoserWinningStagesStream() {
-            return games.stream()
-                    .filter(game -> game.getWinner() != null && game.getWinner() == getPrevLoser())
-                    .map(GameData::getStageIdx);
-        }
     }
 
     public static class GameData {

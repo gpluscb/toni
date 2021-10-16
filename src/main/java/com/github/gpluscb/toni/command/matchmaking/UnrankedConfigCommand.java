@@ -299,7 +299,7 @@ public class UnrankedConfigCommand implements Command {
                         "Aliases: `unrankedconfig`, `unrankedcfg`")
                 .setCommandData(new CommandData("unrankedconfig", "Configuration for unranked matchmaking")
                         .addSubcommands(new SubcommandData("channel", "Update the matchmaking channel. Resets the channel to none if no channel is given")
-                                        .addOption(OptionType.CHANNEL, "channel", "The new matchmaking channel", false),
+                                        .addOption(OptionType.CHANNEL, "channel", "The new matchmaking channel", true),
                                 new SubcommandData("role", "Update the matchmaking role")
                                         .addOption(OptionType.ROLE, "role", "The new matchmaking role", true),
                                 new SubcommandData("reset", "Removes unranked matchmaking from this server"),

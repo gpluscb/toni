@@ -1,7 +1,6 @@
 package com.github.gpluscb.toni.command.components;
 
 import com.github.gpluscb.toni.util.MiscUtil;
-import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.discord.ButtonActionMenu;
 import com.github.gpluscb.toni.util.discord.TwoUsersChoicesActionMenu;
 import com.github.gpluscb.toni.util.smash.Ruleset;
@@ -16,7 +15,6 @@ import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.Button;
-import net.dv8tion.jda.api.interactions.components.Component;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -123,16 +121,16 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
     }
 
     @Nonnull
-    private OneOfTwo<Message, ButtonActionMenu.MenuAction> handleStrike(@Nonnull ButtonClickEvent e, int stageId) {
+    private ButtonActionMenu.MenuAction handleStrike(@Nonnull ButtonClickEvent e, int stageId) {
         if (e.getUser().getIdLong() != currentStriker) {
             e.reply("It's not your turn to strike right now!").setEphemeral(true).queue();
-            return OneOfTwo.ofU(ButtonActionMenu.MenuAction.NOTHING);
+            return ButtonActionMenu.MenuAction.CONTINUE;
         }
 
         if (strikes.stream().anyMatch(struckStages -> struckStages.contains(stageId))) {
-            e.deferEdit().queue();
             log.warn("Stage was double struck. Race condition or failure to set as disabled?");
-            return OneOfTwo.ofT(new MessageBuilder("That stage has already been struck. Please strike a different one.").build());
+            e.editMessage("That stage has already been struck. Please strike a different one.").queue();
+            return ButtonActionMenu.MenuAction.CONTINUE;
         }
 
         currentStrikes.add(stageId);
@@ -148,7 +146,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
             if (strikes.size() == starterStrikePattern.length) {
                 onResult.accept(new StrikeResult(), e);
 
-                return OneOfTwo.ofU(ButtonActionMenu.MenuAction.CANCEL);
+                return ButtonActionMenu.MenuAction.CANCEL;
             }
 
             currentStrikes = new HashSet<>();
@@ -157,23 +155,14 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
             currentStriker = currentStriker == striker1 ? striker2 : striker1; // Invert
         }
 
-        e.deferEdit().queue();
-        MessageBuilder builder = strikeMessageProducer.apply(new UpcomingStrikeInfo());
+        List<ActionRow> actionRows = MiscUtil.disabledButtonActionRows(e);
 
-        List<Button> buttonsToAdd = ruleset.getStarters().stream()
-                .map(starter -> Button.secondary(
-                                String.valueOf(starter.getStageId()),
-                                StringUtils.abbreviate(starter.getName(), LABEL_MAX_LENGTH)
-                        ).withDisabled(strikes.stream().anyMatch(struckIds -> struckIds.contains(starter.getStageId())))
-                ).collect(Collectors.toList());
+        Message newMessage = strikeMessageProducer.apply(new UpcomingStrikeInfo())
+                .build();
 
-        // Multiple ActionRows in case of > 5 buttons
-        List<List<Button>> splitButtonsToAdd = MiscUtil.splitList(buttonsToAdd, Component.Type.BUTTON.getMaxPerRow());
+        e.editMessage(newMessage).setActionRows(actionRows).queue();
 
-        List<ActionRow> actionRows = splitButtonsToAdd.stream().map(ActionRow::of).collect(Collectors.toList());
-        builder.setActionRows(actionRows);
-
-        return OneOfTwo.ofT(builder.build());
+        return ButtonActionMenu.MenuAction.CONTINUE;
     }
 
     private synchronized void onTimeout(@Nonnull ButtonActionMenu.ButtonActionMenuTimeoutEvent event) {

@@ -1,7 +1,6 @@
 package com.github.gpluscb.toni.command.components;
 
 import com.github.gpluscb.toni.util.Constants;
-import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.discord.ButtonActionMenu;
 import com.github.gpluscb.toni.util.discord.TwoUsersChoicesActionMenu;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
@@ -85,12 +84,12 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
     }
 
     @Nonnull
-    private synchronized OneOfTwo<Message, ButtonActionMenu.MenuAction> choose(@Nonnull ButtonClickEvent e, @Nonnull RPS choice) {
+    private synchronized ButtonActionMenu.MenuAction choose(@Nonnull ButtonClickEvent e, @Nonnull RPS choice) {
         boolean isUser1 = e.getUser().getIdLong() == getUser1();
         if ((isUser1 && choice1 != null) || (!isUser1 && choice2 != null)) {
             e.reply("You have already chosen, and you must learn to live with that choice!")
                     .setEphemeral(true).queue();
-            return OneOfTwo.ofU(ButtonActionMenu.MenuAction.NOTHING);
+            return ButtonActionMenu.MenuAction.CONTINUE;
         }
 
         onChoiceMade.accept(choice, e);
@@ -102,11 +101,12 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
             RPSResult outcome = determineWinner();
             onResult.accept(outcome, e);
 
-            return OneOfTwo.ofU(ButtonActionMenu.MenuAction.CANCEL);
+            return ButtonActionMenu.MenuAction.CANCEL;
         }
 
         e.reply("I have noted your choice...").setEphemeral(true).queue();
-        return OneOfTwo.ofU(ButtonActionMenu.MenuAction.NOTHING);
+
+        return ButtonActionMenu.MenuAction.CONTINUE;
     }
 
     @Nonnull

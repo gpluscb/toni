@@ -1,7 +1,6 @@
 package com.github.gpluscb.toni.command.components;
 
 import com.github.gpluscb.toni.util.MiscUtil;
-import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.discord.ActionMenu;
 import com.github.gpluscb.toni.util.discord.ButtonActionMenu;
 import com.github.gpluscb.toni.util.smash.Ruleset;
@@ -16,7 +15,6 @@ import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.Button;
-import net.dv8tion.jda.api.interactions.components.Component;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -117,18 +115,19 @@ public class BanStagesMenu extends ActionMenu {
         underlying.displayDeferredReplying(hook);
     }
 
-    private synchronized OneOfTwo<Message, ButtonActionMenu.MenuAction> onBan(int stageId, @Nonnull ButtonClickEvent e) {
+    @Nonnull
+    private synchronized ButtonActionMenu.MenuAction onBan(int stageId, @Nonnull ButtonClickEvent e) {
         if (bannedStageIds.contains(stageId)) {
             log.warn("Stage was banned twice: {}", stageId);
             e.reply("I have recorded that you banned this stage already earlier.").setEphemeral(true).queue();
-            return OneOfTwo.ofU(ButtonActionMenu.MenuAction.NOTHING);
+            return ButtonActionMenu.MenuAction.CONTINUE;
         }
 
         if (dsrIllegalStages.contains(stageId)) {
             log.warn("DSR illegal stage was banned: {}", stageId);
             e.reply("You shouldn't have been able to ban this stage, " +
                     "because DSR rules already prevent your opponent from picking this stage.").setEphemeral(true).queue();
-            return OneOfTwo.ofU(ButtonActionMenu.MenuAction.NOTHING);
+            return ButtonActionMenu.MenuAction.CONTINUE;
         }
 
         bannedStageIds.add(stageId);
@@ -137,29 +136,18 @@ public class BanStagesMenu extends ActionMenu {
         if (bannedStageIds.size() == ruleset.getStageBans()) {
             // Our job here is done
             onResult.accept(new BanResult(), e);
-            return OneOfTwo.ofU(ButtonActionMenu.MenuAction.CANCEL);
+            return ButtonActionMenu.MenuAction.CANCEL;
         }
 
-        e.deferEdit().queue();
-
         // More stages are to be banned
-        MessageBuilder builder = banMessageProducer.apply(new UpcomingBanInfo());
+        List<ActionRow> actionRows = MiscUtil.disabledButtonActionRows(e);
 
-        List<Button> buttonsToAdd = ruleset.getStagesStream()
-                .map(stage -> Button.secondary(
-                                String.valueOf(stage.getStageId()),
-                                StringUtils.abbreviate(stage.getName(), LABEL_MAX_LENGTH)
-                        ).withDisabled(bannedStageIds.contains(stage.getStageId()))
-                ).collect(Collectors.toList());
+        Message newMessage = banMessageProducer.apply(new UpcomingBanInfo())
+                .build();
 
-        // Multiple ActionRows in case of > 5 buttons
-        List<ActionRow> actionRows = MiscUtil.splitList(buttonsToAdd, Component.Type.BUTTON.getMaxPerRow())
-                .stream()
-                .map(ActionRow::of)
-                .collect(Collectors.toList());
-        builder.setActionRows(actionRows);
+        e.editMessage(newMessage).setActionRows(actionRows).queue();
 
-        return OneOfTwo.ofT(builder.build());
+        return ButtonActionMenu.MenuAction.CONTINUE;
     }
 
     private synchronized void onTimeout(@Nonnull ButtonActionMenu.ButtonActionMenuTimeoutEvent timeout) {

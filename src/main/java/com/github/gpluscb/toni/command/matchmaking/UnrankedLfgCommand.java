@@ -184,22 +184,22 @@ public class UnrankedLfgCommand implements Command {
         }
 
         @Nonnull
-        public OneOfTwo<Message, ButtonActionMenu.MenuAction> fightButton(@Nonnull ButtonClickEvent e) {
+        public ButtonActionMenu.MenuAction fightButton(@Nonnull ButtonClickEvent e) {
             synchronized (currentlyLfgPerGuild) {
                 // Was it cancelled?
                 if (!currentlyLfgPerGuild.contains(new PairNonnull<>(guildId, originalAuthorId)))
-                    return OneOfTwo.ofU(ButtonActionMenu.MenuAction.CANCEL);
+                    return ButtonActionMenu.MenuAction.CANCEL;
             }
 
             long challengerId = e.getUser().getIdLong();
             if (challengerId == originalAuthorId) {
-                e.getChannel().sendMessage("If you are trying to play with yourself, that's ok too. But there's no need to ping matchmaking for that my friend.").queue();
-                return OneOfTwo.ofU(ButtonActionMenu.MenuAction.NOTHING);
+                e.reply("If you are trying to play with yourself, that's ok too. But there's no need to ping matchmaking for that my friend.").queue();
+                return ButtonActionMenu.MenuAction.CONTINUE;
             }
 
             synchronized (currentlyChallenging) {
                 if (currentlyChallenging.contains(challengerId))
-                    return OneOfTwo.ofU(ButtonActionMenu.MenuAction.NOTHING);
+                    return ButtonActionMenu.MenuAction.CONTINUE;
 
                 currentlyChallenging.add(challengerId);
             }
@@ -222,7 +222,7 @@ public class UnrankedLfgCommand implements Command {
             ButtonActionMenu menu = new ButtonActionMenu.Builder()
                     .setWaiter(waiter)
                     .setDeletionButton(null)
-                    .registerButton(Button.success("confirm", Constants.CHECK_MARK), handler::confirmReaction)
+                    .registerButton(Button.success("confirm", Constants.CHECK_MARK), handler::confirmButton)
                     .setStart(start)
                     .addUsers(originalAuthorId)
                     .setTimeout(3, TimeUnit.MINUTES)
@@ -231,26 +231,27 @@ public class UnrankedLfgCommand implements Command {
 
             menu.displayReplying(originalChannel, originalMessageId);
 
-            return OneOfTwo.ofU(ButtonActionMenu.MenuAction.NOTHING);
+            return ButtonActionMenu.MenuAction.CONTINUE;
         }
 
         @Nonnull
-        public OneOfTwo<Message, ButtonActionMenu.MenuAction> cancelButton(@Nonnull ButtonClickEvent e) {
-            if (e.getUser().getIdLong() != originalAuthorId) return OneOfTwo.ofU(ButtonActionMenu.MenuAction.NOTHING);
-
-            e.deferEdit().queue();
+        public ButtonActionMenu.MenuAction cancelButton(@Nonnull ButtonClickEvent e) {
+            if (e.getUser().getIdLong() != originalAuthorId) return ButtonActionMenu.MenuAction.CONTINUE;
 
             synchronized (currentlyLfgPerGuild) {
                 currentlyLfgPerGuild.remove(new PairNonnull<>(guildId, originalAuthorId));
             }
 
-            return OneOfTwo.ofT(
-                    new MessageBuilder(String.format("%s, %s was looking for a game, but cancelled their search.",
-                            MiscUtil.mentionRole(matchmakingRoleId), MiscUtil.mentionUser(originalAuthorId)))
-                            .mentionRoles(matchmakingRoleId).mentionUsers(originalAuthorId)
-                            .setActionRows()
-                            .build()
-            );
+            e.editMessage(new MessageBuilder(String.format("%s, %s was looking for a game, but cancelled their search.",
+                            MiscUtil.mentionRole(matchmakingRoleId),
+                            MiscUtil.mentionUser(originalAuthorId)))
+                            .mentionRoles(matchmakingRoleId)
+                            .mentionUsers(originalAuthorId)
+                            .build())
+                    .setActionRows()
+                    .queue();
+
+            return ButtonActionMenu.MenuAction.CANCEL;
         }
 
         public void timeout(@Nonnull ButtonActionMenu.ButtonActionMenuTimeoutEvent event) {
@@ -278,9 +279,7 @@ public class UnrankedLfgCommand implements Command {
             }
 
             @Nonnull
-            public OneOfTwo<Message, ButtonActionMenu.MenuAction> confirmReaction(@Nonnull ButtonClickEvent e) {
-                e.deferEdit().queue();
-
+            public ButtonActionMenu.MenuAction confirmButton(@Nonnull ButtonClickEvent e) {
                 MessageChannel channel = e.getChannel();
 
                 synchronized (currentlyLfgPerGuild) {
@@ -293,12 +292,13 @@ public class UnrankedLfgCommand implements Command {
                         .setActionRows()
                         .queue();
 
-                return OneOfTwo.ofT(
-                        new MessageBuilder(String.format("%s, %s wants to play with you.", MiscUtil.mentionUser(originalAuthorId), MiscUtil.mentionUser(challengerId)))
+                e.editMessage(new MessageBuilder(String.format("%s, %s wants to play with you.", MiscUtil.mentionUser(originalAuthorId), MiscUtil.mentionUser(challengerId)))
                                 .mentionUsers(originalAuthorId, challengerId)
-                                .setActionRows()
-                                .build()
-                );
+                                .build())
+                        .setActionRows()
+                        .queue();
+
+                return ButtonActionMenu.MenuAction.CANCEL;
             }
 
             public void timeout(@Nonnull ButtonActionMenu.ButtonActionMenuTimeoutEvent event) {

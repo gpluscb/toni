@@ -2,7 +2,6 @@ package com.github.gpluscb.toni.command.components;
 
 import com.github.gpluscb.toni.util.Constants;
 import com.github.gpluscb.toni.util.MiscUtil;
-import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.discord.ButtonActionMenu;
 import com.github.gpluscb.toni.util.discord.TwoUsersChoicesActionMenu;
 import com.github.gpluscb.toni.util.smash.Ruleset;
@@ -167,14 +166,14 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
 
         Message start = strikeFirstMessageProvider.apply(rpsResult, e);
 
-        Function<ButtonClickEvent, OneOfTwo<Message, ButtonActionMenu.MenuAction>> onButtonFirst = event -> {
+        Function<ButtonClickEvent, ButtonActionMenu.MenuAction> onButtonFirst = event -> {
             onStrikeFirstChoice(new StrikeFirstChoiceResult(winner, winner, loser), event);
-            return OneOfTwo.ofU(ButtonActionMenu.MenuAction.CANCEL);
+            return ButtonActionMenu.MenuAction.CANCEL;
         };
 
-        Function<ButtonClickEvent, OneOfTwo<Message, ButtonActionMenu.MenuAction>> onButtonSecond = event -> {
+        Function<ButtonClickEvent, ButtonActionMenu.MenuAction> onButtonSecond = event -> {
             onStrikeFirstChoice(new StrikeFirstChoiceResult(winner, loser, winner), event);
-            return OneOfTwo.ofU(ButtonActionMenu.MenuAction.CANCEL);
+            return ButtonActionMenu.MenuAction.CANCEL;
         };
 
         ButtonActionMenu strikeFirstChoiceUnderlying = new ButtonActionMenu.Builder()

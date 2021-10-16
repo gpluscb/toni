@@ -3,9 +3,7 @@ package com.github.gpluscb.toni.util.discord;
 import com.github.gpluscb.toni.util.Constants;
 import com.github.gpluscb.toni.util.FailLogger;
 import com.github.gpluscb.toni.util.MiscUtil;
-import com.github.gpluscb.toni.util.OneOfTwo;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
-import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
@@ -40,7 +38,7 @@ public class ButtonActionMenu extends ActionMenu {
     @Nonnull
     private final List<ActionRow> actionRows;
     @Nonnull
-    private final Map<String, Function<ButtonClickEvent, OneOfTwo<Message, MenuAction>>> buttonActions;
+    private final Map<String, Function<ButtonClickEvent, MenuAction>> buttonActions;
     @Nonnull
     private final Message start;
     @Nullable
@@ -117,16 +115,12 @@ public class ButtonActionMenu extends ActionMenu {
 
     private void initWithMessage(@Nonnull Message message) {
         setMessageInfo(message);
-        awaitEvents(message);
+        awaitEvents();
     }
 
-    private void awaitEvents(@Nonnull Message message) {
-        awaitEvents(message.getJDA(), message.getIdLong(), message.getChannel().getIdLong());
-    }
-
-    private void awaitEvents(@Nonnull JDA jda, long messageId, long channelId) {
+    private void awaitEvents() {
         getWaiter().waitForEvent(ButtonClickEvent.class,
-                e -> checkButtonClick(e, messageId),
+                e -> checkButtonClick(e, getMessageId()),
                 this::handleButtonClick,
                 getTimeout(), getUnit(), FailLogger.logFail(() -> { // This is the only thing that will be executed on not JDA-WS thread. So exceptions may get swallowed
                     timeoutAction.accept(new ButtonActionMenuTimeoutEvent());
@@ -149,27 +143,22 @@ public class ButtonActionMenu extends ActionMenu {
     private void handleButtonClick(@Nonnull ButtonClickEvent e) {
         String buttonId = e.getComponentId();
 
-        long messageId = e.getMessageIdLong();
-        MessageChannel channel = e.getChannel();
         if (deletionButton != null && buttonId.equals(deletionButton.getId())) {
-            channel.deleteMessageById(e.getMessageId()).queue();
+            e.getMessage().delete().queue();
             return;
         }
 
-        OneOfTwo<Message, MenuAction> action = buttonActions.get(buttonId).apply(e);
-        action
-                .onT(edited -> channel.editMessageById(messageId, edited).queue(this::awaitEvents))
-                .onU(otherAction -> {
-                    switch (otherAction) {
-                        case NOTHING:
-                            awaitEvents(e.getJDA(), messageId, channel.getIdLong());
-                            break;
-                        case CANCEL:
-                            break;
-                        default:
-                            throw new IllegalStateException("Non exhaustive switch over MenuAction");
-                    }
-                });
+        MenuAction action = buttonActions.get(buttonId).apply(e);
+
+        switch (action) {
+            case CONTINUE:
+                awaitEvents();
+                break;
+            case CANCEL:
+                break;
+            default:
+                throw new IllegalStateException("Non exhaustive switch over MenuAction");
+        }
     }
 
     public class ButtonActionMenuTimeoutEvent extends MenuStateInfo {
@@ -179,10 +168,10 @@ public class ButtonActionMenu extends ActionMenu {
         @Nonnull
         private final Button button;
         @Nonnull
-        private final Function<ButtonClickEvent, OneOfTwo<Message, MenuAction>> onClick;
+        private final Function<ButtonClickEvent, MenuAction> onClick;
         private final boolean displayInitially;
 
-        public RegisteredButton(@Nonnull Button button, @Nonnull Function<ButtonClickEvent, OneOfTwo<Message, MenuAction>> onClick, boolean displayInitially) {
+        public RegisteredButton(@Nonnull Button button, @Nonnull Function<ButtonClickEvent, MenuAction> onClick, boolean displayInitially) {
             this.button = button;
             this.onClick = onClick;
             this.displayInitially = displayInitially;
@@ -194,7 +183,7 @@ public class ButtonActionMenu extends ActionMenu {
         }
 
         @Nonnull
-        public Function<ButtonClickEvent, OneOfTwo<Message, MenuAction>> getOnClick() {
+        public Function<ButtonClickEvent, MenuAction> getOnClick() {
             return onClick;
         }
 
@@ -204,7 +193,7 @@ public class ButtonActionMenu extends ActionMenu {
     }
 
     public enum MenuAction {
-        NOTHING,
+        CONTINUE,
         /**
          * Does not remove the buttons
          */
@@ -245,12 +234,12 @@ public class ButtonActionMenu extends ActionMenu {
         }
 
         @Nonnull
-        public synchronized Builder registerButton(@Nonnull Button button, @Nonnull Function<ButtonClickEvent, OneOfTwo<Message, MenuAction>> action) {
+        public synchronized Builder registerButton(@Nonnull Button button, @Nonnull Function<ButtonClickEvent, MenuAction> action) {
             return registerButton(button, action, true);
         }
 
         @Nonnull
-        public synchronized Builder registerButton(@Nonnull Button button, @Nonnull Function<ButtonClickEvent, OneOfTwo<Message, MenuAction>> action, boolean displayInitially) {
+        public synchronized Builder registerButton(@Nonnull Button button, @Nonnull Function<ButtonClickEvent, MenuAction> action, boolean displayInitially) {
             return registerButton(new RegisteredButton(button, action, displayInitially));
         }
 

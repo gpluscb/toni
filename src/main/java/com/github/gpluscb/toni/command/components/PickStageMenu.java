@@ -1,6 +1,5 @@
 package com.github.gpluscb.toni.command.components;
 
-import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.discord.ActionMenu;
 import com.github.gpluscb.toni.util.discord.ButtonActionMenu;
 import com.github.gpluscb.toni.util.smash.Ruleset;
@@ -96,15 +95,16 @@ public class PickStageMenu extends ActionMenu {
     }
 
     @Nonnull
-    private synchronized OneOfTwo<Message, ButtonActionMenu.MenuAction> onPick(int stageId, @Nonnull ButtonClickEvent e) {
+    private synchronized ButtonActionMenu.MenuAction onPick(int stageId, @Nonnull ButtonClickEvent e) {
         if (bannedStageIds.contains(stageId)) {
             log.error("Banned stage was picked: {}", stageId);
             e.reply("This stage cannot be picked.").setEphemeral(true).queue();
-            return OneOfTwo.ofU(ButtonActionMenu.MenuAction.NOTHING);
+            return ButtonActionMenu.MenuAction.CONTINUE;
         }
 
         onResult.accept(new PickStageResult(stageId), e);
-        return OneOfTwo.ofU(ButtonActionMenu.MenuAction.CANCEL);
+
+        return ButtonActionMenu.MenuAction.CANCEL;
     }
 
     private synchronized void onTimeout(@Nonnull ButtonActionMenu.ButtonActionMenuTimeoutEvent event) {

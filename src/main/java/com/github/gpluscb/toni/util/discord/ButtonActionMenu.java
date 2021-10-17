@@ -202,9 +202,9 @@ public class ButtonActionMenu extends ActionMenu {
 
     public static class Builder extends ActionMenu.Builder<Builder, ButtonActionMenu> {
         @Nonnull
-        private final Set<Long> users;
+        private Set<Long> users;
         @Nonnull
-        private final List<RegisteredButton> buttons;
+        private List<RegisteredButton> buttons;
         @Nullable
         private Message start;
         @Nullable
@@ -234,6 +234,12 @@ public class ButtonActionMenu extends ActionMenu {
         }
 
         @Nonnull
+        public Builder setUsers(@Nonnull Set<Long> users) {
+            this.users = users;
+            return this;
+        }
+
+        @Nonnull
         public synchronized Builder registerButton(@Nonnull Button button, @Nonnull Function<ButtonClickEvent, MenuAction> action) {
             return registerButton(button, action, true);
         }
@@ -246,6 +252,12 @@ public class ButtonActionMenu extends ActionMenu {
         @Nonnull
         public synchronized Builder registerButton(@Nonnull RegisteredButton reg) {
             buttons.add(reg);
+            return this;
+        }
+
+        @Nonnull
+        public Builder setButtons(@Nonnull List<RegisteredButton> buttons) {
+            this.buttons = buttons;
             return this;
         }
 

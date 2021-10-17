@@ -146,7 +146,7 @@ public class SmashSet {
         }
     }
 
-    private abstract class GameAssociatedState extends SetState {
+    public abstract class GameAssociatedState extends SetState {
         @Nonnull
         private final GameData game;
 
@@ -160,7 +160,7 @@ public class SmashSet {
         }
     }
 
-    private abstract class DSRAffectedState extends GameAssociatedState {
+    public abstract class DSRAffectedState extends GameAssociatedState {
         @Nonnull
         private final Player prevWinner;
 
@@ -302,7 +302,6 @@ public class SmashSet {
     }
 
     public class SetDoubleBlindState extends GameAssociatedState {
-
         private SetDoubleBlindState(@Nonnull GameData game) {
             super(game);
         }

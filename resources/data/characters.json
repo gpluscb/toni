@@ -1547,5 +1547,22 @@
     "games": [
       "ult"
     ]
+  },
+  {
+    "type": "character",
+    "id": null,
+    "name": "Sora",
+    "alt_names": [
+      "sora",
+      "my boi",
+      "my boy",
+      "ma boi",
+      "ma boy"
+    ],
+    "emote_id": 899404352303792178,
+    "guild": 736625517154926623,
+    "games": [
+      "ult"
+    ]
   }
 ]

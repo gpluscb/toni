@@ -29,10 +29,7 @@ import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static net.dv8tion.jda.api.interactions.components.selections.SelectOption.LABEL_MAX_LENGTH;
@@ -70,6 +67,14 @@ public class CharacterCommand implements Command {
                 return;
             }
 
+            // TODO: Hack, special casing will go as soon as we have an ufd for sora
+            String args = msg.getArgsFrom(0);
+            if (args.matches("(sora|my boi|my boy|ma boi|ma boy).*")) {
+                ctx.reply("Sora doesn't have a complete ufd page yet, so just be a little bit patient alright? " +
+                        "I'll announce it on my status when we support him for this command.").queue();
+                return;
+            }
+
             // T: id, U: response in case Id is not found
             OneOfTwo<Pair<Short, String>, String> idAndMoveNameOrResponse = findCharacterIdAndMoveNameOrResponse(msg);
 
@@ -88,6 +93,13 @@ public class CharacterCommand implements Command {
             SlashCommandContext slash = context.getUOrThrow();
 
             String characterName = slash.getOptionNonNull("character").getAsString().toLowerCase();
+
+            // TODO: Hack, special casing will go as soon as we have an ufd for sora
+            if (Arrays.asList("sora", "my boi", "my boy", "ma boi", "ma boy").contains(characterName)) {
+                ctx.reply("Sora doesn't have a complete ufd page yet, so just be a little bit patient alright? " +
+                        "I'll announce it on my status when we support him for this command.").queue();
+                return;
+            }
 
             Optional<Short> idOptional = characters.stream().filter(character -> character.getAltNames().contains(characterName)).map(c -> {
                         Short id__ = c.getId();

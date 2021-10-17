@@ -41,23 +41,57 @@ public class Ruleset {
         this.blindPickBeforeStage = blindPickBeforeStage;
 
         int stagesSize = starters.size() + counterpicks.size();
+        int maximumBestOfWhat;
         switch (dsrMode) {
-            case WINNERS_VARIATION:
-                maximumFirstToWhatScore = stagesSize;
+            case NONE:
+            case MODIFIED_DSR:
+                // For MODIFIED_DSR this is with some conditions, see the validate section
+                maximumFirstToWhatScore = null;
                 break;
             case GAME_RESTRICTED:
-                int maximumBestOf = stagesSize % 2 == 0 ?
-                        stagesSize - 1
-                        : stagesSize;
-                maximumFirstToWhatScore = (maximumBestOf + 1) / 2;
+                // Worst case scenario: we played on x stages already, and stageBans *different* stages are banned
+                // So we'll have (x + stageBans) *illegal* stages
+                // This means we'll have (stagesSize - (x + stageBans)) = (stagesSize - x - stageBans) *legal* stages
+                // We have to have at least one legal stage left before the last game
+                // 1 = stagesSize - x - stageBans <=> x = stagesSize - stageBans - 1
+                // After that we can play that one last game
+                // Therefore: maximumBestOfWhat = (x + 1) = (stagesSize - stageBans) if that is odd,
+                // (stagesSize - stageBans - 1) otherwise
+                // and: maximumFirstToWhatScore = (maximumBestOfWhat + 1) / 2
+                maximumBestOfWhat = stagesSize - stageBans;
+                if (maximumBestOfWhat % 2 == 0) maximumBestOfWhat--;
+                maximumFirstToWhatScore = (maximumBestOfWhat + 1) / 2;
+                break;
+            case WINNERS_VARIATION:
+                // Worst case scenario: both player 1 and player 2 have already won x games (meaning we played 2x games), and now stageBans *different* stages are banned
+                // So we'll have (x + stageBans) *illegal* stages
+                // This means we'll have (stagesSize - (x + stageBans)) = (stagesSize - x - stageBans) *legal* stages
+                // We have to have at least one legal stage left before the last game
+                // 1 = stagesSize - x - stageBans <=> x = stagesSize - stageBans - 1
+                // <=> 2x = 2 (stagesSize - sageBans - 1)
+                // After that we can play that one last game
+                // Therefore: maximumBestOfWhat = (2x + 1) = (2 (stagesSize - stageBans - 1) + 1)
+                // = (2 (stagesSize - stageBans) - 1), which is always odd
+                // and: maximumFirstToWhatScore = (maximumBestOfWhat + 1) / 2
+                // Note: We could have one more game in theory iff the previous loser wins, but that violates
+                // the condition that maximumBestOfWhat must be odd
+                maximumBestOfWhat = 2 * (stagesSize - stageBans) - 1;
+                maximumFirstToWhatScore = (maximumBestOfWhat + 1) / 2;
                 break;
             case STAGE_DISMISSAL_RULE:
-                // TODO: This seems wrong I think
+                // TODO: Revisit this if I ever implement gentlemans clause
+                // You can not play on a *counterpick* stage if you *counterpicked* it and  won
+                // So the limiting factor is really how many counterpick stages we have
+                // Worst case scenario: First game was on a starter (obv), after that we only play on counterpicks
+                // Both players always win on their counterpick
+                // Score is x-x, Player 1 won on the starter and on x-1 of their own counterpicks
+                // Player 2 won on x of their own counterpicks
+                // This implies something idekk
+                // TODO: AAAAAAAAAA maths
                 maximumFirstToWhatScore = stagesSize;
                 break;
             default:
-                maximumFirstToWhatScore = null;
-                break;
+                throw new IllegalStateException("Incomplete switch over DSR modes");
         }
 
         // Validate
@@ -66,6 +100,10 @@ public class Ruleset {
         if (stageBans >= stagesSize) throw new IllegalArgumentException("There must be fewer stage bans than stages");
         if (Arrays.stream(starterStrikePattern).sum() != startersSize - 1)
             throw new IllegalArgumentException("The starter strike pattern must leave exactly one stage unstruck");
+        if (Arrays.stream(starterStrikePattern).anyMatch(strikes -> strikes <= 0))
+            throw new IllegalArgumentException("The starter strike pattern can only contain strictly positive numbers");
+        if (dsrMode == DSRMode.MODIFIED_DSR && stagesSize - stageBans < 2)
+            throw new IllegalArgumentException("Modified DSR requires that after stage bans, at least 2 stages must be left");
     }
 
     public int getRulesetId() {

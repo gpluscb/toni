@@ -203,12 +203,34 @@ public class SmashSet {
                     return getPreviousLoserWinningStagesStream()
                             .collect(Collectors.toSet());
                 case STAGE_DISMISSAL_RULE:
-                    List<Stage> counterpicks = ruleset.getCounterpicks();
-                    return getPreviousLoserWinningStagesStream()
-                            .filter(idx -> counterpicks.stream()
-                                    .map(Stage::getStageId)
-                                    .anyMatch(idx::equals))
-                            .collect(Collectors.toSet());
+                    Set<Integer> dsrIllegal = new HashSet<>();
+
+                    // It's ok to access games.get(1) here
+                    // A DSRAffectedState only happens after at least one game is completed
+                    // We only go to games.size() - 1 because the current game guaranteed doesn't have a stage yet
+                    for (int i = 1; i < games.size() - 1; i++) {
+                        GameData prevGame = games.get(i - 1);
+                        GameData game = games.get(i);
+
+                        Player prevGameLoser = prevGame.getLoser();
+                        // Only stages where the current previous loser counterpicked are relevant
+                        if (prevGameLoser != getPrevLoser()) continue;
+
+                        // Only counterpick stages are relevant
+                        Integer stageIdx = game.getStageIdx();
+
+                        // Every game before the current one (before games.size() - 1) will have a stage
+                        //noinspection ConstantConditions
+                        if (ruleset.getCounterpicks().stream().map(Stage::getStageId).noneMatch(stageIdx::equals))
+                            continue;
+
+                        // Only stages where the current previous loser won are relevant
+                        if (game.getWinner() != getPrevLoser()) continue;
+
+                        dsrIllegal.add(stageIdx);
+                    }
+
+                    return dsrIllegal;
                 default:
                     throw new IllegalStateException("Incomplete switch over DSR Mode");
             }
@@ -521,6 +543,11 @@ public class SmashSet {
         @Nullable
         public Player getWinner() {
             return winner;
+        }
+
+        @Nullable
+        public Player getLoser() {
+            return winner == null ? null : winner.invert();
         }
 
         @Nullable

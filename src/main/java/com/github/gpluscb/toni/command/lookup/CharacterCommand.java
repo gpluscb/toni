@@ -68,7 +68,7 @@ public class CharacterCommand implements Command {
             }
 
             // TODO: Hack, special casing will go as soon as we have an ufd for sora
-            String args = msg.getArgsFrom(0);
+            String args = msg.getArgsFrom(0).toLowerCase();
             if (args.matches("(sora|my boi|my boy|ma boi|ma boy).*")) {
                 ctx.reply("Sora doesn't have a complete ufd page yet, so just be a little bit patient alright? " +
                         "I'll announce it on my status when we support him for this command.").queue();

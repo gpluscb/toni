@@ -36,7 +36,7 @@ public class ButtonActionMenu extends ActionMenu {
     private final Set<Long> users;
 
     @Nonnull
-    private final List<ActionRow> actionRows;
+    private final List<ActionRow> initialActionRows;
     @Nonnull
     private final Map<String, Function<ButtonClickEvent, MenuAction>> buttonActions;
     @Nonnull
@@ -63,7 +63,7 @@ public class ButtonActionMenu extends ActionMenu {
 
         // Multiple ActionRows in case of > 5 buttons
         List<List<Button>> splitButtonsToAdd = MiscUtil.splitList(buttonsToAdd, Component.Type.BUTTON.getMaxPerRow());
-        actionRows = splitButtonsToAdd.stream().map(ActionRow::of).collect(Collectors.toList());
+        initialActionRows = splitButtonsToAdd.stream().map(ActionRow::of).collect(Collectors.toList());
 
         // e.getKey.getId() cannot return null here since we don't allow link buttons
         this.buttonActions = buttons
@@ -87,12 +87,12 @@ public class ButtonActionMenu extends ActionMenu {
 
     @Override
     public void displaySlashReplying(@Nonnull SlashCommandEvent e) {
-        e.reply(start).addActionRows(actionRows).flatMap(InteractionHook::retrieveOriginal).queue(this::initWithMessage);
+        e.reply(start).addActionRows(initialActionRows).flatMap(InteractionHook::retrieveOriginal).queue(this::initWithMessage);
     }
 
     @Override
     public void displayDeferredReplying(@Nonnull InteractionHook hook) {
-        hook.sendMessage(start).addActionRows(actionRows).queue(this::initWithMessage);
+        hook.sendMessage(start).addActionRows(initialActionRows).queue(this::initWithMessage);
     }
 
     @Override
@@ -110,7 +110,7 @@ public class ButtonActionMenu extends ActionMenu {
     }
 
     private void init(@Nonnull MessageAction messageAction) {
-        messageAction.setActionRows(actionRows).queue(this::initWithMessage);
+        messageAction.setActionRows(initialActionRows).queue(this::initWithMessage);
     }
 
     private void initWithMessage(@Nonnull Message message) {
@@ -159,6 +159,11 @@ public class ButtonActionMenu extends ActionMenu {
             default:
                 throw new IllegalStateException("Non exhaustive switch over MenuAction");
         }
+    }
+
+    @Nonnull
+    public List<ActionRow> getInitialActionRows() {
+        return initialActionRows;
     }
 
     public class ButtonActionMenuTimeoutEvent extends MenuStateInfo {

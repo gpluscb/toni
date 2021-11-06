@@ -3,7 +3,10 @@ package com.github.gpluscb.toni.util.discord;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.Button;
 import net.dv8tion.jda.api.interactions.components.ComponentLayout;
@@ -12,11 +15,11 @@ import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
     private static final Logger log = LogManager.getLogger(ConfirmableButtonChoiceMenu.class);
@@ -30,17 +33,19 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
     @Nonnull
     private final Button resetButton;
     @Nonnull
-    private final BiFunction<T, ButtonClickEvent, Message> onChoice;
+    private final BiFunction<ChoiceInfo, ButtonClickEvent, Message> onChoice;
     @Nonnull
-    private final Function<ButtonClickEvent, Message> onReset;
+    private final BiFunction<ConfirmableButtonChoiceInfo, ButtonClickEvent, Message> onReset;
     @Nonnull
-    private final BiConsumer<List<T>, ButtonClickEvent> onChoicesConfirmed;
+    private final BiConsumer<ConfirmableButtonChoiceInfo, ButtonClickEvent> onChoicesConfirmed;
+    @Nonnull
+    private final BiConsumer<ConfirmableButtonChoiceInfo, ButtonActionMenu.ButtonActionMenuTimeoutEvent> onTimeout;
 
     @Nonnull
     private final List<T> currentChoices;
 
     public ConfirmableButtonChoiceMenu(@Nonnull EventWaiter waiter, long user, long timeout, @Nonnull TimeUnit unit, @Nonnull List<ChoiceButton<T>> choiceButtons, @Nonnull Message start,
-                                       @Nonnull Button confirmButton, @Nonnull Button resetButton, int minChoices, int maxChoices) {
+                                       @Nonnull Button confirmButton, @Nonnull Button resetButton, int minChoices, int maxChoices, @Nonnull BiFunction<ChoiceInfo, ButtonClickEvent, Message> onChoice, @Nonnull BiFunction<ConfirmableButtonChoiceInfo, ButtonClickEvent, Message> onReset, @Nonnull BiConsumer<ConfirmableButtonChoiceInfo, ButtonClickEvent> onChoicesConfirmed, @Nonnull BiConsumer<ConfirmableButtonChoiceInfo, ButtonActionMenu.ButtonActionMenuTimeoutEvent> onTimeout) {
         super(waiter, timeout, unit);
 
         if (minChoices > maxChoices)
@@ -50,21 +55,55 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
         this.maxChoices = maxChoices;
         this.confirmButton = confirmButton;
         this.resetButton = resetButton;
+        this.onChoice = onChoice;
+        this.onReset = onReset;
+        this.onChoicesConfirmed = onChoicesConfirmed;
+        this.onTimeout = onTimeout;
+        currentChoices = new ArrayList<>();
 
         ButtonActionMenu.Builder underlyingBuilder = new ButtonActionMenu.Builder()
                 .setTimeout(timeout, unit)
                 .addUsers(user)
-                .setStart(start);
+                .setStart(start)
+                .setDeletionButton(null)
+                .setTimeoutAction(this::onTimeout);
 
         for (ChoiceButton<T> choiceButton : choiceButtons)
             underlyingBuilder.registerButton(choiceButton.getButton(), e -> onChoice(choiceButton.getAssociatedChoice(), e));
 
         underlyingBuilder.registerButton(confirmButton, this::onConfirm);
         underlyingBuilder.registerButton(resetButton, this::onReset);
+
+        underlying = underlyingBuilder.build();
+    }
+
+    @Override
+    public void display(@Nonnull MessageChannel channel) {
+        underlying.display(channel);
+    }
+
+    @Override
+    public void display(MessageChannel channel, long messageId) {
+        underlying.display(channel, messageId);
+    }
+
+    @Override
+    public void displayReplying(@Nonnull MessageChannel channel, long messageId) {
+        underlying.displayReplying(channel, messageId);
+    }
+
+    @Override
+    public void displaySlashReplying(@Nonnull SlashCommandEvent event) {
+        underlying.displaySlashReplying(event);
+    }
+
+    @Override
+    public void displayDeferredReplying(@Nonnull InteractionHook hook) {
+        underlying.displayDeferredReplying(hook);
     }
 
     @Nonnull
-    public synchronized ButtonActionMenu.MenuAction onChoice(@Nullable T choice, @Nonnull ButtonClickEvent event) {
+    private synchronized ButtonActionMenu.MenuAction onChoice(@Nullable T choice, @Nonnull ButtonClickEvent event) {
         if (choice == null) {
             log.warn("Invalid choice chosen - id: {}", event.getComponentId());
 
@@ -85,7 +124,7 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
         }
 
         currentChoices.add(choice);
-        Message message = onChoice.apply(choice, event);
+        Message message = onChoice.apply(new ChoiceInfo(choice), event);
 
         List<ActionRow> actionRows = MiscUtil.disabledButtonActionRows(event);
 
@@ -108,7 +147,7 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
     }
 
     @Nonnull
-    public synchronized ButtonActionMenu.MenuAction onConfirm(@Nonnull ButtonClickEvent event) {
+    private synchronized ButtonActionMenu.MenuAction onConfirm(@Nonnull ButtonClickEvent event) {
         if (currentChoices.size() < minChoices || currentChoices.size() > maxChoices) {
             log.warn("Confirm was activated with illegal number of choices.");
 
@@ -119,16 +158,16 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
             return ButtonActionMenu.MenuAction.CONTINUE;
         }
 
-        onChoicesConfirmed.accept(currentChoices, event);
+        onChoicesConfirmed.accept(new ConfirmableButtonChoiceInfo(), event);
 
         return ButtonActionMenu.MenuAction.CANCEL;
     }
 
     @Nonnull
-    public synchronized ButtonActionMenu.MenuAction onReset(@Nonnull ButtonClickEvent event) {
+    private synchronized ButtonActionMenu.MenuAction onReset(@Nonnull ButtonClickEvent event) {
         currentChoices.clear();
 
-        Message message = onReset.apply(event);
+        Message message = onReset.apply(new ConfirmableButtonChoiceInfo(), event);
 
         List<ActionRow> actionRows = underlying.getInitialActionRows();
 
@@ -137,6 +176,34 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
                 .queue();
 
         return ButtonActionMenu.MenuAction.CONTINUE;
+    }
+
+    private synchronized void onTimeout(@Nonnull ButtonActionMenu.ButtonActionMenuTimeoutEvent timeout) {
+        onTimeout.accept(new ConfirmableButtonChoiceTimeoutEvent(), timeout);
+    }
+
+    public class ConfirmableButtonChoiceInfo extends MenuStateInfo {
+        @Nonnull
+        public List<T> getChoices() {
+            return currentChoices;
+        }
+    }
+
+    public class ChoiceInfo extends ConfirmableButtonChoiceInfo {
+        @Nonnull
+        private final T coice;
+
+        public ChoiceInfo(@Nonnull T coice) {
+            this.coice = coice;
+        }
+
+        @Nonnull
+        public T getCoice() {
+            return coice;
+        }
+    }
+
+    public class ConfirmableButtonChoiceTimeoutEvent extends ConfirmableButtonChoiceInfo {
     }
 
     public static class ChoiceButton<T> {

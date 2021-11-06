@@ -33,9 +33,9 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
     @Nonnull
     private final Button resetButton;
     @Nonnull
-    private final BiFunction<ChoiceInfo, ButtonClickEvent, Message> onChoice;
+    private final BiFunction<ChoiceInfo, ButtonClickEvent, Message> choiceMessageProvider;
     @Nonnull
-    private final BiFunction<ConfirmableButtonChoiceInfo, ButtonClickEvent, Message> onReset;
+    private final BiFunction<ConfirmableButtonChoiceInfo, ButtonClickEvent, Message> resetMessageProvider;
     @Nonnull
     private final BiConsumer<ConfirmableButtonChoiceInfo, ButtonClickEvent> onChoicesConfirmed;
     @Nonnull
@@ -45,7 +45,7 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
     private final List<T> currentChoices;
 
     public ConfirmableButtonChoiceMenu(@Nonnull EventWaiter waiter, long user, long timeout, @Nonnull TimeUnit unit, @Nonnull List<ChoiceButton<T>> choiceButtons, @Nonnull Message start,
-                                       @Nonnull Button confirmButton, @Nonnull Button resetButton, int minChoices, int maxChoices, @Nonnull BiFunction<ChoiceInfo, ButtonClickEvent, Message> onChoice, @Nonnull BiFunction<ConfirmableButtonChoiceInfo, ButtonClickEvent, Message> onReset, @Nonnull BiConsumer<ConfirmableButtonChoiceInfo, ButtonClickEvent> onChoicesConfirmed, @Nonnull BiConsumer<ConfirmableButtonChoiceInfo, ButtonActionMenu.ButtonActionMenuTimeoutEvent> onTimeout) {
+                                       @Nonnull Button confirmButton, @Nonnull Button resetButton, int minChoices, int maxChoices, @Nonnull BiFunction<ChoiceInfo, ButtonClickEvent, Message> choiceMessageProvider, @Nonnull BiFunction<ConfirmableButtonChoiceInfo, ButtonClickEvent, Message> resetMessageProvider, @Nonnull BiConsumer<ConfirmableButtonChoiceInfo, ButtonClickEvent> onChoicesConfirmed, @Nonnull BiConsumer<ConfirmableButtonChoiceInfo, ButtonActionMenu.ButtonActionMenuTimeoutEvent> onTimeout) {
         super(waiter, timeout, unit);
 
         if (minChoices > maxChoices)
@@ -55,8 +55,8 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
         this.maxChoices = maxChoices;
         this.confirmButton = confirmButton;
         this.resetButton = resetButton;
-        this.onChoice = onChoice;
-        this.onReset = onReset;
+        this.choiceMessageProvider = choiceMessageProvider;
+        this.resetMessageProvider = resetMessageProvider;
         this.onChoicesConfirmed = onChoicesConfirmed;
         this.onTimeout = onTimeout;
         currentChoices = new ArrayList<>();
@@ -124,7 +124,7 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
         }
 
         currentChoices.add(choice);
-        Message message = onChoice.apply(new ChoiceInfo(choice), event);
+        Message message = choiceMessageProvider.apply(new ChoiceInfo(choice), event);
 
         List<ActionRow> actionRows = MiscUtil.disabledButtonActionRows(event);
 
@@ -167,7 +167,7 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
     private synchronized ButtonActionMenu.MenuAction onReset(@Nonnull ButtonClickEvent event) {
         currentChoices.clear();
 
-        Message message = onReset.apply(new ConfirmableButtonChoiceInfo(), event);
+        Message message = resetMessageProvider.apply(new ConfirmableButtonChoiceInfo(), event);
 
         List<ActionRow> actionRows = underlying.getInitialActionRows();
 

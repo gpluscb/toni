@@ -29,6 +29,7 @@ public interface ICommandContext<EVENT extends Event, ACTION extends RestAction<
         return reply(new MessageBuilder().setEmbeds(embed).build());
     }
 
+    @Nonnull
     EVENT getEvent();
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")

@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 
 public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
     private static final Logger log = LogManager.getLogger(ConfirmableButtonChoiceMenu.class);
@@ -35,17 +36,17 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
     @Nonnull
     private final BiFunction<ChoiceInfo, ButtonClickEvent, Message> choiceMessageProvider;
     @Nonnull
-    private final BiFunction<ConfirmableButtonChoiceInfo, ButtonClickEvent, Message> resetMessageProvider;
+    private final BiFunction<ResetInfo, ButtonClickEvent, Message> resetMessageProvider;
     @Nonnull
-    private final BiConsumer<ConfirmableButtonChoiceInfo, ButtonClickEvent> onChoicesConfirmed;
+    private final BiConsumer<ConfirmInfo, ButtonClickEvent> onChoicesConfirmed;
     @Nonnull
-    private final BiConsumer<ConfirmableButtonChoiceInfo, ButtonActionMenu.ButtonActionMenuTimeoutEvent> onTimeout;
+    private final Consumer<ConfirmableButtonChoiceTimeoutEvent> onTimeout;
 
     @Nonnull
     private final List<T> currentChoices;
 
     public ConfirmableButtonChoiceMenu(@Nonnull EventWaiter waiter, long user, long timeout, @Nonnull TimeUnit unit, @Nonnull List<ChoiceButton<T>> choiceButtons, @Nonnull Message start,
-                                       @Nonnull Button confirmButton, @Nonnull Button resetButton, int minChoices, int maxChoices, @Nonnull BiFunction<ChoiceInfo, ButtonClickEvent, Message> choiceMessageProvider, @Nonnull BiFunction<ConfirmableButtonChoiceInfo, ButtonClickEvent, Message> resetMessageProvider, @Nonnull BiConsumer<ConfirmableButtonChoiceInfo, ButtonClickEvent> onChoicesConfirmed, @Nonnull BiConsumer<ConfirmableButtonChoiceInfo, ButtonActionMenu.ButtonActionMenuTimeoutEvent> onTimeout) {
+                                       @Nonnull Button confirmButton, @Nonnull Button resetButton, int minChoices, int maxChoices, @Nonnull BiFunction<ChoiceInfo, ButtonClickEvent, Message> choiceMessageProvider, @Nonnull BiFunction<ResetInfo, ButtonClickEvent, Message> resetMessageProvider, @Nonnull BiConsumer<ConfirmInfo, ButtonClickEvent> onChoicesConfirmed, @Nonnull Consumer<ConfirmableButtonChoiceTimeoutEvent> onTimeout) {
         super(waiter, timeout, unit);
 
         if (minChoices > maxChoices)
@@ -158,7 +159,7 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
             return ButtonActionMenu.MenuAction.CONTINUE;
         }
 
-        onChoicesConfirmed.accept(new ConfirmableButtonChoiceInfo(), event);
+        onChoicesConfirmed.accept(new ConfirmInfo(), event);
 
         return ButtonActionMenu.MenuAction.CANCEL;
     }
@@ -167,7 +168,7 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
     private synchronized ButtonActionMenu.MenuAction onReset(@Nonnull ButtonClickEvent event) {
         currentChoices.clear();
 
-        Message message = resetMessageProvider.apply(new ConfirmableButtonChoiceInfo(), event);
+        Message message = resetMessageProvider.apply(new ResetInfo(), event);
 
         List<ActionRow> actionRows = underlying.getInitialActionRows();
 
@@ -179,10 +180,10 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
     }
 
     private synchronized void onTimeout(@Nonnull ButtonActionMenu.ButtonActionMenuTimeoutEvent timeout) {
-        onTimeout.accept(new ConfirmableButtonChoiceTimeoutEvent(), timeout);
+        onTimeout.accept(new ConfirmableButtonChoiceTimeoutEvent(timeout));
     }
 
-    public class ConfirmableButtonChoiceInfo extends MenuStateInfo {
+    private abstract class ConfirmableButtonChoiceInfo extends MenuStateInfo {
         @Nonnull
         public List<T> getChoices() {
             return currentChoices;
@@ -203,7 +204,24 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
         }
     }
 
+    public class ResetInfo extends ConfirmableButtonChoiceInfo {
+    }
+
+    public class ConfirmInfo extends ConfirmableButtonChoiceInfo {
+    }
+
     public class ConfirmableButtonChoiceTimeoutEvent extends ConfirmableButtonChoiceInfo {
+        @Nonnull
+        private final ButtonActionMenu.ButtonActionMenuTimeoutEvent underlyingTimeout;
+
+        public ConfirmableButtonChoiceTimeoutEvent(@Nonnull ButtonActionMenu.ButtonActionMenuTimeoutEvent underlyingTimeout) {
+            this.underlyingTimeout = underlyingTimeout;
+        }
+
+        @Nonnull
+        public ButtonActionMenu.ButtonActionMenuTimeoutEvent getUnderlyingTimeout() {
+            return underlyingTimeout;
+        }
     }
 
     public static class ChoiceButton<T> {

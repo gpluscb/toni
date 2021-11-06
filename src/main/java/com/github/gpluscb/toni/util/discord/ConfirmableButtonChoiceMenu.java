@@ -191,15 +191,15 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
 
     public class ChoiceInfo extends ConfirmableButtonChoiceInfo {
         @Nonnull
-        private final T coice;
+        private final T choice;
 
-        public ChoiceInfo(@Nonnull T coice) {
-            this.coice = coice;
+        public ChoiceInfo(@Nonnull T choice) {
+            this.choice = choice;
         }
 
         @Nonnull
-        public T getCoice() {
-            return coice;
+        public T getChoice() {
+            return choice;
         }
     }
 

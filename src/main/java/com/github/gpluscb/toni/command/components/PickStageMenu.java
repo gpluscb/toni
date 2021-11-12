@@ -1,7 +1,7 @@
 package com.github.gpluscb.toni.command.components;
 
-import com.github.gpluscb.toni.util.discord.ActionMenu;
-import com.github.gpluscb.toni.util.discord.ButtonActionMenu;
+import com.github.gpluscb.toni.util.discord.menu.ActionMenu;
+import com.github.gpluscb.toni.util.discord.menu.ButtonActionMenu;
 import com.github.gpluscb.toni.util.smash.Ruleset;
 import com.github.gpluscb.toni.util.smash.Stage;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;

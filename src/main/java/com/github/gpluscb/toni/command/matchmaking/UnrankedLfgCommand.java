@@ -6,7 +6,7 @@ import com.github.gpluscb.toni.util.Constants;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.PairNonnull;
-import com.github.gpluscb.toni.util.discord.ButtonActionMenu;
+import com.github.gpluscb.toni.util.discord.menu.ButtonActionMenu;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;

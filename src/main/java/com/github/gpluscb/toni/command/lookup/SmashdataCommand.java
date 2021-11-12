@@ -6,7 +6,7 @@ import com.github.gpluscb.toni.util.Constants;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.discord.EmbedUtil;
-import com.github.gpluscb.toni.util.discord.ReactionActionMenu;
+import com.github.gpluscb.toni.util.discord.menu.ReactionActionMenu;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;

@@ -6,7 +6,7 @@ import com.github.gpluscb.toni.command.components.RPSMenu;
 import com.github.gpluscb.toni.command.components.StrikeStagesMenu;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
-import com.github.gpluscb.toni.util.discord.ActionMenu;
+import com.github.gpluscb.toni.util.discord.menu.ActionMenu;
 import com.github.gpluscb.toni.util.smash.Ruleset;
 import com.github.gpluscb.toni.util.smash.Stage;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;

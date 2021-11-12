@@ -1,7 +1,7 @@
 package com.github.gpluscb.toni.command.components;
 
 import com.github.gpluscb.toni.util.MiscUtil;
-import com.github.gpluscb.toni.util.discord.TwoUsersChoicesActionMenu;
+import com.github.gpluscb.toni.util.discord.menu.TwoUsersChoicesActionMenu;
 import com.github.gpluscb.toni.util.smash.Ruleset;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.JDA;

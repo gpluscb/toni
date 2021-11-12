@@ -2,10 +2,10 @@ package com.github.gpluscb.toni.command.components;
 
 import com.github.gpluscb.toni.util.Constants;
 import com.github.gpluscb.toni.util.OneOfTwo;
-import com.github.gpluscb.toni.util.discord.ActionMenu;
+import com.github.gpluscb.toni.util.discord.menu.ActionMenu;
 import com.github.gpluscb.toni.util.discord.ChannelChoiceWaiter;
 import com.github.gpluscb.toni.util.discord.EmbedUtil;
-import com.github.gpluscb.toni.util.discord.TwoUsersChoicesActionMenu;
+import com.github.gpluscb.toni.util.discord.menu.TwoUsersChoicesActionMenu;
 import com.github.gpluscb.toni.util.smash.Character;
 import com.github.gpluscb.toni.util.smash.*;
 import net.dv8tion.jda.api.EmbedBuilder;

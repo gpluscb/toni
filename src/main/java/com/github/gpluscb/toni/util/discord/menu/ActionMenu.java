@@ -1,4 +1,4 @@
-package com.github.gpluscb.toni.util.discord;
+package com.github.gpluscb.toni.util.discord.menu;
 
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.JDA;

@@ -1,4 +1,4 @@
-package com.github.gpluscb.toni.util.discord;
+package com.github.gpluscb.toni.util.discord.menu;
 
 import com.github.gpluscb.toni.util.FailLogger;
 import com.github.gpluscb.toni.util.PairNonnull;

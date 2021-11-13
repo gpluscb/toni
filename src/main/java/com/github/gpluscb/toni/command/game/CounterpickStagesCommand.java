@@ -6,6 +6,8 @@ import com.github.gpluscb.toni.command.components.BanStagesMenu;
 import com.github.gpluscb.toni.command.components.PickStageMenu;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
+import com.github.gpluscb.toni.util.discord.menu.ActionMenu;
+import com.github.gpluscb.toni.util.discord.menu.TwoUsersChoicesActionMenu;
 import com.github.gpluscb.toni.util.smash.Ruleset;
 import com.github.gpluscb.toni.util.smash.Stage;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
@@ -20,6 +22,7 @@ import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import javax.annotation.Nonnull;
 import java.util.List;
 
+@SuppressWarnings("ClassCanBeRecord")
 public class CounterpickStagesCommand implements Command {
     @Nonnull
     private final EventWaiter waiter;
@@ -46,23 +49,12 @@ public class CounterpickStagesCommand implements Command {
 
             MiscUtil.TwoUserArgsErrorType error = result.getU().orElse(null);
             if (error != null) {
-                String reply;
-                switch (error) {
-                    case WRONG_NUMBER_ARGS:
-                        reply = "You must mention two users, and give the ruleset id.";
-                        break;
-                    case NOT_USER_MENTION_ARG:
-                        reply = "Arguments must be user mentions.";
-                        break;
-                    case BOT_USER:
-                        reply = "This command doesn't support bot or webhook users.";
-                        break;
-                    case USER_1_EQUALS_USER_2:
-                        reply = "I can't have someone do a stage ban/counterpick procedure with themselves, what would that even look like?";
-                        break;
-                    default:
-                        throw new IllegalStateException("Non exhaustive switch over error");
-                }
+                String reply = switch (error) {
+                    case WRONG_NUMBER_ARGS -> "You must mention two users, and give the ruleset id.";
+                    case NOT_USER_MENTION_ARG -> "Arguments must be user mentions.";
+                    case BOT_USER -> "This command doesn't support bot or webhook users.";
+                    case USER_1_EQUALS_USER_2 -> "I can't have someone do a stage ban/counterpick procedure with themselves, what would that even look like?";
+                };
 
                 ctx.reply(reply).queue();
                 return;
@@ -119,15 +111,19 @@ public class CounterpickStagesCommand implements Command {
                 .mentionUsers(banningUser, pickingUser)
                 .build();
 
-        BanPickStagesMenu menu = new BanPickStagesMenu.Builder()
-                .setWaiter(waiter)
-                .setUsers(banningUser, pickingUser)
+        BanPickStagesMenu menu = new BanPickStagesMenu(new BanPickStagesMenu.Settings.Builder()
+                .setTwoUsersChoicesActionMenuSettings(new TwoUsersChoicesActionMenu.Settings.Builder()
+                        .setActionMenuSettings(new ActionMenu.Settings.Builder()
+                                .setWaiter(waiter)
+                                .build())
+                        .setUsers(banningUser, pickingUser)
+                        .build())
                 .setRuleset(ruleset)
                 .setPickStageStart(pickStagesStart)
                 .setOnResult(this::onResult)
                 .setOnBanTimeout(this::onBanTimeout)
                 .setOnPickTimeout(this::onPickTimeout)
-                .build();
+                .build());
 
         context
                 .onT(msg -> menu.displayReplying(msg.getMessage()))
@@ -139,7 +135,7 @@ public class CounterpickStagesCommand implements Command {
         if (channel == null) return;
         long messageId = timeout.getMessageId();
 
-        long banningUser = timeout.getBanningUser();
+        long banningUser = timeout.getBanStagesMenuSettings().banningUser();
 
         channel.editMessageById(messageId, String.format("%s, you didn't ban the stages in time.", MiscUtil.mentionUser(banningUser)))
                 .mentionUsers(banningUser)
@@ -152,7 +148,7 @@ public class CounterpickStagesCommand implements Command {
         if (channel == null) return;
         long messageId = timeout.getMessageId();
 
-        long pickingUser = timeout.getPickingUser();
+        long pickingUser = timeout.getPickStageMenuSettings().pickingUser();
 
         channel.editMessageById(messageId, String.format("%s, you didn't pick the stage.", MiscUtil.mentionUser(pickingUser)))
                 .mentionUsers(pickingUser)

@@ -5,6 +5,7 @@ import com.github.gpluscb.toni.command.components.BlindPickMenu;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.discord.ChannelChoiceWaiter;
+import com.github.gpluscb.toni.util.discord.menu.ActionMenu;
 import com.github.gpluscb.toni.util.smash.Character;
 import com.github.gpluscb.toni.util.smash.CharacterTree;
 import net.dv8tion.jda.api.JDA;
@@ -115,16 +116,19 @@ public class BlindPickCommand implements Command {
                 .mentionUsers(userMentionsArray)
                 .build();
 
-        BlindPickMenu menu = new BlindPickMenu.Builder()
+        BlindPickMenu menu = new BlindPickMenu(new BlindPickMenu.Settings.Builder()
+                .setActionMenuSettings(new ActionMenu.Settings.Builder()
+                        .setTimeout(3, TimeUnit.MINUTES)
+                        .setWaiter(waiter.getEventWaiter())
+                        .build())
                 .setChannelWaiter(waiter)
-                .setTimeout(3, TimeUnit.MINUTES)
                 .setUsers(users)
                 .setStart(start)
                 .setCharacters(characters)
                 .setOnResult(result -> onResult(result, jda, channelId, referenceId))
                 .setOnTimeout(timeout -> onTimeout(timeout, jda, channelId, referenceId))
                 .setOnFailedInit(() -> ctx.reply("Some of you fools already have a DM thing going on with me. I can't have you do multiple of those at the same time. That's just too complicated for me!").queue())
-                .build();
+                .build());
 
         context
                 .onT(msg -> menu.displayReplying(msg.getMessage()))
@@ -140,7 +144,7 @@ public class BlindPickCommand implements Command {
             return;
         }
 
-        List<Long> users = result.getUsers();
+        List<Long> users = result.getBlindPickMenuSettings().users();
 
         String choicesString = result.getPicks().stream().map(choice -> {
             Character character = choice.getChoice();
@@ -175,7 +179,7 @@ public class BlindPickCommand implements Command {
                 .map(MiscUtil::mentionUser)
                 .collect(Collectors.joining(", "));
 
-        List<Long> users = timeout.getUsers();
+        List<Long> users = timeout.getBlindPickMenuSettings().users();
 
         MessageAction action = channel.sendMessage(String.format("The three (3) minutes are done." +
                 " Not all of you have given me your characters. Shame on you, %s!", lazyIdiots));
@@ -193,12 +197,11 @@ public class BlindPickCommand implements Command {
         return new CommandInfo.Builder()
                 .setAliases(new String[]{"doubleblind", "doubleblindpick", "blind", "blindpick"})
                 .setShortHelp("Helps you do a (double) blind pick. Usage: `blind <USERS...>`")
-                .setDetailedHelp("`doubleblind <USERS...>`\n" +
-                        "Assists you in doing a [blind pick](https://gist.github.com/gpluscb/559f00e750854b46c0a71827e094ab3e). " +
-                        "After performing the command, everyone who participates in the blind pick will have to DM me. " +
-                        "So you might have to unblock me (but what kind of monster would have me blocked in the first place?).\n" +
-                        "The slash command version supports at most two (2) participants.\n" +
-                        "Aliases: `doubleblind`, `blindpick`, `blind`")
+                .setDetailedHelp("""
+                        `doubleblind <USERS...>`
+                        Assists you in doing a [blind pick](https://gist.github.com/gpluscb/559f00e750854b46c0a71827e094ab3e). After performing the command, everyone who participates in the blind pick will have to DM me. So you might have to unblock me (but what kind of monster would have me blocked in the first place?).
+                        The slash command version supports at most two (2) participants.
+                        Aliases: `doubleblind`, `blindpick`, `blind`""")
                 .setCommandData(new CommandData("doubleblind", "Helps you do a double blind pick")
                         .addOption(OptionType.USER, "player-1", "The first participant in the double blind", true)
                         .addOption(OptionType.USER, "player-2", "The second participant in the double blind. This is yourself by default", false))

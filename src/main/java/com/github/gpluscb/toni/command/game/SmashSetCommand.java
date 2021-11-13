@@ -6,6 +6,8 @@ import com.github.gpluscb.toni.command.CommandInfo;
 import com.github.gpluscb.toni.command.components.SmashSetMenu;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.discord.ChannelChoiceWaiter;
+import com.github.gpluscb.toni.util.discord.menu.ActionMenu;
+import com.github.gpluscb.toni.util.discord.menu.TwoUsersChoicesActionMenu;
 import com.github.gpluscb.toni.util.smash.Character;
 import com.github.gpluscb.toni.util.smash.CharacterTree;
 import com.github.gpluscb.toni.util.smash.Ruleset;
@@ -40,9 +42,14 @@ public class SmashSetCommand implements Command {
         Ruleset ruleset = rulesets.get(0);
         int firstToWhatScore = (3 + 1) / 2;
 
-        SmashSetMenu menu = new SmashSetMenu.Builder()
+        SmashSetMenu menu = new SmashSetMenu(new SmashSetMenu.Settings.Builder()
+                .setTwoUsersChoicesActionMenuSettings(new TwoUsersChoicesActionMenu.Settings.Builder()
+                        .setActionMenuSettings(new ActionMenu.Settings.Builder()
+                                .setWaiter(channelWaiter.getEventWaiter())
+                                .build())
+                        .setUsers(user1, user2)
+                        .build())
                 .setChannelWaiter(channelWaiter)
-                .setUsers(user1, user2)
                 .setCharacters(characters)
                 .setRuleset(ruleset)
                 .setFirstToWhatScore(firstToWhatScore)
@@ -51,7 +58,7 @@ public class SmashSetCommand implements Command {
                 }))
                 .setUsersDisplay("Mrü", "MarRueTest")
                 .setOnResult(this::onResult)
-                .build();
+                .build());
 
         ctx.getContext()
                 .onT(msg -> menu.displayReplying(msg.getMessage()))
@@ -64,9 +71,9 @@ public class SmashSetCommand implements Command {
 
         long winner;
         if (lastGame.getWinner() == SmashSet.Player.PLAYER1) {
-            winner = result.getUser1();
+            winner = result.getTwoUsersChoicesActionMenuSettings().user1();
         } else {
-            winner = result.getUser2();
+            winner = result.getTwoUsersChoicesActionMenuSettings().user2();
         }
 
         event.getHook().sendMessage(String.format("Wowee %s you won the set congrats!!!!!!!!", MiscUtil.mentionUser(winner))).mentionUsers(winner).queue();

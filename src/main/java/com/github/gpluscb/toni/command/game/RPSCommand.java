@@ -4,6 +4,8 @@ import com.github.gpluscb.toni.command.*;
 import com.github.gpluscb.toni.command.components.RPSMenu;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
+import com.github.gpluscb.toni.util.discord.menu.ActionMenu;
+import com.github.gpluscb.toni.util.discord.menu.TwoUsersChoicesActionMenu;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
@@ -18,6 +20,7 @@ import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import javax.annotation.Nonnull;
 import java.util.concurrent.TimeUnit;
 
+@SuppressWarnings("ClassCanBeRecord")
 public class RPSCommand implements Command {
     @Nonnull
     private final EventWaiter waiter;
@@ -38,23 +41,12 @@ public class RPSCommand implements Command {
             OneOfTwo<MiscUtil.OneOrTwoUserArgs, MiscUtil.TwoUserArgsErrorType> argResult = MiscUtil.getTwoUserArgs(msg, false);
             MiscUtil.TwoUserArgsErrorType error = argResult.getU().orElse(null);
             if (error != null) {
-                String reply;
-                switch (error) {
-                    case WRONG_NUMBER_ARGS:
-                        reply = "You must mention either one or two users.";
-                        break;
-                    case NOT_USER_MENTION_ARG:
-                        reply = "Arguments must be user mentions.";
-                        break;
-                    case BOT_USER:
-                        reply = "This command doesn't support bot or webhook users.";
-                        break;
-                    case USER_1_EQUALS_USER_2:
-                        reply = "I can't have someone rps with themselves, what would that even look like?";
-                        break;
-                    default:
-                        throw new IllegalStateException("Non exhaustive switch over error");
-                }
+                String reply = switch (error) {
+                    case WRONG_NUMBER_ARGS -> "You must mention either one or two users.";
+                    case NOT_USER_MENTION_ARG -> "Arguments must be user mentions.";
+                    case BOT_USER -> "This command doesn't support bot or webhook users.";
+                    case USER_1_EQUALS_USER_2 -> "I can't have someone rps with themselves, what would that even look like?";
+                };
 
                 ctx.reply(reply).queue();
             }
@@ -93,14 +85,18 @@ public class RPSCommand implements Command {
                 .mentionUsers(user1, user2)
                 .build();
 
-        RPSMenu menu = new RPSMenu.Builder()
-                .setWaiter(waiter)
-                .setUsers(user1, user2)
+        RPSMenu menu = new RPSMenu(new RPSMenu.Settings.Builder()
+                .setTwoUsersChoicesActionMenuSettings(new TwoUsersChoicesActionMenu.Settings.Builder()
+                        .setActionMenuSettings(new ActionMenu.Settings.Builder()
+                                .setWaiter(waiter)
+                                .setTimeout(3, TimeUnit.MINUTES)
+                                .build())
+                        .setUsers(user1, user2)
+                        .build())
                 .setStart(start)
-                .setTimeout(3, TimeUnit.MINUTES)
                 .setOnTimeout(timeout -> onTimeout(timeout, user1, user2))
                 .setOnResult((result, e) -> onRPSResult(result, e, user1, user2))
-                .build();
+                .build());
 
         context
                 .onT(msg -> menu.displayReplying(msg.getMessage()))
@@ -157,11 +153,10 @@ public class RPSCommand implements Command {
                 .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_HISTORY})
                 .setAliases(new String[]{"rps", "rockpaperscissors"})
                 .setShortHelp("Helps you play rock paper scissors. Usage: `rps [PLAYER 1] <PLAYER 2>`")
-                .setDetailedHelp("`rps [PLAYER 1 (default: message author)] <PLAYER 2>`\n" +
-                        "Helps you play the world famous game of [rock paper scissors](https://en.wikipedia.org/wiki/Rock_paper_scissors). " +
-                        "After performing the command, both participants will have to DM me. " +
-                        "So you might have to unblock me (but what kind of monster would have me blocked in the first place?)\n" +
-                        "Aliases: `rockpaperscissors`, `rps`")
+                .setDetailedHelp("""
+                        `rps [PLAYER 1 (default: message author)] <PLAYER 2>`
+                        Helps you play the world famous game of [rock paper scissors](https://en.wikipedia.org/wiki/Rock_paper_scissors). After performing the command, both participants will have to DM me. So you might have to unblock me (but what kind of monster would have me blocked in the first place?)
+                        Aliases: `rockpaperscissors`, `rps`""")
                 .setCommandData(new CommandData("rps", "Helps you play rock paper scissors")
                         .addOption(OptionType.USER, "player-1", "The first rps player", true)
                         .addOption(OptionType.USER, "player-2", "The second rps player. This is yourself by default", false))

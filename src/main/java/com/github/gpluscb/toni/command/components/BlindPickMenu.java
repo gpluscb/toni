@@ -97,13 +97,13 @@ public class BlindPickMenu extends ActionMenu {
     }
 
     @Nonnull
-    private Settings getBlindPickMenuSettings() {
+    public Settings getBlindPickMenuSettings() {
         return settings;
     }
 
     private abstract class BlindPickMenuStateInfo extends MenuStateInfo {
         @Nonnull
-        private Settings getBlindPickMenuSettings() {
+        public Settings getBlindPickMenuSettings() {
             return BlindPickMenu.this.getBlindPickMenuSettings();
         }
     }

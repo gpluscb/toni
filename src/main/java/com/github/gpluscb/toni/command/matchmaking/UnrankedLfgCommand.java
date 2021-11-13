@@ -6,6 +6,7 @@ import com.github.gpluscb.toni.util.Constants;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.PairNonnull;
+import com.github.gpluscb.toni.util.discord.menu.ActionMenu;
 import com.github.gpluscb.toni.util.discord.menu.ButtonActionMenu;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.MessageBuilder;
@@ -137,15 +138,17 @@ public class UnrankedLfgCommand implements Command {
                 .mentionRoles(roleId).mentionUsers(userId).build();
 
         ButtonHandler handler = new ButtonHandler(guildId, userId, roleId);
-        ButtonActionMenu menu = new ButtonActionMenu.Builder()
-                .setWaiter(waiter)
+        ButtonActionMenu menu = new ButtonActionMenu(new ButtonActionMenu.Settings.Builder()
+                .setActionMenuSettings(new ActionMenu.Settings.Builder()
+                        .setWaiter(waiter)
+                        .setTimeout(duration.getSeconds(), TimeUnit.SECONDS)
+                        .build())
                 .setDeletionButton(null)
                 .registerButton(Button.success("fight", Emoji.fromUnicode(Constants.FENCER)).withLabel("Fight"), handler::fightButton)
                 .registerButton(Button.danger("cancel", Emoji.fromUnicode(Constants.CROSS_MARK)), handler::cancelButton)
                 .setStart(start)
-                .setTimeout(duration.getSeconds(), TimeUnit.SECONDS)
-                .setTimeoutAction(handler::timeout)
-                .build();
+                .setOnTimeout(handler::timeout)
+                .build());
 
         context
                 .onT(msg -> menu.displayReplying(msg.getMessage()))
@@ -159,10 +162,10 @@ public class UnrankedLfgCommand implements Command {
                 .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_HISTORY})
                 .setAliases(new String[]{"unranked", "lfg", "fight", "fite"})
                 .setShortHelp("Pings the matchmaking role and lets you know if someone wants to play for a given duration. Usage: `unranked [DURATION]`")
-                .setDetailedHelp("`lfg [DURATION (default 2h)]`\n" +
-                        "Pings the matchmaking role and asks players to react if they want to play. Notifies you when they react within the given duration." +
-                        " The duration can have the format `Xh Xm Xs`, and it has to be between 10m and 5h.\n" +
-                        "Aliases: `lfg`, `unranked`, `fight`, `fite`")
+                .setDetailedHelp("""
+                        `lfg [DURATION (default 2h)]`
+                        Pings the matchmaking role and asks players to react if they want to play. Notifies you when they react within the given duration. The duration can have the format `Xh Xm Xs`, and it has to be between 10m and 5h.
+                        Aliases: `lfg`, `unranked`, `fight`, `fite`""")
                 .setCommandData(new CommandData("lfg", "Pings matchmaking and lets you know if someone is available to play")
                         .addOption(OptionType.STRING, "duration", "How long you are looking for a game. Default is two hours", false))
                 .build();
@@ -219,15 +222,17 @@ public class UnrankedLfgCommand implements Command {
 
             // TODO: Should we keep that "if you want me to disable" stuff to just the main message?
             DisableButtonHandler handler = new DisableButtonHandler(originalMessageId, challengerId);
-            ButtonActionMenu menu = new ButtonActionMenu.Builder()
-                    .setWaiter(waiter)
+            ButtonActionMenu menu = new ButtonActionMenu(new ButtonActionMenu.Settings.Builder()
+                    .setActionMenuSettings(new ActionMenu.Settings.Builder()
+                            .setWaiter(waiter)
+                            .setTimeout(3, TimeUnit.MINUTES)
+                            .build())
                     .setDeletionButton(null)
                     .registerButton(Button.success("confirm", Constants.CHECK_MARK), handler::confirmButton)
                     .setStart(start)
                     .addUsers(originalAuthorId)
-                    .setTimeout(3, TimeUnit.MINUTES)
-                    .setTimeoutAction(handler::timeout)
-                    .build();
+                    .setOnTimeout(handler::timeout)
+                    .build());
 
             menu.displayReplying(originalChannel, originalMessageId);
 

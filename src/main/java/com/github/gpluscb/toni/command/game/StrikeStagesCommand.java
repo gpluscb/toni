@@ -7,6 +7,7 @@ import com.github.gpluscb.toni.command.components.StrikeStagesMenu;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.discord.menu.ActionMenu;
+import com.github.gpluscb.toni.util.discord.menu.TwoUsersChoicesActionMenu;
 import com.github.gpluscb.toni.util.smash.Ruleset;
 import com.github.gpluscb.toni.util.smash.Stage;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
@@ -23,6 +24,7 @@ import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
+@SuppressWarnings("ClassCanBeRecord")
 public class StrikeStagesCommand implements Command {
     @Nonnull
     private final EventWaiter waiter;
@@ -50,23 +52,12 @@ public class StrikeStagesCommand implements Command {
 
             MiscUtil.TwoUserArgsErrorType error = result.getU().orElse(null);
             if (error != null) {
-                String reply;
-                switch (error) {
-                    case WRONG_NUMBER_ARGS:
-                        reply = "You must mention either one or two users.";
-                        break;
-                    case NOT_USER_MENTION_ARG:
-                        reply = "Arguments must be user mentions.";
-                        break;
-                    case BOT_USER:
-                        reply = "This command doesn't support bot or webhook users.";
-                        break;
-                    case USER_1_EQUALS_USER_2:
-                        reply = "I can't have someone strike with themselves, what would that even look like?";
-                        break;
-                    default:
-                        throw new IllegalStateException("Non exhaustive switch over error");
-                }
+                String reply = switch (error) {
+                    case WRONG_NUMBER_ARGS -> "You must mention either one or two users.";
+                    case NOT_USER_MENTION_ARG -> "Arguments must be user mentions.";
+                    case BOT_USER -> "This command doesn't support bot or webhook users.";
+                    case USER_1_EQUALS_USER_2 -> "I can't have someone strike with themselves, what would that even look like?";
+                };
 
                 ctx.reply(reply).queue();
                 return;
@@ -156,6 +147,11 @@ public class StrikeStagesCommand implements Command {
             ctx.reply(String.format("This ruleset only has one starter weirdly. You're going to ~~Brazil~~ %s.", stage.getDisplayName())).queue();
         }
 
+        TwoUsersChoicesActionMenu.Settings.Builder twoUsersChoicesActionMenuSettingsBuilder = new TwoUsersChoicesActionMenu.Settings.Builder()
+                .setActionMenuSettings(new ActionMenu.Settings.Builder()
+                        .setWaiter(waiter)
+                        .build());
+
         ActionMenu menu;
         if (doRPS) {
             Message start = new MessageBuilder(String.format(
@@ -164,16 +160,17 @@ public class StrikeStagesCommand implements Command {
                     MiscUtil.mentionUser(user2)
             )).mentionUsers(user1, user2).build();
 
-            menu = new RPSAndStrikeStagesMenu.Builder()
-                    .setWaiter(waiter)
+            menu = new RPSAndStrikeStagesMenu(new RPSAndStrikeStagesMenu.Settings.Builder()
+                    .setTwoUsersChoicesActionMenuSettings(twoUsersChoicesActionMenuSettingsBuilder
+                            .setUsers(user1, user2)
+                            .build())
                     .setRuleset(ruleset)
-                    .setUsers(user1, user2)
                     .setStart(start)
                     .setOnStrikeResult(this::onStrikeResult)
                     .setOnRPSTimeout(this::onRPSTimeout)
                     .setOnStrikeFirstTimeout(this::onStrikeFirstChoiceTimeout)
                     .setOnStrikeTimeout(this::onStrikeTimeout)
-                    .build();
+                    .build());
         } else {
             if (ThreadLocalRandom.current().nextBoolean()) {
                 // Randomly swap
@@ -182,13 +179,14 @@ public class StrikeStagesCommand implements Command {
                 user2 = tmp;
             }
 
-            menu = new StrikeStagesMenu.Builder()
-                    .setWaiter(waiter)
+            menu = new StrikeStagesMenu(new StrikeStagesMenu.Settings.Builder()
+                    .setTwoUsersChoicesActionMenuSettings(twoUsersChoicesActionMenuSettingsBuilder
+                            .setUsers(user1, user2)
+                            .build())
                     .setRuleset(ruleset)
-                    .setUsers(user1, user2)
                     .setOnResult(this::onStrikeResult)
                     .setOnTimeout(this::onStrikeTimeout)
-                    .build();
+                    .build());
         }
 
         context
@@ -201,8 +199,8 @@ public class StrikeStagesCommand implements Command {
         if (channel == null) return;
         long messageId = timeout.getMessageId();
 
-        long user1 = timeout.getUser1();
-        long user2 = timeout.getUser2();
+        long user1 = timeout.getTwoUsersChoicesActionMenuSettings().user1();
+        long user2 = timeout.getTwoUsersChoicesActionMenuSettings().user2();
 
         RPSMenu.RPS choice1 = timeout.getChoiceA();
         RPSMenu.RPS choice2 = timeout.getChoiceB();
@@ -262,11 +260,11 @@ public class StrikeStagesCommand implements Command {
                 .setAliases(new String[]{"strike", "strikestarters", "strikestages"})
                 .setShortHelp("Helps you do the stage striking procedure with a specific ruleset. Usage: `strike [PLAYER 1] <PLAYER 2> [RULESET ID] [DO RPS]`")
                 // TODO If we get passed ctx here, we can actually name the server default ruleset
-                .setDetailedHelp("`strike [PLAYER 1] <PLAYER 2> [RULESET ID (default: server default ruleset)] [DO RPS (true|false(default))]`\n" +
-                        "Helps you perform the [stage striking procedure](https://www.ssbwiki.com/Stage_striking) for a given ruleset. " +
-                        "Depending on the `DO RPS` argument, you'll play a game of RPS first to determine who gets to strike first.\n" +
-                        "For a list of rulesets and their IDs, use the `rulesets` command.\n" +
-                        "Aliases: `strike`, `strikestarters`, `strikestages`")
+                .setDetailedHelp("""
+                        `strike [PLAYER 1] <PLAYER 2> [RULESET ID (default: server default ruleset)] [DO RPS (true|false(default))]`
+                        Helps you perform the [stage striking procedure](https://www.ssbwiki.com/Stage_striking) for a given ruleset. Depending on the `DO RPS` argument, you'll play a game of RPS first to determine who gets to strike first.
+                        For a list of rulesets and their IDs, use the `rulesets` command.
+                        Aliases: `strike`, `strikestarters`, `strikestages`""")
                 .setCommandData(new CommandData("strikestarters", "Helps you perform the stage striking procedure")
                         .addOption(OptionType.USER, "striker-1", "One participant in the striking procedure", true)
                         .addOption(OptionType.USER, "striker-2", "The other participant in the striking procedure. This is yourself by default", false)

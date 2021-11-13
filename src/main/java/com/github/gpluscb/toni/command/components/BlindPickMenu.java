@@ -18,6 +18,7 @@ import org.apache.logging.log4j.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -165,8 +166,20 @@ public class BlindPickMenu extends ActionMenu {
             private Runnable onFailedInit = DEFAULT_ON_FAILED_INIT;
 
             @Nonnull
+            public Builder setActionMenuSettings(@Nullable ActionMenu.Settings actionMenuSettings) {
+                this.actionMenuSettings = actionMenuSettings;
+                return this;
+            }
+
+            @Nonnull
             public Builder setChannelWaiter(@Nonnull ChannelChoiceWaiter channelWaiter) {
                 this.channelWaiter = channelWaiter;
+                return this;
+            }
+
+            @Nonnull
+            public Builder addUsers(@Nonnull long... users) {
+                Arrays.stream(users).forEach(this.users::add);
                 return this;
             }
 

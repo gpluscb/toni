@@ -301,6 +301,12 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
             private Consumer<ReportGameTimeoutEvent> onTimeout = DEFAULT_ON_TIMEOUT;
 
             @Nonnull
+            public Builder setTwoUsersChoicesActionMenuSettings(@Nullable TwoUsersChoicesActionMenu.Settings twoUsersChoicesActionMenuSettings) {
+                this.twoUsersChoicesActionMenuSettings = twoUsersChoicesActionMenuSettings;
+                return this;
+            }
+
+            @Nonnull
             public Builder setUsersDisplay(@Nonnull String user1Display, @Nonnull String user2Display) {
                 this.user1Display = user1Display;
                 this.user2Display = user2Display;

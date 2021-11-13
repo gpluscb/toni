@@ -336,6 +336,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
             @Nonnull
             private Consumer<StrikeStagesTimeoutEvent> onTimeout = DEFAULT_ON_TIMEOUT;
 
+            @Nonnull
             public Builder setTwoUsersChoicesActionMenuSettings(@Nullable TwoUsersChoicesActionMenu.Settings twoUsersChoicesActionMenuSettings) {
                 this.twoUsersChoicesActionMenuSettings = twoUsersChoicesActionMenuSettings;
                 return this;

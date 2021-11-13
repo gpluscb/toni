@@ -74,7 +74,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-// TODO: Update to java 14
 public class Bot {
     private static final Logger log = LogManager.getLogger(Bot.class);
 

@@ -59,6 +59,7 @@ public class CommandContext<T extends RestAction<?> & AllowedMentions<T>> implem
         return (T) context.map(ctx -> ctx.reply(message), ctx -> ctx.reply(message));
     }
 
+    @Nonnull
     @Override
     public Event getEvent() {
         return context.map(MessageCommandContext::getEvent, SlashCommandContext::getEvent);

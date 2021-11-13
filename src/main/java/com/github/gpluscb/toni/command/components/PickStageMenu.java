@@ -1,10 +1,10 @@
 package com.github.gpluscb.toni.command.components;
 
+import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.discord.menu.ActionMenu;
 import com.github.gpluscb.toni.util.discord.menu.ButtonActionMenu;
 import com.github.gpluscb.toni.util.smash.Ruleset;
 import com.github.gpluscb.toni.util.smash.Stage;
-import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
@@ -20,7 +20,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -29,44 +28,32 @@ import static net.dv8tion.jda.api.interactions.components.Button.LABEL_MAX_LENGT
 public class PickStageMenu extends ActionMenu {
     private static final Logger log = LogManager.getLogger(PickStageMenu.class);
 
-    private final long pickingUser;
     @Nonnull
-    private final Ruleset ruleset;
-    @Nonnull
-    private final List<Integer> bannedStageIds;
-    @Nonnull
-    private final BiConsumer<PickStageResult, ButtonClickEvent> onResult;
-    @Nonnull
-    private final Consumer<PickStageTimeoutEvent> onTimeout;
+    private final Settings settings;
+
     @Nonnull
     private final ButtonActionMenu underlying;
 
-    public PickStageMenu(@Nonnull EventWaiter waiter, long pickingUser, long timeout, @Nonnull TimeUnit unit, @Nonnull Ruleset ruleset, @Nonnull List<Integer> bannedStageIds, @Nonnull BiConsumer<PickStageResult, ButtonClickEvent> onResult, @Nonnull Message start, @Nonnull Consumer<PickStageTimeoutEvent> onTimeout) {
-        super(waiter, timeout, unit);
+    public PickStageMenu(@Nonnull Settings settings) {
+        super(settings.actionMenuSettings());
+        this.settings = settings;
 
-        this.pickingUser = pickingUser;
-        this.ruleset = ruleset;
-        this.bannedStageIds = bannedStageIds;
-        this.onResult = onResult;
-        this.onTimeout = onTimeout;
-
-        ButtonActionMenu.Builder underlyingBuilder = new ButtonActionMenu.Builder()
-                .setWaiter(waiter)
-                .setStart(start)
-                .addUsers(pickingUser)
+        ButtonActionMenu.Settings.Builder underlyingBuilder = new ButtonActionMenu.Settings.Builder()
+                .setActionMenuSettings(getActionMenuSettings())
+                .setStart(settings.start())
+                .addUsers(settings.pickingUser())
                 .setDeletionButton(null)
-                .setTimeout(timeout, unit)
-                .setTimeoutAction(this::onTimeout);
+                .setOnTimeout(this::onTimeout);
 
-        ruleset.getStagesStream().forEach(stage -> {
+        settings.ruleset().getStagesStream().forEach(stage -> {
             int id = stage.getStageId();
             Button stageButton = Button.secondary(String.valueOf(id), StringUtils.abbreviate(stage.getName(), LABEL_MAX_LENGTH))
-                    .withDisabled(bannedStageIds.contains(id));
+                    .withDisabled(settings.bannedStageIds().contains(id));
 
             underlyingBuilder.registerButton(stageButton, e -> onPick(id, e));
         });
 
-        underlying = underlyingBuilder.build();
+        underlying = new ButtonActionMenu(underlyingBuilder.build());
     }
 
     @Override
@@ -96,19 +83,19 @@ public class PickStageMenu extends ActionMenu {
 
     @Nonnull
     private synchronized ButtonActionMenu.MenuAction onPick(int stageId, @Nonnull ButtonClickEvent e) {
-        if (bannedStageIds.contains(stageId)) {
+        if (settings.bannedStageIds().contains(stageId)) {
             log.error("Banned stage was picked: {}", stageId);
             e.reply("This stage cannot be picked.").setEphemeral(true).queue();
             return ButtonActionMenu.MenuAction.CONTINUE;
         }
 
-        onResult.accept(new PickStageResult(stageId), e);
+        settings.onResult().accept(new PickStageResult(stageId), e);
 
         return ButtonActionMenu.MenuAction.CANCEL;
     }
 
     private synchronized void onTimeout(@Nonnull ButtonActionMenu.ButtonActionMenuTimeoutEvent event) {
-        onTimeout.accept(new PickStageTimeoutEvent());
+        settings.onTimeout().accept(new PickStageTimeoutEvent());
     }
 
     @Nonnull
@@ -127,19 +114,15 @@ public class PickStageMenu extends ActionMenu {
         return underlying.getChannelId();
     }
 
+    @Nonnull
+    public Settings getPickStageMenuSettings() {
+        return settings;
+    }
+
     private abstract class PickStageInfo extends MenuStateInfo {
-        public long getPickingUser() {
-            return pickingUser;
-        }
-
         @Nonnull
-        public Ruleset getRuleset() {
-            return ruleset;
-        }
-
-        @Nonnull
-        public List<Integer> getBannedStageIds() {
-            return bannedStageIds;
+        public Settings getPickStageMenuSettings() {
+            return PickStageMenu.this.getPickStageMenuSettings();
         }
     }
 
@@ -158,7 +141,7 @@ public class PickStageMenu extends ActionMenu {
         public Stage getPickedStage() {
             // Picked stage should exist
             //noinspection OptionalGetWithoutIsPresent
-            return ruleset.getStagesStream()
+            return settings.ruleset().getStagesStream()
                     .filter(stage -> stage.getStageId() == pickedStageId)
                     .findAny()
                     .get();
@@ -168,108 +151,81 @@ public class PickStageMenu extends ActionMenu {
     public class PickStageTimeoutEvent extends PickStageInfo {
     }
 
-    public static class Builder extends ActionMenu.Builder<Builder, PickStageMenu> {
-        @Nullable
-        private Long pickingUser;
-        @Nullable
-        private Ruleset ruleset;
-        @Nullable
-        private Message start;
+    public record Settings(@Nonnull ActionMenu.Settings actionMenuSettings, long pickingUser, @Nonnull Ruleset ruleset,
+                           @Nonnull List<Integer> bannedStageIds,
+                           @Nonnull BiConsumer<PickStageResult, ButtonClickEvent> onResult, @Nonnull Message start,
+                           @Nonnull Consumer<PickStageTimeoutEvent> onTimeout) {
         @Nonnull
-        private List<Integer> bannedStageIds;
+        public static final BiConsumer<PickStageResult, ButtonClickEvent> DEFAULT_ON_RESULT = MiscUtil.emptyBiConsumer();
         @Nonnull
-        private BiConsumer<PickStageResult, ButtonClickEvent> onResult;
-        @Nonnull
-        private Consumer<PickStageTimeoutEvent> onTimeout;
+        public static final Consumer<PickStageTimeoutEvent> DEFAULT_ON_TIMEOUT = MiscUtil.emptyConsumer();
 
-        public Builder() {
-            super(Builder.class);
+        public static class Builder {
+            @Nullable
+            private ActionMenu.Settings actionMenuSettings;
+            @Nullable
+            private Long pickingUser;
+            @Nullable
+            private Ruleset ruleset;
+            @Nullable
+            private Message start;
+            @Nonnull
+            private List<Integer> bannedStageIds = new ArrayList<>();
+            @Nonnull
+            private BiConsumer<PickStageResult, ButtonClickEvent> onResult = DEFAULT_ON_RESULT;
+            @Nonnull
+            private Consumer<PickStageTimeoutEvent> onTimeout = DEFAULT_ON_TIMEOUT;
 
-            bannedStageIds = new ArrayList<>();
-            onResult = (result, e) -> {
-            };
-            onTimeout = timeout -> {
-            };
-        }
+            public Builder setActionMenuSettings(@Nullable ActionMenu.Settings actionMenuSettings) {
+                this.actionMenuSettings = actionMenuSettings;
+                return this;
+            }
 
-        @Nonnull
-        public Builder setPickingUser(long pickingUser) {
-            this.pickingUser = pickingUser;
-            return this;
-        }
+            @Nonnull
+            public Builder setPickingUser(long pickingUser) {
+                this.pickingUser = pickingUser;
+                return this;
+            }
 
-        @Nonnull
-        public Builder setRuleset(@Nonnull Ruleset ruleset) {
-            this.ruleset = ruleset;
-            return this;
-        }
+            @Nonnull
+            public Builder setRuleset(@Nonnull Ruleset ruleset) {
+                this.ruleset = ruleset;
+                return this;
+            }
 
-        @Nonnull
-        public Builder setStart(@Nonnull Message start) {
-            this.start = start;
-            return this;
-        }
+            @Nonnull
+            public Builder setStart(@Nonnull Message start) {
+                this.start = start;
+                return this;
+            }
 
-        @Nonnull
-        public Builder setBannedStageIds(@Nonnull List<Integer> bannedStageIds) {
-            this.bannedStageIds = bannedStageIds;
-            return this;
-        }
+            @Nonnull
+            public Builder setBannedStageIds(@Nonnull List<Integer> bannedStageIds) {
+                this.bannedStageIds = bannedStageIds;
+                return this;
+            }
 
-        @Nonnull
-        public Builder setOnResult(@Nonnull BiConsumer<PickStageResult, ButtonClickEvent> onResult) {
-            this.onResult = onResult;
-            return this;
-        }
+            @Nonnull
+            public Builder setOnResult(@Nonnull BiConsumer<PickStageResult, ButtonClickEvent> onResult) {
+                this.onResult = onResult;
+                return this;
+            }
 
-        @Nonnull
-        public Builder setOnTimeout(@Nonnull Consumer<PickStageTimeoutEvent> onTimeout) {
-            this.onTimeout = onTimeout;
-            return this;
-        }
+            @Nonnull
+            public Builder setOnTimeout(@Nonnull Consumer<PickStageTimeoutEvent> onTimeout) {
+                this.onTimeout = onTimeout;
+                return this;
+            }
 
-        @Nullable
-        public Long getPickingUser() {
-            return pickingUser;
-        }
+            @Nonnull
+            public Settings build() {
+                if (actionMenuSettings == null) throw new IllegalStateException("ActionMenuSettings must be set");
+                if (pickingUser == null) throw new IllegalStateException("PickingUser must be set");
+                if (ruleset == null) throw new IllegalStateException("Ruleset must be set");
+                if (start == null) throw new IllegalStateException("Start must be set");
 
-        @Nullable
-        public Ruleset getRuleset() {
-            return ruleset;
-        }
-
-        @Nullable
-        public Message getStart() {
-            return start;
-        }
-
-        @Nonnull
-        public List<Integer> getBannedStageIds() {
-            return bannedStageIds;
-        }
-
-        @Nonnull
-        public BiConsumer<PickStageResult, ButtonClickEvent> getOnResult() {
-            return onResult;
-        }
-
-        @Nonnull
-        public Consumer<PickStageTimeoutEvent> getOnTimeout() {
-            return onTimeout;
-        }
-
-        @Nonnull
-        @Override
-        public PickStageMenu build() {
-            preBuild();
-
-            if (pickingUser == null) throw new IllegalStateException("PickingUser must be set");
-            if (ruleset == null) throw new IllegalStateException("Ruleset must be set");
-            if (start == null) throw new IllegalStateException("Start must be set");
-
-            // We know nonnullability because preBuild
-            //noinspection ConstantConditions
-            return new PickStageMenu(getWaiter(), pickingUser, getTimeout(), getUnit(), ruleset, bannedStageIds, onResult, start, onTimeout);
+                return new Settings(actionMenuSettings, pickingUser, ruleset, bannedStageIds, onResult, start, onTimeout);
+            }
         }
     }
 }

@@ -20,6 +20,8 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -42,6 +44,18 @@ public class MiscUtil {
             log.catching(e);
             return null;
         }
+    }
+
+    @Nonnull
+    public static <T> Consumer<T> emptyConsumer() {
+        return t -> {
+        };
+    }
+
+    @Nonnull
+    public static <T, U> BiConsumer<T, U> emptyBiConsumer() {
+        return (t, u) -> {
+        };
     }
 
     public enum TwoUserArgsErrorType {

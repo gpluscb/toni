@@ -1,9 +1,9 @@
 package com.github.gpluscb.toni.command.components;
 
 import com.github.gpluscb.toni.util.Constants;
+import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.discord.menu.ButtonActionMenu;
 import com.github.gpluscb.toni.util.discord.menu.TwoUsersChoicesActionMenu;
-import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Emoji;
@@ -19,17 +19,13 @@ import net.dv8tion.jda.api.requests.ErrorResponse;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class RPSMenu extends TwoUsersChoicesActionMenu {
     @Nonnull
-    private final BiConsumer<RPS, ButtonClickEvent> onChoiceMade;
-    @Nonnull
-    private final BiConsumer<RPSResult, ButtonClickEvent> onResult;
-    @Nonnull
-    private final Consumer<RPSTimeoutEvent> onTimeout;
+    private final Settings settings;
+
     @Nonnull
     private final ButtonActionMenu underlying;
 
@@ -38,24 +34,20 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
     @Nullable
     private RPS choice2;
 
-    public RPSMenu(@Nonnull EventWaiter waiter, long user1, long user2, long timeout, @Nonnull TimeUnit unit, @Nonnull BiConsumer<RPS, ButtonClickEvent> onChoiceMade, @Nonnull BiConsumer<RPSResult, ButtonClickEvent> onResult, @Nonnull Message start, @Nonnull Consumer<RPSTimeoutEvent> onTimeout) {
-        super(waiter, user1, user2, timeout, unit);
+    public RPSMenu(@Nonnull Settings settings) {
+        super(settings.twoUsersChoicesActionMenuSettings());
+        this.settings = settings;
 
-        this.onChoiceMade = onChoiceMade;
-        this.onResult = onResult;
-        this.onTimeout = onTimeout;
-
-        underlying = new ButtonActionMenu.Builder()
-                .setWaiter(waiter)
-                .addUsers(user1, user2)
-                .setStart(start)
+        underlying = new ButtonActionMenu(new ButtonActionMenu.Settings.Builder()
+                .setActionMenuSettings(getActionMenuSettings())
+                .addUsers(getTwoUsersChoicesActionMenuSettings().user1(), getTwoUsersChoicesActionMenuSettings().user2())
+                .setStart(settings.start())
                 .setDeletionButton(null)
                 .registerButton(Button.secondary("rock", Emoji.fromUnicode(Constants.ROCK)), e -> choose(e, RPS.ROCK))
                 .registerButton(Button.secondary("paper", Emoji.fromUnicode(Constants.PAPER)), e -> choose(e, RPS.PAPER))
                 .registerButton(Button.secondary("scissors", Emoji.fromUnicode(Constants.SCISSORS)), e -> choose(e, RPS.SCISSORS))
-                .setTimeout(timeout, unit)
-                .setTimeoutAction(this::onTimeout)
-                .build();
+                .setOnTimeout(this::onTimeout)
+                .build());
     }
 
     @Override
@@ -85,21 +77,21 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
 
     @Nonnull
     private synchronized ButtonActionMenu.MenuAction choose(@Nonnull ButtonClickEvent e, @Nonnull RPS choice) {
-        boolean isUser1 = e.getUser().getIdLong() == getUser1();
+        boolean isUser1 = e.getUser().getIdLong() == getTwoUsersChoicesActionMenuSettings().user1();
         if ((isUser1 && choice1 != null) || (!isUser1 && choice2 != null)) {
             e.reply("You have already chosen, and you must learn to live with that choice!")
                     .setEphemeral(true).queue();
             return ButtonActionMenu.MenuAction.CONTINUE;
         }
 
-        onChoiceMade.accept(choice, e);
+        settings.onChoiceMade().accept(choice, e);
 
         if (isUser1) choice1 = choice;
         else choice2 = choice;
 
         if (choice1 != null && choice2 != null) {
             RPSResult outcome = determineWinner();
-            onResult.accept(outcome, e);
+            settings.onResult().accept(outcome, e);
 
             return ButtonActionMenu.MenuAction.CANCEL;
         }
@@ -112,28 +104,20 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
     @Nonnull
     private synchronized RPSResult determineWinner() {
         if (choice1 == choice2) return new RPSResult(Winner.Tie);
-        Winner winner;
+
         // At this point choice1 and choice2 will be nonnull
         //noinspection ConstantConditions
-        switch (choice1) {
-            case ROCK:
-                winner = choice2 == RPS.PAPER ? Winner.B : Winner.A;
-                break;
-            case PAPER:
-                winner = choice2 == RPS.SCISSORS ? Winner.B : Winner.A;
-                break;
-            case SCISSORS:
-                winner = choice2 == RPS.ROCK ? Winner.B : Winner.A;
-                break;
-            default:
-                throw new IllegalStateException("Not all RPS options covered");
-        }
+        Winner winner = switch (choice1) {
+            case ROCK -> choice2 == RPS.PAPER ? Winner.B : Winner.A;
+            case PAPER -> choice2 == RPS.SCISSORS ? Winner.B : Winner.A;
+            case SCISSORS -> choice2 == RPS.ROCK ? Winner.B : Winner.A;
+        };
 
         return new RPSResult(winner);
     }
 
     private synchronized void onTimeout(@Nonnull ButtonActionMenu.ButtonActionMenuTimeoutEvent event) {
-        onTimeout.accept(new RPSTimeoutEvent(choice1, choice2));
+        settings.onTimeout().accept(new RPSTimeoutEvent(choice1, choice2));
     }
 
     @Nonnull
@@ -159,16 +143,11 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
 
         @Nonnull
         public String getDisplayName() {
-            switch (this) {
-                case ROCK:
-                    return Constants.ROCK + "(rock)";
-                case PAPER:
-                    return Constants.PAPER + "(paper)";
-                case SCISSORS:
-                    return Constants.SCISSORS + "(scissors)";
-                default:
-                    throw new IllegalStateException("Enum switch failed");
-            }
+            return switch (this) {
+                case ROCK -> Constants.ROCK + "(rock)";
+                case PAPER -> Constants.PAPER + "(paper)";
+                case SCISSORS -> Constants.SCISSORS + "(scissors)";
+            };
         }
     }
 
@@ -205,30 +184,20 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
 
         @Nullable
         public Long getWinnerId() {
-            switch (winner) {
-                case A:
-                    return getUser1();
-                case B:
-                    return getUser2();
-                case Tie:
-                    return null;
-                default:
-                    throw new IllegalStateException("Non-exhaustive switch");
-            }
+            return switch (winner) {
+                case A -> getTwoUsersChoicesActionMenuSettings().user1();
+                case B -> getTwoUsersChoicesActionMenuSettings().user2();
+                case Tie -> null;
+            };
         }
 
         @Nullable
         public Long getLoserId() {
-            switch (winner) {
-                case A:
-                    return getUser2();
-                case B:
-                    return getUser1();
-                case Tie:
-                    return null;
-                default:
-                    throw new IllegalStateException("Non-exhaustive switch");
-            }
+            return switch (winner) {
+                case A -> getTwoUsersChoicesActionMenuSettings().user2();
+                case B -> getTwoUsersChoicesActionMenuSettings().user1();
+                case Tie -> null;
+            };
         }
 
         @Override
@@ -270,97 +239,79 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
         }
     }
 
-    public static class Builder extends TwoUsersChoicesActionMenu.Builder<Builder, RPSMenu> {
-        @Nullable
-        private Message start;
+    public record Settings(@Nonnull TwoUsersChoicesActionMenu.Settings twoUsersChoicesActionMenuSettings,
+                           @Nonnull BiConsumer<RPS, ButtonClickEvent> onChoiceMade,
+                           @Nonnull BiConsumer<RPSResult, ButtonClickEvent> onResult, @Nonnull Message start,
+                           @Nonnull Consumer<RPSTimeoutEvent> onTimeout) {
         @Nonnull
-        private BiConsumer<RPS, ButtonClickEvent> onChoiceMade;
+        public static final BiConsumer<RPS, ButtonClickEvent> DEFAULT_ON_CHOICE_MADE = MiscUtil.emptyBiConsumer();
         @Nonnull
-        private BiConsumer<RPSResult, ButtonClickEvent> onResult;
+        public static final BiConsumer<RPSResult, ButtonClickEvent> DEFAULT_ON_RESULT = MiscUtil.emptyBiConsumer();
         @Nonnull
-        private Consumer<RPSTimeoutEvent> onTimeout;
+        public static final Consumer<RPSTimeoutEvent> DEFAULT_ON_TIMEOUT = event -> {
+            MessageChannel channel = event.getChannel();
+            long id = event.getMessageId();
+            if (channel == null) return;
+            if (channel instanceof TextChannel textChannel) {
+                if (!textChannel.getGuild().getSelfMember().hasPermission(textChannel, Permission.MESSAGE_HISTORY))
+                    return;
+            }
 
-        public Builder() {
-            super(Builder.class);
+            channel.retrieveMessageById(id)
+                    .flatMap(m -> m.editMessage(m).setActionRows())
+                    .queue(null, new ErrorHandler().ignore(ErrorResponse.UNKNOWN_MESSAGE));
+        };
+        ;
 
-            onChoiceMade = (rps, e) -> {
-            };
-            onResult = (r, e) -> {
-            };
-            onTimeout = event -> {
-                MessageChannel channel = event.getChannel();
-                long id = event.getMessageId();
-                if (channel == null) return;
-                if (channel instanceof TextChannel) {
-                    TextChannel textChannel = (TextChannel) channel;
-                    if (!textChannel.getGuild().getSelfMember().hasPermission(textChannel, Permission.MESSAGE_HISTORY))
-                        return;
-                }
+        public static class Builder {
+            @Nullable
+            private TwoUsersChoicesActionMenu.Settings twoUsersChoicesActionMenuSettings;
+            @Nullable
+            private Message start;
+            @Nonnull
+            private BiConsumer<RPS, ButtonClickEvent> onChoiceMade = DEFAULT_ON_CHOICE_MADE;
+            @Nonnull
+            private BiConsumer<RPSResult, ButtonClickEvent> onResult = DEFAULT_ON_RESULT;
+            @Nonnull
+            private Consumer<RPSTimeoutEvent> onTimeout = DEFAULT_ON_TIMEOUT;
 
-                channel.retrieveMessageById(id)
-                        .flatMap(m -> m.editMessage(m).setActionRows())
-                        .queue(null, new ErrorHandler().ignore(ErrorResponse.UNKNOWN_MESSAGE));
-            };
-        }
+            public Builder setTwoUsersChoicesActionMenuSettings(@Nonnull TwoUsersChoicesActionMenu.Settings twoUsersChoicesActionMenuSettings) {
+                this.twoUsersChoicesActionMenuSettings = twoUsersChoicesActionMenuSettings;
+                return this;
+            }
 
-        @Nonnull
-        public Builder setStart(@Nonnull Message start) {
-            this.start = start;
-            return this;
-        }
+            @Nonnull
+            public Builder setStart(@Nonnull Message start) {
+                this.start = start;
+                return this;
+            }
 
-        @Nonnull
-        public Builder setOnChoiceMade(@Nonnull BiConsumer<RPS, ButtonClickEvent> onChoiceMade) {
-            this.onChoiceMade = onChoiceMade;
-            return this;
-        }
+            @Nonnull
+            public Builder setOnChoiceMade(@Nonnull BiConsumer<RPS, ButtonClickEvent> onChoiceMade) {
+                this.onChoiceMade = onChoiceMade;
+                return this;
+            }
 
-        @Nonnull
-        public Builder setOnResult(@Nonnull BiConsumer<RPSResult, ButtonClickEvent> onResult) {
-            this.onResult = onResult;
-            return this;
-        }
+            @Nonnull
+            public Builder setOnResult(@Nonnull BiConsumer<RPSResult, ButtonClickEvent> onResult) {
+                this.onResult = onResult;
+                return this;
+            }
 
-        /**
-         * MessageChannel may be null on timeout in weird cases
-         * <p>
-         * Default: look at source lol it's too long for docs: {@link #build()}
-         */
-        @Nonnull
-        public RPSMenu.Builder setOnTimeout(@Nonnull Consumer<RPSTimeoutEvent> onTimeout) {
-            this.onTimeout = onTimeout;
-            return this;
-        }
+            @Nonnull
+            public Builder setOnTimeout(@Nonnull Consumer<RPSTimeoutEvent> onTimeout) {
+                this.onTimeout = onTimeout;
+                return this;
+            }
 
-        @Nullable
-        public Message getStart() {
-            return start;
-        }
+            @Nonnull
+            public synchronized Settings build() {
+                if (twoUsersChoicesActionMenuSettings == null)
+                    throw new IllegalStateException("TwoUsersChoicesActionMEnuSettings must be set");
+                if (start == null) throw new IllegalStateException("Start must be set");
 
-        @Nonnull
-        public BiConsumer<RPS, ButtonClickEvent> getOnChoiceMade() {
-            return onChoiceMade;
-        }
-
-        @Nonnull
-        public BiConsumer<RPSResult, ButtonClickEvent> getOnResult() {
-            return onResult;
-        }
-
-        @Nonnull
-        public Consumer<RPSTimeoutEvent> getOnTimeout() {
-            return onTimeout;
-        }
-
-        @Nonnull
-        @Override
-        public synchronized RPSMenu build() {
-            preBuild();
-            if (start == null) throw new IllegalStateException("Start must be set");
-
-            // We know because preBuild waiter, user1, user2 and start aren't null
-            //noinspection ConstantConditions
-            return new RPSMenu(getWaiter(), getUser1(), getUser2(), getTimeout(), getUnit(), onChoiceMade, onResult, start, onTimeout);
+                return new Settings(twoUsersChoicesActionMenuSettings, onChoiceMade, onResult, start, onTimeout);
+            }
         }
     }
 }

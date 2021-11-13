@@ -3,7 +3,6 @@ package com.github.gpluscb.toni.util.discord.menu;
 import com.github.gpluscb.toni.util.Constants;
 import com.github.gpluscb.toni.util.FailLogger;
 import com.github.gpluscb.toni.util.MiscUtil;
-import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
@@ -22,7 +21,6 @@ import net.dv8tion.jda.api.requests.restaction.MessageAction;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -33,27 +31,24 @@ import java.util.stream.Stream;
  */
 public class ButtonActionMenu extends ActionMenu {
     @Nonnull
-    private final Set<Long> users;
+    private final Settings settings;
 
     @Nonnull
     private final List<ActionRow> initialActionRows;
     @Nonnull
     private final Map<String, Function<ButtonClickEvent, MenuAction>> buttonActions;
-    @Nonnull
-    private final Message start;
-    @Nullable
-    private final Button deletionButton;
-    @Nonnull
-    private final Consumer<ButtonActionMenuTimeoutEvent> timeoutAction;
 
-    public ButtonActionMenu(@Nonnull EventWaiter waiter, @Nonnull Set<Long> users, long timeout, @Nonnull TimeUnit unit, @Nonnull List<RegisteredButton> buttons, @Nonnull Message start, @Nullable Button deletionButton, @Nonnull Consumer<ButtonActionMenuTimeoutEvent> timeoutAction) {
-        super(waiter, timeout, unit);
-        this.users = users;
+    public ButtonActionMenu(@Nonnull Settings settings) {
+        super(settings.settings());
 
+        this.settings = settings;
+
+        List<RegisteredButton> buttons = settings.buttons();
         Stream<Button> buttonsStream = buttons.stream()
-                .filter(RegisteredButton::isDisplayInitially)
-                .map(RegisteredButton::getButton);
+                .filter(RegisteredButton::displayInitially)
+                .map(RegisteredButton::button);
 
+        Button deletionButton = settings.deletionButton();
         if (deletionButton != null) buttonsStream = Stream.concat(buttonsStream, Stream.of(deletionButton));
 
         List<Button> buttonsToAdd = buttonsStream.collect(Collectors.toList());
@@ -68,41 +63,37 @@ public class ButtonActionMenu extends ActionMenu {
         // e.getKey.getId() cannot return null here since we don't allow link buttons
         this.buttonActions = buttons
                 .stream()
-                .collect(Collectors.toMap(reg -> reg.getButton().getId(), RegisteredButton::getOnClick));
-
-        this.start = start;
-        this.deletionButton = deletionButton;
-        this.timeoutAction = timeoutAction;
+                .collect(Collectors.toMap(reg -> reg.button().getId(), RegisteredButton::onClick));
     }
 
     @Override
     public void display(@Nonnull MessageChannel channel) {
-        init(channel.sendMessage(start));
+        init(channel.sendMessage(settings.start()));
     }
 
     @Override
     public void display(@Nonnull MessageChannel channel, long messageId) {
-        init(channel.editMessageById(messageId, start));
+        init(channel.editMessageById(messageId, settings.start()));
     }
 
     @Override
     public void displaySlashReplying(@Nonnull SlashCommandEvent e) {
-        e.reply(start).addActionRows(initialActionRows).flatMap(InteractionHook::retrieveOriginal).queue(this::initWithMessage);
+        e.reply(settings.start()).addActionRows(initialActionRows).flatMap(InteractionHook::retrieveOriginal).queue(this::initWithMessage);
     }
 
     @Override
     public void displayDeferredReplying(@Nonnull InteractionHook hook) {
-        hook.sendMessage(start).addActionRows(initialActionRows).queue(this::initWithMessage);
+        hook.sendMessage(settings.start()).addActionRows(initialActionRows).queue(this::initWithMessage);
     }
 
     @Override
     public void displayReplying(@Nonnull MessageChannel channel, long messageId) {
         boolean hasPerms = true;
-        if (channel instanceof TextChannel) {
-            TextChannel textChannel = (TextChannel) channel;
+        if (channel instanceof TextChannel textChannel) {
             hasPerms = textChannel.getGuild().getSelfMember().hasPermission(textChannel, Permission.MESSAGE_HISTORY);
         }
 
+        Message start = settings.start();
         if (hasPerms)
             init(channel.sendMessage(start).referenceById(messageId));
         else
@@ -119,15 +110,20 @@ public class ButtonActionMenu extends ActionMenu {
     }
 
     private void awaitEvents() {
-        getWaiter().waitForEvent(ButtonClickEvent.class,
+        getActionMenuSettings().waiter().waitForEvent(
+                ButtonClickEvent.class,
                 e -> checkButtonClick(e, getMessageId()),
                 this::handleButtonClick,
-                getTimeout(), getUnit(), FailLogger.logFail(() -> { // This is the only thing that will be executed on not JDA-WS thread. So exceptions may get swallowed
-                    timeoutAction.accept(new ButtonActionMenuTimeoutEvent());
-                }));
+                getActionMenuSettings().timeout(),
+                getActionMenuSettings().unit(),
+                FailLogger.logFail(() -> { // This is the only thing that will be executed on not JDA-WS thread. So exceptions may get swallowed
+                    settings.onTimeout().accept(new ButtonActionMenuTimeoutEvent());
+                })
+        );
     }
 
     private boolean isValidUser(long user) {
+        Set<Long> users = settings.users();
         return users.isEmpty() || users.contains(user);
     }
 
@@ -136,13 +132,14 @@ public class ButtonActionMenu extends ActionMenu {
         if (!isValidUser(e.getUser().getIdLong())) return false;
 
         String buttonId = e.getComponentId();
+        Button deletionButton = settings.deletionButton();
         return buttonActions.containsKey(buttonId) ||
                 (deletionButton != null && buttonId.equals(deletionButton.getId()));
     }
 
     private void handleButtonClick(@Nonnull ButtonClickEvent e) {
         String buttonId = e.getComponentId();
-
+        Button deletionButton = settings.deletionButton();
         if (deletionButton != null && buttonId.equals(deletionButton.getId())) {
             e.getMessage().delete().queue();
             return;
@@ -166,34 +163,25 @@ public class ButtonActionMenu extends ActionMenu {
         return initialActionRows;
     }
 
-    public class ButtonActionMenuTimeoutEvent extends MenuStateInfo {
+    @Nonnull
+    public Settings getButtonActionMenuSettings() {
+        return settings;
     }
 
-    public static class RegisteredButton {
+    public class ButtonActionMenuTimeoutEvent extends MenuStateInfo {
         @Nonnull
-        private final Button button;
-        @Nonnull
-        private final Function<ButtonClickEvent, MenuAction> onClick;
-        private final boolean displayInitially;
+        public Settings getButtonActionMenuSettings() {
+            return settings;
+        }
+    }
 
+    public record RegisteredButton(@Nonnull Button button,
+                                   @Nonnull Function<ButtonClickEvent, MenuAction> onClick,
+                                   boolean displayInitially) {
         public RegisteredButton(@Nonnull Button button, @Nonnull Function<ButtonClickEvent, MenuAction> onClick, boolean displayInitially) {
             this.button = button;
             this.onClick = onClick;
             this.displayInitially = displayInitially;
-        }
-
-        @Nonnull
-        public Button getButton() {
-            return button;
-        }
-
-        @Nonnull
-        public Function<ButtonClickEvent, MenuAction> getOnClick() {
-            return onClick;
-        }
-
-        public boolean isDisplayInitially() {
-            return displayInitially;
         }
     }
 
@@ -205,147 +193,108 @@ public class ButtonActionMenu extends ActionMenu {
         CANCEL
     }
 
-    public static class Builder extends ActionMenu.Builder<Builder, ButtonActionMenu> {
+    public record Settings(@Nonnull ActionMenu.Settings settings, @Nonnull Set<Long> users,
+                           @Nonnull List<RegisteredButton> buttons, @Nonnull Message start,
+                           @Nullable Button deletionButton,
+                           @Nonnull Consumer<ButtonActionMenuTimeoutEvent> onTimeout) {
         @Nonnull
-        private Set<Long> users;
+        public static final Button DEFAULT_DELETION_BUTTON = Button.danger("delete", Constants.CROSS_MARK);
         @Nonnull
-        private List<RegisteredButton> buttons;
-        @Nullable
-        private Message start;
-        @Nullable
-        private Button deletionButton;
-        @Nullable
-        private Consumer<ButtonActionMenuTimeoutEvent> timeoutAction;
-
-        /**
-         * Default timeout of 20 minutes
-         */
-        public Builder() {
-            super(Builder.class);
-
-            users = new HashSet<>();
-            buttons = new ArrayList<>();
-            deletionButton = Button.danger("delete", Constants.CROSS_MARK);
-            setTimeout(20, TimeUnit.MINUTES);
-        }
-
-        /**
-         * If the user list ends up empty, everyone can use it
-         */
-        @Nonnull
-        public Builder addUsers(long... users) {
-            Arrays.stream(users).forEach(this.users::add);
-            return this;
-        }
-
-        @Nonnull
-        public Builder setUsers(@Nonnull Set<Long> users) {
-            this.users = users;
-            return this;
-        }
-
-        @Nonnull
-        public synchronized Builder registerButton(@Nonnull Button button, @Nonnull Function<ButtonClickEvent, MenuAction> action) {
-            return registerButton(button, action, true);
-        }
-
-        @Nonnull
-        public synchronized Builder registerButton(@Nonnull Button button, @Nonnull Function<ButtonClickEvent, MenuAction> action, boolean displayInitially) {
-            return registerButton(new RegisteredButton(button, action, displayInitially));
-        }
-
-        @Nonnull
-        public synchronized Builder registerButton(@Nonnull RegisteredButton reg) {
-            buttons.add(reg);
-            return this;
-        }
-
-        @Nonnull
-        public Builder setButtons(@Nonnull List<RegisteredButton> buttons) {
-            this.buttons = buttons;
-            return this;
-        }
-
-        @Nonnull
-        public Builder setStart(@Nullable Message start) {
-            this.start = start;
-            return this;
-        }
-
-        /**
-         * Default: {@link Constants#CROSS_MARK}
-         * {@code null} is none, not default
-         */
-        @Nonnull
-        public Builder setDeletionButton(@Nullable Button deletionButton) {
-            this.deletionButton = deletionButton;
-            return this;
-        }
-
-        /**
-         * MessageChannel may be null on timeout in weird cases
-         * <p>
-         * Default: look at source lol it's too long for docs: {@link #build()}
-         */
-        @Nonnull
-        public Builder setTimeoutAction(@Nullable Consumer<ButtonActionMenuTimeoutEvent> timeoutAction) {
-            this.timeoutAction = timeoutAction;
-            return this;
-        }
-
-        @Nonnull
-        public Set<Long> getUsers() {
-            return users;
-        }
-
-        @Nonnull
-        public List<RegisteredButton> getButtons() {
-            return buttons;
-        }
-
-        @Nullable
-        public Message getStart() {
-            return start;
-        }
-
-        @Nullable
-        public Button getDeletionButton() {
-            return deletionButton;
-        }
-
-        @Nullable
-        public Consumer<ButtonActionMenuTimeoutEvent> getTimeoutAction() {
-            return timeoutAction;
-        }
-
-        /**
-         * @throws IllegalStateException if waiter or start is not set, or if super.users contains stuff to prevent accidents
-         */
-        @Nonnull
-        @Override
-        public synchronized ButtonActionMenu build() {
-            preBuild();
-            if (start == null) throw new IllegalStateException("Start must be set");
-
-            if (timeoutAction == null) {
-                timeoutAction = event -> {
-                    MessageChannel channel = event.getChannel();
-                    if (channel == null) return;
-                    if (channel instanceof TextChannel) {
-                        TextChannel textChannel = (TextChannel) channel;
-                        if (!textChannel.getGuild().getSelfMember().hasPermission(textChannel, Permission.MESSAGE_HISTORY))
-                            return;
-                    }
-
-                    channel.retrieveMessageById(event.getMessageId())
-                            .flatMap(m -> m.editMessage(m).setActionRows())
-                            .queue(null, new ErrorHandler().ignore(ErrorResponse.UNKNOWN_MESSAGE));
-                };
+        public static final Consumer<ButtonActionMenuTimeoutEvent> DEFAULT_ON_TIMEOUT = event -> {
+            MessageChannel channel = event.getChannel();
+            if (channel == null) return;
+            if (channel instanceof TextChannel textChannel) {
+                if (!textChannel.getGuild().getSelfMember().hasPermission(textChannel, Permission.MESSAGE_HISTORY))
+                    return;
             }
 
-            // preBuild checks for null on waiter
-            //noinspection ConstantConditions
-            return new ButtonActionMenu(getWaiter(), users, getTimeout(), getUnit(), buttons, start, deletionButton, timeoutAction);
+            channel.retrieveMessageById(event.getMessageId())
+                    .flatMap(m -> m.editMessage(m).setActionRows())
+                    .queue(null, new ErrorHandler().ignore(ErrorResponse.UNKNOWN_MESSAGE));
+        };
+
+        public static class Builder {
+            @Nullable
+            private ActionMenu.Settings actionMenuSettings;
+            @Nonnull
+            private Set<Long> users = new HashSet<>();
+            @Nonnull
+            private List<RegisteredButton> buttons = new ArrayList<>();
+            @Nullable
+            private Message start;
+            @Nullable
+            private Button deletionButton = DEFAULT_DELETION_BUTTON;
+            @Nonnull
+            private Consumer<ButtonActionMenuTimeoutEvent> onTimeout = DEFAULT_ON_TIMEOUT;
+
+            @Nonnull
+            public Builder setActionMenuSettings(@Nullable ActionMenu.Settings actionMenuSettings) {
+                this.actionMenuSettings = actionMenuSettings;
+                return this;
+            }
+
+            /**
+             * If the user list ends up empty, everyone can use it
+             */
+            @Nonnull
+            public Builder addUsers(long... users) {
+                Arrays.stream(users).forEach(this.users::add);
+                return this;
+            }
+
+            @Nonnull
+            public Builder setUsers(@Nonnull Set<Long> users) {
+                this.users = users;
+                return this;
+            }
+
+            @Nonnull
+            public Builder registerButton(@Nonnull Button button, @Nonnull Function<ButtonClickEvent, MenuAction> function) {
+                return registerButton(button, function, true);
+            }
+
+            @Nonnull
+            public Builder registerButton(@Nonnull Button button, @Nonnull Function<ButtonClickEvent, MenuAction> function, boolean displayInitially) {
+                return registerButton(new RegisteredButton(button, function, displayInitially));
+            }
+
+            @Nonnull
+            public Builder registerButton(@Nonnull RegisteredButton button) {
+                buttons.add(button);
+                return this;
+            }
+
+            @Nonnull
+            public Builder setButtons(@Nonnull List<RegisteredButton> buttons) {
+                this.buttons = buttons;
+                return this;
+            }
+
+            @Nonnull
+            public Builder setStart(@Nonnull Message start) {
+                this.start = start;
+                return this;
+            }
+
+            @Nonnull
+            public Builder setDeletionButton(@Nullable Button deletionButton) {
+                this.deletionButton = deletionButton;
+                return this;
+            }
+
+            @Nonnull
+            public Builder setOnTimeout(@Nonnull Consumer<ButtonActionMenuTimeoutEvent> onTimeout) {
+                this.onTimeout = onTimeout;
+                return this;
+            }
+
+            @Nonnull
+            public Settings build() {
+                if (actionMenuSettings == null) throw new IllegalStateException("ActionMenuSettings must be set");
+                if (start == null) throw new IllegalStateException("Start must be set");
+
+                return new Settings(actionMenuSettings, users, buttons, start, deletionButton, onTimeout);
+            }
         }
     }
 }

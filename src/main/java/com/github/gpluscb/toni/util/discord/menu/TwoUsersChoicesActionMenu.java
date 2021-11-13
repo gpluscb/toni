@@ -1,72 +1,56 @@
 package com.github.gpluscb.toni.util.discord.menu;
 
-import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.concurrent.TimeUnit;
 
 public abstract class TwoUsersChoicesActionMenu extends ActionMenu {
-    private final long user1;
-    private final long user2;
+    @Nonnull
+    private final Settings settings;
 
-    public TwoUsersChoicesActionMenu(@Nonnull EventWaiter waiter, long user1, long user2, long timeout, @Nonnull TimeUnit unit) {
-        super(waiter, timeout, unit);
-
-        this.user1 = user1;
-        this.user2 = user2;
+    public TwoUsersChoicesActionMenu(@Nonnull Settings settings) {
+        super(settings.actionMenuSettings());
+        this.settings = settings;
     }
 
-    public long getUser2() {
-        return user2;
-    }
-
-    public long getUser1() {
-        return user1;
+    @Nonnull
+    public Settings getTwoUsersChoicesActionMenuSettings() {
+        return settings;
     }
 
     public abstract class TwoUsersMenuStateInfo extends MenuStateInfo {
-        public long getUser1() {
-            return user1;
-        }
-
-        public long getUser2() {
-            return user2;
+        @Nonnull
+        public Settings getTwoUsersChoicesActionMenuSettings() {
+            return settings;
         }
     }
 
-    public static abstract class Builder<T extends Builder<T, V>, V extends TwoUsersChoicesActionMenu> extends ActionMenu.Builder<T, V> {
-        @Nullable
-        private Long user1;
-        @Nullable
-        private Long user2;
+    public record Settings(@Nonnull ActionMenu.Settings actionMenuSettings, long user1, long user2) {
+        public static class Builder {
+            @Nullable
+            private ActionMenu.Settings actionMenuSettings;
+            @Nullable
+            private Long user1;
+            @Nullable
+            private Long user2;
 
-        public Builder(@Nonnull Class<T> clazz) {
-            super(clazz);
-        }
+            @Nonnull
+            public Builder setActionMenuSettings(@Nonnull ActionMenu.Settings actionMenuSettings) {
+                this.actionMenuSettings = actionMenuSettings;
+                return this;
+            }
 
-        @SuppressWarnings("unchecked")
-        @Nonnull
-        public T setUsers(long user1, long user2) {
-            this.user1 = user1;
-            this.user2 = user2;
-            return (T) this;
-        }
+            @Nonnull
+            public Builder setUsers(long user1, long user2) {
+                this.user1 = user1;
+                this.user2 = user2;
+                return this;
+            }
 
-        @Nullable
-        public Long getUser1() {
-            return user1;
-        }
-
-        @Nullable
-        public Long getUser2() {
-            return user2;
-        }
-
-        @Override
-        protected void preBuild() {
-            super.preBuild();
-            if (user1 == null || user2 == null) throw new IllegalStateException("Users must be set");
+            public Settings build() {
+                if (actionMenuSettings == null) throw new IllegalStateException("ActionMenuSettings must be set");
+                if (user1 == null || user2 == null) throw new IllegalStateException("Users must be set");
+                return new Settings(actionMenuSettings, user1, user2);
+            }
         }
     }
 }

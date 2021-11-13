@@ -13,20 +13,15 @@ import java.util.concurrent.TimeUnit;
 
 public abstract class ActionMenu {
     @Nonnull
-    private final EventWaiter waiter;
-    private final long timeout;
-    @Nonnull
-    private final TimeUnit unit;
+    private final Settings settings;
 
     @Nullable
     private JDA jda;
     private long messageId;
     private long channelId;
 
-    public ActionMenu(@Nonnull EventWaiter waiter, long timeout, @Nonnull TimeUnit unit) {
-        this.waiter = waiter;
-        this.timeout = timeout;
-        this.unit = unit;
+    public ActionMenu(@Nonnull Settings settings) {
+        this.settings = settings;
     }
 
     protected void setMessageInfo(@Nonnull Message message) {
@@ -35,18 +30,10 @@ public abstract class ActionMenu {
         this.channelId = message.getChannel().getIdLong();
     }
 
+    // final to prevent accidentally overriding. getJDA and stuff can be overridden
     @Nonnull
-    public EventWaiter getWaiter() {
-        return waiter;
-    }
-
-    public long getTimeout() {
-        return timeout;
-    }
-
-    @Nonnull
-    public TimeUnit getUnit() {
-        return unit;
+    public final Settings getActionMenuSettings() {
+        return settings;
     }
 
     @Nonnull
@@ -109,19 +96,10 @@ public abstract class ActionMenu {
 
     public abstract void displayDeferredReplying(@Nonnull InteractionHook hook);
 
-
     public abstract class MenuStateInfo {
-        public EventWaiter getWaiter() {
-            return ActionMenu.this.getWaiter();
-        }
-
-        public long getTimeout() {
-            return ActionMenu.this.getTimeout();
-        }
-
         @Nonnull
-        public TimeUnit getUnit() {
-            return ActionMenu.this.getUnit();
+        public Settings getActionMenuSettings() {
+            return ActionMenu.this.getActionMenuSettings();
         }
 
         @Nonnull
@@ -143,56 +121,36 @@ public abstract class ActionMenu {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    public static abstract class Builder<T extends Builder<T, V>, V extends ActionMenu> {
-        @Nullable
-        private EventWaiter waiter;
-        private long timeout;
+    public record Settings(@Nonnull EventWaiter waiter, long timeout, @Nonnull TimeUnit unit) {
+        public static long DEFAULT_TIMEOUT = 20;
         @Nonnull
-        private TimeUnit unit;
+        public static TimeUnit DEFAULT_UNIT = TimeUnit.MINUTES;
 
-        public Builder(@Nonnull Class<T> clazz) {
-            if (!this.getClass().equals(clazz)) throw new IllegalArgumentException("T must be the own class");
+        public static class Builder {
+            @Nullable
+            private EventWaiter waiter;
+            private long timeout = DEFAULT_TIMEOUT;
+            @Nonnull
+            private TimeUnit unit = DEFAULT_UNIT;
 
-            timeout = 20;
-            unit = TimeUnit.MINUTES;
+            @Nonnull
+            public Builder setWaiter(@Nullable EventWaiter waiter) {
+                this.waiter = waiter;
+                return this;
+            }
+
+            @Nonnull
+            public Builder setTimeout(long timeout, @Nonnull TimeUnit unit) {
+                this.timeout = timeout;
+                this.unit = unit;
+                return this;
+            }
+
+            @Nonnull
+            public Settings build() {
+                if (waiter == null) throw new IllegalStateException("Waiter must be set");
+                return new Settings(waiter, timeout, unit);
+            }
         }
-
-        @Nonnull
-        public T setWaiter(@Nonnull EventWaiter waiter) {
-            this.waiter = waiter;
-            return (T) this;
-        }
-
-        @Nonnull
-        public T setTimeout(long timeout, @Nonnull TimeUnit unit) {
-            this.timeout = timeout;
-            this.unit = unit;
-            return (T) this;
-        }
-
-        @Nullable
-        public EventWaiter getWaiter() {
-            return waiter;
-        }
-
-        public long getTimeout() {
-            return timeout;
-        }
-
-        @Nonnull
-        public TimeUnit getUnit() {
-            return unit;
-        }
-
-        protected void preBuild() {
-            if (waiter == null) throw new IllegalStateException("Waiter must be set");
-        }
-
-        /**
-         * call preBuild as the first thing in here. It does checks.
-         */
-        @Nonnull
-        public abstract V build();
     }
 }

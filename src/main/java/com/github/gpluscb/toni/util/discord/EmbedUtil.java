@@ -77,30 +77,11 @@ public class EmbedUtil {
     public static String parseInlineFields(@Nonnull List<InlineField> fields) {
         // Modified from JDA-Butlers help command code: https://github.com/Almighty-Alpaca/JDA-Butler/blob/fc8abbb80088f0b83d881fc754e58f0d170dbf2d/bot/src/main/java/com/almightyalpaca/discord/jdabutler/commands/commands/HelpCommand.java#L30-L32
         // JDA-Butlers code is published under the Apache license: https://github.com/Almighty-Alpaca/JDA-Butler/blob/fc8abbb80088f0b83d881fc754e58f0d170dbf2d/LICENSE
-        int maxSize = fields.stream().mapToInt(field -> field.getName().length() + 1).max().orElse(0);
+        int maxSize = fields.stream().mapToInt(field -> field.name().length() + 1).max().orElse(0);
 
-        return fields.stream().map(field -> String.format("`%s`| %s", StringUtils.rightPad(field.getName(), maxSize, "·"), field.getValue())).collect(Collectors.joining("\n"));
+        return fields.stream().map(field -> String.format("`%s`| %s", StringUtils.rightPad(field.name(), maxSize, "·"), field.value())).collect(Collectors.joining("\n"));
     }
 
-    public static class InlineField {
-        @Nonnull
-        private final String name;
-        @Nonnull
-        private final String value;
-
-        public InlineField(@Nonnull String name, @Nonnull String value) {
-            this.name = name;
-            this.value = value;
-        }
-
-        @Nonnull
-        public String getName() {
-            return name;
-        }
-
-        @Nonnull
-        public String getValue() {
-            return value;
-        }
+    public record InlineField(@Nonnull String name, @Nonnull String value) {
     }
 }

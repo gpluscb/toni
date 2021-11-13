@@ -16,6 +16,7 @@ import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+@SuppressWarnings("ClassCanBeRecord")
 public class SlashCommandContext implements ICommandContext<SlashCommandEvent, RestAction<?>> {
     private static final Logger log = LogManager.getLogger(SlashCommandContext.class);
 

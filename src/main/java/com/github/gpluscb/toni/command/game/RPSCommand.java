@@ -52,8 +52,8 @@ public class RPSCommand implements Command {
             }
 
             MiscUtil.OneOrTwoUserArgs users = argResult.getTOrThrow();
-            user1User = users.getUser1User();
-            user2User = users.getUser2User();
+            user1User = users.user1User();
+            user2User = users.user2User();
         } else {
             SlashCommandContext slash = context.getUOrThrow();
 

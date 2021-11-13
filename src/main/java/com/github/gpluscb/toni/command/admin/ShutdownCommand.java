@@ -11,6 +11,7 @@ import org.apache.logging.log4j.Logger;
 import javax.annotation.Nonnull;
 import java.util.concurrent.TimeUnit;
 
+@SuppressWarnings("ClassCanBeRecord")
 public class ShutdownCommand implements Command {
     private static final Logger log = LogManager.getLogger(ShutdownCommand.class);
 

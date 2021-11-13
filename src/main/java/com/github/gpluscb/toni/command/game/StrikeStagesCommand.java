@@ -67,7 +67,7 @@ public class StrikeStagesCommand implements Command {
             user1 = users.getUser1();
             user2 = users.getUser2();
 
-            int continuedArgsIdx = users.isTwoArgumentsGiven() ? 2 : 1;
+            int continuedArgsIdx = users.twoArgumentsGiven() ? 2 : 1;
             int argNum = msg.getArgNum();
 
             if (argNum == continuedArgsIdx + 1) {

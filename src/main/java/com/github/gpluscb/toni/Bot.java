@@ -31,7 +31,7 @@ import com.github.gpluscb.toni.statsposting.dbots.StatsResponse;
 import com.github.gpluscb.toni.statsposting.topgg.TopggClient;
 import com.github.gpluscb.toni.statsposting.topgg.TopggClientMock;
 import com.github.gpluscb.toni.ultimateframedata.UltimateframedataClient;
-import com.github.gpluscb.toni.util.Rulesets;
+import com.github.gpluscb.toni.util.smash.Rulesets;
 import com.github.gpluscb.toni.util.discord.ChannelChoiceWaiter;
 import com.github.gpluscb.toni.util.discord.DiscordAppenderImpl;
 import com.github.gpluscb.toni.util.discord.ShardsLoadListener;
@@ -74,6 +74,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+// TODO: Apparently GSON has issues with records?? https://github.com/google/gson/issues/1794 / https://github.com/Marcono1234/gson-record-type-adapter-factory
 public class Bot {
     private static final Logger log = LogManager.getLogger(Bot.class);
 
@@ -134,7 +135,7 @@ public class Bot {
         log.trace("Loading stopwords");
         List<String> stopwords;
         try {
-            Path path = FileSystems.getDefault().getPath(cfg.getStopwordListLocation());
+            Path path = FileSystems.getDefault().getPath(cfg.stopwordListLocation());
             stopwords = Files.readAllLines(path);
         } catch (Exception e) {
             log.error("Exception while loading stopwords - shutting down", e);
@@ -145,7 +146,7 @@ public class Bot {
         OkHttpClient okHttp = new OkHttpClient.Builder().build();
 
         log.trace("Building GGManager");
-        ggManager = new GGManager(GGClient.builder(cfg.getGGToken()).client(okHttp).build(), stopwords);
+        ggManager = new GGManager(GGClient.builder(cfg.ggToken()).client(okHttp).build(), stopwords);
 
 		/*log.trace("Building ListenerManager");
 		client = new RetrofitRestClient();
@@ -176,16 +177,16 @@ public class Bot {
         EventWaiter waiter = new EventWaiter(waiterPool, false);
         ChannelChoiceWaiter channelWaiter = new ChannelChoiceWaiter(waiter);
 
-        long botId = cfg.getBotId();
+        long botId = cfg.botId();
 
-        boolean mockBotLists = cfg.isMockBotLists();
+        boolean mockBotLists = cfg.mockBotLists();
         BotListClient<StatsResponse> dBotsClient;
         if (mockBotLists) {
             log.trace("Creating DBotsClientMock");
             dBotsClient = new DBotsClientMock();
         } else {
             log.trace("Creating DBotsClient");
-            dBotsClient = new DBotsClient(cfg.getDbotsToken(), okHttp, botId);
+            dBotsClient = new DBotsClient(cfg.dbotsToken(), okHttp, botId);
         }
 
         BotListClient<Void> topggClient;
@@ -194,7 +195,7 @@ public class Bot {
             topggClient = new TopggClientMock();
         } else {
             log.trace("Creating TopggClient");
-            topggClient = new TopggClient(cfg.getTopggToken(), okHttp, botId);
+            topggClient = new TopggClient(cfg.topggToken(), okHttp, botId);
         }
 
         log.trace("Constructing post stats routine");
@@ -202,7 +203,7 @@ public class Bot {
 
         log.trace("Loading characters");
         CharacterTree characterTree;
-        try (Reader file = new FileReader(cfg.getCharactersFileLocation())) {
+        try (Reader file = new FileReader(cfg.charactersFileLocation())) {
             JsonArray json = JsonParser.parseReader(file).getAsJsonArray();
             characterTree = CharacterTree.fromJson(json);
         } catch (Exception e) {
@@ -217,7 +218,7 @@ public class Bot {
 
         log.trace("Loading unranked manager");
         try {
-            unrankedManager = new UnrankedManager(cfg.getStateDbLocation());
+            unrankedManager = new UnrankedManager(cfg.stateDbLocation());
         } catch (SQLException e) {
             log.error("Exception while loading unranked manager - shutting down", e);
             ggManager.shutdown();
@@ -232,7 +233,7 @@ public class Bot {
         log.trace("Loading rulesets");
         List<Ruleset> rulesets;
         try {
-            rulesets = loadRulesets(cfg.getRulesetsLocation());
+            rulesets = loadRulesets(cfg.rulesetsLocation());
         } catch (Exception e) {
             log.error("Exception while loading rulesets - shutting down", e);
             ggManager.shutdown();
@@ -246,7 +247,7 @@ public class Bot {
 
         log.trace("Loading smashdata");
         try {
-            smashdata = new SmashdataManager(cfg.getSmashdataDbLocation());
+            smashdata = new SmashdataManager(cfg.smashdataDbLocation());
         } catch (SQLException e) {
             log.error("Exception while loading smashdata - shutting down", e);
             ggManager.shutdown();
@@ -262,7 +263,7 @@ public class Bot {
         List<CommandCategory> commands = loadCommands(ufdClient, waiter, channelWaiter, /*challonge, listener, */characterTree, rulesets);
 
         log.trace("Creating loadListener");
-        long adminGuildId = cfg.getAdminGuildId();
+        long adminGuildId = cfg.adminGuildId();
 
         // TODO: Somehow notice if slash commands could not be hooked?
         ShardsLoadListener loadListener = new ShardsLoadListener(jda -> {
@@ -283,7 +284,7 @@ public class Bot {
 
         try {
             log.trace("Building ShardManager");
-            shardManager = DefaultShardManagerBuilder.createLight(cfg.getDiscordToken())
+            shardManager = DefaultShardManagerBuilder.createLight(cfg.discordToken())
                     .enableIntents(GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGE_REACTIONS, GatewayIntent.GUILD_MESSAGE_REACTIONS)
                     .enableCache(CacheFlag.MEMBER_OVERRIDES)
                     .setMemberCachePolicy(MemberCachePolicy.NONE)
@@ -397,9 +398,9 @@ public class Bot {
     }
 
     private void hookSlashCommands(@Nonnull Guild adminGuild, @Nonnull List<CommandCategory> commands) {
-        Map<Boolean, List<Command>> map = commands.stream().flatMap(cat -> cat.getCommands().stream()).collect(Collectors.groupingBy(cmd -> cmd.getInfo().isAdminGuildOnly()));
-        List<CommandData> globalCommands = map.get(false).stream().map(cmd -> cmd.getInfo().getCommandData()).collect(Collectors.toList());
-        List<CommandData> adminOnlyCommands = map.get(true).stream().map(cmd -> cmd.getInfo().getCommandData()).collect(Collectors.toList());
+        Map<Boolean, List<Command>> map = commands.stream().flatMap(cat -> cat.commands().stream()).collect(Collectors.groupingBy(cmd -> cmd.getInfo().adminOnly()));
+        List<CommandData> globalCommands = map.get(false).stream().map(cmd -> cmd.getInfo().commandData()).collect(Collectors.toList());
+        List<CommandData> adminOnlyCommands = map.get(true).stream().map(cmd -> cmd.getInfo().commandData()).collect(Collectors.toList());
 
         shardManager.getShardCache().forEachUnordered(jda -> {
             jda.updateCommands().addCommands(globalCommands).queue();

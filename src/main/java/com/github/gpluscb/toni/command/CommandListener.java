@@ -28,7 +28,7 @@ public class CommandListener extends ListenerAdapter {
         this.waiter = waiter;
         this.dispatcher = dispatcher;
         this.config = config;
-        prefixPattern = Pattern.compile(String.format("(!t|toni|noti|<@!?%s>),? [\\s\\S]*", config.getBotId()), Pattern.CASE_INSENSITIVE);
+        prefixPattern = Pattern.compile(String.format("(!t|toni|noti|<@!?%s>),? [\\s\\S]*", config.botId()), Pattern.CASE_INSENSITIVE);
     }
 
     @Override

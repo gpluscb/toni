@@ -122,8 +122,9 @@ public class SubscribeCommand/* implements Command*/ {
     @Nullable
 //    @Override
     public String getDetailedHelp() {
-        return "`sub[scribe]|link <END OF TOURNAMENT URL> <CHANNEL MENTION>`\nThe bot will look at the specified tournament, and send updates in the specified channel. " +
-                "The part of the url I'd need would, for example, be `example` for `challonge.com/example`.\n" +
-                "Unfortunately, I can't really support free for all, team, and multistage tournaments as of now.";
+        return """
+                `sub[scribe]|link <END OF TOURNAMENT URL> <CHANNEL MENTION>`
+                The bot will look at the specified tournament, and send updates in the specified channel. The part of the url I'd need would, for example, be `example` for `challonge.com/example`.
+                Unfortunately, I can't really support free for all, team, and multistage tournaments as of now.""";
     }
 }

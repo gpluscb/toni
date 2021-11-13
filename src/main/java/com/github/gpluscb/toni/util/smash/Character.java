@@ -11,27 +11,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class Character {
-    @Nullable
-    private final Short id;
-    @Nonnull
-    private final String name;
-    @Nonnull
-    private final List<String> altNames;
-    private final long emoteId;
-    private final long guildId;
-    @Nonnull
-    private final Set<CharacterTree.Game> games;
-
-    private Character(@Nullable Short id, @Nonnull String name, @Nonnull List<String> altNames, long emoteId, long guildId, @Nonnull Set<CharacterTree.Game> games) {
-        this.id = id;
-        this.name = name;
-        this.altNames = altNames;
-        this.emoteId = emoteId;
-        this.guildId = guildId;
-        this.games = games;
-    }
-
+public record Character(@Nullable Short id, @Nonnull String name,
+                        @Nonnull List<String> altNames, long emoteId, long guildId,
+                        @Nonnull Set<CharacterTree.Game> games) {
     /**
      * @throws IllegalArgumentException if the json is not as expected
      */
@@ -57,39 +39,8 @@ public class Character {
         }
     }
 
-    /**
-     * null for poketrainer and pymy
-     */
-    @Nullable
-    public Short getId() {
-        return id;
-    }
-
     @Nonnull
     public String getDisplayName() {
-        return String.format("%s(%s)", MiscUtil.mentionEmote(getEmoteId()), getName());
-    }
-
-    @Nonnull
-    public String getName() {
-        return name;
-    }
-
-    @Nonnull
-    public List<String> getAltNames() {
-        return altNames;
-    }
-
-    public long getEmoteId() {
-        return emoteId;
-    }
-
-    public long getGuildId() {
-        return guildId;
-    }
-
-    @Nonnull
-    public Set<CharacterTree.Game> getGames() {
-        return games;
+        return String.format("%s(%s)", MiscUtil.mentionEmote(emoteId()), name());
     }
 }

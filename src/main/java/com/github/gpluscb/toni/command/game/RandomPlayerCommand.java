@@ -69,10 +69,11 @@ public class RandomPlayerCommand implements Command {
         return new CommandInfo.Builder()
                 .setAliases(new String[]{"randomplayer", "chooseplayer", "choose"})
                 .setShortHelp("Picks a random element out of multiple choices. Usage: `choose <CHOICES...>`")
-                .setDetailedHelp("`choose <CHOICES...>`\n" +
-                        "Picks a random choice out of the given choices. Useful if you don't want to play rock paper scissors for example.\n" +
-                        "The slash command version supports only two (2) choices.\n" +
-                        "Aliases: `choose`, `randomplayer`, `chooseplayer`")
+                .setDetailedHelp("""
+                        `choose <CHOICES...>`
+                        Picks a random choice out of the given choices. Useful if you don't want to play rock paper scissors for example.
+                        The slash command version supports only two (2) choices.
+                        Aliases: `choose`, `randomplayer`, `chooseplayer`""")
                 .setCommandData(new CommandData("choose", "Choose between two options")
                         .addOption(OptionType.STRING, "choice-1", "The first choice", true)
                         .addOption(OptionType.STRING, "choice-2", "The second choice", true))

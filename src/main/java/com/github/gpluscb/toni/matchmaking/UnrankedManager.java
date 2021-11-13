@@ -50,8 +50,8 @@ public class UnrankedManager {
         statement.setQueryTimeout(10);
 
         statement.setLong(1, guildId);
-        statement.setLong(2, config.getLfgRoleId());
-        Long channelId = config.getChannelId();
+        statement.setLong(2, config.lfgRoleId());
+        Long channelId = config.channelId();
         if (channelId == null) statement.setNull(3, Types.BIGINT);
         else statement.setLong(3, channelId);
 
@@ -74,8 +74,8 @@ public class UnrankedManager {
         PreparedStatement statement = connection.prepareStatement("UPDATE unranked_matchmaking_configs SET lfg_role_id = ?, channel_id = ? WHERE guild_id = ?");
         statement.setQueryTimeout(10);
 
-        statement.setLong(1, config.getLfgRoleId());
-        Long channelId = config.getChannelId();
+        statement.setLong(1, config.lfgRoleId());
+        Long channelId = config.channelId();
         if (channelId == null) statement.setNull(2, Types.BIGINT);
         else statement.setLong(2, channelId);
         statement.setLong(3, guildId);
@@ -108,7 +108,7 @@ public class UnrankedManager {
 
             MatchmakingConfig cachedConfig = matchmakingConfigCache.get(guildId);
             if (cachedConfig != null)
-                matchmakingConfigCache.put(guildId, new MatchmakingConfig(lfgRoleId, cachedConfig.getChannelId()));
+                matchmakingConfigCache.put(guildId, new MatchmakingConfig(lfgRoleId, cachedConfig.channelId()));
         }
 
         statement.close();
@@ -133,7 +133,7 @@ public class UnrankedManager {
 
             MatchmakingConfig cachedConfig = matchmakingConfigCache.get(guildId);
             if (cachedConfig != null)
-                matchmakingConfigCache.put(guildId, new MatchmakingConfig(cachedConfig.getLfgRoleId(), channelId));
+                matchmakingConfigCache.put(guildId, new MatchmakingConfig(cachedConfig.lfgRoleId(), channelId));
         }
 
         statement.close();
@@ -164,23 +164,6 @@ public class UnrankedManager {
         connection.close();
     }
 
-    public static class MatchmakingConfig {
-        private final long lfgRoleId;
-        @Nullable
-        private final Long channelId;
-
-        public MatchmakingConfig(long lfgRoleId, @Nullable Long channelId) {
-            this.lfgRoleId = lfgRoleId;
-            this.channelId = channelId;
-        }
-
-        public long getLfgRoleId() {
-            return lfgRoleId;
-        }
-
-        @Nullable
-        public Long getChannelId() {
-            return channelId;
-        }
+    public record MatchmakingConfig(long lfgRoleId, @Nullable Long channelId) {
     }
 }

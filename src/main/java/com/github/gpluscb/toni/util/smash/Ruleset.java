@@ -43,12 +43,10 @@ public class Ruleset {
         int stagesSize = starters.size() + counterpicks.size();
         int maximumBestOfWhat;
         switch (dsrMode) {
-            case NONE:
-            case MODIFIED_DSR:
-                // For MODIFIED_DSR this is with some conditions, see the validate section
-                maximumFirstToWhatScore = null;
-                break;
-            case GAME_RESTRICTED:
+            case NONE, MODIFIED_DSR ->
+                    // For MODIFIED_DSR this is with some conditions, see the validate section
+                    maximumFirstToWhatScore = null;
+            case GAME_RESTRICTED -> {
                 // Worst case scenario: we played on x stages already, and stageBans *different* stages are banned
                 // So we'll have (x + stageBans) *illegal* stages
                 // This means we'll have (stagesSize - (x + stageBans)) = (stagesSize - x - stageBans) *legal* stages
@@ -61,8 +59,8 @@ public class Ruleset {
                 maximumBestOfWhat = stagesSize - stageBans;
                 if (maximumBestOfWhat % 2 == 0) maximumBestOfWhat--;
                 maximumFirstToWhatScore = (maximumBestOfWhat + 1) / 2;
-                break;
-            case WINNERS_VARIATION:
+            }
+            case WINNERS_VARIATION -> {
                 // Worst case scenario: both player 1 and player 2 have already won x games (meaning we played 2x games), and now stageBans *different* stages are banned
                 // So we'll have (x + stageBans) *illegal* stages
                 // This means we'll have (stagesSize - (x + stageBans)) = (stagesSize - x - stageBans) *legal* stages
@@ -77,21 +75,19 @@ public class Ruleset {
                 // the condition that maximumBestOfWhat must be odd
                 maximumBestOfWhat = 2 * (stagesSize - stageBans) - 1;
                 maximumFirstToWhatScore = (maximumBestOfWhat + 1) / 2;
-                break;
-            case STAGE_DISMISSAL_RULE:
-                // TODO: Revisit this if I ever implement gentlemans clause
-                // You can not play on a *counterpick* stage if you *counterpicked* it and  won
-                // So the limiting factor is really how many counterpick stages we have
-                // Worst case scenario: First game was on a starter (obv), after that we only play on counterpicks
-                // Both players always win on their counterpick
-                // Score is x-x, Player 1 won on the starter and on x-1 of their own counterpicks
-                // Player 2 won on x of their own counterpicks
-                // This implies something idekk
-                // TODO: AAAAAAAAAA maths
-                maximumFirstToWhatScore = stagesSize;
-                break;
-            default:
-                throw new IllegalStateException("Incomplete switch over DSR modes");
+            }
+            case STAGE_DISMISSAL_RULE ->
+                    // TODO: Revisit this if I ever implement gentlemans clause
+                    // You can not play on a *counterpick* stage if you *counterpicked* it and  won
+                    // So the limiting factor is really how many counterpick stages we have
+                    // Worst case scenario: First game was on a starter (obv), after that we only play on counterpicks
+                    // Both players always win on their counterpick
+                    // Score is x-x, Player 1 won on the starter and on x-1 of their own counterpicks
+                    // Player 2 won on x of their own counterpicks
+                    // This implies something idekk
+                    // TODO: AAAAAAAAAA maths
+                    maximumFirstToWhatScore = stagesSize;
+            default -> throw new IllegalStateException("Incomplete switch over DSR modes");
         }
 
         // Validate

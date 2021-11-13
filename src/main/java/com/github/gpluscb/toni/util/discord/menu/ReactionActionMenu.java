@@ -80,8 +80,7 @@ public class ReactionActionMenu extends Menu {
 
     public void displayReplying(@Nonnull MessageChannel channel, long messageId) {
         boolean hasPerms = true;
-        if (channel instanceof TextChannel) {
-            TextChannel textChannel = (TextChannel) channel;
+        if (channel instanceof TextChannel textChannel) {
             hasPerms = textChannel.getGuild().getSelfMember().hasPermission(textChannel, Permission.MESSAGE_HISTORY);
         }
 
@@ -243,8 +242,7 @@ public class ReactionActionMenu extends Menu {
             if (timeoutAction == null) {
                 timeoutAction = (channel, id) -> {
                     if (channel == null) return;
-                    if (channel instanceof TextChannel) {
-                        TextChannel textChannel = (TextChannel) channel;
+                    if (channel instanceof TextChannel textChannel) {
                         if (textChannel.getGuild().getSelfMember().hasPermission(textChannel, Permission.MESSAGE_MANAGE))
                             textChannel.clearReactionsById(id).queue();
                     } else {

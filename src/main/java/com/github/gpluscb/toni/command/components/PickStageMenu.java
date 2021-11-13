@@ -46,8 +46,8 @@ public class PickStageMenu extends ActionMenu {
                 .setOnTimeout(this::onTimeout);
 
         settings.ruleset().getStagesStream().forEach(stage -> {
-            int id = stage.getStageId();
-            Button stageButton = Button.secondary(String.valueOf(id), StringUtils.abbreviate(stage.getName(), LABEL_MAX_LENGTH))
+            int id = stage.stageId();
+            Button stageButton = Button.secondary(String.valueOf(id), StringUtils.abbreviate(stage.name(), LABEL_MAX_LENGTH))
                     .withDisabled(settings.bannedStageIds().contains(id));
 
             underlyingBuilder.registerButton(stageButton, e -> onPick(id, e));
@@ -142,7 +142,7 @@ public class PickStageMenu extends ActionMenu {
             // Picked stage should exist
             //noinspection OptionalGetWithoutIsPresent
             return settings.ruleset().getStagesStream()
-                    .filter(stage -> stage.getStageId() == pickedStageId)
+                    .filter(stage -> stage.stageId() == pickedStageId)
                     .findAny()
                     .get();
         }

@@ -64,7 +64,7 @@ public class CounterpickStagesCommand implements Command {
             banningUser = users.getUser1();
             pickingUser = users.getUser2();
 
-            int continuedArgsIdx = users.isTwoArgumentsGiven() ? 2 : 1;
+            int continuedArgsIdx = users.twoArgumentsGiven() ? 2 : 1;
             int argNum = msg.getArgNum();
 
             if (argNum == continuedArgsIdx + 1) {

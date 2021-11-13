@@ -100,7 +100,7 @@ public class GGManager implements GGClient {
             tournamentElementsBuilder.append(String.format(TOURNAMENTS_QUERY_TOURNAMENT_ELEMENT_WORKAROUND_FORMAT, i));
         }
 
-        return String.format(TOURNAMENTS_QUERY_WORKAROUND_FORMAT, paramsBuilder.toString(), tournamentElementsBuilder.toString());
+        return String.format(TOURNAMENTS_QUERY_WORKAROUND_FORMAT, paramsBuilder, tournamentElementsBuilder);
     }
 
     @Nonnull

@@ -17,6 +17,7 @@ import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+@SuppressWarnings("ClassCanBeRecord")
 public class CommandContext<T extends RestAction<?> & AllowedMentions<T>> implements ICommandContext<Event, T> {
     @Nonnull
     private final OneOfTwo<MessageCommandContext, SlashCommandContext> context;

@@ -62,7 +62,7 @@ public class DBotsClient implements BotListClient<StatsResponse> {
 
         CompletableFuture<StatsResponse> ret = new CompletableFuture<>();
 
-        service.postStats(token, id, body).enqueue(new Callback<StatsResponse>() {
+        service.postStats(token, id, body).enqueue(new Callback<>() {
             @Override
             public void onResponse(@Nonnull Call<StatsResponse> call, @Nonnull Response<StatsResponse> response) {
                 if (response.isSuccessful()) ret.complete(response.body());

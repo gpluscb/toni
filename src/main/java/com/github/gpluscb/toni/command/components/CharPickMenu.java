@@ -89,7 +89,7 @@ public class CharPickMenu extends ActionMenu {
         Message message = event.getMessage();
         String choice = message.getContentRaw();
 
-        Character character = settings.characters().stream().filter(c -> c.getAltNames().contains(choice.toLowerCase())).findAny().orElse(null);
+        Character character = settings.characters().stream().filter(c -> c.altNames().contains(choice.toLowerCase())).findAny().orElse(null);
         if (character == null) message.reply("I don't know that character.").queue();
         else settings.onChoice().accept(character);
 

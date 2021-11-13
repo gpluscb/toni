@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+@SuppressWarnings("ClassCanBeRecord")
 public class CharacterTree {
     @Nonnull
     private final CollectionType type;
@@ -43,28 +44,27 @@ public class CharacterTree {
                 String type = characterObject.getAsJsonPrimitive("type").getAsString();
 
                 switch (type) {
-                    case "character":
+                    case "character" -> {
                         Character character = Character.fromJson(characterObject);
                         characters.add(OneOfTwo.ofT(character));
-                        break;
-                    case "miis":
+                    }
+                    case "miis" -> {
                         CharacterTree miisTree = CharacterTree.fromJson(CollectionType.MIIS, characterObject.get("characters").getAsJsonArray());
                         characters.add(OneOfTwo.ofU(miisTree));
-                        break;
-                    case "echos":
+                    }
+                    case "echos" -> {
                         CharacterTree echosTree = CharacterTree.fromJson(CollectionType.ECHOS, characterObject.get("characters").getAsJsonArray());
                         characters.add(OneOfTwo.ofU(echosTree));
-                        break;
-                    case "sheik/zelda":
+                    }
+                    case "sheik/zelda" -> {
                         CharacterTree sheikZeldaTree = CharacterTree.fromJson(CollectionType.SHEIK_ZELDA, characterObject.get("characters").getAsJsonArray());
                         characters.add(OneOfTwo.ofU(sheikZeldaTree));
-                        break;
-                    case "zss/samus":
+                    }
+                    case "zss/samus" -> {
                         CharacterTree zssSamusTree = CharacterTree.fromJson(CollectionType.ZSS_SAMUS, characterObject.get("characters").getAsJsonArray());
                         characters.add(OneOfTwo.ofU(zssSamusTree));
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Unsupported type: " + type);
+                    }
+                    default -> throw new IllegalArgumentException("Unsupported type: " + type);
                 }
             }
 
@@ -92,7 +92,7 @@ public class CharacterTree {
 
         for (OneOfTwo<Character, CharacterTree> element : characters) {
             element.onT(character -> {
-                if (game == null || character.getGames().contains(game)) allCharacters.add(character);
+                if (game == null || character.games().contains(game)) allCharacters.add(character);
             }).onU(tree -> allCharacters.addAll(tree.getAllCharacters(game)));
         }
 
@@ -105,7 +105,7 @@ public class CharacterTree {
 
         for (OneOfTwo<Character, CharacterTree> element : characters) {
             element.onT(character -> {
-                if (game == null || character.getGames().contains(game))
+                if (game == null || character.games().contains(game))
                     allCharacters.add(Collections.singletonList(character));
             }).onU(tree -> {
                 if ((stackEchos && tree.getType() == CollectionType.ECHOS)

@@ -35,7 +35,7 @@ public class PostGuildRoutine {
             dBotsClient.postStats(guildCount).whenComplete((r, t) -> {
                 if (t != null) log.catching(t);
                 else
-                    log.debug("Successful guild stats post to dbots: guilds: {}, shards: {}", r.getGuildCount(), r.getShardCount());
+                    log.debug("Successful guild stats post to dbots: guilds: {}, shards: {}", r.guildCount(), r.shardCount());
             });
             topggClient.postStats(guildCount).whenComplete((r, t) -> {
                 if (t != null) log.catching(t);

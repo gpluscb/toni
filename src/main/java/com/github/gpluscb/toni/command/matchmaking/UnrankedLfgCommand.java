@@ -75,7 +75,7 @@ public class UnrankedLfgCommand implements Command {
             return;
         }
 
-        Long lfgChannelId = config.getChannelId();
+        Long lfgChannelId = config.channelId();
         if (lfgChannelId != null && ctx.getChannel().getIdLong() != lfgChannelId) {
             ctx.reply(String.format("This command is configured to only work in %s.", MiscUtil.mentionChannel(lfgChannelId))).queue();
             return;
@@ -118,7 +118,7 @@ public class UnrankedLfgCommand implements Command {
 
         long guildId = guild.getIdLong();
         long userId = ctx.getUser().getIdLong();
-        long roleId = config.getLfgRoleId();
+        long roleId = config.lfgRoleId();
 
         synchronized (currentlyLfgPerGuild) {
             if (currentlyLfgPerGuild.contains(new PairNonnull<>(guildId, userId))) {

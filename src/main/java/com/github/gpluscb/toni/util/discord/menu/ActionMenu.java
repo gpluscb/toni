@@ -122,9 +122,9 @@ public abstract class ActionMenu {
     }
 
     public record Settings(@Nonnull EventWaiter waiter, long timeout, @Nonnull TimeUnit unit) {
-        public static long DEFAULT_TIMEOUT = 20;
+        public static final long DEFAULT_TIMEOUT = 20;
         @Nonnull
-        public static TimeUnit DEFAULT_UNIT = TimeUnit.MINUTES;
+        public static final TimeUnit DEFAULT_UNIT = TimeUnit.MINUTES;
 
         public static class Builder {
             @Nullable

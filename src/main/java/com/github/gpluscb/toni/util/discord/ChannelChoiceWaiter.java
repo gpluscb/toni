@@ -131,30 +131,12 @@ public class ChannelChoiceWaiter {
         return waiter;
     }
 
-    private static class WaitingElement<T> {
-        @Nonnull
-        private final List<UserChoiceInfo<T>> choices;
-        private final boolean ignoreDoubleChoices;
-        private final long timeout;
-        @Nonnull
-        private final TimeUnit unit;
-        @Nonnull
-        private final Function<MessageReceivedEvent, Optional<T>> verifyChoice;
-        @Nonnull
-        private final Consumer<List<UserChoiceInfo<T>>> onChoicesDone;
-        @Nonnull
-        private final Consumer<List<UserChoiceInfo<T>>> timeoutAction;
-
-        public WaitingElement(@Nonnull List<UserChoiceInfo<T>> choices, boolean ignoreDoubleChoices, long timeout, @Nonnull TimeUnit unit, @Nonnull Function<MessageReceivedEvent, Optional<T>> verifyChoice, @Nonnull Consumer<List<UserChoiceInfo<T>>> onChoicesDone, @Nonnull Consumer<List<UserChoiceInfo<T>>> timeoutAction) {
-            this.choices = choices;
-            this.ignoreDoubleChoices = ignoreDoubleChoices;
-            this.timeout = timeout;
-            this.unit = unit;
-            this.verifyChoice = verifyChoice;
-            this.onChoicesDone = onChoicesDone;
-            this.timeoutAction = timeoutAction;
-        }
-
+    private record WaitingElement<T>(
+            @Nonnull List<UserChoiceInfo<T>> choices,
+            boolean ignoreDoubleChoices, long timeout, @Nonnull TimeUnit unit,
+            @Nonnull Function<MessageReceivedEvent, Optional<T>> verifyChoice,
+            @Nonnull Consumer<List<UserChoiceInfo<T>>> onChoicesDone,
+            @Nonnull Consumer<List<UserChoiceInfo<T>>> timeoutAction) {
         /**
          * @return true if done
          */

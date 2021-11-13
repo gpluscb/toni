@@ -90,8 +90,8 @@ public class CharacterCommand implements Command {
 
             String characterName = slash.getOptionNonNull("character").getAsString().toLowerCase();
 
-            Optional<Short> idOptional = characters.stream().filter(character -> character.getAltNames().contains(characterName)).map(c -> {
-                        Short id__ = c.getId();
+            Optional<Short> idOptional = characters.stream().filter(character -> character.altNames().contains(characterName)).map(c -> {
+                        Short id__ = c.id();
                         return Optional.ofNullable(id__);
                     })
                     .findAny().orElse(null);
@@ -149,9 +149,9 @@ public class CharacterCommand implements Command {
         for (int i = 1; i <= argNum; i++) {
             String characterName = ctx.getArgsRange(0, i).toLowerCase();
 
-            OneOfTwo<Short, Optional<String>> id_ = characters.stream().filter(c -> c.getAltNames().contains(characterName))
+            OneOfTwo<Short, Optional<String>> id_ = characters.stream().filter(c -> c.altNames().contains(characterName))
                     .<OneOfTwo<Short, Optional<String>>>map(c -> {
-                        Short id__ = c.getId();
+                        Short id__ = c.id();
                         return id__ == null ?
                                 OneOfTwo.ofU(Optional.of("This character by itself doesn't have a page on ultimateframedata, but sub-characters probably do!" +
                                         " So try for example `Charizard` instead of `Pokémon Trainer`."))
@@ -190,11 +190,11 @@ public class CharacterCommand implements Command {
 
         PairNonnull<Integer, Integer> foundMove = null;
 
-        List<CharacterData.MoveSection> sections = data.getMoveSections();
+        List<CharacterData.MoveSection> sections = data.moveSections();
         for (int i = 0; i < sections.size(); i++) {
-            List<CharacterData.MoveData> moves = sections.get(i).getMoves();
+            List<CharacterData.MoveData> moves = sections.get(i).moves();
             for (int j = 0; j < moves.size(); j++) {
-                String moveName = moves.get(j).getMoveName();
+                String moveName = moves.get(j).moveName();
 
                 if (moveName != null) {
                     String moveNameLowercase = moveName.toLowerCase();
@@ -269,18 +269,13 @@ public class CharacterCommand implements Command {
 
     @Nullable
     private String expandMoveCharacterNBFD(char character) {
-        switch (character) {
-            case 'n':
-                return "neutral";
-            case 'f':
-                return "forward";
-            case 'b':
-                return "back";
-            case 'd':
-                return "down";
-            default:
-                return null;
-        }
+        return switch (character) {
+            case 'n' -> "neutral";
+            case 'f' -> "forward";
+            case 'b' -> "back";
+            case 'd' -> "down";
+            default -> null;
+        };
     }
 
     private void sendReply(@Nonnull CommandContext<?> ctx, @Nullable CharacterData data, @Nullable PairNonnull<Integer, Integer> startMove, boolean startMoveRequested) {
@@ -308,15 +303,15 @@ public class CharacterCommand implements Command {
      */
     @Nonnull
     private EmbedBuilder applyMove(@Nonnull EmbedBuilder embed, @Nonnull CharacterData data, @Nonnull OneOfTwo<CharacterData.MoveSection, CharacterData.MiscData> section, @Nullable PairNonnull<Integer, CharacterData.MoveData> hitboxPageAndMove) {
-        String url = String.format("%s#%s", data.getUfdUrl(), section.map(CharacterData.MoveSection::getHtmlId, CharacterData.MiscData::getHtmlId));
-        String nameCapitalized = MiscUtil.capitalizeFirst(data.getName());
-        String sectionName = section.map(CharacterData.MoveSection::getSectionName, u -> "Misc");
+        String url = String.format("%s#%s", data.ufdUrl(), section.map(CharacterData.MoveSection::htmlId, CharacterData.MiscData::htmlId));
+        String nameCapitalized = MiscUtil.capitalizeFirst(data.name());
+        String sectionName = section.map(CharacterData.MoveSection::sectionName, u -> "Misc");
 
         if (hitboxPageAndMove == null) {
             embed.setTitle(String.format("%s - %s", nameCapitalized, sectionName), url);
         } else {
             CharacterData.MoveData move = hitboxPageAndMove.getU();
-            String moveName = move.getMoveName();
+            String moveName = move.moveName();
             if (moveName == null) moveName = "Some Unnamed Move";
             embed.setTitle(String.format("%s - %s - %s", nameCapitalized, sectionName, moveName), url);
         }
@@ -325,89 +320,89 @@ public class CharacterCommand implements Command {
 
         if (hitboxPageAndMove == null) {
             // This only happens in misc section
-            CharacterData.StatsData stats = data.getMiscData().getStats();
+            CharacterData.StatsData stats = data.miscData().stats();
 
             if (stats != null) {
-                String weight = stats.getWeight();
+                String weight = stats.weight();
                 if (weight != null) fields.add(new EmbedUtil.InlineField("Weight", weight));
 
-                String gravity = stats.getGravity();
+                String gravity = stats.gravity();
                 if (gravity != null) fields.add(new EmbedUtil.InlineField("Gravity", gravity));
 
-                String runSpeed = stats.getRunSpeed();
+                String runSpeed = stats.runSpeed();
                 if (runSpeed != null) fields.add(new EmbedUtil.InlineField("Run Speed", runSpeed));
 
-                String walkSpeed = stats.getWalkSpeed();
+                String walkSpeed = stats.walkSpeed();
                 if (walkSpeed != null) fields.add(new EmbedUtil.InlineField("Walk Speed", walkSpeed));
 
-                String initialDash = stats.getInitialDash();
+                String initialDash = stats.initialDash();
                 if (initialDash != null) fields.add(new EmbedUtil.InlineField("Initial Dash", initialDash));
 
-                String airSpeed = stats.getAirSpeed();
+                String airSpeed = stats.airSpeed();
                 if (airSpeed != null) fields.add(new EmbedUtil.InlineField("Air Speed", airSpeed));
 
-                String totalAirAcceleration = stats.getTotalAirAcceleration();
+                String totalAirAcceleration = stats.totalAirAcceleration();
                 if (totalAirAcceleration != null)
                     fields.add(new EmbedUtil.InlineField("Total Air Acceleration", totalAirAcceleration));
 
-                String shFhShffFhffFrames = stats.getShFhShffFhffFrames();
+                String shFhShffFhffFrames = stats.shFhShffFhffFrames();
                 if (shFhShffFhffFrames != null)
                     fields.add(new EmbedUtil.InlineField("SH / FH / SHFF / FHFF Frames", shFhShffFhffFrames));
 
-                String fallSpeedFastFallSpeed = stats.getFallSpeedFastFallSpeed();
+                String fallSpeedFastFallSpeed = stats.fallSpeedFastFallSpeed();
                 if (fallSpeedFastFallSpeed != null)
                     fields.add(new EmbedUtil.InlineField("Fall Speed / Fast Fall Speed", fallSpeedFastFallSpeed));
 
-                List<String> oosOptions = stats.getOosOptions();
+                List<String> oosOptions = stats.oosOptions();
                 if (!oosOptions.isEmpty())
                     fields.add(new EmbedUtil.InlineField("Out Of Shield options", oosOptions.get(0)));
                 for (int i = 1; i < oosOptions.size(); i++)
                     fields.add(new EmbedUtil.InlineField("", oosOptions.get(i)));
 
-                String shieldGrab = stats.getShieldGrab();
+                String shieldGrab = stats.shieldGrab();
                 if (shieldGrab != null) fields.add(new EmbedUtil.InlineField("Shield Grab", shieldGrab));
 
-                String shieldDrop = stats.getShieldDrop();
+                String shieldDrop = stats.shieldDrop();
                 if (shieldDrop != null) fields.add(new EmbedUtil.InlineField("Shield Drop", shieldDrop));
 
-                String jumpSquat = stats.getJumpSquat();
+                String jumpSquat = stats.jumpSquat();
                 if (jumpSquat != null) fields.add(new EmbedUtil.InlineField("Jump Squat", jumpSquat));
             }
         } else {
             int hitboxPage = hitboxPageAndMove.getT();
             CharacterData.MoveData move = hitboxPageAndMove.getU();
 
-            String startup = move.getStartup();
+            String startup = move.startup();
             if (startup != null) fields.add(new EmbedUtil.InlineField("Startup", startup));
 
-            String totalFrames = move.getTotalFrames();
+            String totalFrames = move.totalFrames();
             if (totalFrames != null) fields.add(new EmbedUtil.InlineField("Total Frames", totalFrames));
 
-            String landingLag = move.getLandingLag();
+            String landingLag = move.landingLag();
             if (landingLag != null) fields.add(new EmbedUtil.InlineField("Landing Lag", landingLag));
 
-            String notes = move.getNotes();
+            String notes = move.notes();
             if (notes != null) fields.add(new EmbedUtil.InlineField("Notes", notes));
 
-            String baseDamage = move.getBaseDamage();
+            String baseDamage = move.baseDamage();
             if (baseDamage != null) fields.add(new EmbedUtil.InlineField("Base Damage", baseDamage));
 
-            String shieldLag = move.getShieldLag();
+            String shieldLag = move.shieldLag();
             if (shieldLag != null) fields.add(new EmbedUtil.InlineField("Shield Lag", shieldLag));
 
-            String shieldStun = move.getShieldStun();
+            String shieldStun = move.shieldStun();
             if (shieldStun != null) fields.add(new EmbedUtil.InlineField("Shield Stun", shieldStun));
 
-            String advantage = move.getAdvantage();
+            String advantage = move.advantage();
             if (advantage != null) fields.add(new EmbedUtil.InlineField("Frame Advantage", advantage));
 
-            String activeFrames = move.getActiveFrames();
+            String activeFrames = move.activeFrames();
             if (activeFrames != null) fields.add(new EmbedUtil.InlineField("Active Frames", activeFrames));
 
-            String whichHitbox = move.getWhichHitbox();
+            String whichHitbox = move.whichHitbox();
             if (whichHitbox != null) fields.add(new EmbedUtil.InlineField("Info about which hitbox?", whichHitbox));
 
-            List<CharacterData.HitboxData> hitboxes = move.getHitboxes();
+            List<CharacterData.HitboxData> hitboxes = move.hitboxes();
             int hitboxesSize = hitboxes.size();
 
             String hitboxNote;
@@ -421,9 +416,9 @@ public class CharacterCommand implements Command {
                 else {
                     CharacterData.HitboxData hitbox = hitboxes.get(hitboxPage);
 
-                    String name = hitbox.getName();
+                    String name = hitbox.name();
                     hitboxNote = name == null ? noteWithoutName : String.format("%s | %s", name, noteWithoutName);
-                    embed.setImage(hitbox.getUrl());
+                    embed.setImage(hitbox.url());
                 }
             }
 
@@ -442,10 +437,11 @@ public class CharacterCommand implements Command {
                 .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_EMBED_LINKS, Permission.MESSAGE_HISTORY})
                 .setAliases(new String[]{"character", "char", "ufd", "moves", "move", "hitboxes", "hitbox"})
                 .setShortHelp("Displays the moves of a character using data from [ultimateframedata.com](https://ultimateframedata.com). Usage: `character <CHARACTER NAME...> [MOVE NAME...]`")
-                .setDetailedHelp("`character <CHARACTER NAME...> [MOVE NAME...]`\n" +
-                        "Looks up the moves of a character on [ultimateframedata.com](https://ultimateframedata.com).\n" +
-                        "Use the drop-down menus to select the move section, move, and hitbox image.\n" +
-                        "Aliases: `character`, `char`, `ufd`, `move`, `moves`, `hitboxes`, `hitbox`")
+                .setDetailedHelp("""
+                        `character <CHARACTER NAME...> [MOVE NAME...]`
+                        Looks up the moves of a character on [ultimateframedata.com](https://ultimateframedata.com).
+                        Use the drop-down menus to select the move section, move, and hitbox image.
+                        Aliases: `character`, `char`, `ufd`, `move`, `moves`, `hitboxes`, `hitbox`""")
                 .setCommandData(new CommandData("moves", "Displays moves of a smash ultimate character")
                         .addOption(OptionType.STRING, "character", "The character name", true)
                         .addOption(OptionType.STRING, "move", "The move name (e.g. `fair`, `down b`)", false))
@@ -492,8 +488,7 @@ public class CharacterCommand implements Command {
 
             boolean hasPerms = true;
             MessageChannel channel = referenceOrSlashEvent.map(Message::getChannel, SlashCommandEvent::getChannel);
-            if (channel instanceof TextChannel) {
-                TextChannel textChannel = (TextChannel) channel;
+            if (channel instanceof TextChannel textChannel) {
                 hasPerms = textChannel.getGuild().getSelfMember().hasPermission(textChannel, Permission.MESSAGE_HISTORY);
             }
 
@@ -558,22 +553,17 @@ public class CharacterCommand implements Command {
                 int valueInt = Integer.parseInt(value);
 
                 switch (id) {
-                    case sectionMenuId:
+                    case sectionMenuId -> {
                         sectionPage = valueInt;
                         movePage = sectionPage == -1 ? -1 : 0;
                         hitboxPage = 0;
-                        break;
-
-                    case moveMenuId:
+                    }
+                    case moveMenuId -> {
                         movePage = valueInt;
                         hitboxPage = 0;
-                        break;
-
-                    case hitboxMenuId:
-                        hitboxPage = valueInt;
-                        break;
-
-                    default:
+                    }
+                    case hitboxMenuId -> hitboxPage = valueInt;
+                    default -> {
                         log.error("Unknown selection menu id: {}", id);
                         // We know because of the check that messageId is not null here
                         //noinspection ConstantConditions
@@ -581,6 +571,7 @@ public class CharacterCommand implements Command {
                                 .override(true)
                                 .queue();
                         return;
+                    }
                 }
 
                 Message current = getCurrent();
@@ -614,12 +605,12 @@ public class CharacterCommand implements Command {
 
         @Nonnull
         private synchronized List<SelectOption> currentSectionOptions() {
-            List<CharacterData.MoveSection> sections = data.getMoveSections();
+            List<CharacterData.MoveSection> sections = data.moveSections();
             List<SelectOption> ret = new ArrayList<>(sections.size() + 1);
 
             for (int i = 0; i < sections.size(); i++) {
                 CharacterData.MoveSection section = sections.get(i);
-                ret.add(SelectOption.of(StringUtils.abbreviate(section.getSectionName(), LABEL_MAX_LENGTH), String.valueOf(i)).withDefault(i == sectionPage));
+                ret.add(SelectOption.of(StringUtils.abbreviate(section.sectionName(), LABEL_MAX_LENGTH), String.valueOf(i)).withDefault(i == sectionPage));
             }
 
             ret.add(SelectOption.of("Misc", "-1").withDefault(-1 == sectionPage));
@@ -632,7 +623,7 @@ public class CharacterCommand implements Command {
             List<SelectOption> ret = new ArrayList<>(moves.size());
 
             for (int i = 0; i < moves.size(); i++) {
-                String moveName = moves.get(i).getMoveName();
+                String moveName = moves.get(i).moveName();
                 ret.add(
                         SelectOption.of(moveName == null ? "Unknown Move" : StringUtils.abbreviate(moveName, LABEL_MAX_LENGTH), String.valueOf(i))
                                 .withDefault(i == movePage)
@@ -648,13 +639,13 @@ public class CharacterCommand implements Command {
         private synchronized List<SelectOption> currentHitboxOptions() {
             if (movePage == -1) return Collections.emptyList(); // Misc Page
 
-            List<CharacterData.HitboxData> hitboxes = getCurrentMoves().get(movePage).getHitboxes();
+            List<CharacterData.HitboxData> hitboxes = getCurrentMoves().get(movePage).hitboxes();
             if (hitboxes.isEmpty()) return Collections.emptyList();
 
             int hitboxSize = hitboxes.size();
             List<SelectOption> ret = new ArrayList<>(hitboxSize + 1);
             for (int i = 0; i < hitboxes.size(); i++) {
-                String hitboxName = hitboxes.get(i).getName();
+                String hitboxName = hitboxes.get(i).name();
                 ret.add(
                         SelectOption.of(hitboxName == null ? String.format("Hitbox %d/%d", i + 1, hitboxSize) : StringUtils.abbreviate(hitboxName, LABEL_MAX_LENGTH), String.valueOf(i))
                                 .withDefault(i == hitboxPage)
@@ -669,13 +660,13 @@ public class CharacterCommand implements Command {
         @Nonnull
         private synchronized OneOfTwo<CharacterData.MoveSection, CharacterData.MiscData> getCurrentSection() {
             return sectionPage == -1 ?
-                    OneOfTwo.ofU(data.getMiscData())
-                    : OneOfTwo.ofT(data.getMoveSections().get(sectionPage));
+                    OneOfTwo.ofU(data.miscData())
+                    : OneOfTwo.ofT(data.moveSections().get(sectionPage));
         }
 
         @Nonnull
         private synchronized List<CharacterData.MoveData> getCurrentMoves() {
-            return getCurrentSection().map(CharacterData.MoveSection::getMoves, CharacterData.MiscData::getMoves);
+            return getCurrentSection().map(CharacterData.MoveSection::moves, CharacterData.MiscData::moves);
         }
 
         @Nonnull

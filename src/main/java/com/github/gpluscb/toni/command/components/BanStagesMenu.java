@@ -60,8 +60,8 @@ public class BanStagesMenu extends ActionMenu {
                 .setOnTimeout(this::onTimeout);
 
         settings.ruleset().getStagesStream().forEach(stage -> {
-            int id = stage.getStageId();
-            Button stageButton = Button.secondary(String.valueOf(id), StringUtils.abbreviate(stage.getName(), LABEL_MAX_LENGTH))
+            int id = stage.stageId();
+            Button stageButton = Button.secondary(String.valueOf(id), StringUtils.abbreviate(stage.name(), LABEL_MAX_LENGTH))
                     .withDisabled(settings.dsrIllegalStages().contains(id));
 
             underlyingBuilder.registerButton(stageButton, e -> onBan(id, e));
@@ -170,14 +170,14 @@ public class BanStagesMenu extends ActionMenu {
             // For each banned stage there is a stage with that id in the ruleset
             //noinspection OptionalGetWithoutIsPresent
             return bannedStageIds.stream()
-                    .map(id -> settings.ruleset().getStagesStream().filter(stage -> stage.getStageId() == id).findAny().get())
+                    .map(id -> settings.ruleset().getStagesStream().filter(stage -> stage.stageId() == id).findAny().get())
                     .collect(Collectors.toList());
         }
 
         @Nonnull
         public Set<Integer> getRemainingStageIds() {
             return settings.ruleset().getStagesStream()
-                    .map(Stage::getStageId)
+                    .map(Stage::stageId)
                     .filter(Predicate.not(bannedStageIds::contains))
                     .filter(Predicate.not(settings.dsrIllegalStages()::contains))
                     .collect(Collectors.toSet());
@@ -186,8 +186,8 @@ public class BanStagesMenu extends ActionMenu {
         @Nonnull
         public List<Stage> getRemainingStages() {
             return settings.ruleset().getStagesStream()
-                    .filter(stage -> !bannedStageIds.contains(stage.getStageId()))
-                    .filter(stage -> !settings.dsrIllegalStages().contains(stage.getStageId()))
+                    .filter(stage -> !bannedStageIds.contains(stage.stageId()))
+                    .filter(stage -> !settings.dsrIllegalStages().contains(stage.stageId()))
                     .collect(Collectors.toList());
         }
     }
@@ -214,7 +214,7 @@ public class BanStagesMenu extends ActionMenu {
             // Should be present if everything is ok
             //noinspection OptionalGetWithoutIsPresent
             return settings.ruleset().getStagesStream()
-                    .filter(stage -> stage.getStageId() == bannedStageId)
+                    .filter(stage -> stage.stageId() == bannedStageId)
                     .findAny()
                     .get();
         }

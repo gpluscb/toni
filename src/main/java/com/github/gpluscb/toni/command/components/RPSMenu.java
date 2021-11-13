@@ -261,7 +261,6 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
                     .flatMap(m -> m.editMessage(m).setActionRows())
                     .queue(null, new ErrorHandler().ignore(ErrorResponse.UNKNOWN_MESSAGE));
         };
-        ;
 
         public static class Builder {
             @Nullable

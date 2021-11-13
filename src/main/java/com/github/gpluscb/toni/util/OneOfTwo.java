@@ -7,6 +7,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 // All I want for christmas is algebraic types in Java
+@SuppressWarnings("ClassCanBeRecord")
 public class OneOfTwo<T, U> {
     @Nullable
     private final T t;

@@ -65,39 +65,14 @@ public class MiscUtil {
         USER_1_EQUALS_USER_2,
     }
 
-    public static class OneOrTwoUserArgs {
-        @Nonnull
-        private final User user1User;
-        @Nonnull
-        private final User user2User;
-        private final boolean twoArgumentsGiven;
-
-        public OneOrTwoUserArgs(@Nonnull User user1User, @Nonnull User user2User, boolean twoArgumentsGiven) {
-            this.user1User = user1User;
-            this.user2User = user2User;
-            this.twoArgumentsGiven = twoArgumentsGiven;
-        }
-
+    public record OneOrTwoUserArgs(@Nonnull User user1User,
+                                   @Nonnull User user2User, boolean twoArgumentsGiven) {
         public long getUser1() {
             return user1User.getIdLong();
         }
 
         public long getUser2() {
             return user2User.getIdLong();
-        }
-
-        @Nonnull
-        public User getUser1User() {
-            return user1User;
-        }
-
-        @Nonnull
-        public User getUser2User() {
-            return user2User;
-        }
-
-        public boolean isTwoArgumentsGiven() {
-            return twoArgumentsGiven;
         }
     }
 
@@ -140,20 +115,11 @@ public class MiscUtil {
 
     @Nullable
     public static Boolean boolFromString(@Nonnull String string) {
-        switch (string.toLowerCase()) {
-            case "0":
-            case "false":
-            case "no":
-            case "n":
-                return false;
-            case "1":
-            case "true":
-            case "yes":
-            case "y":
-                return true;
-            default:
-                return null;
-        }
+        return switch (string.toLowerCase()) {
+            case "0", "false", "no", "n" -> false;
+            case "1", "true", "yes", "y" -> true;
+            default -> null;
+        };
     }
 
     @Nonnull
@@ -178,8 +144,7 @@ public class MiscUtil {
     @Nonnull
     @CheckReturnValue
     public static RestAction<Void> clearReactionsOrRemoveOwnReactions(@Nonnull MessageChannel channel, long messageId, @Nonnull String... reactions) {
-        if (channel instanceof TextChannel) {
-            TextChannel textChannel = (TextChannel) channel;
+        if (channel instanceof TextChannel textChannel) {
             if (textChannel.getGuild().getSelfMember().hasPermission(textChannel, Permission.MESSAGE_MANAGE))
                 return textChannel.clearReactionsById(messageId);
         }
@@ -280,15 +245,13 @@ public class MiscUtil {
         return builder.toString();
     }
 
+    // TODO: I don't think this is necessary, getName should just do that for me
     @Nonnull
     public static String getPermName(@Nonnull Permission perm) {
-        switch (perm) {
-            case MESSAGE_EMBED_LINKS:
-                return "Embed Links";
-            case MESSAGE_HISTORY:
-                return "Read Message History";
-            default:
-                return perm.getName();
-        }
+        return switch (perm) {
+            case MESSAGE_EMBED_LINKS -> "Embed Links";
+            case MESSAGE_HISTORY -> "Read Message History";
+            default -> perm.getName();
+        };
     }
 }

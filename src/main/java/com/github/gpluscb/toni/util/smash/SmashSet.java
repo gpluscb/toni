@@ -123,14 +123,10 @@ public class SmashSet {
         @CheckReturnValue
         @Nonnull
         public Player invert() {
-            switch (this) {
-                case PLAYER1:
-                    return PLAYER2;
-                case PLAYER2:
-                    return PLAYER1;
-                default:
-                    throw new IllegalStateException("Player doesn't exist");
-            }
+            return switch (this) {
+                case PLAYER1 -> PLAYER2;
+                case PLAYER2 -> PLAYER1;
+            };
         }
     }
 
@@ -221,7 +217,7 @@ public class SmashSet {
 
                         // Every game before the current one (before games.size() - 1) will have a stage
                         //noinspection ConstantConditions
-                        if (ruleset.getCounterpicks().stream().map(Stage::getStageId).noneMatch(stageIdx::equals))
+                        if (ruleset.getCounterpicks().stream().map(Stage::stageId).noneMatch(stageIdx::equals))
                             continue;
 
                         // Only stages where the current previous loser won are relevant
@@ -392,12 +388,8 @@ public class SmashSet {
             GameData game = getGame();
 
             switch (prevWinner) {
-                case PLAYER1:
-                    game.setPlayer1Char(character);
-                    break;
-                case PLAYER2:
-                    game.setPlayer2Char(character);
-                    break;
+                case PLAYER1 -> game.setPlayer1Char(character);
+                case PLAYER2 -> game.setPlayer2Char(character);
             }
 
             SetLoserCharCounterpickState state = new SetLoserCharCounterpickState(game, prevWinner);
@@ -418,12 +410,8 @@ public class SmashSet {
             GameData game = getGame();
 
             switch (prevWinner.invert()) {
-                case PLAYER1:
-                    game.setPlayer1Char(character);
-                    break;
-                case PLAYER2:
-                    game.setPlayer2Char(character);
-                    break;
+                case PLAYER1 -> game.setPlayer1Char(character);
+                case PLAYER2 -> game.setPlayer2Char(character);
             }
 
             if (ruleset.isStageBeforeCharacter()) {

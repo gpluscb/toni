@@ -55,7 +55,7 @@ public class FailLogger {
 
     @Nonnull
     public static <T> retrofit2.Callback<T> logFail(@Nonnull retrofit2.Callback<T> callback) {
-        return new retrofit2.Callback<T>() {
+        return new retrofit2.Callback<>() {
             @Override
             public void onResponse(@Nonnull Call<T> call, @Nonnull Response<T> response) {
                 try {

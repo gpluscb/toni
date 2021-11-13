@@ -49,7 +49,7 @@ public class UltimateframedataClient {
     public CompletableFuture<CharacterData> getCharacter(long id) {
         CompletableFuture<CharacterData> ret = new CompletableFuture<>();
 
-        service.getCharacter(id).enqueue(FailLogger.logFail(new Callback<CharacterData>() {
+        service.getCharacter(id).enqueue(FailLogger.logFail(new Callback<>() {
             @Override
             public void onResponse(@Nonnull Call<CharacterData> call, @Nonnull Response<CharacterData> response) {
                 if (response.isSuccessful()) ret.complete(response.body());

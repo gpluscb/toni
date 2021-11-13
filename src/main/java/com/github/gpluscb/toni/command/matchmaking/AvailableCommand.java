@@ -57,7 +57,7 @@ public class AvailableCommand implements Command {
                 return;
             }
 
-            long roleId = config.getLfgRoleId();
+            long roleId = config.lfgRoleId();
             Role role = guild.getRoleById(roleId);
 
             if (role == null) {

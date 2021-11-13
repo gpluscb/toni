@@ -33,7 +33,7 @@ public interface ICommandContext<EVENT extends Event, ACTION extends RestAction<
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     default boolean memberHasBotAdminPermission() {
-        return getUser().getIdLong() == getConfig().getDevId();
+        return getUser().getIdLong() == getConfig().devId();
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")

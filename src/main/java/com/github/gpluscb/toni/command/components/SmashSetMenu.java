@@ -201,13 +201,13 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                 .setTwoUsersChoicesActionMenuSettings(new TwoUsersChoicesActionMenu.Settings.Builder()
                         .setActionMenuSettings(new ActionMenu.Settings.Builder()
                                 .setWaiter(getActionMenuSettings().waiter())
-                                .setTimeout(rpsInfo.getStrikeFirstChoiceTimeout(), rpsInfo.getUnit())
+                                .setTimeout(rpsInfo.strikeFirstChoiceTimeout(), rpsInfo.unit())
                                 .build())
                         .setUsers(getTwoUsersChoicesActionMenuSettings().user1(), getTwoUsersChoicesActionMenuSettings().user2())
                         .build())
                 .setStart(start)
                 .setRuleset(settings.ruleset())
-                .setRpsTimeout(rpsInfo.getTimeout(), rpsInfo.getUnit())
+                .setRpsTimeout(rpsInfo.timeout(), rpsInfo.unit())
                 .setStrikeTimeout(getActionMenuSettings().timeout(), getActionMenuSettings().unit())
                 .setStrikeFirstMessageProvider(strikeFirstMessageProvider)
                 .setRpsTieMessageProvider(rpsTieMessageProvider)
@@ -704,13 +704,13 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
     private void onRPSTimeout(@Nonnull RPSMenu.RPSTimeoutEvent event) {
         // If this is called this is nonnull
         //noinspection ConstantConditions
-        settings.rpsInfo().getOnRPSTimeout().accept(new SmashSetRPSTimeoutEvent(event));
+        settings.rpsInfo().onRPSTimeout().accept(new SmashSetRPSTimeoutEvent(event));
     }
 
     private void onFirstChoiceTimeout(@Nonnull RPSAndStrikeStagesMenu.StrikeFirstChoiceTimeoutEvent event) {
         // If this is called this is nonnull
         //noinspection ConstantConditions
-        settings.rpsInfo().getOnFirstChoiceTimeout().accept(new SmashSetStrikeFirstChoiceTimeoutEvent(event));
+        settings.rpsInfo().onFirstChoiceTimeout().accept(new SmashSetStrikeFirstChoiceTimeoutEvent(event));
     }
 
     private void onStrikeTimeout(@Nonnull StrikeStagesMenu.StrikeStagesTimeoutEvent event) {
@@ -938,54 +938,10 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         }
     }
 
-    public static class RPSInfo {
-        private final long timeout;
-        @Nonnull
-        private final TimeUnit unit;
-        private final long strikeFirstChoiceTimeout;
-        @Nonnull
-        private final TimeUnit strikeFirstChoiceUnit;
-        @Nonnull
-        private final Consumer<SmashSetStrikeFirstChoiceTimeoutEvent> onFirstChoiceTimeout;
-        @Nonnull
-        private final Consumer<SmashSetRPSTimeoutEvent> onRPSTimeout;
-
-        public RPSInfo(long timeout, @Nonnull TimeUnit unit, long strikeFirstChoiceTimeout, @Nonnull TimeUnit strikeFirstChoiceUnit, @Nonnull Consumer<SmashSetStrikeFirstChoiceTimeoutEvent> onFirstChoiceTimeout, @Nonnull Consumer<SmashSetRPSTimeoutEvent> onRPSTimeout) {
-            this.timeout = timeout;
-            this.unit = unit;
-            this.strikeFirstChoiceTimeout = strikeFirstChoiceTimeout;
-            this.strikeFirstChoiceUnit = strikeFirstChoiceUnit;
-            this.onFirstChoiceTimeout = onFirstChoiceTimeout;
-            this.onRPSTimeout = onRPSTimeout;
-        }
-
-        public long getTimeout() {
-            return timeout;
-        }
-
-        @Nonnull
-        public TimeUnit getUnit() {
-            return unit;
-        }
-
-        public long getStrikeFirstChoiceTimeout() {
-            return strikeFirstChoiceTimeout;
-        }
-
-        @Nonnull
-        public TimeUnit getStrikeFirstChoiceUnit() {
-            return strikeFirstChoiceUnit;
-        }
-
-        @Nonnull
-        public Consumer<SmashSetStrikeFirstChoiceTimeoutEvent> getOnFirstChoiceTimeout() {
-            return onFirstChoiceTimeout;
-        }
-
-        @Nonnull
-        public Consumer<SmashSetRPSTimeoutEvent> getOnRPSTimeout() {
-            return onRPSTimeout;
-        }
+    public record RPSInfo(long timeout, @Nonnull TimeUnit unit, long strikeFirstChoiceTimeout,
+                          @Nonnull TimeUnit strikeFirstChoiceUnit,
+                          @Nonnull Consumer<SmashSetStrikeFirstChoiceTimeoutEvent> onFirstChoiceTimeout,
+                          @Nonnull Consumer<SmashSetRPSTimeoutEvent> onRPSTimeout) {
     }
 
     public record Settings(@Nonnull TwoUsersChoicesActionMenu.Settings twoUsersChoicesActionMenuSettings,

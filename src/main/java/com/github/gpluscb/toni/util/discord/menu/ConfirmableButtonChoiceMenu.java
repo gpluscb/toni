@@ -232,9 +232,130 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
                               @Nonnull List<ChoiceButton<T>> choiceButtons, @Nonnull Message start,
                               @Nonnull Button confirmButton, @Nonnull Button resetButton,
                               int minChoices, int maxChoices,
-                              @Nonnull BiFunction<ConfirmableButtonChoiceMenu<T>.ChoiceInfo, ButtonClickEvent, Message> choiceMessageProvider,
-                              @Nonnull BiFunction<ConfirmableButtonChoiceMenu<T>.ResetInfo, ButtonClickEvent, Message> resetMessageProvider,
-                              @Nonnull BiConsumer<ConfirmableButtonChoiceMenu<T>.ConfirmInfo, ButtonClickEvent> onChoicesConfirmed,
-                              @Nonnull Consumer<ConfirmableButtonChoiceMenu<T>.ConfirmableButtonChoiceTimeoutEvent> onTimeout) {
+                              @Nonnull BiFunction<ConfirmableButtonChoiceMenu<? super T>.ChoiceInfo, ButtonClickEvent, Message> choiceMessageProvider,
+                              @Nonnull BiFunction<ConfirmableButtonChoiceMenu<? super T>.ResetInfo, ButtonClickEvent, Message> resetMessageProvider,
+                              @Nonnull BiConsumer<ConfirmableButtonChoiceMenu<? super T>.ConfirmInfo, ButtonClickEvent> onChoicesConfirmed,
+                              @Nonnull Consumer<ConfirmableButtonChoiceMenu<? super T>.ConfirmableButtonChoiceTimeoutEvent> onTimeout) {
+        public static class Builder<T> {
+            @Nullable
+            private ActionMenu.Settings actionMenuSettings;
+            @Nullable
+            private Long user;
+            @Nonnull
+            private List<ChoiceButton<T>> choiceButtons = new ArrayList<>();
+            @Nullable
+            private Message start;
+            @Nullable
+            private Button confirmButton;
+            @Nullable
+            private Button resetButton;
+            @Nullable
+            private Integer minChoices;
+            @Nullable
+            private Integer maxChoices;
+            @Nullable
+            private BiFunction<ConfirmableButtonChoiceMenu<? super T>.ChoiceInfo, ButtonClickEvent, Message> choiceMessageProvider;
+            @Nullable
+            private BiFunction<ConfirmableButtonChoiceMenu<? super T>.ResetInfo, ButtonClickEvent, Message> resetMessageProvider;
+            @Nullable
+            private BiConsumer<ConfirmableButtonChoiceMenu<? super T>.ConfirmInfo, ButtonClickEvent> onChoicesConfirmed;
+            @Nullable
+            private Consumer<ConfirmableButtonChoiceMenu<? super T>.ConfirmableButtonChoiceTimeoutEvent> onTimeout;
+
+            @Nonnull
+            public Builder<T> setActionMenuSettings(@Nullable ActionMenu.Settings actionMenuSettings) {
+                this.actionMenuSettings = actionMenuSettings;
+                return this;
+            }
+
+            @Nonnull
+            public Builder<T> setUser(long user) {
+                this.user = user;
+                return this;
+            }
+
+            @Nonnull
+            public Builder<T> registerChoiceButton(@Nonnull Button button, @Nullable T associatedChoice) {
+                return registerChoiceButton(new ChoiceButton<>(button, associatedChoice));
+            }
+
+            @Nonnull
+            public Builder<T> registerChoiceButton(@Nonnull ChoiceButton<T> choiceButton) {
+                choiceButtons.add(choiceButton);
+                return this;
+            }
+
+            @Nonnull
+            public Builder<T> setChoiceButtons(@Nonnull List<ChoiceButton<T>> choiceButtons) {
+                this.choiceButtons = choiceButtons;
+                return this;
+            }
+
+            @Nonnull
+            public Builder<T> setStart(@Nullable Message start) {
+                this.start = start;
+                return this;
+            }
+
+            @Nonnull
+            public Builder<T> setConfirmButton(@Nullable Button confirmButton) {
+                this.confirmButton = confirmButton;
+                return this;
+            }
+
+            @Nonnull
+            public Builder<T> setResetButton(@Nullable Button resetButton) {
+                this.resetButton = resetButton;
+                return this;
+            }
+
+            @Nonnull
+            public Builder<T> setChoicesRange(int minChoices, int maxChoices) {
+                this.minChoices = minChoices;
+                this.maxChoices = maxChoices;
+                return this;
+            }
+
+            @Nonnull
+            public Builder<T> setChoiceMessageProvider(@Nullable BiFunction<ConfirmableButtonChoiceMenu<? super T>.ChoiceInfo, ButtonClickEvent, Message> choiceMessageProvider) {
+                this.choiceMessageProvider = choiceMessageProvider;
+                return this;
+            }
+
+            @Nonnull
+            public Builder<T> setResetMessageProvider(@Nullable BiFunction<ConfirmableButtonChoiceMenu<? super T>.ResetInfo, ButtonClickEvent, Message> resetMessageProvider) {
+                this.resetMessageProvider = resetMessageProvider;
+                return this;
+            }
+
+            @Nonnull
+            public Builder<T> setOnChoicesConfirmed(@Nullable BiConsumer<ConfirmableButtonChoiceMenu<? super T>.ConfirmInfo, ButtonClickEvent> onChoicesConfirmed) {
+                this.onChoicesConfirmed = onChoicesConfirmed;
+                return this;
+            }
+
+            @Nonnull
+            public Builder<T> setOnTimeout(@Nullable Consumer<ConfirmableButtonChoiceMenu<? super T>.ConfirmableButtonChoiceTimeoutEvent> onTimeout) {
+                this.onTimeout = onTimeout;
+                return this;
+            }
+
+            public Settings<T> build() {
+                if (actionMenuSettings == null) throw new IllegalStateException("ActionMenuSettings must be set");
+                if (user == null) throw new IllegalStateException("User must be set");
+                if (start == null) throw new IllegalStateException("Start must be set");
+                if (confirmButton == null) throw new IllegalStateException("ConfirmButton must be set");
+                if (resetButton == null) throw new IllegalStateException("ResetButton must be set");
+                if (minChoices == null || maxChoices == null)
+                    throw new IllegalStateException("choiceRange must be set");
+                if (choiceMessageProvider == null) throw new IllegalStateException("ChoiceMessageProvider must be set");
+                if (resetMessageProvider == null) throw new IllegalStateException("ResetMessageProvider must be set");
+                if (onChoicesConfirmed == null) throw new IllegalStateException("OnChoicesConfirmed must be set");
+                if (onTimeout == null) throw new IllegalStateException("OnTimeout must be set");
+
+                return new Settings<>(actionMenuSettings, user, choiceButtons, start, confirmButton, resetButton,
+                        minChoices, maxChoices, choiceMessageProvider, resetMessageProvider, onChoicesConfirmed, onTimeout);
+            }
+        }
     }
 }

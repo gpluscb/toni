@@ -49,7 +49,8 @@ public class BanStagesMenu extends ActionMenu {
 
         bannedStageIds = new HashSet<>();
 
-        // TODO: What if no bans??
+        if (settings.ruleset().getStageBans() == 0) throw new IllegalArgumentException("The ruleset must have at least one ban.");
+
         Message start = settings.banMessageProducer().apply(new UpcomingBanInfo());
 
         ButtonActionMenu.Settings.Builder underlyingBuilder = new ButtonActionMenu.Settings.Builder()

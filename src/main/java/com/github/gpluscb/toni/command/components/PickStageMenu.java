@@ -19,7 +19,9 @@ import org.apache.logging.log4j.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -37,6 +39,9 @@ public class PickStageMenu extends ActionMenu {
     public PickStageMenu(@Nonnull Settings settings) {
         super(settings.actionMenuSettings());
         this.settings = settings;
+
+        if (settings.bannedStageIds().size() >= settings.ruleset().getStarters().size() + settings.ruleset().getCounterpicks().size())
+            throw new IllegalArgumentException("Fewer stages must be banned than there are stages in total.");
 
         ButtonActionMenu.Settings.Builder underlyingBuilder = new ButtonActionMenu.Settings.Builder()
                 .setActionMenuSettings(getActionMenuSettings())
@@ -152,7 +157,7 @@ public class PickStageMenu extends ActionMenu {
     }
 
     public record Settings(@Nonnull ActionMenu.Settings actionMenuSettings, long pickingUser, @Nonnull Ruleset ruleset,
-                           @Nonnull List<Integer> bannedStageIds,
+                           @Nonnull Set<Integer> bannedStageIds,
                            @Nonnull BiConsumer<PickStageResult, ButtonClickEvent> onResult, @Nonnull Message start,
                            @Nonnull Consumer<PickStageTimeoutEvent> onTimeout) {
         @Nonnull
@@ -170,7 +175,7 @@ public class PickStageMenu extends ActionMenu {
             @Nullable
             private Message start;
             @Nonnull
-            private List<Integer> bannedStageIds = new ArrayList<>();
+            private Set<Integer> bannedStageIds = new HashSet<>();
             @Nonnull
             private BiConsumer<PickStageResult, ButtonClickEvent> onResult = DEFAULT_ON_RESULT;
             @Nonnull
@@ -200,7 +205,7 @@ public class PickStageMenu extends ActionMenu {
             }
 
             @Nonnull
-            public Builder setBannedStageIds(@Nonnull List<Integer> bannedStageIds) {
+            public Builder setBannedStageIds(@Nonnull Set<Integer> bannedStageIds) {
                 this.bannedStageIds = bannedStageIds;
                 return this;
             }

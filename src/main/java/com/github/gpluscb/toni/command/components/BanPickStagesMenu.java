@@ -13,6 +13,7 @@ import net.dv8tion.jda.api.interactions.InteractionHook;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -26,8 +27,9 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
     @Nonnull
     private final Settings settings;
 
+    // PickStageMenu if there are no bans in this ruleset
     @Nonnull
-    private final BanStagesMenu banUnderlying;
+    private final ActionMenu underlying;
 
     @Nullable
     private BanStagesMenu.BanResult banResult;
@@ -35,6 +37,11 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
     public BanPickStagesMenu(@Nonnull Settings settings) {
         super(settings.twoUsersChoicesActionMenuSettings());
         this.settings = settings;
+
+        if (settings.ruleset().getStageBans() == 0) {
+            underlying = createPickMenu(Collections.emptySet());
+            return;
+        }
 
         BanStagesMenu.Settings.Builder banUnderlyingBuilder = new BanStagesMenu.Settings.Builder()
                 .setActionMenuSettings(getActionMenuSettings())
@@ -46,34 +53,32 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
                 .setOnBan(settings.onBan())
                 .setOnResult(this::onBanResult);
 
-        // TODO: What if no bans??
-
-        banUnderlying = new BanStagesMenu(banUnderlyingBuilder.build());
+        underlying = new BanStagesMenu(banUnderlyingBuilder.build());
     }
 
     @Override
     public void display(@Nonnull MessageChannel channel) {
-        banUnderlying.display(channel);
+        underlying.display(channel);
     }
 
     @Override
     public void display(@Nonnull MessageChannel channel, long messageId) {
-        banUnderlying.display(channel, messageId);
+        underlying.display(channel, messageId);
     }
 
     @Override
     public void displayReplying(@Nonnull MessageChannel channel, long messageId) {
-        banUnderlying.displayReplying(channel, messageId);
+        underlying.displayReplying(channel, messageId);
     }
 
     @Override
     public void displaySlashReplying(@Nonnull SlashCommandEvent event) {
-        banUnderlying.displaySlashReplying(event);
+        underlying.displaySlashReplying(event);
     }
 
     @Override
     public void displayDeferredReplying(@Nonnull InteractionHook hook) {
-        banUnderlying.displayDeferredReplying(hook);
+        underlying.displayDeferredReplying(hook);
     }
 
     private synchronized void onBanResult(@Nonnull BanStagesMenu.BanResult result, @Nonnull ButtonClickEvent e) {
@@ -83,24 +88,29 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
 
         banResult = result;
 
-        PickStageMenu pickUnderlying = new PickStageMenu(new PickStageMenu.Settings.Builder()
+        PickStageMenu pickUnderlying = createPickMenu(Stream.concat(result.getBannedStageIds().stream(), result.getBanStagesMenuSettings().dsrIllegalStages().stream())
+                .collect(Collectors.toSet()));
+
+        pickUnderlying.display(e.getMessage());
+    }
+
+    @Nonnull
+    private PickStageMenu createPickMenu(@Nonnull Set<Integer> bannedStageIds) {
+        return new PickStageMenu(new PickStageMenu.Settings.Builder()
                 .setActionMenuSettings(new ActionMenu.Settings.Builder()
                         .setWaiter(getActionMenuSettings().waiter())
                         .setTimeout(settings.pickStageTimeout(), settings.pickStageUnit())
                         .build())
                 .setPickingUser(getTwoUsersChoicesActionMenuSettings().user2())
                 .setRuleset(settings.ruleset())
-                .setBannedStageIds(Stream.concat(result.getBannedStageIds().stream(), result.getBanStagesMenuSettings().dsrIllegalStages().stream())
-                        .collect(Collectors.toList()))
+                .setBannedStageIds(bannedStageIds)
                 .setStart(settings.pickStageStart())
                 .setOnResult(this::onPickResult)
                 .setOnTimeout(settings.onPickTimeout())
                 .build());
-
-        pickUnderlying.display(e.getMessage());
     }
 
-    private void onPickResult(@Nonnull PickStageMenu.PickStageResult pickResult, @Nonnull ButtonClickEvent e) {
+    private synchronized void onPickResult(@Nonnull PickStageMenu.PickStageResult pickResult, @Nonnull ButtonClickEvent e) {
         settings.onPickResult().accept(pickResult, e);
 
         // banResult will be set at this point
@@ -111,17 +121,17 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
     @Nonnull
     @Override
     public JDA getJDA() {
-        return banUnderlying.getJDA();
+        return underlying.getJDA();
     }
 
     @Override
     public long getMessageId() {
-        return banUnderlying.getMessageId();
+        return underlying.getMessageId();
     }
 
     @Override
     public long getChannelId() {
-        return banUnderlying.getChannelId();
+        return underlying.getChannelId();
     }
 
     @Nonnull

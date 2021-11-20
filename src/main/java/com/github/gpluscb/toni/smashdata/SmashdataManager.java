@@ -18,8 +18,8 @@ public class SmashdataManager {
     @Nonnull
     private final Gson gson;
 
-    public SmashdataManager(@Nonnull String dbLocation) throws SQLException {
-        gson = new Gson();
+    public SmashdataManager(@Nonnull String dbLocation, @Nonnull Gson gson) throws SQLException {
+        this.gson = gson;
 
         connection = DriverManager.getConnection("jdbc:sqlite:" + dbLocation);
         pgru = loadPgru();

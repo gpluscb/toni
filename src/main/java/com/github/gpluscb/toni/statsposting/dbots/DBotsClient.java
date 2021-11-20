@@ -28,7 +28,7 @@ public class DBotsClient implements BotListClient<StatsResponse> {
     @Nonnull
     private final DBotsService service;
 
-    public DBotsClient(@Nonnull String token, @Nonnull OkHttpClient client, long id) {
+    public DBotsClient(@Nonnull String token, @Nonnull OkHttpClient client, long id, @Nonnull Gson gson) {
         this.token = token;
         this.id = id;
 
@@ -40,8 +40,6 @@ public class DBotsClient implements BotListClient<StatsResponse> {
                 return new Thread(runnable, String.format("DBotsClient [%d] Callback-Thread", i++));
             }
         });
-
-        Gson gson = new GsonBuilder().create();
 
         // TODO: Think about executors
         Retrofit retrofit = new Retrofit.Builder()

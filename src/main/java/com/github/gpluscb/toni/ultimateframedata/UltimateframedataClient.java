@@ -21,7 +21,7 @@ public class UltimateframedataClient {
     @Nonnull
     private final UltimateframedataService service;
 
-    public UltimateframedataClient(@Nonnull OkHttpClient client) {
+    public UltimateframedataClient(@Nonnull OkHttpClient client, @Nonnull Gson gson) {
         Executor callbackExecutor = Executors.newCachedThreadPool(new ThreadFactory() {
             int i;
 
@@ -31,13 +31,13 @@ public class UltimateframedataClient {
             }
         });
 
-        Gson gson = new GsonBuilder()
+        Gson customGson = gson.newBuilder()
                 .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
                 .create();
 
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl("http://127.0.0.1:8080/")
-                .addConverterFactory(GsonConverterFactory.create(gson))
+                .addConverterFactory(GsonConverterFactory.create(customGson))
                 .callbackExecutor(callbackExecutor)
                 .client(client)
                 .build();

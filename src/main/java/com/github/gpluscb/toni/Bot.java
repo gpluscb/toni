@@ -31,13 +31,15 @@ import com.github.gpluscb.toni.statsposting.dbots.StatsResponse;
 import com.github.gpluscb.toni.statsposting.topgg.TopggClient;
 import com.github.gpluscb.toni.statsposting.topgg.TopggClientMock;
 import com.github.gpluscb.toni.ultimateframedata.UltimateframedataClient;
-import com.github.gpluscb.toni.util.smash.Rulesets;
+import com.github.gpluscb.toni.util.RecordTypeAdapterFactory;
 import com.github.gpluscb.toni.util.discord.ChannelChoiceWaiter;
 import com.github.gpluscb.toni.util.discord.DiscordAppenderImpl;
 import com.github.gpluscb.toni.util.discord.ShardsLoadListener;
 import com.github.gpluscb.toni.util.smash.CharacterTree;
 import com.github.gpluscb.toni.util.smash.Ruleset;
+import com.github.gpluscb.toni.util.smash.Rulesets;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
@@ -74,7 +76,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-// TODO: Apparently GSON has issues with records?? https://github.com/google/gson/issues/1794 / https://github.com/Marcono1234/gson-record-type-adapter-factory
 public class Bot {
     private static final Logger log = LogManager.getLogger(Bot.class);
 
@@ -98,6 +99,8 @@ public class Bot {
     private final UnrankedManager unrankedManager;
     @Nonnull
     private final ScheduledExecutorService waiterPool;
+    @Nonnull
+    private final Gson gson;
 
     public static void main(String[] args) {
         if (args.length < 1) {
@@ -129,6 +132,11 @@ public class Bot {
     }
 
     public Bot(@Nonnull String configLocation, boolean hookCommands) throws LoginException, SQLException, DataAccessException, IOException {
+        log.trace("Loading Gson");
+        gson = new GsonBuilder()
+                .registerTypeAdapterFactory(new RecordTypeAdapterFactory())
+                .create();
+
         log.trace("Loading config");
         Config cfg = loadConfig(configLocation);
 
@@ -170,7 +178,7 @@ public class Bot {
         RestAction.setDefaultTimeout(30, TimeUnit.SECONDS);
 
         log.trace("Building UltimateframedataClient");
-        UltimateframedataClient ufdClient = new UltimateframedataClient(okHttp);
+        UltimateframedataClient ufdClient = new UltimateframedataClient(okHttp, gson);
 
         log.trace("Building EventWaiter");
         waiterPool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "EventWaiterPool [0 / 1] Waiter-Thread"));
@@ -186,7 +194,7 @@ public class Bot {
             dBotsClient = new DBotsClientMock();
         } else {
             log.trace("Creating DBotsClient");
-            dBotsClient = new DBotsClient(cfg.dbotsToken(), okHttp, botId);
+            dBotsClient = new DBotsClient(cfg.dbotsToken(), okHttp, botId, gson);
         }
 
         BotListClient<Void> topggClient;
@@ -247,7 +255,7 @@ public class Bot {
 
         log.trace("Loading smashdata");
         try {
-            smashdata = new SmashdataManager(cfg.smashdataDbLocation());
+            smashdata = new SmashdataManager(cfg.smashdataDbLocation(), gson);
         } catch (SQLException e) {
             log.error("Exception while loading smashdata - shutting down", e);
             ggManager.shutdown();
@@ -333,7 +341,6 @@ public class Bot {
     @Nonnull
     private Config loadConfig(@Nonnull String location) throws IOException {
         try (Reader configFile = new FileReader(location)) {
-            Gson gson = new Gson();
             Config config = gson.fromJson(configFile, Config.class);
             config.check();
 
@@ -344,7 +351,6 @@ public class Bot {
     @Nonnull
     private List<Ruleset> loadRulesets(@Nonnull String location) throws IOException {
         try (Reader rulesetsFile = new FileReader(location)) {
-            Gson gson = new Gson();
             Rulesets rulesets = gson.fromJson(rulesetsFile, Rulesets.class);
             rulesets.check();
 

@@ -51,14 +51,14 @@ public class ButtonActionMenu extends ActionMenu {
         Button deletionButton = settings.deletionButton();
         if (deletionButton != null) buttonsStream = Stream.concat(buttonsStream, Stream.of(deletionButton));
 
-        List<Button> buttonsToAdd = buttonsStream.collect(Collectors.toList());
+        List<Button> buttonsToAdd = buttonsStream.toList();
 
         if (buttonsToAdd.stream().anyMatch(button -> button.getStyle() == ButtonStyle.LINK))
             throw new IllegalStateException("Buttons may not be link buttons");
 
         // Multiple ActionRows in case of > 5 buttons
         List<List<Button>> splitButtonsToAdd = MiscUtil.splitList(buttonsToAdd, Component.Type.BUTTON.getMaxPerRow());
-        initialActionRows = splitButtonsToAdd.stream().map(ActionRow::of).collect(Collectors.toList());
+        initialActionRows = splitButtonsToAdd.stream().map(ActionRow::of).toList();
 
         // e.getKey.getId() cannot return null here since we don't allow link buttons
         this.buttonActions = buttons

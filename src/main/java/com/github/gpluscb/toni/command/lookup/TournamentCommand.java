@@ -404,10 +404,10 @@ public class TournamentCommand implements Command {
                 List<EventResponse> eventsResponse = tournament.getEvents();
                 List<EventResponse> events = eventsResponse == null ?
                         Collections.emptyList()
-                        : eventsResponse.stream().filter(Objects::nonNull).collect(Collectors.toList());
+                        : eventsResponse.stream().filter(Objects::nonNull).toList();
 
                 return new PairNonnull<>(tournament, events);
-            }).collect(Collectors.toList());
+            }).toList();
 
             lazyMessages = new Message[tournaments.size()][];
             for (int i = 0; i < lazyMessages.length; i++) {

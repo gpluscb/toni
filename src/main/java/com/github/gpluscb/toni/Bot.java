@@ -406,8 +406,8 @@ public class Bot {
 
     private void hookSlashCommands(@Nonnull Guild adminGuild, @Nonnull List<CommandCategory> commands) {
         Map<Boolean, List<Command>> map = commands.stream().flatMap(cat -> cat.commands().stream()).collect(Collectors.groupingBy(cmd -> cmd.getInfo().adminOnly()));
-        List<CommandData> globalCommands = map.get(false).stream().map(cmd -> cmd.getInfo().commandData()).collect(Collectors.toList());
-        List<CommandData> adminOnlyCommands = map.get(true).stream().map(cmd -> cmd.getInfo().commandData()).collect(Collectors.toList());
+        List<CommandData> globalCommands = map.get(false).stream().map(cmd -> cmd.getInfo().commandData()).toList();
+        List<CommandData> adminOnlyCommands = map.get(true).stream().map(cmd -> cmd.getInfo().commandData()).toList();
 
         shardManager.getShardCache().forEachUnordered(jda -> {
             jda.updateCommands().addCommands(globalCommands).queue();

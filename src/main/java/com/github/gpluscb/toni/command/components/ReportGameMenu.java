@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static net.dv8tion.jda.api.interactions.components.Button.LABEL_MAX_LENGTH;
@@ -134,8 +133,8 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
         }
 
         List<ActionRow> actionRows = MiscUtil.splitList(
-                Stream.concat(e.getMessage().getButtons().stream(), Stream.of(modButton)).collect(Collectors.toList()), Component.Type.BUTTON.getMaxPerRow()
-        ).stream().map(ActionRow::of).collect(Collectors.toList());
+                Stream.concat(e.getMessage().getButtons().stream(), Stream.of(modButton)).toList(), Component.Type.BUTTON.getMaxPerRow()
+        ).stream().map(ActionRow::of).toList();
 
         e.editMessage(settings.conflictMessageProvider().apply(new ReportGameConflict(), e))
                 .setActionRows(actionRows)

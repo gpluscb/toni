@@ -112,7 +112,7 @@ public class StringTokenizer {
 
         @Nonnull
         public List<String> getTokens() {
-            return tokensInfo.stream().map(tokenInfo -> originalString.substring(tokenInfo.getStartPos(), tokenInfo.getEndPos())).collect(Collectors.toList());
+            return tokensInfo.stream().map(tokenInfo -> originalString.substring(tokenInfo.getStartPos(), tokenInfo.getEndPos())).toList();
         }
 
         @Nonnull

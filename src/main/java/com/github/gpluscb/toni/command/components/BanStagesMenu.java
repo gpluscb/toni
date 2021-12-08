@@ -172,7 +172,7 @@ public class BanStagesMenu extends ActionMenu {
             //noinspection OptionalGetWithoutIsPresent
             return bannedStageIds.stream()
                     .map(id -> settings.ruleset().getStagesStream().filter(stage -> stage.stageId() == id).findAny().get())
-                    .collect(Collectors.toList());
+                    .toList();
         }
 
         @Nonnull
@@ -189,7 +189,7 @@ public class BanStagesMenu extends ActionMenu {
             return settings.ruleset().getStagesStream()
                     .filter(stage -> !bannedStageIds.contains(stage.stageId()))
                     .filter(stage -> !settings.dsrIllegalStages().contains(stage.stageId()))
-                    .collect(Collectors.toList());
+                    .toList();
         }
     }
 

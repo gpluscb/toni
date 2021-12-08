@@ -151,7 +151,7 @@ public class MiscUtil {
 
         return RestAction.allOf(
                 Arrays.stream(reactions).map(r -> channel.removeReactionById(messageId, r))
-                        .collect(Collectors.toList())
+                        .toList()
         ).map(v -> null);
     }
 

@@ -210,7 +210,7 @@ public class GGManager implements GGClient {
                         }).map(TournamentResponse::getId).filter(Objects::nonNull).map(IDResponse::getValueLong));
                     }
 
-                    return OneOfTwo.ofT(idsStream.limit(numTournaments).collect(Collectors.toList()));
+                    return OneOfTwo.ofT(idsStream.limit(numTournaments).toList());
                 })
         ).thenCompose(result ->
                 result.map(ids -> {
@@ -228,7 +228,7 @@ public class GGManager implements GGClient {
                                             .sorted(Comparator.comparingLong(tournament -> {
                                                 IDResponse id = tournament.getId();
                                                 return id == null ? 0 : ids.indexOf(id.getValueLong());
-                                            })).collect(Collectors.toList()))
+                                            })).toList())
                             );
                         }, fail -> CompletableFuture.completedFuture(OneOfTwo.ofU(fail))
                 )

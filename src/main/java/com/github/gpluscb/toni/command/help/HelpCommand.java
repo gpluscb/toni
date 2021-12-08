@@ -61,7 +61,7 @@ public class HelpCommand implements Command {
                     .map(Command::getInfo)
                     .filter(info -> info.shortHelp() != null)
                     .map(info -> new EmbedUtil.InlineField(info.aliases()[0], info.shortHelp()))
-                    .collect(Collectors.toList());
+                    .toList();
             String parsedFields = EmbedUtil.parseInlineFields(helpFields);
             builder.addField("Commands", parsedFields, false);
 
@@ -109,7 +109,7 @@ public class HelpCommand implements Command {
                 .filter(category -> category.categoryName() != null)
                 .filter(category -> category.shortDescription() != null)
                 .map(category -> new EmbedUtil.InlineField(category.categoryName(), category.shortDescription()))
-                .collect(Collectors.toList());
+                .toList();
         String parsedFields = EmbedUtil.parseInlineFields(helpFields);
         builder.addField("Command categories", parsedFields, false);
 

@@ -18,7 +18,7 @@ public record Rulesets(@Nonnull List<Stage> stages,
 
     @Nonnull
     public List<Ruleset> toRulesetList() {
-        return rulesets.stream().map(raw -> raw.toRuleset(stages)).collect(Collectors.toList());
+        return rulesets.stream().map(raw -> raw.toRuleset(stages)).toList();
     }
 
     private record RawRuleset(int rulesetId, @Nonnull String name,
@@ -43,13 +43,13 @@ public record Rulesets(@Nonnull List<Stage> stages,
         public Ruleset toRuleset(@Nonnull List<Stage> stages) {
             List<Stage> starters = starterIds.stream()
                     .map(id -> stageFromId(stages, id))
-                    .collect(Collectors.toList());
+                    .toList();
 
             if (starters.contains(null)) throw new IllegalStateException("starterIds contains invalid id");
 
             List<Stage> counterpicks = counterpickIds.stream()
                     .map(id -> stageFromId(stages, id))
-                    .collect(Collectors.toList());
+                    .toList();
 
             if (counterpicks.contains(null)) throw new IllegalStateException("counterpickIds contains invalid id");
 

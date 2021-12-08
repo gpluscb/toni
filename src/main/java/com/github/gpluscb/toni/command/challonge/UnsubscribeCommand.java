@@ -45,7 +45,7 @@ public class UnsubscribeCommand/* implements Command*/ {
 
         if (ctx.getArgs().isEmpty()) {
             // Potentially multiple subs per guild
-            List<TournamentListener.Subscription> subs = filterForGuild(guild, listener.getSubscriptions().stream()).collect(Collectors.toList());
+            List<TournamentListener.Subscription> subs = filterForGuild(guild, listener.getSubscriptions().stream()).toList();
             if (subs.isEmpty()) {
                 ctx.reply("I don't think this server is subscribed to any tournaments. If you think this is a bug, please tell my dev. They'll be happy to hear about it.").queue();
                 return;

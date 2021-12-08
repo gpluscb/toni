@@ -35,7 +35,7 @@ public class ChannelChoiceWaiter {
 
             List<UserChoiceInfo<T>> choices = participants.stream()
                     .map(id -> new UserChoiceInfo<T>(id, channelId))
-                    .collect(Collectors.toList());
+                    .toList();
 
             return putElement(choices, ignoreDoubleChoice, verifyChoice, onChoicesDone, timeout, unit, timeoutAction);
         }
@@ -50,7 +50,7 @@ public class ChannelChoiceWaiter {
 
             List<UserChoiceInfo<T>> choices = participants.stream()
                     .map(id -> new UserChoiceInfo<T>(id, null))
-                    .collect(Collectors.toList());
+                    .toList();
 
             return putElement(choices, ignoreDoubleChoice, verifyChoice, onChoicesDone, timeout, unit, timeoutAction);
         }
@@ -110,7 +110,7 @@ public class ChannelChoiceWaiter {
                         return choiceChannelId != null && choiceChannelId == channelId;
                     })
                     .map(UserChoiceInfo::getUserId)
-                    .collect(Collectors.toList());
+                    .toList();
         }
     }
 
@@ -122,7 +122,7 @@ public class ChannelChoiceWaiter {
                     .flatMap(List::stream)
                     .filter(choice -> choice.getChannelId() == null)
                     .map(UserChoiceInfo::getUserId)
-                    .collect(Collectors.toList());
+                    .toList();
         }
     }
 

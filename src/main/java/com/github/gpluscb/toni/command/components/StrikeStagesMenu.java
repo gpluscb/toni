@@ -197,7 +197,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
                             strikes.stream()
                                     .flatMap(Set::stream)
                                     .noneMatch(struckStageId -> stage.stageId() == struckStageId))
-                    .collect(Collectors.toList());
+                    .toList();
         }
     }
 
@@ -256,7 +256,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
         public List<Stage> getStruckStages() {
             return settings.ruleset().getStagesStream()
                     .filter(stage -> struckStagesIds.contains(stage.stageId()))
-                    .collect(Collectors.toList());
+                    .toList();
         }
     }
 

@@ -78,7 +78,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
     }
 
     @Override
-    public void display(MessageChannel channel, long messageId) {
+    public void display(@Nonnull MessageChannel channel, long messageId) {
         initSet();
         startUnderlying.display(channel, messageId);
     }

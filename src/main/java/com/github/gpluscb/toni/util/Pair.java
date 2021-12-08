@@ -1,6 +1,8 @@
 package com.github.gpluscb.toni.util;
 
+import javax.annotation.Nonnull;
 import java.util.Objects;
+import java.util.function.Function;
 
 // TODO: Read into records, maybe they'd make this obsolete idk
 public class Pair<T, U> {
@@ -26,6 +28,21 @@ public class Pair<T, U> {
 
     public void setU(U u) {
         this.u = u;
+    }
+
+    @Nonnull
+    public <V, W> Pair<V, W> map(@Nonnull Function<T, V> funT, @Nonnull Function<U, W> funU) {
+        return new Pair<>(funT.apply(t), funU.apply(u));
+    }
+
+    @Nonnull
+    public <V> Pair<V, U> mapT(@Nonnull Function<T, V> fun) {
+        return map(fun, Function.identity());
+    }
+
+    @Nonnull
+    public <W> Pair<T, W> mapU(@Nonnull Function<U, W> fun) {
+        return map(Function.identity(), fun);
     }
 
     @Override

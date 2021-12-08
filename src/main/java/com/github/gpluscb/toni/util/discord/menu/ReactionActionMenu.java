@@ -118,7 +118,7 @@ public class ReactionActionMenu extends Menu {
                     MessageChannel channel = jda.getTextChannelById(channelId);
                     if (channel == null) channel = jda.getPrivateChannelById(channelId);
                     timeoutAction.accept(channel, messageId);
-                    if (channel == null) log.warn("MessageChannel for timeoutAction not in cache for timeoutAction");
+                    if (channel == null) log.warn("MessageChannel for onTimeout not in cache for onTimeout");
                 }));
     }
 

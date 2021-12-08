@@ -84,7 +84,7 @@ public abstract class ActionMenu {
         display(message.getChannel(), message.getIdLong());
     }
 
-    public abstract void display(MessageChannel channel, long messageId);
+    public abstract void display(@Nonnull MessageChannel channel, long messageId);
 
     public void displayReplying(@Nonnull Message reference) {
         displayReplying(reference.getChannel(), reference.getIdLong());
@@ -152,5 +152,10 @@ public abstract class ActionMenu {
                 return new Settings(waiter, timeout, unit);
             }
         }
+    }
+
+    public enum MenuAction {
+        CONTINUE,
+        CANCEL
     }
 }

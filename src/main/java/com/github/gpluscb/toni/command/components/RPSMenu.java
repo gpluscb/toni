@@ -76,12 +76,12 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
     }
 
     @Nonnull
-    private synchronized ButtonActionMenu.MenuAction choose(@Nonnull ButtonClickEvent e, @Nonnull RPS choice) {
+    private synchronized MenuAction choose(@Nonnull ButtonClickEvent e, @Nonnull RPS choice) {
         boolean isUser1 = e.getUser().getIdLong() == getTwoUsersChoicesActionMenuSettings().user1();
         if ((isUser1 && choice1 != null) || (!isUser1 && choice2 != null)) {
             e.reply("You have already chosen, and you must learn to live with that choice!")
                     .setEphemeral(true).queue();
-            return ButtonActionMenu.MenuAction.CONTINUE;
+            return MenuAction.CONTINUE;
         }
 
         settings.onChoiceMade().accept(choice, e);
@@ -93,12 +93,12 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
             RPSResult outcome = determineWinner();
             settings.onResult().accept(outcome, e);
 
-            return ButtonActionMenu.MenuAction.CANCEL;
+            return MenuAction.CANCEL;
         }
 
         e.reply("I have noted your choice...").setEphemeral(true).queue();
 
-        return ButtonActionMenu.MenuAction.CONTINUE;
+        return MenuAction.CONTINUE;
     }
 
     @Nonnull

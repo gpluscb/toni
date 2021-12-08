@@ -592,7 +592,7 @@ public class CharacterCommand implements Command {
             MessageChannel channel = jda.getTextChannelById(messageChannel);
             if (channel == null) channel = jda.getPrivateChannelById(messageChannel);
             if (channel == null) {
-                log.warn("MessageChannel for timeoutAction not in cache for timeoutAction");
+                log.warn("MessageChannel for onTimeout not in cache for onTimeout");
                 return;
             }
 

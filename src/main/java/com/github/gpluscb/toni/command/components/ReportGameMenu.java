@@ -86,7 +86,7 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
     }
 
     @Nonnull
-    private synchronized ButtonActionMenu.MenuAction onChoice(long reportedWinner, @Nonnull ButtonClickEvent e) {
+    private synchronized MenuAction onChoice(long reportedWinner, @Nonnull ButtonClickEvent e) {
         long reportingUser = e.getUser().getIdLong();
         boolean updatedChoice;
 
@@ -110,14 +110,14 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
             // Only one has reported
             e.reply(String.format("I have %s your choice.", updatedChoice ? "updated" : "noted")).setEphemeral(true).queue();
 
-            return ButtonActionMenu.MenuAction.CONTINUE;
+            return MenuAction.CONTINUE;
         }
 
         // Both have reported the winner
         if (user1ReportedWinner.equals(user2ReportedWinner)) {
             settings.onResult().accept(new ReportGameResult(), e);
 
-            return ButtonActionMenu.MenuAction.CANCEL;
+            return MenuAction.CANCEL;
         }
 
         // Conflict
@@ -130,7 +130,7 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
         // Either way the conflict hasn't changed, so we don't update the message.
         if ((reportingUser == user1 && user1ReportedWinner.equals(previousUser1ReportedWinner)) || user2ReportedWinner.equals(previousUser2ReportedWinner)) {
             e.reply("You have selected the same user you have already reported as the winner.").setEphemeral(true).queue();
-            return ButtonActionMenu.MenuAction.CONTINUE;
+            return MenuAction.CONTINUE;
         }
 
         List<ActionRow> actionRows = MiscUtil.splitList(
@@ -141,13 +141,13 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
                 .setActionRows(actionRows)
                 .queue();
 
-        return ButtonActionMenu.MenuAction.CONTINUE;
+        return MenuAction.CONTINUE;
     }
 
     @Nonnull
-    private synchronized ButtonActionMenu.MenuAction onCallMod(@Nonnull ButtonClickEvent e) {
+    private synchronized MenuAction onCallMod(@Nonnull ButtonClickEvent e) {
         // TODO:
-        return ButtonActionMenu.MenuAction.CONTINUE;
+        return MenuAction.CONTINUE;
     }
 
     private synchronized void onTimeout(@Nonnull ButtonActionMenu.ButtonActionMenuTimeoutEvent event) {

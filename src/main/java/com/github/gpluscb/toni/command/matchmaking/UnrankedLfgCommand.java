@@ -187,22 +187,22 @@ public class UnrankedLfgCommand implements Command {
         }
 
         @Nonnull
-        public ButtonActionMenu.MenuAction fightButton(@Nonnull ButtonClickEvent e) {
+        public ActionMenu.MenuAction fightButton(@Nonnull ButtonClickEvent e) {
             synchronized (currentlyLfgPerGuild) {
                 // Was it cancelled?
                 if (!currentlyLfgPerGuild.contains(new PairNonnull<>(guildId, originalAuthorId)))
-                    return ButtonActionMenu.MenuAction.CANCEL;
+                    return ActionMenu.MenuAction.CANCEL;
             }
 
             long challengerId = e.getUser().getIdLong();
             if (challengerId == originalAuthorId) {
                 e.reply("If you are trying to play with yourself, that's ok too. But there's no need to ping matchmaking for that my friend.").queue();
-                return ButtonActionMenu.MenuAction.CONTINUE;
+                return ActionMenu.MenuAction.CONTINUE;
             }
 
             synchronized (currentlyChallenging) {
                 if (currentlyChallenging.contains(challengerId))
-                    return ButtonActionMenu.MenuAction.CONTINUE;
+                    return ActionMenu.MenuAction.CONTINUE;
 
                 currentlyChallenging.add(challengerId);
             }
@@ -236,12 +236,12 @@ public class UnrankedLfgCommand implements Command {
 
             menu.displayReplying(originalChannel, originalMessageId);
 
-            return ButtonActionMenu.MenuAction.CONTINUE;
+            return ActionMenu.MenuAction.CONTINUE;
         }
 
         @Nonnull
-        public ButtonActionMenu.MenuAction cancelButton(@Nonnull ButtonClickEvent e) {
-            if (e.getUser().getIdLong() != originalAuthorId) return ButtonActionMenu.MenuAction.CONTINUE;
+        public ActionMenu.MenuAction cancelButton(@Nonnull ButtonClickEvent e) {
+            if (e.getUser().getIdLong() != originalAuthorId) return ActionMenu.MenuAction.CONTINUE;
 
             synchronized (currentlyLfgPerGuild) {
                 currentlyLfgPerGuild.remove(new PairNonnull<>(guildId, originalAuthorId));
@@ -256,7 +256,7 @@ public class UnrankedLfgCommand implements Command {
                     .setActionRows()
                     .queue();
 
-            return ButtonActionMenu.MenuAction.CANCEL;
+            return ActionMenu.MenuAction.CANCEL;
         }
 
         public void timeout(@Nonnull ButtonActionMenu.ButtonActionMenuTimeoutEvent event) {
@@ -284,7 +284,7 @@ public class UnrankedLfgCommand implements Command {
             }
 
             @Nonnull
-            public ButtonActionMenu.MenuAction confirmButton(@Nonnull ButtonClickEvent e) {
+            public ActionMenu.MenuAction confirmButton(@Nonnull ButtonClickEvent e) {
                 MessageChannel channel = e.getChannel();
 
                 synchronized (currentlyLfgPerGuild) {
@@ -303,7 +303,7 @@ public class UnrankedLfgCommand implements Command {
                         .setActionRows()
                         .queue();
 
-                return ButtonActionMenu.MenuAction.CANCEL;
+                return ActionMenu.MenuAction.CANCEL;
             }
 
             public void timeout(@Nonnull ButtonActionMenu.ButtonActionMenuTimeoutEvent event) {

@@ -106,14 +106,14 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
 
         Message start = settings.strikeFirstMessageProvider().apply(rpsResult, e);
 
-        Function<ButtonClickEvent, ButtonActionMenu.MenuAction> onButtonFirst = event -> {
+        Function<ButtonClickEvent, MenuAction> onButtonFirst = event -> {
             onStrikeFirstChoice(new StrikeFirstChoiceResult(winner, winner, loser), event);
-            return ButtonActionMenu.MenuAction.CANCEL;
+            return MenuAction.CANCEL;
         };
 
-        Function<ButtonClickEvent, ButtonActionMenu.MenuAction> onButtonSecond = event -> {
+        Function<ButtonClickEvent, MenuAction> onButtonSecond = event -> {
             onStrikeFirstChoice(new StrikeFirstChoiceResult(winner, loser, winner), event);
-            return ButtonActionMenu.MenuAction.CANCEL;
+            return MenuAction.CANCEL;
         };
 
         ButtonActionMenu strikeFirstChoiceUnderlying = new ButtonActionMenu(new ButtonActionMenu.Settings.Builder()

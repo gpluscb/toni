@@ -169,6 +169,17 @@ public class Ruleset {
         STAGE_DISMISSAL_RULE;
 
         @Nonnull
+        public String displayName() {
+            return switch (this) {
+                case NONE -> "No DSR";
+                case MODIFIED_DSR -> "Modified DSR";
+                case GAME_RESTRICTED -> "Game Restricted DSR";
+                case WINNERS_VARIATION -> "Winners Variation";
+                case STAGE_DISMISSAL_RULE -> "Stage Dismissal Rule";
+            };
+        }
+
+        @Nonnull
         public static DSRMode fromId(int id) {
             return DSRMode.values()[id];
         }

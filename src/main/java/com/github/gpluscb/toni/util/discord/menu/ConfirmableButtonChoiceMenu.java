@@ -64,7 +64,7 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
     }
 
     @Override
-    public void display(MessageChannel channel, long messageId) {
+    public void display(@Nonnull MessageChannel channel, long messageId) {
         underlying.display(channel, messageId);
     }
 
@@ -84,7 +84,7 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
     }
 
     @Nonnull
-    private synchronized ButtonActionMenu.MenuAction onChoice(@Nullable T choice, @Nonnull ButtonClickEvent event) {
+    private synchronized MenuAction onChoice(@Nullable T choice, @Nonnull ButtonClickEvent event) {
         if (choice == null) {
             log.warn("Invalid choice chosen - id: {}", event.getComponentId());
 
@@ -92,7 +92,7 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
                     .setEphemeral(true)
                     .queue();
 
-            return ButtonActionMenu.MenuAction.CONTINUE;
+            return MenuAction.CONTINUE;
         }
 
         if (currentChoices.size() == settings.maxChoices()) {
@@ -101,7 +101,7 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
                     .setEphemeral(true)
                     .queue();
 
-            return ButtonActionMenu.MenuAction.CONTINUE;
+            return MenuAction.CONTINUE;
         }
 
         currentChoices.add(choice);
@@ -124,11 +124,11 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
                 .setActionRows(actionRows)
                 .queue();
 
-        return ButtonActionMenu.MenuAction.CONTINUE;
+        return MenuAction.CONTINUE;
     }
 
     @Nonnull
-    private synchronized ButtonActionMenu.MenuAction onConfirm(@Nonnull ButtonClickEvent event) {
+    private synchronized MenuAction onConfirm(@Nonnull ButtonClickEvent event) {
         if (currentChoices.size() < settings.minChoices() || currentChoices.size() > settings.maxChoices()) {
             log.warn("Confirm was activated with illegal number of choices.");
 
@@ -136,16 +136,16 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
                     .setEphemeral(true)
                     .queue();
 
-            return ButtonActionMenu.MenuAction.CONTINUE;
+            return MenuAction.CONTINUE;
         }
 
         settings.onChoicesConfirmed().accept(new ConfirmInfo(), event);
 
-        return ButtonActionMenu.MenuAction.CANCEL;
+        return MenuAction.CANCEL;
     }
 
     @Nonnull
-    private synchronized ButtonActionMenu.MenuAction onReset(@Nonnull ButtonClickEvent event) {
+    private synchronized MenuAction onReset(@Nonnull ButtonClickEvent event) {
         currentChoices.clear();
 
         Message message = settings.resetMessageProvider().apply(new ResetInfo(), event);
@@ -156,7 +156,7 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
                 .setActionRows(actionRows)
                 .queue();
 
-        return ButtonActionMenu.MenuAction.CONTINUE;
+        return MenuAction.CONTINUE;
     }
 
     private synchronized void onTimeout(@Nonnull ButtonActionMenu.ButtonActionMenuTimeoutEvent timeout) {

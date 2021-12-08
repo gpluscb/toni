@@ -100,16 +100,16 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
     }
 
     @Nonnull
-    private ButtonActionMenu.MenuAction handleStrike(@Nonnull ButtonClickEvent e, int stageId) {
+    private MenuAction handleStrike(@Nonnull ButtonClickEvent e, int stageId) {
         if (e.getUser().getIdLong() != currentStriker) {
             e.reply("It's not your turn to strike right now!").setEphemeral(true).queue();
-            return ButtonActionMenu.MenuAction.CONTINUE;
+            return MenuAction.CONTINUE;
         }
 
         if (strikes.stream().anyMatch(struckStages -> struckStages.contains(stageId))) {
             log.warn("Stage was double struck. Race condition or failure to set as disabled?");
             e.editMessage("That stage has already been struck. Please strike a different one.").queue();
-            return ButtonActionMenu.MenuAction.CONTINUE;
+            return MenuAction.CONTINUE;
         }
 
         currentStrikes.add(stageId);
@@ -125,7 +125,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
             if (strikes.size() == starterStrikePattern.length) {
                 settings.onResult().accept(new StrikeResult(), e);
 
-                return ButtonActionMenu.MenuAction.CANCEL;
+                return MenuAction.CANCEL;
             }
 
             currentStrikes = new HashSet<>();
@@ -140,7 +140,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
 
         e.editMessage(newMessage).setActionRows(actionRows).queue();
 
-        return ButtonActionMenu.MenuAction.CONTINUE;
+        return MenuAction.CONTINUE;
     }
 
     private synchronized void onTimeout(@Nonnull ButtonActionMenu.ButtonActionMenuTimeoutEvent event) {

@@ -147,15 +147,7 @@ public class ButtonActionMenu extends ActionMenu {
 
         MenuAction action = buttonActions.get(buttonId).apply(e);
 
-        switch (action) {
-            case CONTINUE:
-                awaitEvents();
-                break;
-            case CANCEL:
-                break;
-            default:
-                throw new IllegalStateException("Non exhaustive switch over MenuAction");
-        }
+        if (action == MenuAction.CONTINUE) awaitEvents();
     }
 
     @Nonnull
@@ -183,14 +175,6 @@ public class ButtonActionMenu extends ActionMenu {
             this.onClick = onClick;
             this.displayInitially = displayInitially;
         }
-    }
-
-    public enum MenuAction {
-        CONTINUE,
-        /**
-         * Does not remove the buttons
-         */
-        CANCEL
     }
 
     public record Settings(@Nonnull ActionMenu.Settings settings, @Nonnull Set<Long> users,

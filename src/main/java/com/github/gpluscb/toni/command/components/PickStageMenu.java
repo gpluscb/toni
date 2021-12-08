@@ -87,16 +87,16 @@ public class PickStageMenu extends ActionMenu {
     }
 
     @Nonnull
-    private synchronized ButtonActionMenu.MenuAction onPick(int stageId, @Nonnull ButtonClickEvent e) {
+    private synchronized MenuAction onPick(int stageId, @Nonnull ButtonClickEvent e) {
         if (settings.bannedStageIds().contains(stageId)) {
             log.error("Banned stage was picked: {}", stageId);
             e.reply("This stage cannot be picked.").setEphemeral(true).queue();
-            return ButtonActionMenu.MenuAction.CONTINUE;
+            return MenuAction.CONTINUE;
         }
 
         settings.onResult().accept(new PickStageResult(stageId), e);
 
-        return ButtonActionMenu.MenuAction.CANCEL;
+        return MenuAction.CANCEL;
     }
 
     private synchronized void onTimeout(@Nonnull ButtonActionMenu.ButtonActionMenuTimeoutEvent event) {

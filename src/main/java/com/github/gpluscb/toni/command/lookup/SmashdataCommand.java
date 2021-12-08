@@ -253,7 +253,7 @@ public class SmashdataCommand implements Command {
                 return new MessageBuilder().setEmbeds(embed.build()).build();
             } catch (Exception e) {
                 log.catching(e);
-                return new MessageBuilder("There was a severe unexpected problem with displaying the player data, I don't really know how that happened. I'll tell  my dev, you can go shoot them a message about this too if you want to.").build();
+                return new MessageBuilder("There was a severe unexpected problem with displaying the player data, I don't really know how that happened. I've told my dev, you can go shoot them a message about this too if you want to.").build();
             }
         }
     }

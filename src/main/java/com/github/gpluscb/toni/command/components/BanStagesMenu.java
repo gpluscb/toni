@@ -97,18 +97,18 @@ public class BanStagesMenu extends ActionMenu {
     }
 
     @Nonnull
-    private synchronized ButtonActionMenu.MenuAction onBan(int stageId, @Nonnull ButtonClickEvent e) {
+    private synchronized MenuAction onBan(int stageId, @Nonnull ButtonClickEvent e) {
         if (bannedStageIds.contains(stageId)) {
             log.warn("Stage was banned twice: {}", stageId);
             e.reply("I have recorded that you banned this stage already earlier.").setEphemeral(true).queue();
-            return ButtonActionMenu.MenuAction.CONTINUE;
+            return MenuAction.CONTINUE;
         }
 
         if (settings.dsrIllegalStages().contains(stageId)) {
             log.warn("DSR illegal stage was banned: {}", stageId);
             e.reply("You shouldn't have been able to ban this stage, " +
                     "because DSR rules already prevent your opponent from picking this stage.").setEphemeral(true).queue();
-            return ButtonActionMenu.MenuAction.CONTINUE;
+            return MenuAction.CONTINUE;
         }
 
         bannedStageIds.add(stageId);
@@ -117,7 +117,7 @@ public class BanStagesMenu extends ActionMenu {
         if (bannedStageIds.size() == settings.ruleset().getStageBans()) {
             // Our job here is done
             settings.onResult().accept(new BanResult(), e);
-            return ButtonActionMenu.MenuAction.CANCEL;
+            return MenuAction.CANCEL;
         }
 
         // More stages are to be banned
@@ -127,7 +127,7 @@ public class BanStagesMenu extends ActionMenu {
 
         e.editMessage(newMessage).setActionRows(actionRows).queue();
 
-        return ButtonActionMenu.MenuAction.CONTINUE;
+        return MenuAction.CONTINUE;
     }
 
     private synchronized void onTimeout(@Nonnull ButtonActionMenu.ButtonActionMenuTimeoutEvent timeout) {

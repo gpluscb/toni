@@ -42,10 +42,10 @@ public class Ruleset {
 
         int stagesSize = starters.size() + counterpicks.size();
         int maximumBestOfWhat;
-        switch (dsrMode) {
+        maximumFirstToWhatScore = switch (dsrMode) {
             case NONE, MODIFIED_DSR ->
                     // For MODIFIED_DSR this is with some conditions, see the validate section
-                    maximumFirstToWhatScore = null;
+                    null;
             case GAME_RESTRICTED -> {
                 // Worst case scenario: we played on x stages already, and stageBans *different* stages are banned
                 // So we'll have (x + stageBans) *illegal* stages
@@ -58,7 +58,7 @@ public class Ruleset {
                 // and: maximumFirstToWhatScore = (maximumBestOfWhat + 1) / 2
                 maximumBestOfWhat = stagesSize - stageBans;
                 if (maximumBestOfWhat % 2 == 0) maximumBestOfWhat--;
-                maximumFirstToWhatScore = (maximumBestOfWhat + 1) / 2;
+                yield (maximumBestOfWhat + 1) / 2;
             }
             case WINNERS_VARIATION -> {
                 // Worst case scenario: both player 1 and player 2 have already won x games (meaning we played 2x games), and now stageBans *different* stages are banned
@@ -74,7 +74,7 @@ public class Ruleset {
                 // Note: We could have one more game in theory iff the previous loser wins, but that violates
                 // the condition that maximumBestOfWhat must be odd
                 maximumBestOfWhat = 2 * (stagesSize - stageBans) - 1;
-                maximumFirstToWhatScore = (maximumBestOfWhat + 1) / 2;
+                yield (maximumBestOfWhat + 1) / 2;
             }
             case STAGE_DISMISSAL_RULE ->
                     // TODO: Revisit this if I ever implement gentlemans clause
@@ -86,9 +86,8 @@ public class Ruleset {
                     // Player 2 won on x of their own counterpicks
                     // This implies something idekk
                     // TODO: AAAAAAAAAA maths
-                    maximumFirstToWhatScore = stagesSize;
-            default -> throw new IllegalStateException("Incomplete switch over DSR modes");
-        }
+                    stagesSize;
+        };
 
         // Validate
         int startersSize = starters.size();
@@ -176,6 +175,17 @@ public class Ruleset {
                 case GAME_RESTRICTED -> "Game Restricted DSR";
                 case WINNERS_VARIATION -> "Winners Variation";
                 case STAGE_DISMISSAL_RULE -> "Stage Dismissal Rule";
+            };
+        }
+
+        @Nullable
+        public String getSsbwikiUrl() {
+            return switch (this) {
+                case NONE -> null;
+                case MODIFIED_DSR -> "https://www.ssbwiki.com/Dave%27s_Stupid_Rule#Original_Ruling";
+                case GAME_RESTRICTED -> "https://www.ssbwiki.com/Dave%27s_Stupid_Rule#Game-Restricted_Variation";
+                case WINNERS_VARIATION -> "https://www.ssbwiki.com/Dave%27s_Stupid_Rule#Winner's_Variation";
+                case STAGE_DISMISSAL_RULE -> "https://www.ssbwiki.com/Dave%27s_Stupid_Rule#%22Stage_Dismissal_Rule%22";
             };
         }
 

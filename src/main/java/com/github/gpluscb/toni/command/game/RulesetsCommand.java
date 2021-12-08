@@ -105,7 +105,10 @@ public class RulesetsCommand implements Command {
         for (int i = 1; i < counterpicks.size(); i++)
             fields.add(new EmbedUtil.InlineField("", counterpicks.get(i).getDisplayName()));
 
-        fields.add(new EmbedUtil.InlineField("DSR Mode", String.format("%s ([SmashWiki](%s))", ruleset.getDsrMode().displayName(), "https://www.ssbwiki.com/Dave%27s_Stupid_Rule")));
+        String dsrSsbwikiUrl = ruleset.getDsrMode().getSsbwikiUrl();
+        fields.add(new EmbedUtil.InlineField("DSR Mode",
+                String.format("%s%s", ruleset.getDsrMode().displayName(),
+                        dsrSsbwikiUrl == null ? "" : String.format(" ([SmashWiki](%s))", dsrSsbwikiUrl))));
 
         fields.add(new EmbedUtil.InlineField("Bans", String.valueOf(ruleset.getStageBans())));
 

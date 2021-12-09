@@ -1,4 +1,4 @@
-package com.github.gpluscb.toni.command.components;
+package com.github.gpluscb.toni.command.menu;
 
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.discord.menu.ActionMenu;

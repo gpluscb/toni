@@ -1,4 +1,4 @@
-package com.github.gpluscb.toni.command.components;
+package com.github.gpluscb.toni.command.menu;
 
 import com.github.gpluscb.toni.util.Constants;
 import com.github.gpluscb.toni.util.MiscUtil;
@@ -17,18 +17,19 @@ import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-public class CharPickMenu extends ActionMenu {
-    private static final Logger log = LogManager.getLogger(CharPickMenu.class);
+public class BlindPickMenu extends ActionMenu {
+    private static final Logger log = LogManager.getLogger(BlindPickMenu.class);
 
     @Nonnull
     private final Settings settings;
 
-    public CharPickMenu(@Nonnull Settings settings) {
+    public BlindPickMenu(@Nonnull Settings settings) {
         super(settings.actionMenuSettings());
         this.settings = settings;
     }
@@ -60,14 +61,13 @@ public class CharPickMenu extends ActionMenu {
     }
 
     private void initWithMessageAction(@Nonnull RestAction<Message> action) {
-        ChannelChoiceWaiter.WaitChoiceHandle handle = settings.waiter().waitForChoice(
-                Collections.singletonList(settings.user()),
-                settings.channelId(),
+        ChannelChoiceWaiter.WaitChoiceHandle handle = settings.waiter().waitForDMChoice(
+                settings.users(),
                 true,
                 this::verifyChoice,
-                this::onResult,
+                choices -> settings.onResult().accept(new BlindPickResult(choices)),
                 getActionMenuSettings().timeout(), getActionMenuSettings().unit(),
-                this::onTimeout
+                choices -> settings.onTimeout().accept(new BlindPickTimeoutEvent(choices))
         );
 
         if (handle == null) {
@@ -91,60 +91,59 @@ public class CharPickMenu extends ActionMenu {
 
         Character character = settings.characters().stream().filter(c -> c.altNames().contains(choice.toLowerCase())).findAny().orElse(null);
         if (character == null) message.reply("I don't know that character.").queue();
-        else settings.onChoice().accept(character);
+        else message.reply("Accepted!").queue();
 
         return Optional.ofNullable(character);
     }
 
-    private void onResult(@Nonnull List<ChannelChoiceWaiter.UserChoiceInfo<Character>> choices) {
-        // Since we're done here it's nonnull time
-        //noinspection ConstantConditions
-        settings.onResult().accept(new CharPickResult(choices.get(0).getChoice()));
-    }
-
-    private void onTimeout(@Nonnull List<ChannelChoiceWaiter.UserChoiceInfo<Character>> choices) {
-        settings.onTimeout().accept(new CharPickTimeoutEvent());
-    }
-
     @Nonnull
-    public Settings getCharPickMenuSettings() {
+    public Settings getBlindPickMenuSettings() {
         return settings;
     }
 
-    private abstract class CharPickMenuInfo extends MenuStateInfo {
+    private abstract class BlindPickMenuStateInfo extends MenuStateInfo {
         @Nonnull
-        public Settings getCharPickMenuSettings() {
-            return CharPickMenu.this.getCharPickMenuSettings();
+        public Settings getBlindPickMenuSettings() {
+            return BlindPickMenu.this.getBlindPickMenuSettings();
         }
     }
 
-    public class CharPickResult extends CharPickMenuInfo {
+    public class BlindPickResult extends BlindPickMenuStateInfo {
         @Nonnull
-        private final Character pickedCharacter;
+        private final List<ChannelChoiceWaiter.UserChoiceInfo<Character>> picks;
 
-        public CharPickResult(@Nonnull Character pickedCharacter) {
-            this.pickedCharacter = pickedCharacter;
+        public BlindPickResult(@Nonnull List<ChannelChoiceWaiter.UserChoiceInfo<Character>> picks) {
+            this.picks = picks;
         }
 
         @Nonnull
-        public Character getPickedCharacter() {
-            return pickedCharacter;
+        public List<ChannelChoiceWaiter.UserChoiceInfo<Character>> getPicks() {
+            return picks;
         }
     }
 
-    public class CharPickTimeoutEvent extends CharPickMenuInfo {
+    public class BlindPickTimeoutEvent extends BlindPickMenuStateInfo {
+        @Nonnull
+        private final List<ChannelChoiceWaiter.UserChoiceInfo<Character>> picksSoFar;
+
+        public BlindPickTimeoutEvent(@Nonnull List<ChannelChoiceWaiter.UserChoiceInfo<Character>> picksSoFar) {
+            this.picksSoFar = picksSoFar;
+        }
+
+        @Nonnull
+        public List<ChannelChoiceWaiter.UserChoiceInfo<Character>> getPicksSoFar() {
+            return picksSoFar;
+        }
     }
 
     public record Settings(@Nonnull ActionMenu.Settings actionMenuSettings, @Nonnull ChannelChoiceWaiter waiter,
-                           long user, long channelId, @Nonnull Message start, @Nonnull List<Character> characters,
-                           @Nonnull Consumer<Character> onChoice, @Nonnull Consumer<CharPickResult> onResult,
-                           @Nonnull Consumer<CharPickTimeoutEvent> onTimeout, @Nonnull Runnable onFailedInit) {
+                           @Nonnull List<Long> users, @Nonnull Message start, @Nonnull List<Character> characters,
+                           @Nonnull Consumer<BlindPickResult> onResult,
+                           @Nonnull Consumer<BlindPickTimeoutEvent> onTimeout, @Nonnull Runnable onFailedInit) {
         @Nonnull
-        public static final Consumer<Character> DEFAULT_ON_CHOICE = MiscUtil.emptyConsumer();
+        public static final Consumer<BlindPickResult> DEFAULT_ON_RESULT = MiscUtil.emptyConsumer();
         @Nonnull
-        public static final Consumer<CharPickResult> DEFAULT_ON_RESULT = MiscUtil.emptyConsumer();
-        @Nonnull
-        public static final Consumer<CharPickTimeoutEvent> DEFAULT_ON_TIMEOUT = MiscUtil.emptyConsumer();
+        public static final Consumer<BlindPickTimeoutEvent> DEFAULT_ON_TIMEOUT = MiscUtil.emptyConsumer();
         @Nonnull
         public static final Runnable DEFAULT_ON_FAILED_INIT = Constants.EMPTY_RUNNABLE;
 
@@ -153,25 +152,21 @@ public class CharPickMenu extends ActionMenu {
             private ActionMenu.Settings actionMenuSettings;
             @Nullable
             private ChannelChoiceWaiter channelWaiter;
-            @Nullable
-            private Long user;
-            @Nullable
-            private Long channelId;
+            @Nonnull
+            private List<Long> users = new ArrayList<>();
             @Nullable
             private Message start;
             @Nullable
             private List<Character> characters;
             @Nonnull
-            private Consumer<Character> onChoice = DEFAULT_ON_CHOICE;
+            private Consumer<BlindPickResult> onResult = DEFAULT_ON_RESULT;
             @Nonnull
-            private Consumer<CharPickResult> onResult = DEFAULT_ON_RESULT;
-            @Nonnull
-            private Consumer<CharPickTimeoutEvent> onTimeout = DEFAULT_ON_TIMEOUT;
+            private Consumer<BlindPickTimeoutEvent> onTimeout = DEFAULT_ON_TIMEOUT;
             @Nonnull
             private Runnable onFailedInit = DEFAULT_ON_FAILED_INIT;
 
             @Nonnull
-            public Builder setActionMenuSettings(@Nonnull ActionMenu.Settings actionMenuSettings) {
+            public Builder setActionMenuSettings(@Nullable ActionMenu.Settings actionMenuSettings) {
                 this.actionMenuSettings = actionMenuSettings;
                 return this;
             }
@@ -183,14 +178,14 @@ public class CharPickMenu extends ActionMenu {
             }
 
             @Nonnull
-            public Builder setUser(long user) {
-                this.user = user;
+            public Builder addUsers(@Nonnull long... users) {
+                Arrays.stream(users).forEach(this.users::add);
                 return this;
             }
 
             @Nonnull
-            public Builder setChannelId(long channelId) {
-                this.channelId = channelId;
+            public Builder setUsers(@Nonnull List<Long> users) {
+                this.users = users;
                 return this;
             }
 
@@ -213,19 +208,13 @@ public class CharPickMenu extends ActionMenu {
             }
 
             @Nonnull
-            public Builder setOnChoice(@Nonnull Consumer<Character> onChoice) {
-                this.onChoice = onChoice;
-                return this;
-            }
-
-            @Nonnull
-            public Builder setOnResult(@Nonnull Consumer<CharPickResult> onResult) {
+            public Builder setOnResult(@Nonnull Consumer<BlindPickResult> onResult) {
                 this.onResult = onResult;
                 return this;
             }
 
             @Nonnull
-            public Builder setOnTimeout(@Nonnull Consumer<CharPickTimeoutEvent> onTimeout) {
+            public Builder setOnTimeout(@Nonnull Consumer<BlindPickTimeoutEvent> onTimeout) {
                 this.onTimeout = onTimeout;
                 return this;
             }
@@ -240,12 +229,10 @@ public class CharPickMenu extends ActionMenu {
             public Settings build() {
                 if (actionMenuSettings == null) throw new IllegalStateException("ActionMenuSettings must be set");
                 if (channelWaiter == null) throw new IllegalStateException("ChannelWaiter must be set");
-                if (user == null) throw new IllegalStateException("User must be set");
-                if (channelId == null) throw new IllegalStateException("ChannelId must be set");
                 if (start == null) throw new IllegalStateException("Start must be set");
                 if (characters == null) throw new IllegalStateException("Characters must be set");
 
-                return new Settings(actionMenuSettings, channelWaiter, user, channelId, start, characters, onChoice, onResult, onTimeout, onFailedInit);
+                return new Settings(actionMenuSettings, channelWaiter, users, start, characters, onResult, onTimeout, onFailedInit);
             }
         }
     }

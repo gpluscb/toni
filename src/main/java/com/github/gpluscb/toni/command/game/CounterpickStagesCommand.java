@@ -1,9 +1,9 @@
 package com.github.gpluscb.toni.command.game;
 
 import com.github.gpluscb.toni.command.*;
-import com.github.gpluscb.toni.command.components.BanPickStagesMenu;
-import com.github.gpluscb.toni.command.components.BanStagesMenu;
-import com.github.gpluscb.toni.command.components.PickStageMenu;
+import com.github.gpluscb.toni.command.menu.BanPickStagesMenu;
+import com.github.gpluscb.toni.command.menu.BanStagesMenu;
+import com.github.gpluscb.toni.command.menu.PickStageMenu;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.discord.menu.ActionMenu;

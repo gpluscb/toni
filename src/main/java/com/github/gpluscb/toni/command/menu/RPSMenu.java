@@ -1,4 +1,4 @@
-package com.github.gpluscb.toni.command.components;
+package com.github.gpluscb.toni.command.menu;
 
 import com.github.gpluscb.toni.util.Constants;
 import com.github.gpluscb.toni.util.MiscUtil;

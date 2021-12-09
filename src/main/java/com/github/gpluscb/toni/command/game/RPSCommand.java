@@ -1,7 +1,7 @@
 package com.github.gpluscb.toni.command.game;
 
 import com.github.gpluscb.toni.command.*;
-import com.github.gpluscb.toni.command.components.RPSMenu;
+import com.github.gpluscb.toni.command.menu.RPSMenu;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.discord.menu.ActionMenu;

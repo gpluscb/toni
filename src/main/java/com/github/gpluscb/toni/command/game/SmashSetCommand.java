@@ -3,7 +3,7 @@ package com.github.gpluscb.toni.command.game;
 import com.github.gpluscb.toni.command.Command;
 import com.github.gpluscb.toni.command.CommandContext;
 import com.github.gpluscb.toni.command.CommandInfo;
-import com.github.gpluscb.toni.command.components.SmashSetMenu;
+import com.github.gpluscb.toni.command.menu.SmashSetMenu;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.discord.ChannelChoiceWaiter;
 import com.github.gpluscb.toni.util.discord.menu.ActionMenu;

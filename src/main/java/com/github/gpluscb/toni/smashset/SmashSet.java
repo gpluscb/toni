@@ -1,4 +1,4 @@
-package com.github.gpluscb.toni.util.smash;
+package com.github.gpluscb.toni.smashset;
 
 import com.github.gpluscb.toni.util.OneOfTwo;
 

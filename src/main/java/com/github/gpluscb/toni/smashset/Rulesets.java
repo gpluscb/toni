@@ -1,9 +1,8 @@
-package com.github.gpluscb.toni.util.smash;
+package com.github.gpluscb.toni.smashset;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public record Rulesets(@Nonnull List<Stage> stages,
                        @Nonnull List<RawRuleset> rulesets) {

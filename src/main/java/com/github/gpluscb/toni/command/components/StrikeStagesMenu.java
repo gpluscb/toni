@@ -3,8 +3,8 @@ package com.github.gpluscb.toni.command.components;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.discord.menu.ButtonActionMenu;
 import com.github.gpluscb.toni.util.discord.menu.TwoUsersChoicesActionMenu;
-import com.github.gpluscb.toni.util.smash.Ruleset;
-import com.github.gpluscb.toni.util.smash.Stage;
+import com.github.gpluscb.toni.smashset.Ruleset;
+import com.github.gpluscb.toni.smashset.Stage;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
@@ -24,7 +24,6 @@ import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static net.dv8tion.jda.api.interactions.components.Button.LABEL_MAX_LENGTH;
 

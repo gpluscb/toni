@@ -1,4 +1,4 @@
-package com.github.gpluscb.toni.util.smash;
+package com.github.gpluscb.toni.smashset;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -90,7 +90,6 @@ public class Ruleset {
         };
 
         // Validate
-        int startersSize = starters.size();
         if (startersSize == 0) throw new IllegalArgumentException("There must be at least one starter stage");
         if (stageBans >= stagesSize) throw new IllegalArgumentException("There must be fewer stage bans than stages");
         if (Arrays.stream(starterStrikePattern).sum() != startersSize - 1)

@@ -18,7 +18,6 @@ import net.dv8tion.jda.api.interactions.components.Button;
 import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @SuppressWarnings("ClassCanBeRecord")
 public class HelpCommand implements Command {

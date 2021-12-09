@@ -24,7 +24,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 public class MiscUtil {
     private static final Logger log = LogManager.getLogger(MiscUtil.class);

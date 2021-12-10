@@ -306,7 +306,7 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
             @Nonnull
             public synchronized Settings build() {
                 if (twoUsersChoicesActionMenuSettings == null)
-                    throw new IllegalStateException("TwoUsersChoicesActionMEnuSettings must be set");
+                    throw new IllegalStateException("TwoUsersChoicesActionMenuSettings must be set");
                 if (start == null) throw new IllegalStateException("Start must be set");
 
                 return new Settings(twoUsersChoicesActionMenuSettings, onChoiceMade, onResult, start, onTimeout);

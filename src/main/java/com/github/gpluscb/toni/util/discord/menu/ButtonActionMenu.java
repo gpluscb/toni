@@ -26,9 +26,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-/**
- * We override the validation to only allow specific users in users.
- */
 public class ButtonActionMenu extends ActionMenu {
     @Nonnull
     private final Settings settings;

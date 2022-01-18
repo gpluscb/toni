@@ -5,7 +5,10 @@ import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.discord.menu.ActionMenu;
 import com.github.gpluscb.toni.util.discord.menu.SelectionActionMenu;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.SelectionMenuEvent;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
 import org.apache.commons.lang3.StringUtils;
 
@@ -44,6 +47,31 @@ public class RulesetSelectMenu extends ActionMenu {
         }
 
         underlying = new SelectionActionMenu(menuBuilder.build());
+    }
+
+    @Override
+    public void display(@Nonnull MessageChannel channel) {
+        underlying.display(channel);
+    }
+
+    @Override
+    public void display(@Nonnull MessageChannel channel, long messageId) {
+        underlying.display(channel, messageId);
+    }
+
+    @Override
+    public void displayReplying(@Nonnull MessageChannel channel, long messageId) {
+        underlying.displayReplying(channel, messageId);
+    }
+
+    @Override
+    public void displaySlashReplying(@Nonnull SlashCommandEvent event) {
+        underlying.displaySlashReplying(event);
+    }
+
+    @Override
+    public void displayDeferredReplying(@Nonnull InteractionHook hook) {
+        underlying.displayDeferredReplying(hook);
     }
 
     @Nonnull

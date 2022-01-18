@@ -17,6 +17,8 @@ public class ConfirmableSelectionActionMenu extends ActionMenu {
         selectionUnderlying = new SelectionActionMenu(settings.selectionActionMenuSettings());
     }
 
+    // FIXME: This is a major design issue - How do we get *both* the ButtonActionMenu and the SelectionActionMenu on the same message,
+    // ideally without editing it
 
     public record Settings(@Nonnull SelectionActionMenu.Settings selectionActionMenuSettings) {}
 }

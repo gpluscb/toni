@@ -3,26 +3,33 @@ package com.github.gpluscb.toni.command.game;
 import com.github.gpluscb.toni.command.*;
 import com.github.gpluscb.toni.command.menu.RPSAndStrikeStagesMenu;
 import com.github.gpluscb.toni.command.menu.RPSMenu;
+import com.github.gpluscb.toni.command.menu.RulesetSelectMenu;
 import com.github.gpluscb.toni.command.menu.StrikeStagesMenu;
+import com.github.gpluscb.toni.smashset.Ruleset;
+import com.github.gpluscb.toni.smashset.Stage;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.discord.menu.ActionMenu;
 import com.github.gpluscb.toni.util.discord.menu.TwoUsersChoicesActionMenu;
-import com.github.gpluscb.toni.smashset.Ruleset;
-import com.github.gpluscb.toni.smashset.Stage;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
+import net.dv8tion.jda.api.events.interaction.SelectionMenuEvent;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.requests.ErrorResponse;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("ClassCanBeRecord")
 public class StrikeStagesCommand implements Command {
@@ -42,7 +49,7 @@ public class StrikeStagesCommand implements Command {
         long user2;
         boolean doRPS = false;
         // TODO: Server default ruleset (and maybe even server default doRPS setting?)
-        Ruleset ruleset = rulesets.get(0);
+        Ruleset ruleset = null;
 
         OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
         if (context.isT()) {
@@ -140,11 +147,57 @@ public class StrikeStagesCommand implements Command {
             doRPS = doRpsMapping != null && doRpsMapping.getAsBoolean();
         }
 
+        if (ruleset != null) {
+            startStrikeStages(ruleset, context.mapT(MessageCommandContext::getMessage).mapU(SlashCommandContext::getEvent), doRPS, user1, user2);
+            return;
+        }
+
+        // Load RulesetSelectMenu
+        boolean doRPS_ = doRPS;
+        RulesetSelectMenu rulesetMenu = new RulesetSelectMenu(new RulesetSelectMenu.Settings.Builder()
+                .setActionMenuSettings(new ActionMenu.Settings.Builder()
+                        .setWaiter(waiter)
+                        .setTimeout(15, TimeUnit.MINUTES)
+                        .build())
+                .setUser(user1)
+                .setRulesets(rulesets)
+                .setStart(new MessageBuilder(String.format("%s, please select a ruleset.", ctx.getUser().getAsMention()))
+                        .mentionUsers(ctx.getUser().getIdLong())
+                        .build())
+                .setOnRulesetSelect((info, event) -> onRulesetSelect(info, event, doRPS_, user1, user2))
+                .setOnTimeout(this::onRulesetSelectTimeout)
+                .build());
+
+        context
+                .onT(msg -> rulesetMenu.displayReplying(msg.getMessage()))
+                .onU(slash -> rulesetMenu.displaySlashReplying(slash.getEvent()));
+    }
+
+    private synchronized void onRulesetSelect(@Nonnull RulesetSelectMenu.RulesetSelectionInfo info, @Nonnull SelectionMenuEvent event, boolean doRPS, long user1, long user2) {
+        event.deferEdit().queue();
+        startStrikeStages(info.getSelectedRuleset(), OneOfTwo.ofT(event.getMessage()), doRPS, user1, user2);
+    }
+
+    private synchronized void onRulesetSelectTimeout(@Nonnull RulesetSelectMenu.RulesetSelectTimeoutEvent timeout) {
+        MessageChannel channel = timeout.getChannel();
+        if (channel == null) return;
+        if (channel instanceof TextChannel textChannel) {
+            if (!textChannel.getGuild().getSelfMember().hasPermission(textChannel, Permission.MESSAGE_HISTORY))
+                return;
+        }
+
+        channel.retrieveMessageById(timeout.getMessageId())
+                .flatMap(m -> m.editMessage("You didn't choose the ruleset in time.").setActionRows())
+                .queue(null, new ErrorHandler().ignore(ErrorResponse.UNKNOWN_MESSAGE));
+    }
+
+    private void startStrikeStages(@Nonnull Ruleset ruleset, @Nonnull OneOfTwo<Message, SlashCommandEvent> replyTo, boolean doRPS, long user1, long user2) {
         int[] starterStrikePattern = ruleset.getStarterStrikePattern();
         if (starterStrikePattern.length == 0) {
             // Has exactly one element in this case
             Stage stage = ruleset.getStarters().get(0);
-            ctx.reply(String.format("This ruleset only has one starter weirdly. You're going to ~~Brazil~~ %s.", stage.getDisplayName())).queue();
+            String reply = String.format("This ruleset only has one starter weirdly. You're going to ~~Brazil~~ %s.", stage.getDisplayName());
+            replyTo.map(msg -> msg.reply(reply), slash -> slash.reply(reply)).queue();
         }
 
         TwoUsersChoicesActionMenu.Settings.Builder twoUsersChoicesActionMenuSettingsBuilder = new TwoUsersChoicesActionMenu.Settings.Builder()
@@ -189,9 +242,9 @@ public class StrikeStagesCommand implements Command {
                     .build());
         }
 
-        context
-                .onT(msg -> menu.displayReplying(msg.getMessage()))
-                .onU(slash -> menu.displaySlashReplying(slash.getEvent()));
+        replyTo
+                .onT(menu::displayReplying)
+                .onU(menu::displaySlashReplying);
     }
 
     private void onRPSTimeout(@Nonnull RPSMenu.RPSTimeoutEvent timeout) {

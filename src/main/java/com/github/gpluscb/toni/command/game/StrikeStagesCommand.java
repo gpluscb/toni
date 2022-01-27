@@ -174,8 +174,9 @@ public class StrikeStagesCommand implements Command {
     }
 
     private synchronized void onRulesetSelect(@Nonnull RulesetSelectMenu.RulesetSelectionInfo info, @Nonnull SelectionMenuEvent event, boolean doRPS, long user1, long user2) {
-        event.deferEdit().queue();
-        startStrikeStages(info.getSelectedRuleset(), OneOfTwo.ofT(event.getMessage()), doRPS, user1, user2);
+        Ruleset ruleset = info.getSelectedRuleset();
+        event.editMessage(String.format("You chose: %s", ruleset.getName())).setActionRows().queue();
+        startStrikeStages(ruleset, OneOfTwo.ofT(event.getMessage()), doRPS, user1, user2);
     }
 
     private synchronized void onRulesetSelectTimeout(@Nonnull RulesetSelectMenu.RulesetSelectTimeoutEvent timeout) {

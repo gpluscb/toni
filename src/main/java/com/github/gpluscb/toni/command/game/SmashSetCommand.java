@@ -76,8 +76,9 @@ public class SmashSetCommand implements Command {
     }
 
     private synchronized void onRulesetSelect(@Nonnull RulesetSelectMenu.RulesetSelectionInfo info, @Nonnull SelectionMenuEvent event, int firstToWhatScore, long user1, long user2) {
-        event.deferEdit().queue();
-        startSmashSet(info.getSelectedRuleset(), OneOfTwo.ofT(event.getMessage()), firstToWhatScore, user1, user2);
+        Ruleset ruleset = info.getSelectedRuleset();
+        event.editMessage(String.format("You chose: %s", ruleset.getName())).setActionRows().queue();
+        startSmashSet(ruleset, OneOfTwo.ofT(event.getMessage()), firstToWhatScore, user1, user2);
     }
 
     private synchronized void onRulesetSelectTimeout(@Nonnull RulesetSelectMenu.RulesetSelectTimeoutEvent timeout) {

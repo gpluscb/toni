@@ -149,7 +149,9 @@ public class SmashdataCommand implements Command {
                 String.format("(%d/%d) Smasher: %s", idx + 1, players.size(), data.getTag())
                 : String.format("Smasher: %s", data.getTag());
 
-        builder.setTitle(title);
+        String url = String.format("https://smashdata.gg/smash/ultimate/player/%s?id=%s", data.getTag(), data.getId());
+
+        builder.setTitle(title, url);
 
         List<EmbedUtil.InlineField> fields = new ArrayList<>();
 

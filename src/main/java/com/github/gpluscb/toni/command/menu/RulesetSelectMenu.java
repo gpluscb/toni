@@ -4,17 +4,24 @@ import com.github.gpluscb.toni.smashset.Ruleset;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.discord.menu.ActionMenu;
 import com.github.gpluscb.toni.util.discord.menu.SelectionActionMenu;
+import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
+import net.dv8tion.jda.api.MessageBuilder;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.interaction.SelectionMenuEvent;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
+import net.dv8tion.jda.api.requests.ErrorResponse;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -144,6 +151,38 @@ public class RulesetSelectMenu extends ActionMenu {
         public static final BiConsumer<RulesetSelectionInfo, SelectionMenuEvent> DEFAULT_ON_RULESET_SELECT = MiscUtil.emptyBiConsumer();
         @Nonnull
         public static final Consumer<RulesetSelectTimeoutEvent> DEFAULT_ON_TIMEOUT = MiscUtil.emptyConsumer();
+
+        @Nonnull
+        public static Settings getDefaultSettings(@Nonnull EventWaiter waiter, long user, @Nonnull List<Ruleset> rulesets,
+                                                  @Nonnull BiConsumer<RulesetSelectMenu.RulesetSelectionInfo, SelectionMenuEvent> afterRulesetSelect) {
+            return new RulesetSelectMenu.Settings.Builder()
+                    .setActionMenuSettings(new ActionMenu.Settings.Builder()
+                            .setWaiter(waiter)
+                            .setTimeout(15, TimeUnit.MINUTES)
+                            .build())
+                    .setUser(user)
+                    .setRulesets(rulesets)
+                    .setStart(new MessageBuilder(String.format("%s, please select a ruleset.", MiscUtil.mentionUser(user)))
+                            .mentionUsers(user)
+                            .build())
+                    .setOnRulesetSelect((info, event) -> {
+                        event.editMessage(String.format("You chose: %s", info.getSelectedRuleset().getName())).setActionRows().queue();
+                        afterRulesetSelect.accept(info, event);
+                    })
+                    .setOnTimeout(timeout -> {
+                        MessageChannel channel = timeout.getChannel();
+                        if (channel == null) return;
+                        if (channel instanceof TextChannel textChannel) {
+                            if (!textChannel.getGuild().getSelfMember().hasPermission(textChannel, Permission.MESSAGE_HISTORY))
+                                return;
+                        }
+
+                        channel.retrieveMessageById(timeout.getMessageId())
+                                .flatMap(m -> m.editMessage("You didn't choose the ruleset in time.").setActionRows())
+                                .queue(null, new ErrorHandler().ignore(ErrorResponse.UNKNOWN_MESSAGE));
+                    })
+                    .build();
+        }
 
         public static class Builder {
             @Nullable

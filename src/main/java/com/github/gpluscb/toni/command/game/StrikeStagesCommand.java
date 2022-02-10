@@ -16,20 +16,16 @@ import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
-import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
-import net.dv8tion.jda.api.events.interaction.SelectionMenuEvent;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
-import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
-import net.dv8tion.jda.api.requests.ErrorResponse;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("ClassCanBeRecord")
 public class StrikeStagesCommand implements Command {
@@ -154,42 +150,18 @@ public class StrikeStagesCommand implements Command {
 
         // Load RulesetSelectMenu
         boolean doRPS_ = doRPS;
-        RulesetSelectMenu rulesetMenu = new RulesetSelectMenu(new RulesetSelectMenu.Settings.Builder()
-                .setActionMenuSettings(new ActionMenu.Settings.Builder()
-                        .setWaiter(waiter)
-                        .setTimeout(15, TimeUnit.MINUTES)
-                        .build())
-                .setUser(user1)
-                .setRulesets(rulesets)
-                .setStart(new MessageBuilder(String.format("%s, please select a ruleset.", ctx.getUser().getAsMention()))
-                        .mentionUsers(ctx.getUser().getIdLong())
-                        .build())
-                .setOnRulesetSelect((info, event) -> onRulesetSelect(info, event, doRPS_, user1, user2))
-                .setOnTimeout(this::onRulesetSelectTimeout)
-                .build());
+
+        User selectingUser = ctx.getUser();
+        RulesetSelectMenu rulesetMenu = new RulesetSelectMenu(RulesetSelectMenu.Settings.getDefaultSettings(
+                waiter,
+                selectingUser.getIdLong(),
+                rulesets,
+                (info, event) -> startStrikeStages(info.getSelectedRuleset(), OneOfTwo.ofT(event.getMessage()), doRPS_, user1, user2)
+        ));
 
         context
                 .onT(msg -> rulesetMenu.displayReplying(msg.getMessage()))
                 .onU(slash -> rulesetMenu.displaySlashReplying(slash.getEvent()));
-    }
-
-    private synchronized void onRulesetSelect(@Nonnull RulesetSelectMenu.RulesetSelectionInfo info, @Nonnull SelectionMenuEvent event, boolean doRPS, long user1, long user2) {
-        Ruleset ruleset = info.getSelectedRuleset();
-        event.editMessage(String.format("You chose: %s", ruleset.getName())).setActionRows().queue();
-        startStrikeStages(ruleset, OneOfTwo.ofT(event.getMessage()), doRPS, user1, user2);
-    }
-
-    private synchronized void onRulesetSelectTimeout(@Nonnull RulesetSelectMenu.RulesetSelectTimeoutEvent timeout) {
-        MessageChannel channel = timeout.getChannel();
-        if (channel == null) return;
-        if (channel instanceof TextChannel textChannel) {
-            if (!textChannel.getGuild().getSelfMember().hasPermission(textChannel, Permission.MESSAGE_HISTORY))
-                return;
-        }
-
-        channel.retrieveMessageById(timeout.getMessageId())
-                .flatMap(m -> m.editMessage("You didn't choose the ruleset in time.").setActionRows())
-                .queue(null, new ErrorHandler().ignore(ErrorResponse.UNKNOWN_MESSAGE));
     }
 
     private void startStrikeStages(@Nonnull Ruleset ruleset, @Nonnull OneOfTwo<Message, SlashCommandEvent> replyTo, boolean doRPS, long user1, long user2) {

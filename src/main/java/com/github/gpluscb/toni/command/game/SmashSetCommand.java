@@ -12,18 +12,13 @@ import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.discord.ChannelChoiceWaiter;
 import com.github.gpluscb.toni.util.discord.menu.ActionMenu;
 import com.github.gpluscb.toni.util.discord.menu.TwoUsersChoicesActionMenu;
-import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageChannel;
-import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
-import net.dv8tion.jda.api.events.interaction.SelectionMenuEvent;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
-import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
-import net.dv8tion.jda.api.requests.ErrorResponse;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -55,43 +50,17 @@ public class SmashSetCommand implements Command {
             return;
         }
 
-        // TODO: Hella duped code
-        RulesetSelectMenu rulesetMenu = new RulesetSelectMenu(new RulesetSelectMenu.Settings.Builder()
-                .setActionMenuSettings(new ActionMenu.Settings.Builder()
-                        .setWaiter(channelWaiter.getEventWaiter())
-                        .setTimeout(15, TimeUnit.MINUTES)
-                        .build())
-                .setUser(ctx.getUser().getIdLong())
-                .setRulesets(rulesets)
-                .setStart(new MessageBuilder(String.format("%s, please select a ruleset.", ctx.getUser().getAsMention()))
-                        .mentionUsers(ctx.getUser().getIdLong())
-                        .build())
-                .setOnRulesetSelect((info, event) -> onRulesetSelect(info, event, firstToWhatScore, user1, user2))
-                .setOnTimeout(this::onRulesetSelectTimeout)
-                .build());
+        User selectingUser = ctx.getUser();
+        RulesetSelectMenu rulesetMenu = new RulesetSelectMenu(RulesetSelectMenu.Settings.getDefaultSettings(
+                channelWaiter.getEventWaiter(),
+                selectingUser.getIdLong(),
+                rulesets,
+                (info, event) -> startSmashSet(info.getSelectedRuleset(), OneOfTwo.ofT(event.getMessage()), firstToWhatScore, user1, user2)
+        ));
 
         ctx.getContext()
                 .onT(msg -> rulesetMenu.displayReplying(msg.getMessage()))
                 .onU(slash -> rulesetMenu.displaySlashReplying(slash.getEvent()));
-    }
-
-    private synchronized void onRulesetSelect(@Nonnull RulesetSelectMenu.RulesetSelectionInfo info, @Nonnull SelectionMenuEvent event, int firstToWhatScore, long user1, long user2) {
-        Ruleset ruleset = info.getSelectedRuleset();
-        event.editMessage(String.format("You chose: %s", ruleset.getName())).setActionRows().queue();
-        startSmashSet(ruleset, OneOfTwo.ofT(event.getMessage()), firstToWhatScore, user1, user2);
-    }
-
-    private synchronized void onRulesetSelectTimeout(@Nonnull RulesetSelectMenu.RulesetSelectTimeoutEvent timeout) {
-        MessageChannel channel = timeout.getChannel();
-        if (channel == null) return;
-        if (channel instanceof TextChannel textChannel) {
-            if (!textChannel.getGuild().getSelfMember().hasPermission(textChannel, Permission.MESSAGE_HISTORY))
-                return;
-        }
-
-        channel.retrieveMessageById(timeout.getMessageId())
-                .flatMap(m -> m.editMessage("You didn't choose the ruleset in time.").setActionRows())
-                .queue(null, new ErrorHandler().ignore(ErrorResponse.UNKNOWN_MESSAGE));
     }
 
     private void startSmashSet(@Nonnull Ruleset ruleset, @Nonnull OneOfTwo<Message, SlashCommandEvent> replyTo, int firstToWhatScore, long user1, long user2) {

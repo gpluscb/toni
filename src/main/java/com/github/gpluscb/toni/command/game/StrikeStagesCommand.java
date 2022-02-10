@@ -151,10 +151,10 @@ public class StrikeStagesCommand implements Command {
         // Load RulesetSelectMenu
         boolean doRPS_ = doRPS;
 
-        User selectingUser = ctx.getUser();
+        long selectingUser = ctx.getUser().getIdLong();
         RulesetSelectMenu rulesetMenu = new RulesetSelectMenu(RulesetSelectMenu.Settings.getDefaultSettings(
                 waiter,
-                selectingUser.getIdLong(),
+                selectingUser,
                 rulesets,
                 (info, event) -> startStrikeStages(info.getSelectedRuleset(), OneOfTwo.ofT(event.getMessage()), doRPS_, user1, user2)
         ));

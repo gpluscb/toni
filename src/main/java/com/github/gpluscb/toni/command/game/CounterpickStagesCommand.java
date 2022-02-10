@@ -4,17 +4,19 @@ import com.github.gpluscb.toni.command.*;
 import com.github.gpluscb.toni.command.menu.BanPickStagesMenu;
 import com.github.gpluscb.toni.command.menu.BanStagesMenu;
 import com.github.gpluscb.toni.command.menu.PickStageMenu;
+import com.github.gpluscb.toni.command.menu.RulesetSelectMenu;
+import com.github.gpluscb.toni.smashset.Ruleset;
+import com.github.gpluscb.toni.smashset.Stage;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.discord.menu.ActionMenu;
 import com.github.gpluscb.toni.util.discord.menu.TwoUsersChoicesActionMenu;
-import com.github.gpluscb.toni.smashset.Ruleset;
-import com.github.gpluscb.toni.smashset.Stage;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
@@ -39,7 +41,7 @@ public class CounterpickStagesCommand implements Command {
         long banningUser;
         long pickingUser;
         // TODO: Server default ruleset
-        Ruleset ruleset = rulesets.get(0);
+        Ruleset ruleset = null;
 
         OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
         if (context.isT()) {
@@ -105,6 +107,25 @@ public class CounterpickStagesCommand implements Command {
             }
         }
 
+        if (ruleset != null) {
+            startCounterpickStages(pickingUser, banningUser, ruleset, context.mapT(MessageCommandContext::getMessage).mapU(SlashCommandContext::getEvent));
+            return;
+        }
+
+        long selectingUser = ctx.getUser().getIdLong();
+        RulesetSelectMenu rulesetMenu = new RulesetSelectMenu(RulesetSelectMenu.Settings.getDefaultSettings(
+                waiter,
+                selectingUser,
+                rulesets,
+                (info, event) -> startCounterpickStages(pickingUser, banningUser, info.getSelectedRuleset(), OneOfTwo.ofT(event.getMessage()))
+        ));
+
+        context
+                .onT(msg -> rulesetMenu.displayReplying(msg.getMessage()))
+                .onU(slash -> rulesetMenu.displaySlashReplying(slash.getEvent()));
+    }
+
+    private void startCounterpickStages(long pickingUser, long banningUser, @Nonnull Ruleset ruleset, @Nonnull OneOfTwo<Message, SlashCommandEvent> replyTo) {
         Message pickStagesStart = new MessageBuilder(String.format("%s, since %s has chosen their bans, you can now pick one stage from the remaining stages.",
                 MiscUtil.mentionUser(pickingUser),
                 MiscUtil.mentionUser(banningUser)))
@@ -125,9 +146,9 @@ public class CounterpickStagesCommand implements Command {
                 .setOnPickTimeout(this::onPickTimeout)
                 .build());
 
-        context
-                .onT(msg -> menu.displayReplying(msg.getMessage()))
-                .onU(slash -> menu.displaySlashReplying(slash.getEvent()));
+        replyTo
+                .onT(menu::displayReplying)
+                .onU(menu::displaySlashReplying);
     }
 
     private void onBanTimeout(@Nonnull BanStagesMenu.BanStagesTimeoutEvent timeout) {

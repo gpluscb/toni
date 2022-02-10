@@ -50,10 +50,10 @@ public class SmashSetCommand implements Command {
             return;
         }
 
-        User selectingUser = ctx.getUser();
+        long selectingUser = ctx.getUser().getIdLong();
         RulesetSelectMenu rulesetMenu = new RulesetSelectMenu(RulesetSelectMenu.Settings.getDefaultSettings(
                 channelWaiter.getEventWaiter(),
-                selectingUser.getIdLong(),
+                selectingUser,
                 rulesets,
                 (info, event) -> startSmashSet(info.getSelectedRuleset(), OneOfTwo.ofT(event.getMessage()), firstToWhatScore, user1, user2)
         ));

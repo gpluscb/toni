@@ -99,7 +99,6 @@ public class StrikeStagesCommand implements Command {
                     int rulesetId = Integer.parseInt(rulesetIdString);
                     ruleset = rulesets.stream().filter(ruleset_ -> ruleset_.getRulesetId() == rulesetId).findAny().orElse(null);
                     if (ruleset == null) {
-                        // TODO: Ruleset list command
                         ctx.reply("The given ruleset id is invalid.").queue();
                         return;
                     }

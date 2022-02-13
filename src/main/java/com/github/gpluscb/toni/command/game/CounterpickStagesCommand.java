@@ -193,7 +193,7 @@ public class CounterpickStagesCommand implements Command {
                 .setCommandData(new CommandData("counterpick", "Helps you through the stage ban/counterpick phase of a set")
                         .addOption(OptionType.USER, "banning-user", "The user banning the stage", true)
                         .addOption(OptionType.USER, "counterpicking-user", "The user counterpicking. This is yourself by default", false)
-                        .addOption(OptionType.INTEGER, "ruleset-id", "The ruleset id", false)) // TODO: Yea that feels unintuitive
+                        .addOption(OptionType.INTEGER, "ruleset-id", "The ruleset id. Use the 'rulesets' command to check out the different rulesets", false)) // TODO: Yea that feels unintuitive
                 .build();
     }
 }

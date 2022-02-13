@@ -294,7 +294,7 @@ public class StrikeStagesCommand implements Command {
                         .addOption(OptionType.USER, "striker-2", "The other participant in the striking procedure. This is yourself by default", false)
                         .addOption(OptionType.BOOLEAN, "rps", "Whether to play RPS for who strikes first. By default the first striker is determined randomly", false)
                         // TODO: Only allow valid ids
-                        .addOption(OptionType.INTEGER, "ruleset-id", "The id of the ruleset with the starter stage list", false)) // TODO: Use "listrulesets" for a list of rulesets or w/e. Also maybe server default ruleset?
+                        .addOption(OptionType.INTEGER, "ruleset-id", "The ruleset id. Use the 'rulesets' command to check out the different rulesets", false)) // TODO: server default ruleset
                 .build();
     }
 }

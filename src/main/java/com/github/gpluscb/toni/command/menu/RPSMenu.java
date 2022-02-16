@@ -2,8 +2,8 @@ package com.github.gpluscb.toni.command.menu;
 
 import com.github.gpluscb.toni.util.Constants;
 import com.github.gpluscb.toni.util.MiscUtil;
-import com.github.gpluscb.toni.util.discord.menu.ButtonActionMenu;
-import com.github.gpluscb.toni.util.discord.menu.TwoUsersChoicesActionMenu;
+import com.github.gpluscb.toni.menu.ButtonActionMenu;
+import com.github.gpluscb.toni.menu.TwoUsersChoicesActionMenu;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Emoji;

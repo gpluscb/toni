@@ -2,8 +2,8 @@ package com.github.gpluscb.toni.command.menu;
 
 import com.github.gpluscb.toni.smashset.Ruleset;
 import com.github.gpluscb.toni.util.MiscUtil;
-import com.github.gpluscb.toni.util.discord.menu.ActionMenu;
-import com.github.gpluscb.toni.util.discord.menu.SelectionActionMenu;
+import com.github.gpluscb.toni.menu.ActionMenu;
+import com.github.gpluscb.toni.menu.SelectionActionMenu;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;

@@ -1,4 +1,4 @@
-package com.github.gpluscb.toni.util.discord.menu;
+package com.github.gpluscb.toni.menu;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

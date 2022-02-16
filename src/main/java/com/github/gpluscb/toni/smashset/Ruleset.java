@@ -8,26 +8,15 @@ import java.util.stream.Stream;
 
 // TODO: Somehow do RPS required or have that as a server wide setting? Alternative is random choice
 // TODO: Short description?
-@SuppressWarnings("ClassCanBeRecord")
-public class Ruleset {
-    private final int rulesetId;
-    @Nonnull
-    private final String name;
-    @Nonnull
-    private final List<Stage> starters;
-    @Nonnull
-    private final List<Stage> counterpicks;
-    @Nonnull
-    private final DSRMode dsrMode;
-
-    private final int stageBans;
-    private final int[] starterStrikePattern;
-    private final boolean stageBeforeCharacter;
-    private final boolean blindPickBeforeStage;
-
-    public Ruleset(int rulesetId, @Nonnull String name, @Nonnull List<Stage> starters, @Nonnull List<Stage> counterpicks, @Nonnull DSRMode dsrMode, int stageBans, int[] starterStrikePattern, boolean stageBeforeCharacter, boolean blindPickBeforeStage) {
+public record Ruleset(int rulesetId, @Nonnull String name, @Nonnull String url,
+                      @Nonnull List<Stage> starters,
+                      @Nonnull List<Stage> counterpicks,
+                      @Nonnull com.github.gpluscb.toni.smashset.Ruleset.DSRMode dsrMode, int stageBans,
+                      int[] starterStrikePattern, boolean stageBeforeCharacter, boolean blindPickBeforeStage) {
+    public Ruleset(int rulesetId, @Nonnull String name, @Nonnull String url, @Nonnull List<Stage> starters, @Nonnull List<Stage> counterpicks, @Nonnull DSRMode dsrMode, int stageBans, int[] starterStrikePattern, boolean stageBeforeCharacter, boolean blindPickBeforeStage) {
         this.rulesetId = rulesetId;
         this.name = name;
+        this.url = url;
         this.starters = starters;
         this.counterpicks = counterpicks;
         this.dsrMode = dsrMode;
@@ -42,6 +31,7 @@ public class Ruleset {
     @SuppressWarnings("ConstantConditions")
     public void validate() {
         if (name == null) throw new IllegalStateException("Name may not be null");
+        if (url == null) throw new IllegalStateException("Url may not be null");
         if (starters == null) throw new IllegalStateException("Name may not be null");
         if (counterpicks == null) throw new IllegalStateException("Name may not be null");
         if (dsrMode == null) throw new IllegalStateException("Name may not be null");
@@ -62,25 +52,6 @@ public class Ruleset {
             throw new IllegalArgumentException("This ruleset with the selected DSR mode would not allow for any games to be played");
     }
 
-    public int getRulesetId() {
-        return rulesetId;
-    }
-
-    @Nonnull
-    public String getName() {
-        return name;
-    }
-
-    @Nonnull
-    public List<Stage> getStarters() {
-        return starters;
-    }
-
-    @Nonnull
-    public List<Stage> getCounterpicks() {
-        return counterpicks;
-    }
-
     @Nonnull
     public Stream<Stage> getStagesStream() {
         return Stream.concat(starters.stream(), counterpicks.stream());
@@ -90,19 +61,6 @@ public class Ruleset {
     public Stage getStageAtIdx(int idx) {
         if (idx < starters.size()) return starters.get(idx);
         else return counterpicks.get(idx - starters.size());
-    }
-
-    @Nonnull
-    public DSRMode getDsrMode() {
-        return dsrMode;
-    }
-
-    public int getStageBans() {
-        return stageBans;
-    }
-
-    public int[] getStarterStrikePattern() {
-        return starterStrikePattern;
     }
 
     /**
@@ -173,14 +131,6 @@ public class Ruleset {
                 yield (maximumBestOfWhat + 1) / 2;
             }
         };
-    }
-
-    public boolean isStageBeforeCharacter() {
-        return stageBeforeCharacter;
-    }
-
-    public boolean isBlindPickBeforeStage() {
-        return blindPickBeforeStage;
     }
 
     /**

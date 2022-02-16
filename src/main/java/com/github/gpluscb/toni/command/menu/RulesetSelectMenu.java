@@ -48,7 +48,7 @@ public class RulesetSelectMenu extends ActionMenu {
             Ruleset ruleset = rulesets.get(i);
             int i_ = i;
             menuBuilder.registerOption(
-                    SelectOption.of(StringUtils.abbreviate(ruleset.getName(), SelectOption.LABEL_MAX_LENGTH), String.valueOf(ruleset.getRulesetId())),
+                    SelectOption.of(StringUtils.abbreviate(ruleset.name(), SelectOption.LABEL_MAX_LENGTH), String.valueOf(ruleset.rulesetId())),
                     (info, e) -> onSelect(info, e, i_)
             );
         }
@@ -166,7 +166,7 @@ public class RulesetSelectMenu extends ActionMenu {
                             .mentionUsers(user)
                             .build())
                     .setOnRulesetSelect((info, event) -> {
-                        event.editMessage(String.format("You chose: %s", info.getSelectedRuleset().getName())).setActionRows().queue();
+                        event.editMessage(String.format("You chose: %s", info.getSelectedRuleset().name())).setActionRows().queue();
                         afterRulesetSelect.accept(info, event);
                     })
                     .setOnTimeout(timeout -> {

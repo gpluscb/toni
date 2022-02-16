@@ -80,6 +80,7 @@
     {
       "rulesetId": 0,
       "name": "Syndicate Ruleset",
+      "url": "https://help.smash.gg/en/articles/2552379-smash-ultimate-online-rulesets#syndicate-ruleset",
       "starterIds": [
         0,
         1,
@@ -104,6 +105,7 @@
     {
       "rulesetId": 1,
       "name": "GOML Ruleset",
+      "url": "https://help.smash.gg/en/articles/2552379-smash-ultimate-online-rulesets#goml-ruleset",
       "starterIds": [
         0,
         1,
@@ -128,6 +130,7 @@
     {
       "rulesetId": 2,
       "name": "2GG Ruleset",
+      "url": "https://help.smash.gg/en/articles/2552379-smash-ultimate-online-rulesets#2gg-ruleset",
       "starterIds": [
         0,
         1,
@@ -151,6 +154,7 @@
     {
       "rulesetId": 3,
       "name": "Genesis Ruleset",
+      "url": "https://help.smash.gg/en/articles/2552379-smash-ultimate-online-rulesets#genesis-ruleset",
       "starterIds": [
         0,
         1,
@@ -176,6 +180,7 @@
     {
       "rulesetId": 4,
       "name": "SWT Ruleset",
+      "url": "https://help.smash.gg/en/articles/2552379-smash-ultimate-online-rulesets#vgbc-ruleset",
       "starterIds": [
         0,
         1,
@@ -202,6 +207,7 @@
     {
       "rulesetId": 5,
       "name": "The Box Ruleset",
+      "url": "https://help.smash.gg/en/articles/2552379-smash-ultimate-online-rulesets#the-box-ruleset",
       "starterIds": [
         0,
         1,
@@ -226,6 +232,7 @@
     {
       "rulesetId": 6,
       "name": "Collision Ruleset",
+      "url": "https://help.smash.gg/en/articles/2552379-smash-ultimate-online-rulesets#collision-ruleset",
       "starterIds": [
         0,
         1,
@@ -249,6 +256,7 @@
     {
       "rulesetId": 7,
       "name": "Frostbite Ruleset",
+      "url": "https://help.smash.gg/en/articles/2552379-smash-ultimate-online-rulesets#frostbite-ruleset",
       "starterIds": [
         0,
         1,
@@ -274,6 +282,7 @@
     {
       "rulesetId": 8,
       "name": "Shine Ruleset",
+      "url": "https://help.smash.gg/en/articles/2552379-smash-ultimate-online-rulesets#shine-ruleset",
       "starterIds": [
         0,
         1,
@@ -298,6 +307,7 @@
     {
       "rulesetId": 9,
       "name": "Small Battlefield Ruleset",
+      "url": "https://help.smash.gg/en/articles/2552379-smash-ultimate-online-rulesets#small-battlefield-ruleset",
       "starterIds": [
         0,
         1,
@@ -324,6 +334,7 @@
     {
       "rulesetId": 10,
       "name": "Frame Perfect Series Ruleset",
+      "url": "https://help.smash.gg/en/articles/2552379-smash-ultimate-online-rulesets#frame-perfect-series-ruleset",
       "starterIds": [
         0,
         1,
@@ -356,6 +367,7 @@
     {
       "rulesetId": 11,
       "name": "MDVA Classic",
+      "url": "https://help.smash.gg/en/articles/2552379-smash-ultimate-online-rulesets#h_afbd0c0701",
       "starterIds": [
         0,
         1,
@@ -381,6 +393,7 @@
     {
       "rulesetId": 12,
       "name": "Wario's Smash Down Ruleset",
+      "url": "https://help.smash.gg/en/articles/2552379-smash-ultimate-online-rulesets#h_9c93ee98f0",
       "starterIds": [
         0,
         1,
@@ -407,6 +420,7 @@
     {
       "rulesetId": 13,
       "name": "Dutch SSBU Ruleset",
+      "url": "https://twitter.com/Smash_NL/status/1453788072378839045?s=20&t=S0ohCVuunozhcOPKww6k5g",
       "starterIds": [
         0,
         1,

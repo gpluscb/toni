@@ -62,7 +62,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
                 .setDeletionButton(null)
                 .setOnTimeout(this::onTimeout);
 
-        for (Stage starter : settings.ruleset().getStarters()) {
+        for (Stage starter : settings.ruleset().starters()) {
             int id = starter.stageId();
             underlyingBuilder.registerButton(
                     Button.secondary(String.valueOf(id), StringUtils.abbreviate(starter.name(), LABEL_MAX_LENGTH)),
@@ -117,7 +117,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
         long striker1 = getTwoUsersChoicesActionMenuSettings().user1();
         long striker2 = getTwoUsersChoicesActionMenuSettings().user2();
 
-        int[] starterStrikePattern = settings.ruleset().getStarterStrikePattern();
+        int[] starterStrikePattern = settings.ruleset().starterStrikePattern();
         if (currentStrikes.size() == starterStrikePattern[currentStrikeIdx]) {
             settings.onUserStrikes().accept(new UserStrikesInfo(currentStrikes), e);
 
@@ -202,11 +202,11 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
 
     public class UpcomingStrikeInfo extends StrikeStagesInfo {
         public int getStagesToStrike() {
-            return settings.ruleset().getStarterStrikePattern()[currentStrikeIdx] - currentStrikes.size();
+            return settings.ruleset().starterStrikePattern()[currentStrikeIdx] - currentStrikes.size();
         }
 
         public boolean isNoStrikeRuleset() {
-            return settings.ruleset().getStarterStrikePattern().length == 0;
+            return settings.ruleset().starterStrikePattern().length == 0;
         }
 
         /**
@@ -292,7 +292,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
             Ruleset ruleset = info.getStrikeStagesMenuSettings().ruleset();
             if (info.isNoStrikeRuleset()) {
                 return new MessageBuilder(String.format("Wow that's just very simple, there is only one stage in the ruleset. You're going to %s.",
-                        ruleset.getStarters().get(0).getDisplayName()))
+                        ruleset.starters().get(0).getDisplayName()))
                         .build();
             } else if (info.isFirstStrike()) {
                 return new MessageBuilder(String.format("Alright, time to strike stages. %s, you go first. Please strike %d stage%s from the list below.",

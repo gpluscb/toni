@@ -32,7 +32,7 @@ public class SmashSet {
         this.firstToWhatScore = firstToWhatScore;
         this.doRPS = doRPS;
         firstStageStriker = null;
-        stageStrikingIdxHistory = new ArrayList<>(ruleset.getStarterStrikePattern().length);
+        stageStrikingIdxHistory = new ArrayList<>(ruleset.starterStrikePattern().length);
         state = null;
         games = new ArrayList<>();
 
@@ -49,7 +49,7 @@ public class SmashSet {
         GameData firstGame = new GameData(false);
         games.add(firstGame);
 
-        if (ruleset.isBlindPickBeforeStage()) {
+        if (ruleset.blindPickBeforeStage()) {
             return OneOfTwo.ofT(switchState(new SetDoubleBlindState(firstGame)));
         } else {
             return OneOfTwo.ofU(switchState(new SetRPSState(firstGame)));
@@ -66,7 +66,7 @@ public class SmashSet {
         GameData firstGame = new GameData(false);
         games.add(firstGame);
 
-        if (ruleset.isBlindPickBeforeStage()) {
+        if (ruleset.blindPickBeforeStage()) {
             return OneOfTwo.ofT(switchState(new SetDoubleBlindState(firstGame)));
         } else {
             return OneOfTwo.ofU(switchState(new SetStarterStrikingState(firstGame)));
@@ -181,7 +181,7 @@ public class SmashSet {
         public Set<Integer> getDSRIllegalStageIndizes() {
             checkValid();
 
-            switch (ruleset.getDsrMode()) {
+            switch (ruleset.dsrMode()) {
                 case NONE:
                     return Collections.emptySet();
                 case MODIFIED_DSR:
@@ -217,7 +217,7 @@ public class SmashSet {
 
                         // Every game before the current one (before games.size() - 1) will have a stage
                         //noinspection ConstantConditions
-                        if (ruleset.getCounterpicks().stream().map(Stage::stageId).noneMatch(stageIdx::equals))
+                        if (ruleset.counterpicks().stream().map(Stage::stageId).noneMatch(stageIdx::equals))
                             continue;
 
                         // Only stages where the current previous loser won are relevant
@@ -277,7 +277,7 @@ public class SmashSet {
         public synchronized OneOfTwo<SetDoubleBlindState, SetInGameState> strikeStages(@Nonnull Set<Integer> stageStrikingIndizes) {
             checkValid();
             // Verification checks
-            int[] starterStrikePattern = ruleset.getStarterStrikePattern();
+            int[] starterStrikePattern = ruleset.starterStrikePattern();
             int neededStrikeAmount = starterStrikePattern[stageStrikingIdxHistory.size()];
             if (neededStrikeAmount != stageStrikingIndizes.size())
                 throw new IllegalStateException(String.format("%d strikes were needed, %d given", neededStrikeAmount, stageStrikingIndizes.size()));
@@ -287,7 +287,7 @@ public class SmashSet {
             // Do the strike
             stageStrikingIdxHistory.add(stageStrikingIndizes);
             if (stageStrikingIdxHistory.size() == starterStrikePattern.length) {
-                int starterAmount = ruleset.getStarters().size();
+                int starterAmount = ruleset.starters().size();
                 // TODO: Better algorithm??
                 int stageIdx = -1;
                 for (int i = 0; i < starterAmount; i++) {
@@ -305,7 +305,7 @@ public class SmashSet {
 
                 game.setStageIdx(stageIdx);
 
-                if (ruleset.isBlindPickBeforeStage()) {
+                if (ruleset.blindPickBeforeStage()) {
                     SetInGameState state = new SetInGameState(game);
                     return OneOfTwo.ofU(switchState(state));
                 } else {
@@ -332,7 +332,7 @@ public class SmashSet {
 
             game.setPlayer1Char(player1Char);
             game.setPlayer2Char(player2Char);
-            if (ruleset.isBlindPickBeforeStage()) {
+            if (ruleset.blindPickBeforeStage()) {
                 if (doRPS) {
                     SetRPSState state = new SetRPSState(game);
                     return OneOfTwo.ofT(OneOfTwo.ofT(switchState(state)));
@@ -364,7 +364,7 @@ public class SmashSet {
             GameData nextGame = new GameData(true);
             games.add(nextGame);
 
-            if (ruleset.isStageBeforeCharacter()) {
+            if (ruleset.stageBeforeCharacter()) {
                 SetWinnerStageBanState state = new SetWinnerStageBanState(nextGame, winner);
                 return OneOfTwo.ofT(OneOfTwo.ofT(switchState(state)));
             } else {
@@ -414,7 +414,7 @@ public class SmashSet {
                 case PLAYER2 -> game.setPlayer2Char(character);
             }
 
-            if (ruleset.isStageBeforeCharacter()) {
+            if (ruleset.stageBeforeCharacter()) {
                 SetInGameState state = new SetInGameState(game);
                 SmashSet.this.state = state;
                 return OneOfTwo.ofU(switchState(state));
@@ -434,8 +434,8 @@ public class SmashSet {
         public synchronized SetLoserStageCounterpickState banStages(@Nonnull Set<Integer> stageBanIndices) {
             checkValid();
 
-            if (stageBanIndices.size() != ruleset.getStageBans())
-                throw new IllegalArgumentException(String.format("Wrong number of stage bans: %d given, %d required.", stageBanIndices.size(), ruleset.getStageBans()));
+            if (stageBanIndices.size() != ruleset.stageBans())
+                throw new IllegalArgumentException(String.format("Wrong number of stage bans: %d given, %d required.", stageBanIndices.size(), ruleset.stageBans()));
 
             GameData game = getGame();
 
@@ -470,7 +470,7 @@ public class SmashSet {
 
             game.setStageIdx(stageIdx);
 
-            if (ruleset.isStageBeforeCharacter()) {
+            if (ruleset.stageBeforeCharacter()) {
                 SetWinnerCharPickState state = new SetWinnerCharPickState(game, getPrevWinner());
                 return OneOfTwo.ofT(switchState(state));
             } else {

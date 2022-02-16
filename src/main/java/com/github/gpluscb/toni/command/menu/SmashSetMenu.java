@@ -50,7 +50,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
         set = new SmashSet(ruleset, settings.firstToWhatScore(), doRPS);
 
-        if (ruleset.isBlindPickBeforeStage()) {
+        if (ruleset.blindPickBeforeStage()) {
             // Manually set game number because we haven't tarted set yet
             Message start = new MessageBuilder(prepareEmbed("Double Blind Pick", 1)
                     .setDescription("Alright, we start by doing a double blind pick. Please DM me the character you will play in the first game now.")

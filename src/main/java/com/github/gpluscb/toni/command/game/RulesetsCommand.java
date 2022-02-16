@@ -63,7 +63,7 @@ public class RulesetsCommand implements Command {
             Ruleset ruleset = rulesets.get(i);
             int i_ = i;
             menuBuilder.registerOption(
-                    SelectOption.of(StringUtils.abbreviate(ruleset.getName(), SelectOption.LABEL_MAX_LENGTH), String.valueOf(ruleset.getRulesetId())),
+                    SelectOption.of(StringUtils.abbreviate(ruleset.name(), SelectOption.LABEL_MAX_LENGTH), String.valueOf(ruleset.rulesetId())),
                     (info, e) -> paginator.onPageSelect(info, e, i_)
             );
         }
@@ -80,7 +80,7 @@ public class RulesetsCommand implements Command {
         builder.setTitle("Available Rulesets");
 
         String rulesetsString = rulesets.stream()
-                .map(ruleset -> String.format("`%d` - %s", ruleset.getRulesetId(), ruleset.getName()))
+                .map(ruleset -> String.format("`%d` - [%s](%s)", ruleset.rulesetId(), ruleset.name(), ruleset.url()))
                 .collect(Collectors.joining("\n"));
 
         builder.appendDescription(rulesetsString);
@@ -90,38 +90,38 @@ public class RulesetsCommand implements Command {
 
     @Nonnull
     private EmbedBuilder applyRuleset(@Nonnull EmbedBuilder builder, @Nonnull Ruleset ruleset) {
-        builder.setTitle(String.format("Ruleset %d: %s", ruleset.getRulesetId(), ruleset.getName()));
+        builder.setTitle(String.format("Ruleset %d: %s", ruleset.rulesetId(), ruleset.name()), ruleset.url());
 
         List<EmbedUtil.InlineField> fields = new ArrayList<>();
 
-        List<Stage> starters = ruleset.getStarters();
+        List<Stage> starters = ruleset.starters();
         // Guaranteed to have at least one starter
         fields.add(new EmbedUtil.InlineField("Starters", starters.get(0).getDisplayName()));
         for (int i = 1; i < starters.size(); i++)
             fields.add(new EmbedUtil.InlineField("", starters.get(i).getDisplayName()));
 
-        List<Stage> counterpicks = ruleset.getCounterpicks();
+        List<Stage> counterpicks = ruleset.counterpicks();
         fields.add(new EmbedUtil.InlineField("Counterpicks", counterpicks.isEmpty() ? "None" : counterpicks.get(0).getDisplayName()));
         for (int i = 1; i < counterpicks.size(); i++)
             fields.add(new EmbedUtil.InlineField("", counterpicks.get(i).getDisplayName()));
 
-        String dsrSsbwikiUrl = ruleset.getDsrMode().getSsbwikiUrl();
+        String dsrSsbwikiUrl = ruleset.dsrMode().getSsbwikiUrl();
         fields.add(new EmbedUtil.InlineField("DSR Mode",
-                String.format("%s%s", ruleset.getDsrMode().displayName(),
+                String.format("%s%s", ruleset.dsrMode().displayName(),
                         dsrSsbwikiUrl == null ? "" : String.format(" ([SmashWiki](%s))", dsrSsbwikiUrl))));
 
-        fields.add(new EmbedUtil.InlineField("Bans", String.valueOf(ruleset.getStageBans())));
+        fields.add(new EmbedUtil.InlineField("Bans", String.valueOf(ruleset.stageBans())));
 
-        int[] starterStrikePattern = ruleset.getStarterStrikePattern();
+        int[] starterStrikePattern = ruleset.starterStrikePattern();
         String strikePattern = starterStrikePattern.length == 0 ? "No Strikes"
                 : Arrays.stream(starterStrikePattern)
                 .mapToObj(String::valueOf)
                 .collect(Collectors.joining("-"));
         fields.add(new EmbedUtil.InlineField("Starter Strike Pattern", strikePattern));
 
-        fields.add(new EmbedUtil.InlineField("Character Blind Pick", String.format("**%s** Stage Striking", ruleset.isBlindPickBeforeStage() ? "Before" : "After")));
+        fields.add(new EmbedUtil.InlineField("Character Blind Pick", String.format("**%s** Stage Striking", ruleset.blindPickBeforeStage() ? "Before" : "After")));
 
-        fields.add(new EmbedUtil.InlineField("Character Reveal", String.format("**%s** Stage Bans", ruleset.isStageBeforeCharacter() ? "After" : "Before")));
+        fields.add(new EmbedUtil.InlineField("Character Reveal", String.format("**%s** Stage Bans", ruleset.stageBeforeCharacter() ? "After" : "Before")));
 
         builder.appendDescription(EmbedUtil.parseInlineFields(fields));
 

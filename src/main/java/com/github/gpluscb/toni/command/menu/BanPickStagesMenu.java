@@ -38,7 +38,7 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
         super(settings.twoUsersChoicesActionMenuSettings());
         this.settings = settings;
 
-        if (settings.ruleset().getStageBans() == 0) {
+        if (settings.ruleset().stageBans() == 0) {
             underlying = createPickMenu(Collections.emptySet());
             return;
         }

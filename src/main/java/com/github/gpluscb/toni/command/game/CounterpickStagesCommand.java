@@ -73,7 +73,7 @@ public class CounterpickStagesCommand implements Command {
                 String rulesetIdString = msg.getArg(continuedArgsIdx);
                 try {
                     int rulesetId = Integer.parseInt(rulesetIdString);
-                    ruleset = rulesets.stream().filter(ruleset_ -> ruleset_.getRulesetId() == rulesetId).findAny().orElse(null);
+                    ruleset = rulesets.stream().filter(ruleset_ -> ruleset_.rulesetId() == rulesetId).findAny().orElse(null);
                     if (ruleset == null) {
                         ctx.reply("The given ruleset id is invalid.").queue();
                         return;
@@ -98,7 +98,7 @@ public class CounterpickStagesCommand implements Command {
             OptionMapping rulesetIdMapping = slash.getOption("ruleset-id");
             if (rulesetIdMapping != null) {
                 long rulesetId = rulesetIdMapping.getAsLong();
-                ruleset = rulesets.stream().filter(ruleset_ -> ruleset_.getRulesetId() == rulesetId).findAny().orElse(null);
+                ruleset = rulesets.stream().filter(ruleset_ -> ruleset_.rulesetId() == rulesetId).findAny().orElse(null);
                 if (ruleset == null) {
                     ctx.reply("The given ruleset id is invalid.").queue();
                     return;

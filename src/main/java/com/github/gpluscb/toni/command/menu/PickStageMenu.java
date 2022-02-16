@@ -38,7 +38,7 @@ public class PickStageMenu extends ActionMenu {
         super(settings.actionMenuSettings());
         this.settings = settings;
 
-        if (settings.bannedStageIds().size() >= settings.ruleset().getStarters().size() + settings.ruleset().getCounterpicks().size())
+        if (settings.bannedStageIds().size() >= settings.ruleset().starters().size() + settings.ruleset().counterpicks().size())
             throw new IllegalArgumentException("Fewer stages must be banned than there are stages in total.");
 
         ButtonActionMenu.Settings.Builder underlyingBuilder = new ButtonActionMenu.Settings.Builder()

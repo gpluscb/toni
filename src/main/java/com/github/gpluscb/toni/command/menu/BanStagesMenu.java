@@ -49,7 +49,7 @@ public class BanStagesMenu extends ActionMenu {
 
         bannedStageIds = new HashSet<>();
 
-        if (settings.ruleset().getStageBans() == 0) throw new IllegalArgumentException("The ruleset must have at least one ban.");
+        if (settings.ruleset().stageBans() == 0) throw new IllegalArgumentException("The ruleset must have at least one ban.");
 
         Message start = settings.banMessageProducer().apply(new UpcomingBanInfo());
 
@@ -114,7 +114,7 @@ public class BanStagesMenu extends ActionMenu {
         bannedStageIds.add(stageId);
         settings.onBan().accept(new StageBan(stageId), e);
 
-        if (bannedStageIds.size() == settings.ruleset().getStageBans()) {
+        if (bannedStageIds.size() == settings.ruleset().stageBans()) {
             // Our job here is done
             settings.onResult().accept(new BanResult(), e);
             return MenuAction.CANCEL;
@@ -195,7 +195,7 @@ public class BanStagesMenu extends ActionMenu {
 
     public class UpcomingBanInfo extends BanStagesInfo {
         public int getStagesToBan() {
-            return settings.ruleset().getStageBans() - bannedStageIds.size();
+            return settings.ruleset().stageBans() - bannedStageIds.size();
         }
     }
 

@@ -79,7 +79,7 @@ public class StrikeStagesCommand implements Command {
                     // TODO: Dupe code
                     try {
                         int rulesetId = Integer.parseInt(eitherString);
-                        ruleset = rulesets.stream().filter(ruleset_ -> ruleset_.getRulesetId() == rulesetId).findAny().orElse(null);
+                        ruleset = rulesets.stream().filter(ruleset_ -> ruleset_.rulesetId() == rulesetId).findAny().orElse(null);
                         if (ruleset == null) {
                             ctx.reply("The given ruleset id is invalid.").queue();
                             return;
@@ -95,7 +95,7 @@ public class StrikeStagesCommand implements Command {
                 String rulesetIdString = msg.getArg(continuedArgsIdx);
                 try {
                     int rulesetId = Integer.parseInt(rulesetIdString);
-                    ruleset = rulesets.stream().filter(ruleset_ -> ruleset_.getRulesetId() == rulesetId).findAny().orElse(null);
+                    ruleset = rulesets.stream().filter(ruleset_ -> ruleset_.rulesetId() == rulesetId).findAny().orElse(null);
                     if (ruleset == null) {
                         ctx.reply("The given ruleset id is invalid.").queue();
                         return;
@@ -129,7 +129,7 @@ public class StrikeStagesCommand implements Command {
             OptionMapping rulesetIdMapping = slash.getOption("ruleset-id");
             if (rulesetIdMapping != null) {
                 long rulesetId = rulesetIdMapping.getAsLong();
-                ruleset = rulesets.stream().filter(ruleset_ -> ruleset_.getRulesetId() == rulesetId).findAny().orElse(null);
+                ruleset = rulesets.stream().filter(ruleset_ -> ruleset_.rulesetId() == rulesetId).findAny().orElse(null);
                 if (ruleset == null) {
                     ctx.reply("The given ruleset id is invalid.").queue();
                     return;
@@ -162,10 +162,10 @@ public class StrikeStagesCommand implements Command {
     }
 
     private void startStrikeStages(@Nonnull Ruleset ruleset, @Nonnull OneOfTwo<Message, SlashCommandEvent> replyTo, boolean doRPS, long user1, long user2) {
-        int[] starterStrikePattern = ruleset.getStarterStrikePattern();
+        int[] starterStrikePattern = ruleset.starterStrikePattern();
         if (starterStrikePattern.length == 0) {
             // Has exactly one element in this case
-            Stage stage = ruleset.getStarters().get(0);
+            Stage stage = ruleset.starters().get(0);
             String reply = String.format("This ruleset only has one starter weirdly. You're going to ~~Brazil~~ %s.", stage.getDisplayName());
             replyTo.map(msg -> msg.reply(reply), slash -> slash.reply(reply)).queue();
         }

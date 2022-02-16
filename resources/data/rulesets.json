@@ -69,6 +69,11 @@
       "stageId": 13,
       "stageEmoteId": 0,
       "name": "Northern Cave"
+    },
+    {
+      "stageId": 14,
+      "stageEmoteId": 0,
+      "name": "Hollow Bastion"
     }
   ],
   "rulesets": [
@@ -397,6 +402,31 @@
         1
       ],
       "stageBeforeCharacter": true,
+      "blindPickBeforeStage": true
+    },
+    {
+      "rulesetId": 13,
+      "name": "Dutch SSBU Ruleset",
+      "starterIds": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        8,
+        14
+      ],
+      "counterpickIds": [],
+      "dsrMode": "NONE",
+      "stageBans": 3,
+      "starterStrikePattern": [
+        3,
+        4,
+        1
+      ],
+      "stageBeforeCharacter": false,
       "blindPickBeforeStage": true
     }
   ]

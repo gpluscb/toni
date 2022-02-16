@@ -92,6 +92,9 @@ public class RulesetsCommand implements Command {
     private EmbedBuilder applyRuleset(@Nonnull EmbedBuilder builder, @Nonnull Ruleset ruleset) {
         builder.setTitle(String.format("Ruleset %d: %s", ruleset.rulesetId(), ruleset.name()), ruleset.url());
 
+        builder.appendDescription(ruleset.shortDescription())
+                .appendDescription("\n\n");
+
         List<EmbedUtil.InlineField> fields = new ArrayList<>();
 
         List<Stage> starters = ruleset.starters();

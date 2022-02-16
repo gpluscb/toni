@@ -7,15 +7,15 @@ import java.util.List;
 import java.util.stream.Stream;
 
 // TODO: Somehow do RPS required or have that as a server wide setting? Alternative is random choice
-// TODO: Short description?
-public record Ruleset(int rulesetId, @Nonnull String name, @Nonnull String url,
+public record Ruleset(int rulesetId, @Nonnull String name, @Nonnull String shortDescription, @Nonnull String url,
                       @Nonnull List<Stage> starters,
                       @Nonnull List<Stage> counterpicks,
                       @Nonnull com.github.gpluscb.toni.smashset.Ruleset.DSRMode dsrMode, int stageBans,
                       int[] starterStrikePattern, boolean stageBeforeCharacter, boolean blindPickBeforeStage) {
-    public Ruleset(int rulesetId, @Nonnull String name, @Nonnull String url, @Nonnull List<Stage> starters, @Nonnull List<Stage> counterpicks, @Nonnull DSRMode dsrMode, int stageBans, int[] starterStrikePattern, boolean stageBeforeCharacter, boolean blindPickBeforeStage) {
+    public Ruleset(int rulesetId, @Nonnull String name, @Nonnull String shortDescription, @Nonnull String url, @Nonnull List<Stage> starters, @Nonnull List<Stage> counterpicks, @Nonnull DSRMode dsrMode, int stageBans, int[] starterStrikePattern, boolean stageBeforeCharacter, boolean blindPickBeforeStage) {
         this.rulesetId = rulesetId;
         this.name = name;
+        this.shortDescription = shortDescription;
         this.url = url;
         this.starters = starters;
         this.counterpicks = counterpicks;
@@ -31,6 +31,7 @@ public record Ruleset(int rulesetId, @Nonnull String name, @Nonnull String url,
     @SuppressWarnings("ConstantConditions")
     public void validate() {
         if (name == null) throw new IllegalStateException("Name may not be null");
+        if (shortDescription == null) throw new IllegalStateException("ShortDescription may not be null");
         if (url == null) throw new IllegalStateException("Url may not be null");
         if (starters == null) throw new IllegalStateException("Name may not be null");
         if (counterpicks == null) throw new IllegalStateException("Name may not be null");

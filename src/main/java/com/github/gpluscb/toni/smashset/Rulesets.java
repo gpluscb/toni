@@ -20,7 +20,7 @@ public record Rulesets(@Nonnull List<Stage> stages,
         return rulesets.stream().map(raw -> raw.toRuleset(stages)).toList();
     }
 
-    private record RawRuleset(int rulesetId, @Nonnull String name, @Nonnull String url,
+    private record RawRuleset(int rulesetId, @Nonnull String name, @Nonnull String shortDescription, @Nonnull String url,
                               @Nonnull List<Integer> starterIds,
                               @Nonnull List<Integer> counterpickIds,
                               @Nonnull Ruleset.DSRMode dsrMode, int stageBans,
@@ -29,6 +29,8 @@ public record Rulesets(@Nonnull List<Stage> stages,
         @SuppressWarnings("ConstantConditions")
         public void check() {
             if (name == null) throw new IllegalStateException("name may not be null");
+            if (shortDescription == null) throw new IllegalStateException("shortDescription may not be null");
+            if (url == null) throw new IllegalStateException("url may not be null");
             if (starterIds == null) throw new IllegalStateException("starterIds may not be null");
             if (starterIds.contains(null)) throw new IllegalStateException("starterIds may not contain null elements");
             if (counterpickIds == null) throw new IllegalStateException("counterpickIds may not be null");
@@ -52,7 +54,7 @@ public record Rulesets(@Nonnull List<Stage> stages,
 
             if (counterpicks.contains(null)) throw new IllegalStateException("counterpickIds contains invalid id");
 
-            return new Ruleset(rulesetId, name, url, starters, counterpicks, dsrMode, stageBans, starterStrikePattern, stageBeforeCharacter, blindPickBeforeStage);
+            return new Ruleset(rulesetId, name, shortDescription, url, starters, counterpicks, dsrMode, stageBans, starterStrikePattern, stageBeforeCharacter, blindPickBeforeStage);
         }
 
         @Nullable

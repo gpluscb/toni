@@ -352,6 +352,35 @@ public class SmashSet {
             super(game);
         }
 
+        public synchronized void registerConflict(@Nonnull Conflict conflict) {
+            checkValid();
+
+            if (conflict.getResolution() != null)
+                throw new IllegalStateException("At this point in time, the conflict may not be resolved");
+
+            GameData game = getGame();
+
+            if (game.getConflict() != null) throw new IllegalStateException("A conflict is already registered");
+
+            game.setConflict(conflict);
+        }
+
+        @Nonnull
+        public synchronized OneOfTwo<OneOfTwo<SetWinnerStageBanState, SetWinnerCharPickState>, SetCompletedState> resolveConflict(@Nonnull ConflictResolution resolution) {
+            checkValid();
+
+            Conflict conflict = getGame().getConflict();
+            if (conflict == null) throw new IllegalStateException("No conflict was registered");
+
+            conflict.setResolution(resolution);
+
+            Player winner = conflict.isBothClaimedWin() ?
+                    resolution.rightfulPlayer()
+                    : resolution.wrongfulPlayer();
+
+            return completeGame(winner);
+        }
+
         @Nonnull
         public synchronized OneOfTwo<OneOfTwo<SetWinnerStageBanState, SetWinnerCharPickState>, SetCompletedState> completeGame(@Nonnull Player winner) {
             checkValid();
@@ -487,7 +516,8 @@ public class SmashSet {
     }
 
     public static class GameData {
-        // TODO: save conflicts when reporting?
+        @Nullable
+        Conflict conflict;
         @Nullable
         private Player winner;
         @Nullable
@@ -505,6 +535,10 @@ public class SmashSet {
 
         public GameData(boolean useBans) {
             this.useBans = useBans;
+        }
+
+        public void setConflict(@Nullable Conflict conflict) {
+            this.conflict = conflict;
         }
 
         public void setWinner(@Nonnull Player winner) {
@@ -526,6 +560,11 @@ public class SmashSet {
         public void setStageBanIndices(@Nonnull Set<Integer> stageBanIndices) {
             if (!useBans) throw new IllegalStateException("Stage bans are not active in this game");
             this.stageBanIndices = stageBanIndices;
+        }
+
+        @Nullable
+        public Conflict getConflict() {
+            return conflict;
         }
 
         @Nullable
@@ -559,6 +598,37 @@ public class SmashSet {
         @Nullable
         public Integer getStageIdx() {
             return stageIdx;
+        }
+    }
+
+    public static class Conflict {
+        private final boolean bothClaimedWin;
+        @Nullable
+        private ConflictResolution resolution;
+
+        public Conflict(boolean bothClaimedWin) {
+            this.bothClaimedWin = bothClaimedWin;
+        }
+
+        public void setResolution(@Nullable ConflictResolution resolution) {
+            this.resolution = resolution;
+        }
+
+        public boolean isBothClaimedWin() {
+            return bothClaimedWin;
+        }
+
+        @Nullable
+        public ConflictResolution getResolution() {
+            return resolution;
+        }
+    }
+
+    public record ConflictResolution(@Nonnull Player wrongfulPlayer,
+                                     @Nullable Long interveningMod) {
+        @Nonnull
+        public Player rightfulPlayer() {
+            return wrongfulPlayer.invert();
         }
     }
 }

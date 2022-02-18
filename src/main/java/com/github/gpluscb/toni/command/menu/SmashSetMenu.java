@@ -1,14 +1,14 @@
 package com.github.gpluscb.toni.command.menu;
 
+import com.github.gpluscb.toni.menu.ActionMenu;
+import com.github.gpluscb.toni.menu.TwoUsersChoicesActionMenu;
+import com.github.gpluscb.toni.smashset.Character;
+import com.github.gpluscb.toni.smashset.*;
 import com.github.gpluscb.toni.util.Constants;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.discord.ChannelChoiceWaiter;
 import com.github.gpluscb.toni.util.discord.EmbedUtil;
-import com.github.gpluscb.toni.menu.ActionMenu;
-import com.github.gpluscb.toni.menu.TwoUsersChoicesActionMenu;
-import com.github.gpluscb.toni.smashset.Character;
-import com.github.gpluscb.toni.smashset.*;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
@@ -308,6 +308,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                 .setConflictMessageProvider(conflictMessageProvider)
                 .setOnResult(this::onReportGameResult)
                 .setOnTimeout(this::onReportGameTimeout)
+                .setOnConflict(this::onReportGameConflict)
                 .build());
     }
 
@@ -505,13 +506,33 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         ).displayReplying(channel, messageId);
     }
 
-    private synchronized void onReportGameResult(@Nonnull ReportGameMenu.ReportGameResult result, @Nonnull ButtonClickEvent event) {
-        SmashSet.Player winner = playerFromUser(result.getWinner());
+    private synchronized void onReportGameConflict(@Nonnull ReportGameMenu.ReportGameConflict reportConflict, @Nonnull ButtonClickEvent event) {
+        boolean bothClaimedWin = reportConflict.getUser1ReportedWinner() == getTwoUsersChoicesActionMenuSettings().user1();
+        SmashSet.Conflict conflict = new SmashSet.Conflict(bothClaimedWin);
 
         // At this point it will be displayed => not null
-        @SuppressWarnings("ConstantConditions")
-        OneOfTwo<OneOfTwo<SmashSet.SetWinnerStageBanState, SmashSet.SetWinnerCharPickState>, SmashSet.SetCompletedState> newState =
-                ((SmashSet.SetInGameState) state).completeGame(winner);
+        // Copying because ReportGameMenu will mutate conflict
+        //noinspection ConstantConditions
+        ((SmashSet.SetInGameState) state).registerConflict(new SmashSet.Conflict(conflict.isBothClaimedWin()));
+    }
+
+    private synchronized void onReportGameResult(@Nonnull ReportGameMenu.ReportGameResult result, @Nonnull ButtonClickEvent event) {
+        SmashSet.SetInGameState inGameState = (SmashSet.SetInGameState) state;
+        OneOfTwo<OneOfTwo<SmashSet.SetWinnerStageBanState, SmashSet.SetWinnerCharPickState>, SmashSet.SetCompletedState> newState;
+
+        SmashSet.Conflict conflict = result.getConflict();
+        if (conflict != null) {
+            // At this point it will be displayed => not null
+            //noinspection ConstantConditions
+            newState = inGameState.resolveConflict(conflict.getResolution());
+        } else {
+            SmashSet.Player winner = playerFromUser(result.getWinner());
+
+            // At this point it will be displayed => not null
+            //noinspection ConstantConditions
+            newState = inGameState.completeGame(winner);
+        }
+
 
         state = newState.map(notComplete -> notComplete.map(ban -> ban, chars -> chars), complete -> complete);
 

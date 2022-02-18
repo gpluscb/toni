@@ -1,8 +1,9 @@
 package com.github.gpluscb.toni.command.menu;
 
-import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.menu.ButtonActionMenu;
 import com.github.gpluscb.toni.menu.TwoUsersChoicesActionMenu;
+import com.github.gpluscb.toni.smashset.SmashSet;
+import com.github.gpluscb.toni.util.MiscUtil;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
@@ -38,6 +39,8 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
     private Long user1ReportedWinner;
     @Nullable
     private Long user2ReportedWinner;
+    @Nullable
+    private SmashSet.Conflict conflict;
 
     public ReportGameMenu(@Nonnull Settings settings) {
         super(settings.twoUsersChoicesActionMenuSettings());
@@ -114,12 +117,24 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
 
         // Both have reported the winner
         if (user1ReportedWinner.equals(user2ReportedWinner)) {
+            if (conflict != null) {
+                SmashSet.Player wrongfulUser;
+                if (conflict.isBothClaimedWin()) {
+                    wrongfulUser = user1ReportedWinner == user2 ? SmashSet.Player.PLAYER1 : SmashSet.Player.PLAYER2;
+                } else {
+                    wrongfulUser = user1ReportedWinner == user1 ? SmashSet.Player.PLAYER1 : SmashSet.Player.PLAYER2;
+                }
+
+                conflict.setResolution(new SmashSet.ConflictResolution(wrongfulUser, null));
+            }
+
             settings.onResult().accept(new ReportGameResult(), e);
 
             return MenuAction.CANCEL;
         }
 
         // Conflict
+        conflict = new SmashSet.Conflict(user1ReportedWinner == user1);
         settings.onConflict().accept(new ReportGameConflict(), e);
 
         // We only need to update ActionRows if a choice was *changed*
@@ -189,6 +204,11 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
         public Long getUser2ReportedWinner() {
             return user2ReportedWinner;
         }
+
+        @Nullable
+        public SmashSet.Conflict getConflict() {
+            return conflict;
+        }
     }
 
     public class ReportGameChoiceInfo extends ReportGameMenuStateInfo {
@@ -229,10 +249,16 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
             //noinspection ConstantConditions
             return super.getUser2ReportedWinner();
         }
+
+        @Nonnull
+        public SmashSet.Conflict getConflict() {
+            // Will not be null in conflict
+            //noinspection ConstantConditions
+            return super.getConflict();
+        }
     }
 
     public class ReportGameResult extends ReportGameMenuStateInfo {
-        // TODO: were there conflicts?
         public long getWinner() {
             // Will not be null here
             //noinspection ConstantConditions

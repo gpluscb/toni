@@ -134,18 +134,19 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
         }
 
         // Conflict
-        conflict = new SmashSet.Conflict(user1ReportedWinner == user1);
-        settings.onConflict().accept(new ReportGameConflict(), e);
 
         // We only need to update ActionRows if a choice was *changed*
         // If we try to update the ActionRows otherwise it'll error
         // We also can't update the message with a full Message because of that reason
         // Tho it'd be possible with a MessageBuilder
         // Either way the conflict hasn't changed, so we don't update the message.
-        if ((reportingUser == user1 && user1ReportedWinner.equals(previousUser1ReportedWinner)) || user2ReportedWinner.equals(previousUser2ReportedWinner)) {
+        if ((reportingUser == user1 && user1ReportedWinner.equals(previousUser1ReportedWinner)) || (reportingUser == user2 && user2ReportedWinner.equals(previousUser2ReportedWinner))) {
             e.reply("You have selected the same user you have already reported as the winner.").setEphemeral(true).queue();
             return MenuAction.CONTINUE;
         }
+
+        conflict = new SmashSet.Conflict(user1ReportedWinner == user1);
+        settings.onConflict().accept(new ReportGameConflict(), e);
 
         List<ActionRow> actionRows = MiscUtil.splitList(
                 Stream.concat(e.getMessage().getButtons().stream(), Stream.of(modButton)).toList(), Component.Type.BUTTON.getMaxPerRow()

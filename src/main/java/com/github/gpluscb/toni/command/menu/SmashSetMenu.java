@@ -131,7 +131,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         return new MessageBuilder(prepareEmbed("RPS")
                 .setDescription(String.format("%s" +
                                 "**%s** chose %s, and **%s** chose %s in the rps, meaning **%s** won the RPS.%n" +
-                                "**%s**, you can now decide if you want to strike first (%s), or second (%s) now.",
+                                "**%s**, you can decide if you want to strike first (%s), or second (%s) now.",
                         messagePrepend == null ? "" : String.format("%s%n", messagePrepend),
                         settings.user1Display(),
                         rpsResult.getChoice1().getDisplayName(),

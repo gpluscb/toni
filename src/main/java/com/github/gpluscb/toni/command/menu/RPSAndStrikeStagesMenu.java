@@ -141,7 +141,7 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
                                 .setWaiter(getActionMenuSettings().waiter())
                                 .setTimeout(settings.strikeTimeout(), settings.strikeUnit())
                                 .build())
-                        .setUsers(getTwoUsersChoicesActionMenuSettings().user1(), getTwoUsersChoicesActionMenuSettings().user2())
+                        .setUsers(result.getFirstStriker(), result.getSecondStriker())
                         .build())
                 .setStrikeMessageProducer(settings.strikeMessageProducer())
                 .setRuleset(settings.ruleset())
@@ -370,7 +370,6 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
 
             /**
              * Timeout is for strike first choice
-             * user1 strikes first
              */
             @Nonnull
             public Builder setTwoUsersChoicesActionMenuSettings(@Nullable TwoUsersChoicesActionMenu.Settings twoUsersChoicesActionMenuSettings) {

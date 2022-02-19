@@ -6,6 +6,7 @@ import com.github.gpluscb.toni.menu.ButtonActionMenu;
 import com.github.gpluscb.toni.smashset.Ruleset;
 import com.github.gpluscb.toni.smashset.Stage;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.entities.Emoji;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
@@ -51,6 +52,7 @@ public class PickStageMenu extends ActionMenu {
         settings.ruleset().getStagesStream().forEach(stage -> {
             int id = stage.stageId();
             Button stageButton = Button.secondary(String.valueOf(id), StringUtils.abbreviate(stage.name(), LABEL_MAX_LENGTH))
+                    .withEmoji(Emoji.fromEmote("a", stage.stageEmoteId(),false)) // a as placeholder because it may not be empty
                     .withDisabled(settings.bannedStageIds().contains(id));
 
             underlyingBuilder.registerButton(stageButton, e -> onPick(id, e));

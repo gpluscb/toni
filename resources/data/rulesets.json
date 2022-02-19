@@ -2,77 +2,77 @@
   "stages": [
     {
       "stageId": 0,
-      "stageEmoteId": 0,
+      "stageEmoteId": 944355707803828304,
       "name": "Battlefield"
     },
     {
       "stageId": 1,
-      "stageEmoteId": 0,
+      "stageEmoteId": 944355708810461184,
       "name": "Final Destination"
     },
     {
       "stageId": 2,
-      "stageEmoteId": 0,
+      "stageEmoteId": 944355709649293372,
       "name": "Pokémon Stadium 2"
     },
     {
       "stageId": 3,
-      "stageEmoteId": 0,
+      "stageEmoteId": 944355710114869319,
       "name": "Smashville"
     },
     {
       "stageId": 4,
-      "stageEmoteId": 0,
+      "stageEmoteId": 944359753843367987,
       "name": "Lylat Cruise"
     },
     {
       "stageId": 5,
-      "stageEmoteId": 0,
+      "stageEmoteId": 944355710337179668,
       "name": "Town & City"
     },
     {
       "stageId": 6,
-      "stageEmoteId": 0,
+      "stageEmoteId": 944355709821280306,
       "name": "Kalos Pokémon League"
     },
     {
       "stageId": 7,
-      "stageEmoteId": 0,
+      "stageEmoteId": 944355710223908875,
       "name": "Yoshi's Story"
     },
     {
       "stageId": 8,
-      "stageEmoteId": 0,
+      "stageEmoteId": 944355709246660618,
       "name": "Small Battlefield"
     },
     {
       "stageId": 9,
-      "stageEmoteId": 0,
+      "stageEmoteId": 944355709057900564,
       "name": "Unova Pokémon League"
     },
     {
       "stageId": 10,
-      "stageEmoteId": 0,
+      "stageEmoteId": 944359753864347729,
       "name": "Yoshi's Island Brawl"
     },
     {
       "stageId": 11,
-      "stageEmoteId": 0,
+      "stageEmoteId": 944359753654607912,
       "name": "Warioware, Inc."
     },
     {
       "stageId": 12,
-      "stageEmoteId": 0,
+      "stageEmoteId": 944361750134915143,
       "name": "Castle Siege"
     },
     {
       "stageId": 13,
-      "stageEmoteId": 0,
+      "stageEmoteId": 944355712203624468,
       "name": "Northern Cave"
     },
     {
       "stageId": 14,
-      "stageEmoteId": 0,
+      "stageEmoteId": 944359754690592859,
       "name": "Hollow Bastion"
     }
   ],

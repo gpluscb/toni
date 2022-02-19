@@ -12,6 +12,7 @@ public record Rulesets(@Nonnull List<Stage> stages,
         if (stages.contains(null)) throw new IllegalStateException("stages may not contain null elements");
         if (rulesets == null) throw new IllegalStateException("rulesets may not be null");
         if (rulesets.contains(null)) throw new IllegalStateException("rulesets may not contain null elements");
+        stages.forEach(Stage::check);
         rulesets.forEach(RawRuleset::check);
     }
 

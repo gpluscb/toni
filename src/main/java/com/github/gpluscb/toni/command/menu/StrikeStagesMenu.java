@@ -7,6 +7,7 @@ import com.github.gpluscb.toni.smashset.Ruleset;
 import com.github.gpluscb.toni.smashset.Stage;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
+import net.dv8tion.jda.api.entities.Emoji;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
@@ -65,7 +66,8 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
         for (Stage starter : settings.ruleset().starters()) {
             int id = starter.stageId();
             underlyingBuilder.registerButton(
-                    Button.secondary(String.valueOf(id), StringUtils.abbreviate(starter.name(), LABEL_MAX_LENGTH)),
+                    Button.secondary(String.valueOf(id), StringUtils.abbreviate(starter.name(), LABEL_MAX_LENGTH))
+                            .withEmoji(Emoji.fromEmote("a", starter.stageEmoteId(),false)), // a as placeholder because it may not be empty
                     e -> handleStrike(e, id)
             );
         }

@@ -42,10 +42,11 @@ public class CommandUtil {
             // TODO: Better naming
             twoArgumentsGiven = false;
         }
+
         if (user1User == null || user2User == null)
             return OneOfTwo.ofU(TwoUserArgsErrorType.NOT_USER_MENTION_ARG);
 
-
+        // FIXME: Move these checks out of this method for the Slash Command case
         if (user1User.isBot() || user2User.isBot())
             return OneOfTwo.ofU(TwoUserArgsErrorType.BOT_USER);
 

@@ -5,12 +5,12 @@ import com.github.gpluscb.toni.command.menu.BanPickStagesMenu;
 import com.github.gpluscb.toni.command.menu.BanStagesMenu;
 import com.github.gpluscb.toni.command.menu.PickStageMenu;
 import com.github.gpluscb.toni.command.menu.RulesetSelectMenu;
+import com.github.gpluscb.toni.menu.ActionMenu;
+import com.github.gpluscb.toni.menu.TwoUsersChoicesActionMenu;
 import com.github.gpluscb.toni.smashset.Ruleset;
 import com.github.gpluscb.toni.smashset.Stage;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
-import com.github.gpluscb.toni.menu.ActionMenu;
-import com.github.gpluscb.toni.menu.TwoUsersChoicesActionMenu;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
@@ -47,9 +47,9 @@ public class CounterpickStagesCommand implements Command {
         if (context.isT()) {
             MessageCommandContext msg = context.getTOrThrow();
 
-            OneOfTwo<MiscUtil.OneOrTwoUserArgs, MiscUtil.TwoUserArgsErrorType> result = MiscUtil.getTwoUserArgs(msg, true);
+            OneOfTwo<CommandUtil.OneOrTwoUserArgs, CommandUtil.TwoUserArgsErrorType> result = CommandUtil.getTwoUserArgs(msg, true);
 
-            MiscUtil.TwoUserArgsErrorType error = result.getU().orElse(null);
+            CommandUtil.TwoUserArgsErrorType error = result.getU().orElse(null);
             if (error != null) {
                 String reply = switch (error) {
                     case WRONG_NUMBER_ARGS -> "You must mention two users, and give the ruleset id.";
@@ -62,7 +62,7 @@ public class CounterpickStagesCommand implements Command {
                 return;
             }
 
-            MiscUtil.OneOrTwoUserArgs users = result.getTOrThrow();
+            CommandUtil.OneOrTwoUserArgs users = result.getTOrThrow();
             banningUser = users.getUser1();
             pickingUser = users.getUser2();
 

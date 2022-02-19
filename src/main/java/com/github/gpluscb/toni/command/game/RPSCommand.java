@@ -2,10 +2,10 @@ package com.github.gpluscb.toni.command.game;
 
 import com.github.gpluscb.toni.command.*;
 import com.github.gpluscb.toni.command.menu.RPSMenu;
-import com.github.gpluscb.toni.util.MiscUtil;
-import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.menu.ActionMenu;
 import com.github.gpluscb.toni.menu.TwoUsersChoicesActionMenu;
+import com.github.gpluscb.toni.util.MiscUtil;
+import com.github.gpluscb.toni.util.OneOfTwo;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
@@ -38,8 +38,8 @@ public class RPSCommand implements Command {
 
         if (context.isT()) {
             MessageCommandContext msg = context.getTOrThrow();
-            OneOfTwo<MiscUtil.OneOrTwoUserArgs, MiscUtil.TwoUserArgsErrorType> argResult = MiscUtil.getTwoUserArgs(msg, false);
-            MiscUtil.TwoUserArgsErrorType error = argResult.getU().orElse(null);
+            OneOfTwo<CommandUtil.OneOrTwoUserArgs, CommandUtil.TwoUserArgsErrorType> argResult = CommandUtil.getTwoUserArgs(msg, false);
+            CommandUtil.TwoUserArgsErrorType error = argResult.getU().orElse(null);
             if (error != null) {
                 String reply = switch (error) {
                     case WRONG_NUMBER_ARGS -> "You must mention either one or two users.";
@@ -51,7 +51,7 @@ public class RPSCommand implements Command {
                 ctx.reply(reply).queue();
             }
 
-            MiscUtil.OneOrTwoUserArgs users = argResult.getTOrThrow();
+            CommandUtil.OneOrTwoUserArgs users = argResult.getTOrThrow();
             user1User = users.user1User();
             user2User = users.user2User();
         } else {

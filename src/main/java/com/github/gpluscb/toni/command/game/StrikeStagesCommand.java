@@ -5,12 +5,12 @@ import com.github.gpluscb.toni.command.menu.RPSAndStrikeStagesMenu;
 import com.github.gpluscb.toni.command.menu.RPSMenu;
 import com.github.gpluscb.toni.command.menu.RulesetSelectMenu;
 import com.github.gpluscb.toni.command.menu.StrikeStagesMenu;
+import com.github.gpluscb.toni.menu.ActionMenu;
+import com.github.gpluscb.toni.menu.TwoUsersChoicesActionMenu;
 import com.github.gpluscb.toni.smashset.Ruleset;
 import com.github.gpluscb.toni.smashset.Stage;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
-import com.github.gpluscb.toni.menu.ActionMenu;
-import com.github.gpluscb.toni.menu.TwoUsersChoicesActionMenu;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
@@ -50,9 +50,9 @@ public class StrikeStagesCommand implements Command {
         if (context.isT()) {
             MessageCommandContext msg = context.getTOrThrow();
 
-            OneOfTwo<MiscUtil.OneOrTwoUserArgs, MiscUtil.TwoUserArgsErrorType> result = MiscUtil.getTwoUserArgs(msg, true);
+            OneOfTwo<CommandUtil.OneOrTwoUserArgs, CommandUtil.TwoUserArgsErrorType> result = CommandUtil.getTwoUserArgs(msg, true);
 
-            MiscUtil.TwoUserArgsErrorType error = result.getU().orElse(null);
+            CommandUtil.TwoUserArgsErrorType error = result.getU().orElse(null);
             if (error != null) {
                 String reply = switch (error) {
                     case WRONG_NUMBER_ARGS -> "You must mention either one or two users.";
@@ -65,7 +65,7 @@ public class StrikeStagesCommand implements Command {
                 return;
             }
 
-            MiscUtil.OneOrTwoUserArgs users = result.getTOrThrow();
+            CommandUtil.OneOrTwoUserArgs users = result.getTOrThrow();
             user1 = users.getUser1();
             user2 = users.getUser2();
 

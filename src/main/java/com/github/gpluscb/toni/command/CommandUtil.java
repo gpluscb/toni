@@ -25,7 +25,6 @@ public class CommandUtil {
     }
 
     /**
-     * Only useful if those one or two user mentions are <b>all</b> the arguments.
      * If there is one argument given user 2 will default to the author.
      */
     // TODO: This needs an overhaul, probably should have List of users with minUsers and maxUsers and defaultAuthorIfMin or sth like that

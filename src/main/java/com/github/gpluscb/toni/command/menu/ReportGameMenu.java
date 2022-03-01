@@ -30,8 +30,8 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
     @Nonnull
     private final Settings settings;
 
-    @Nonnull
-    private final Button modButton;
+//    @Nonnull
+//    private final Button modButton;
     @Nonnull
     private final ButtonActionMenu underlying;
 
@@ -46,7 +46,7 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
         super(settings.twoUsersChoicesActionMenuSettings());
         this.settings = settings;
 
-        modButton = Button.danger("mod", "Call Moderator");
+        //modButton = Button.danger("mod", "Call Moderator");
 
         long user1 = getTwoUsersChoicesActionMenuSettings().user1();
         long user2 = getTwoUsersChoicesActionMenuSettings().user2();
@@ -57,7 +57,7 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
                 .setDeletionButton(null)
                 .registerButton(Button.primary("user1", StringUtils.abbreviate(String.format("%s won", settings.user1Display()), LABEL_MAX_LENGTH)), e -> onChoice(user1, e))
                 .registerButton(Button.primary("user2", StringUtils.abbreviate(String.format("%s won", settings.user2Display()), LABEL_MAX_LENGTH)), e -> onChoice(user2, e))
-                .registerButton(modButton, this::onCallMod, false)
+                //.registerButton(modButton, this::onCallMod, false) TODO: In ranked we should be able to call mod, doesn't matter so much for unranked
                 .setOnTimeout(this::onTimeout)
                 .build());
     }
@@ -148,12 +148,12 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
         conflict = new SmashSet.Conflict(user1ReportedWinner == user1);
         settings.onConflict().accept(new ReportGameConflict(), e);
 
-        List<ActionRow> actionRows = MiscUtil.splitList(
-                Stream.concat(e.getMessage().getButtons().stream(), Stream.of(modButton)).toList(), Component.Type.BUTTON.getMaxPerRow()
-        ).stream().map(ActionRow::of).toList();
+        //List<ActionRow> actionRows = MiscUtil.splitList(
+        //        Stream.concat(e.getMessage().getButtons().stream(), Stream.of(modButton)).toList(), Component.Type.BUTTON.getMaxPerRow()
+        //).stream().map(ActionRow::of).toList();
 
         e.editMessage(settings.conflictMessageProvider().apply(new ReportGameConflict(), e))
-                .setActionRows(actionRows)
+                .setActionRows(e.getMessage().getActionRows())
                 .queue();
 
         return MenuAction.CONTINUE;

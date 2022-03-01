@@ -8,6 +8,7 @@ import com.github.gpluscb.toni.smashset.Character;
 import com.github.gpluscb.toni.smashset.CharacterTree;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.MessageReference;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
@@ -86,7 +87,14 @@ public class CharPickMenu extends ActionMenu {
 
     @Nonnull
     private Optional<Character> verifyChoice(@Nonnull MessageReceivedEvent event) {
+        long botMessage = getMessageId();
+
         Message message = event.getMessage();
+        MessageReference reference = message.getMessageReference();
+        // Only allow replies
+        if (reference == null || reference.getMessageIdLong() != botMessage)
+            return Optional.empty();
+
         String choice = message.getContentRaw();
 
         Character character = settings.characters().stream().filter(c -> c.altNames().contains(choice.toLowerCase())).findAny().orElse(null);

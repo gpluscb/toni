@@ -191,7 +191,7 @@ public class CounterpickStagesCommand implements Command {
                 .setAliases(new String[]{"counterpick", "banstages"})
                 .setShortHelp("Helps you through the stage ban/counterpick phase of a set. Usage: `counterpick <BANNING USER> [COUNTERPICKING USER] [RULESET ID]`")
                 .setDetailedHelp("""
-                        `counterpick <BANNING USER> [COUNTERPICKING USER (default: you)] [RULESET ID (default: server default ruleset)]`
+                        `counterpick <BANNING USER> [COUNTERPICKING USER (default: you)] [RULESET ID (default: selection menu)]`
                         Helps you perform the [stage counterpicking procedure](https://www.ssbwiki.com/Counterpick) after a match for a given ruleset.
                         For a list of rulesets and their IDs, use the `rulesets` command.
                         Aliases: `counterpick`, `banstages`""")

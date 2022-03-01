@@ -284,7 +284,7 @@ public class StrikeStagesCommand implements Command {
                 .setShortHelp("Helps you do the stage striking procedure with a specific ruleset. Usage: `strike [PLAYER 1] <PLAYER 2> [RULESET ID] [DO RPS]`")
                 // TODO If we get passed ctx here, we can actually name the server default ruleset
                 .setDetailedHelp("""
-                        `strike [PLAYER 1] <PLAYER 2> [RULESET ID (default: server default ruleset)] [DO RPS (true|false(default))]`
+                        `strike [PLAYER 1] <PLAYER 2> [RULESET ID (default: selection menu)] [DO RPS (true|false(default))]`
                         Helps you perform the [stage striking procedure](https://www.ssbwiki.com/Stage_striking) for a given ruleset. Depending on the `DO RPS` argument, you'll play a game of RPS first to determine who gets to strike first.
                         For a list of rulesets and their IDs, use the `rulesets` command.
                         Aliases: `strike`, `strikestarters`, `strikestages`""")

@@ -191,7 +191,7 @@ public class SmashSetCommand implements Command {
                 .setAliases(new String[]{"set", "playset"})
                 .setShortHelp("Helps you play a competitive set of Smash for a specific ruleset. Usage: `set [PLAYER 1] <PLAYER 2> [BEST OF X] [RULESET ID]`")
                 .setDetailedHelp("""
-                        `set [PLAYER 1 (default: you)] <PLAYER 2> [BEST OF X (default: 3)] [RULESET ID (default: server default ruleset)]`
+                        `set [PLAYER 1 (default: you)] <PLAYER 2> [BEST OF X (default: 3)] [RULESET ID (default: selection menu)]`
                         Guides you through a competitive set of Smash Bros. Ultimate according to a given ruleset. This will help you with double blind character picks, stage striking, game reporting, and character and stage counterpicking.
                         The `BEST OF X` argument specifies how many games you will play (i.e. with `3` you'll play a best of 3, with `5` you'll play a best of 5 etc.).
                         For a list of rulesets and their IDs, use the `rulesets` command.

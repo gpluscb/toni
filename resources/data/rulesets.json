@@ -74,6 +74,11 @@
       "stageId": 14,
       "stageEmoteId": 944359754690592859,
       "name": "Hollow Bastion"
+    },
+    {
+      "stageId": 15,
+      "stageEmoteId": 944355710056153108,
+      "name": "Fountain of Dreams"
     }
   ],
   "rulesets": [
@@ -455,6 +460,59 @@
         1
       ],
       "stageBeforeCharacter": false,
+      "blindPickBeforeStage": true
+    },
+    {
+      "rulesetId": 14,
+      "name": "L4st Experimental Ruleset",
+      "shortDescription": "A ruleset by L4st featuring Hollow Bastion",
+      "url": "https://help.smash.gg/en/articles/2552379-smash-ultimate-online-rulesets#h_6ccfe91c60",
+      "starterIds": [
+        0,
+        1,
+        3,
+        5,
+        8
+      ],
+      "counterpickIds": [
+        2,
+        6,
+        7,
+        14
+      ],
+      "dsrMode": "WINNERS_VARIATION",
+      "stageBans": 2,
+      "starterStrikePattern": [
+        1,
+        2,
+        1
+      ],
+      "stageBeforeCharacter": true,
+      "blindPickBeforeStage": true
+    },
+    {
+      "rulesetId": 15,
+      "name": "Charles Hazards On Ruleset",
+      "shortDescription": "A ruleset using the Hazards: ON setting",
+      "url": "https://help.smash.gg/en/articles/2552379-smash-ultimate-online-rulesets#h_9b21f7bee6",
+      "starterIds": [
+        0,
+        1,
+        3,
+        5,
+        8
+      ],
+      "counterpickIds": [
+        15
+      ],
+      "dsrMode": "WINNERS_VARIATION",
+      "stageBans": 1,
+      "starterStrikePattern": [
+        1,
+        2,
+        1
+      ],
+      "stageBeforeCharacter": true,
       "blindPickBeforeStage": true
     }
   ]

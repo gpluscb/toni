@@ -6,7 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
-// TODO: Somehow do RPS required or have that as a server wide setting? Alternative is random choice
+// TODO: L4st ruleset requires 3 bans for BO3, 2 for BO5... How tf do we model this????
 public record Ruleset(int rulesetId, @Nonnull String name, @Nonnull String shortDescription, @Nonnull String url,
                       @Nonnull List<Stage> starters,
                       @Nonnull List<Stage> counterpicks,
@@ -161,7 +161,7 @@ public record Ruleset(int rulesetId, @Nonnull String name, @Nonnull String short
                 case NONE -> null;
                 case MODIFIED_DSR -> "https://www.ssbwiki.com/Dave%27s_Stupid_Rule#Original_Ruling";
                 case GAME_RESTRICTED -> "https://www.ssbwiki.com/Dave%27s_Stupid_Rule#Game-Restricted_Variation";
-                case WINNERS_VARIATION -> "https://www.ssbwiki.com/Dave%27s_Stupid_Rule#Winner's_Variation";
+                case WINNERS_VARIATION -> "https://www.ssbwiki.com/Dave%27s_Stupid_Rule#Winner%27s_Variation";
                 case STAGE_DISMISSAL_RULE -> "https://www.ssbwiki.com/Dave%27s_Stupid_Rule#%22Stage_Dismissal_Rule%22";
             };
         }

@@ -71,9 +71,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
             BlindPickMenu doubleBlindMenu = createDoubleBlindMenu(start);
             if (doubleBlindMenu.isInitFailure()) {
-                onDoubleBlindFailedInit();
                 startUnderlying = null;
-
                 return;
             }
 
@@ -449,12 +447,8 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                             .build();
 
                     BlindPickMenu doubleBlindMenu = createDoubleBlindMenu(start);
-                    if (doubleBlindMenu.isInitFailure()) {
-                        onDoubleBlindFailedInit();
-                        return;
-                    }
-
-                    doubleBlindMenu.displayReplying(event.getMessage());
+                    if (!doubleBlindMenu.isInitFailure())
+                        doubleBlindMenu.displayReplying(event.getMessage());
                 })
                 .onU(inGame -> createReportGameMenu().displayReplying(event.getMessage()));
     }
@@ -611,12 +605,8 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                                     .build();
 
                             CharPickMenu charPickMenu = createWinnerCharPickMenu(start);
-                            if (charPickMenu.isInitFailure()) {
-                                onWinnerCharPickFailedInit();
-                                return;
-                            }
-
-                            charPickMenu.displayReplying(event.getMessage());
+                            if (!charPickMenu.isInitFailure())
+                                charPickMenu.displayReplying(event.getMessage());
                         }
                 )
         ).onU(completed -> this.onResult(event));
@@ -655,12 +645,9 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                     .build();
 
             CharPickMenu charPickMenu = createWinnerCharPickMenu(start);
-            if (charPickMenu.isInitFailure()) {
-                onWinnerCharPickFailedInit();
-                return;
-            }
+            if (!charPickMenu.isInitFailure())
+                charPickMenu.displayReplying(event.getMessage());
 
-            charPickMenu.displayReplying(event.getMessage());
         }).onU(inGame -> createReportGameMenu().displayReplying(event.getMessage()));
     }
 
@@ -697,12 +684,8 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                 .build();
 
         CharPickMenu charPickMenu = createLoserCharCounterpickMenu(start);
-        if (charPickMenu.isInitFailure()) {
-            onLoserCharCounterpickFailedInit();
-            return;
-        }
-
-        charPickMenu.displayReplying(channel, messageId);
+        if (!charPickMenu.isInitFailure())
+            charPickMenu.displayReplying(channel, messageId);
     }
 
     private synchronized void onLoserCharCounterpickResult(@Nonnull CharPickMenu.CharPickResult result) {
@@ -783,10 +766,6 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         settings.onDoubleBlindTimeout().accept(new SmashSetDoubleBlindTimeoutEvent(event));
     }
 
-    private void onDoubleBlindFailedInit() {
-        settings.onDoubleBlindFailedInit().accept(new SmashSetStateInfo());
-    }
-
     private void onReportGameTimeout(@Nonnull ReportGameMenu.ReportGameTimeoutEvent event) {
         settings.onReportGameTimeout().accept(new SmashSetReportGameTimeoutEvent(event));
     }
@@ -803,16 +782,8 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         settings.onWinnerCharPickTimeout().accept(new SmashSetCharPickTimeoutEvent(event));
     }
 
-    private void onWinnerCharPickFailedInit() {
-        settings.onWinnerCharPickFailedInit().accept(new SmashSetStateInfo());
-    }
-
     private void onLoserCharCounterpickTimeout(@Nonnull CharPickMenu.CharPickTimeoutEvent event) {
         settings.onLoserCharCounterpickTimeout().accept(new SmashSetCharPickTimeoutEvent(event));
-    }
-
-    private void onLoserCharCounterpickFailedInit() {
-        settings.onLoserCharCounterpickFailedInit().accept(new SmashSetStateInfo());
     }
 
     private long userFromPlayer(@Nonnull SmashSet.Player player) {
@@ -1016,7 +987,6 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                            @Nonnull Consumer<SmashSetStrikeTimeoutEvent> onStrikeTimeout,
                            long doubleBlindTimeout, @Nonnull TimeUnit doubleBlindUnit,
                            @Nonnull Consumer<SmashSetDoubleBlindTimeoutEvent> onDoubleBlindTimeout,
-                           @Nonnull Consumer<SmashSetStateInfo> onDoubleBlindFailedInit,
                            long reportGameTimeout, @Nonnull TimeUnit reportGameUnit, @Nonnull String user1Display,
                            @Nonnull String user2Display,
                            @Nonnull Consumer<SmashSetReportGameTimeoutEvent> onReportGameTimeout,
@@ -1026,10 +996,8 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                            @Nonnull Consumer<SmashSetPickStageTimeoutEvent> onPickStageTimeout,
                            long winnerCharPickTimeout, @Nonnull TimeUnit winnerCharPickUnit,
                            @Nonnull Consumer<SmashSetCharPickTimeoutEvent> onWinnerCharPickTimeout,
-                           @Nonnull Consumer<SmashSetStateInfo> onWinnerCharPickFailedInit,
                            long loserCharCounterpickTimeout, @Nonnull TimeUnit loserCharCounterpickUnit,
                            @Nonnull Consumer<SmashSetCharPickTimeoutEvent> onLoserCharCounterpickTimeout,
-                           @Nonnull Consumer<SmashSetStateInfo> onLoserCharCounterpickFailedInit,
                            @Nonnull Consumer<SmashSetStateInfo> onMessageChannelNotInCache,
                            @Nonnull BiConsumer<SmashSetResult, ButtonClickEvent> onResult) {
         @Nonnull
@@ -1100,8 +1068,6 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
             private TimeUnit doubleBlindUnit = DEFAULT_DOUBLE_BLIND_UNIT;
             @Nonnull
             private Consumer<SmashSetDoubleBlindTimeoutEvent> onDoubleBlindTimeout = DEFAULT_ON_DOUBLE_BLIND_TIMEOUT;
-            @Nonnull
-            private Consumer<SmashSetStateInfo> onDoubleBlindFailedInit = DEFAULT_ON_DOUBLE_BLIND_FAILED_INIT;
 
             private long reportGameTimeout = DEFAULT_REPORT_GAME_TIMEOUT;
             @Nonnull
@@ -1129,16 +1095,12 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
             private TimeUnit winnerCharPickUnit = DEFAULT_WINNER_CHAR_PICK_UNIT;
             @Nonnull
             private Consumer<SmashSetCharPickTimeoutEvent> onWinnerCharPickTimeout = DEFAULT_ON_WINNER_CHAR_PICK_TIMEOUT;
-            @Nonnull
-            private Consumer<SmashSetStateInfo> onWinnerCharPickFailedInit = DEFAULT_ON_WINNER_CHAR_PICK_FAILED_INIT;
 
             private long loserCharCounterpickTimeout = DEFAULT_LOSER_CHAR_COUNTERPICK_TIMEOUT;
             @Nonnull
             private TimeUnit loserCharCounterpickUnit = DEFAULT_LOSER_CHAR_COUNTERPICK_UNIT;
             @Nonnull
             private Consumer<SmashSetCharPickTimeoutEvent> onLoserCharCounterpickTimeout = DEFAULT_ON_LOSER_CHAR_COUNTERPICK_TIMEOUT;
-            @Nonnull
-            private Consumer<SmashSetStateInfo> onLoserCharCounterpickFailedInit = DEFAULT_ON_LOSER_CHAR_COUNTERPICK_FAILED_INIT;
 
             @Nonnull
             private Consumer<SmashSetStateInfo> onMessageChannelNotInCache = DEFAULT_ON_MESSAGE_CHANNEL_NOT_IN_CACHE;
@@ -1210,12 +1172,6 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
             }
 
             @Nonnull
-            public Builder setOnDoubleBlindFailedInit(@Nonnull Consumer<SmashSetStateInfo> onDoubleBlindFailedInit) {
-                this.onDoubleBlindFailedInit = onDoubleBlindFailedInit;
-                return this;
-            }
-
-            @Nonnull
             public Builder setReportGameTimeout(long reportGameTimeout, @Nonnull TimeUnit reportGameUnit) {
                 this.reportGameTimeout = reportGameTimeout;
                 this.reportGameUnit = reportGameUnit;
@@ -1275,12 +1231,6 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
             }
 
             @Nonnull
-            public Builder setOnWinnerCharPickFailedInit(@Nonnull Consumer<SmashSetStateInfo> onWinnerCharPickFailedInit) {
-                this.onWinnerCharPickFailedInit = onWinnerCharPickFailedInit;
-                return this;
-            }
-
-            @Nonnull
             public Builder setLoserCharCounterpickTimeout(long loserCharCounterpickTimeout, @Nonnull TimeUnit loserCharCounterpickUnit) {
                 this.loserCharCounterpickTimeout = loserCharCounterpickTimeout;
                 this.loserCharCounterpickUnit = loserCharCounterpickUnit;
@@ -1290,12 +1240,6 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
             @Nonnull
             public Builder setOnLoserCharCounterpickTimeout(@Nonnull Consumer<SmashSetCharPickTimeoutEvent> onLoserCharCounterpickTimeout) {
                 this.onLoserCharCounterpickTimeout = onLoserCharCounterpickTimeout;
-                return this;
-            }
-
-            @Nonnull
-            public Builder setOnLoserCharCounterpickFailedInit(@Nonnull Consumer<SmashSetStateInfo> onLoserCharCounterpickFailedInit) {
-                this.onLoserCharCounterpickFailedInit = onLoserCharCounterpickFailedInit;
                 return this;
             }
 
@@ -1325,12 +1269,12 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                 return new Settings(twoUsersChoicesActionMenuSettings, channelWaiter, ruleset, characters, firstToWhatScore,
                         rpsInfo,
                         onStrikeTimeout,
-                        doubleBlindTimeout, doubleBlindUnit, onDoubleBlindTimeout, onDoubleBlindFailedInit,
+                        doubleBlindTimeout, doubleBlindUnit, onDoubleBlindTimeout,
                         reportGameTimeout, reportGameUnit, user1Display, user2Display, onReportGameTimeout,
                         banTimeout, banUnit, onBanTimeout,
                         pickStageTimeout, pickStageUnit, onPickStageTimeout,
-                        winnerCharPickTimeout, winnerCharPickUnit, onWinnerCharPickTimeout, onWinnerCharPickFailedInit,
-                        loserCharCounterpickTimeout, loserCharCounterpickUnit, onLoserCharCounterpickTimeout, onLoserCharCounterpickFailedInit,
+                        winnerCharPickTimeout, winnerCharPickUnit, onWinnerCharPickTimeout,
+                        loserCharCounterpickTimeout, loserCharCounterpickUnit, onLoserCharCounterpickTimeout,
                         onMessageChannelNotInCache, onResult);
             }
         }

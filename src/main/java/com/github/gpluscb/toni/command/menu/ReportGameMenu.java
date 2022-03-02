@@ -13,7 +13,6 @@ import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.Button;
-import net.dv8tion.jda.api.interactions.components.Component;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
@@ -22,7 +21,6 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 import static net.dv8tion.jda.api.interactions.components.Button.LABEL_MAX_LENGTH;
 
@@ -30,7 +28,7 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
     @Nonnull
     private final Settings settings;
 
-//    @Nonnull
+    //    @Nonnull
 //    private final Button modButton;
     @Nonnull
     private final ButtonActionMenu underlying;
@@ -85,6 +83,17 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
     @Override
     public void displayDeferredReplying(@Nonnull InteractionHook hook) {
         underlying.displayDeferredReplying(hook);
+    }
+
+    @Nonnull
+    @Override
+    public List<ActionRow> getComponents() {
+        return underlying.getComponents();
+    }
+
+    @Override
+    public void start(@Nonnull Message message) {
+        underlying.start(message);
     }
 
     @Nonnull

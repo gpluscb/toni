@@ -10,6 +10,7 @@ import net.dv8tion.jda.api.events.interaction.SelectionMenuEvent;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
 import net.dv8tion.jda.api.interactions.components.selections.SelectionMenu;
 import net.dv8tion.jda.api.requests.ErrorResponse;
@@ -55,13 +56,13 @@ public class SelectionActionMenu extends ActionMenu {
     @Override
     public void displaySlashReplying(@Nonnull SlashCommandEvent event) {
         SelectionMenu selectionMenu = initSelectionMenu();
-        event.reply(settings.start()).addActionRow(selectionMenu).flatMap(InteractionHook::retrieveOriginal).queue(this::initMessage);
+        event.reply(settings.start()).addActionRow(selectionMenu).flatMap(InteractionHook::retrieveOriginal).queue(this::start);
     }
 
     @Override
     public void displayDeferredReplying(@Nonnull InteractionHook hook) {
         SelectionMenu selectionMenu = initSelectionMenu();
-        hook.sendMessage(settings.start()).addActionRow(selectionMenu).queue(this::initMessage);
+        hook.sendMessage(settings.start()).addActionRow(selectionMenu).queue(this::start);
     }
 
     @Override
@@ -77,15 +78,23 @@ public class SelectionActionMenu extends ActionMenu {
             init(channel.sendMessage(settings.start()));
     }
 
-    private void init(@Nonnull MessageAction messageAction) {
-        SelectionMenu selectionMenu = SelectionMenu.create(settings.id()).addOptions(getInitialSelectOptions()).build();
-        messageAction.setActionRow(selectionMenu).queue(this::initMessage);
+    @Nonnull
+    @Override
+    public List<ActionRow> getComponents() {
+        return Collections.emptyList();
     }
 
-    private void initMessage(@Nonnull Message message) {
+    @Override
+    public void start(@Nonnull Message message) {
         setMessageInfo(message);
         awaitEvents();
     }
+
+    private void init(@Nonnull MessageAction messageAction) {
+        SelectionMenu selectionMenu = SelectionMenu.create(settings.id()).addOptions(getInitialSelectOptions()).build();
+        messageAction.setActionRow(selectionMenu).queue(this::start);
+    }
+
 
     @Nonnull
     private SelectionMenu initSelectionMenu() {

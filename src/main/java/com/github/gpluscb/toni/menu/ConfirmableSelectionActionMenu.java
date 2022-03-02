@@ -1,11 +1,14 @@
 package com.github.gpluscb.toni.menu;
 
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
 import org.apache.commons.lang3.NotImplementedException;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 
 public class ConfirmableSelectionActionMenu extends ActionMenu {
     @Nonnull
@@ -47,6 +50,17 @@ public class ConfirmableSelectionActionMenu extends ActionMenu {
 
     @Override
     public void displayDeferredReplying(@Nonnull InteractionHook hook) {
+        throw new NotImplementedException();
+    }
+
+    @Nonnull
+    @Override
+    public List<ActionRow> getComponents() {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public void start(@Nonnull Message message) {
         throw new NotImplementedException();
     }
 

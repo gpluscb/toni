@@ -6,9 +6,12 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.requests.restaction.MessageAction;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public abstract class ActionMenu {
@@ -95,6 +98,11 @@ public abstract class ActionMenu {
     public abstract void displaySlashReplying(@Nonnull SlashCommandEvent event);
 
     public abstract void displayDeferredReplying(@Nonnull InteractionHook hook);
+
+    @Nonnull
+    public abstract List<ActionRow> getComponents();
+
+    public abstract void start(@Nonnull Message message);
 
     public abstract class MenuStateInfo {
         @Nonnull

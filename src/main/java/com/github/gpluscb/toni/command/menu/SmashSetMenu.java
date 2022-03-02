@@ -17,6 +17,7 @@ import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -32,7 +33,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
     @Nonnull
     private final Settings settings;
 
-    @Nonnull
+    @Nullable
     private final ActionMenu startUnderlying;
 
     @Nonnull
@@ -50,6 +51,17 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
         set = new SmashSet(ruleset, settings.firstToWhatScore(), doRPS);
 
+        // Init set
+        if (doRPS) {
+            state = set.startSetWithRPS().map(doubleBlind -> doubleBlind, rps -> rps);
+        } else {
+            SmashSet.Player firstStriker = ThreadLocalRandom.current().nextBoolean() ?
+                    SmashSet.Player.PLAYER1
+                    : SmashSet.Player.PLAYER2;
+
+            state = set.startSetNoRPS(firstStriker).map(doubleBlind -> doubleBlind, strike -> strike);
+        }
+
         if (ruleset.blindPickBeforeStage()) {
             // Manually set game number because we haven't tarted set yet
             Message start = new MessageBuilder(prepareEmbed("Double Blind Pick", 1)
@@ -57,7 +69,15 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                     .build())
                     .build();
 
-            startUnderlying = createDoubleBlindMenu(start);
+            BlindPickMenu doubleBlindMenu = createDoubleBlindMenu(start);
+            if (doubleBlindMenu.isInitFailure()) {
+                onDoubleBlindFailedInit();
+                startUnderlying = null;
+
+                return;
+            }
+
+            startUnderlying = doubleBlindMenu;
         } else if (doRPS) {
             // Manually set game number because we haven't tarted set yet
             Message start = new MessageBuilder(prepareEmbed("RPS", 1)
@@ -71,46 +91,51 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         }
     }
 
+    public boolean isInitFailure() {
+        return startUnderlying == null;
+    }
+
     @Override
     public void display(@Nonnull MessageChannel channel) {
-        initSet();
+        if (startUnderlying == null) throw new IllegalStateException("Tried to display when double blind init failed");
         startUnderlying.display(channel);
     }
 
     @Override
     public void display(@Nonnull MessageChannel channel, long messageId) {
-        initSet();
+        if (startUnderlying == null) throw new IllegalStateException("Tried to display when double blind init failed");
         startUnderlying.display(channel, messageId);
     }
 
     @Override
     public void displayReplying(@Nonnull MessageChannel channel, long messageId) {
-        initSet();
+        if (startUnderlying == null) throw new IllegalStateException("Tried to display when double blind init failed");
         startUnderlying.displayReplying(channel, messageId);
     }
 
     @Override
     public void displaySlashReplying(@Nonnull SlashCommandEvent event) {
-        initSet();
+        if (startUnderlying == null) throw new IllegalStateException("Tried to display when double blind init failed");
         startUnderlying.displaySlashReplying(event);
     }
 
     @Override
     public void displayDeferredReplying(@Nonnull InteractionHook hook) {
-        initSet();
+        if (startUnderlying == null) throw new IllegalStateException("Tried to display when double blind init failed");
         startUnderlying.displayDeferredReplying(hook);
     }
 
-    private void initSet() {
-        if (settings.rpsInfo() == null) {
-            SmashSet.Player firstStriker = ThreadLocalRandom.current().nextBoolean() ?
-                    SmashSet.Player.PLAYER1
-                    : SmashSet.Player.PLAYER2;
+    @Nonnull
+    @Override
+    public List<ActionRow> getComponents() {
+        if (startUnderlying == null) throw new IllegalStateException("Tried to display when double blind init failed");
+        return startUnderlying.getComponents();
+    }
 
-            state = set.startSetNoRPS(firstStriker).map(doubleBlind -> doubleBlind, strike -> strike);
-        } else {
-            state = set.startSetWithRPS().map(doubleBlind -> doubleBlind, rps -> rps);
-        }
+    @Override
+    public void start(@Nonnull Message message) {
+        if (startUnderlying == null) throw new IllegalStateException("Tried to display when double blind init failed");
+        startUnderlying.start(message);
     }
 
     @Nonnull
@@ -249,7 +274,6 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                 .setCharacters(settings.characters())
                 .setOnResult(this::onDoubleBlindResult)
                 .setOnTimeout(this::onDoubleBlindTimeout)
-                .setOnFailedInit(this::onDoubleBlindFailedInit)
                 .build());
     }
 
@@ -363,7 +387,6 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                 .setStart(start)
                 .setOnResult(this::onWinnerCharPickResult)
                 .setOnTimeout(this::onWinnerCharPickTimeout)
-                .setOnFailedInit(this::onWinnerCharPickFailedInit)
                 .build());
     }
 
@@ -385,7 +408,6 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                 .setStart(start)
                 .setOnResult(this::onLoserCharCounterpickResult)
                 .setOnTimeout(this::onLoserCharCounterpickTimeout)
-                .setOnFailedInit(this::onLoserCharCounterpickFailedInit)
                 .build());
     }
 
@@ -417,8 +439,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                 .setActionRows()
                 .queue();
 
-        newState.map(
-                doubleBlind -> {
+        newState.onT(doubleBlind -> {
                     Message start = new MessageBuilder(prepareEmbed("Double Blind Pick")
                             .setDescription(String.format("You have struck to %s, " +
                                             "so now we'll determine the characters you play by doing a double blind pick.%n" +
@@ -427,10 +448,15 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                             .build())
                             .build();
 
-                    return createDoubleBlindMenu(start);
-                },
-                inGame -> createReportGameMenu()
-        ).displayReplying(event.getMessage());
+                    BlindPickMenu doubleBlindMenu = createDoubleBlindMenu(start);
+                    if (doubleBlindMenu.isInitFailure()) {
+                        onDoubleBlindFailedInit();
+                        return;
+                    }
+
+                    doubleBlindMenu.displayReplying(event.getMessage());
+                })
+                .onU(inGame -> createReportGameMenu().displayReplying(event.getMessage()));
     }
 
     private synchronized void onDoubleBlindResult(@Nonnull BlindPickMenu.BlindPickResult result) {
@@ -555,8 +581,8 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                 .setActionRows()
                 .queue();
 
-        newState.onT(notComplete -> notComplete.map(
-                stageBan -> {
+        newState.onT(
+                notComplete -> notComplete.onT(stageBan -> {
                     Message pickStagesStart = new MessageBuilder(prepareEmbed("Stage Ban / Counterpick")
                             .setDescription(String.format("It has been determined that **%s** won, and **%s** lost the last game and the stages have been banned.%n" +
                                             "So %s, please counterpick one of the remaining stages.",
@@ -572,22 +598,28 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                             displayFromUser(result.getLoser()),
                             displayFromUser(result.getWinner()));
 
-                    return createBanPickStagesMenu(banMessagePrepend, pickStagesStart);
-                },
-                charPick -> {
-                    Message start = new MessageBuilder(prepareEmbed("Winner Character Pick")
-                            .setDescription(String.format("It has been determined that **%s** won, and **%s** lost the last game. " +
-                                            "Now, %s, you have to pick the character you will play next game first.%n" +
-                                            "Please reply to this message with the character you'll play in this channel.",
-                                    displayFromUser(result.getWinner()),
-                                    displayFromUser(result.getLoser()),
-                                    displayFromUser(result.getWinner())))
-                            .build())
-                            .build();
+                    createBanPickStagesMenu(banMessagePrepend, pickStagesStart).displayReplying(event.getMessage());
+                }).onU(charPick -> {
+                            Message start = new MessageBuilder(prepareEmbed("Winner Character Pick")
+                                    .setDescription(String.format("It has been determined that **%s** won, and **%s** lost the last game. " +
+                                                    "Now, %s, you have to pick the character you will play next game first.%n" +
+                                                    "Please reply to this message with the character you'll play in this channel.",
+                                            displayFromUser(result.getWinner()),
+                                            displayFromUser(result.getLoser()),
+                                            displayFromUser(result.getWinner())))
+                                    .build())
+                                    .build();
 
-                    return createWinnerCharPickMenu(start);
-                }
-        ).displayReplying(event.getMessage())).onU(completed -> this.onResult(event));
+                            CharPickMenu charPickMenu = createWinnerCharPickMenu(start);
+                            if (charPickMenu.isInitFailure()) {
+                                onWinnerCharPickFailedInit();
+                                return;
+                            }
+
+                            charPickMenu.displayReplying(event.getMessage());
+                        }
+                )
+        ).onU(completed -> this.onResult(event));
     }
 
     private synchronized void onBanResult(@Nonnull BanStagesMenu.BanResult result, @Nonnull ButtonClickEvent event) {
@@ -610,23 +642,26 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                 .setActionRows()
                 .queue();
 
-        newState.map(
-                charPick -> {
-                    long prevWinner = userFromPlayer(charPick.getPrevWinner());
+        newState.onT(charPick -> {
+            long prevWinner = userFromPlayer(charPick.getPrevWinner());
 
-                    Message start = new MessageBuilder(prepareEmbed("Winner Character Pick")
-                            .setDescription(String.format("You will play the next game on %s. " +
-                                            "Now the winner of the previous game will have to pick the character.%n" +
-                                            "**%s**, please reply to this message with the character you'll play next game in this channel.",
-                                    result.getPickedStage().getDisplayName(),
-                                    displayFromUser(prevWinner)))
-                            .build())
-                            .build();
+            Message start = new MessageBuilder(prepareEmbed("Winner Character Pick")
+                    .setDescription(String.format("You will play the next game on %s. " +
+                                    "Now the winner of the previous game will have to pick the character.%n" +
+                                    "**%s**, please reply to this message with the character you'll play next game in this channel.",
+                            result.getPickedStage().getDisplayName(),
+                            displayFromUser(prevWinner)))
+                    .build())
+                    .build();
 
-                    return createWinnerCharPickMenu(start);
-                },
-                inGame -> createReportGameMenu()
-        ).displayReplying(event.getMessage());
+            CharPickMenu charPickMenu = createWinnerCharPickMenu(start);
+            if (charPickMenu.isInitFailure()) {
+                onWinnerCharPickFailedInit();
+                return;
+            }
+
+            charPickMenu.displayReplying(event.getMessage());
+        }).onU(inGame -> createReportGameMenu().displayReplying(event.getMessage()));
     }
 
     private synchronized void onWinnerCharPickResult(@Nonnull CharPickMenu.CharPickResult result) {
@@ -661,7 +696,13 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                 .build())
                 .build();
 
-        createLoserCharCounterpickMenu(start).displayReplying(channel, messageId);
+        CharPickMenu charPickMenu = createLoserCharCounterpickMenu(start);
+        if (charPickMenu.isInitFailure()) {
+            onLoserCharCounterpickFailedInit();
+            return;
+        }
+
+        charPickMenu.displayReplying(channel, messageId);
     }
 
     private synchronized void onLoserCharCounterpickResult(@Nonnull CharPickMenu.CharPickResult result) {
@@ -807,16 +848,19 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
     @Nonnull
     @Override
     public JDA getJDA() {
+        if (startUnderlying == null) throw new IllegalStateException("Double blind init has failed");
         return startUnderlying.getJDA();
     }
 
     @Override
     public long getMessageId() {
+        if (startUnderlying == null) throw new IllegalStateException("Double blind init has failed");
         return startUnderlying.getMessageId();
     }
 
     @Override
     public long getChannelId() {
+        if (startUnderlying == null) throw new IllegalStateException("Double blind init has failed");
         return startUnderlying.getChannelId();
     }
 

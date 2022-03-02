@@ -2,12 +2,12 @@ package com.github.gpluscb.toni.command.game;
 
 import com.github.gpluscb.toni.command.*;
 import com.github.gpluscb.toni.command.menu.BlindPickMenu;
-import com.github.gpluscb.toni.util.MiscUtil;
-import com.github.gpluscb.toni.util.OneOfTwo;
-import com.github.gpluscb.toni.util.discord.ChannelChoiceWaiter;
 import com.github.gpluscb.toni.menu.ActionMenu;
 import com.github.gpluscb.toni.smashset.Character;
 import com.github.gpluscb.toni.smashset.CharacterTree;
+import com.github.gpluscb.toni.util.MiscUtil;
+import com.github.gpluscb.toni.util.OneOfTwo;
+import com.github.gpluscb.toni.util.discord.ChannelChoiceWaiter;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
@@ -127,8 +127,12 @@ public class BlindPickCommand implements Command {
                 .setCharacters(characters)
                 .setOnResult(result -> onResult(result, jda, channelId, referenceId))
                 .setOnTimeout(timeout -> onTimeout(timeout, jda, channelId, referenceId))
-                .setOnFailedInit(() -> ctx.reply("Some of you fools already have a DM thing going on with me. I can't have you do multiple of those at the same time. That's just too complicated for me!").queue())
                 .build());
+
+        if (menu.isInitFailure()) {
+            ctx.reply("Some of you fools already have a DM thing going on with me. I can't have you do multiple of those at the same time. That's just too complicated for me!").queue();
+            return;
+        }
 
         context
                 .onT(msg -> menu.displayReplying(msg.getMessage()))

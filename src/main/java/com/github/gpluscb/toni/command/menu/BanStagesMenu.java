@@ -1,10 +1,10 @@
 package com.github.gpluscb.toni.command.menu;
 
-import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.menu.ActionMenu;
 import com.github.gpluscb.toni.menu.ButtonActionMenu;
 import com.github.gpluscb.toni.smashset.Ruleset;
 import com.github.gpluscb.toni.smashset.Stage;
+import com.github.gpluscb.toni.util.MiscUtil;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Emoji;
@@ -50,7 +50,8 @@ public class BanStagesMenu extends ActionMenu {
 
         bannedStageIds = new HashSet<>();
 
-        if (settings.ruleset().stageBans() == 0) throw new IllegalArgumentException("The ruleset must have at least one ban.");
+        if (settings.ruleset().stageBans() == 0)
+            throw new IllegalArgumentException("The ruleset must have at least one ban.");
 
         Message start = settings.banMessageProducer().apply(new UpcomingBanInfo());
 
@@ -64,7 +65,7 @@ public class BanStagesMenu extends ActionMenu {
         settings.ruleset().getStagesStream().forEach(stage -> {
             int id = stage.stageId();
             Button stageButton = Button.secondary(String.valueOf(id), StringUtils.abbreviate(stage.name(), LABEL_MAX_LENGTH))
-                    .withEmoji(Emoji.fromEmote("a", stage.stageEmoteId(),false)) // a as placeholder because it may not be empty
+                    .withEmoji(Emoji.fromEmote("a", stage.stageEmoteId(), false)) // a as placeholder because it may not be empty
                     .withDisabled(settings.dsrIllegalStages().contains(id));
 
             underlyingBuilder.registerButton(stageButton, e -> onBan(id, e));
@@ -96,6 +97,17 @@ public class BanStagesMenu extends ActionMenu {
     @Override
     public void displayDeferredReplying(@Nonnull InteractionHook hook) {
         underlying.displayDeferredReplying(hook);
+    }
+
+    @Nonnull
+    @Override
+    public List<ActionRow> getComponents() {
+        return underlying.getComponents();
+    }
+
+    @Override
+    public void start(@Nonnull Message message) {
+        underlying.start(message);
     }
 
     @Nonnull

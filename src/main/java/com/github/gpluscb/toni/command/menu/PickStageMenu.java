@@ -12,6 +12,7 @@ import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.Button;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -20,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -84,6 +86,17 @@ public class PickStageMenu extends ActionMenu {
     @Override
     public void displayDeferredReplying(@Nonnull InteractionHook hook) {
         underlying.displayDeferredReplying(hook);
+    }
+
+    @Nonnull
+    @Override
+    public List<ActionRow> getComponents() {
+        return underlying.getComponents();
+    }
+
+    @Override
+    public void start(@Nonnull Message message) {
+        underlying.start(message);
     }
 
     @Nonnull

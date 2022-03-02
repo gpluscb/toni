@@ -1,9 +1,9 @@
 package com.github.gpluscb.toni.command.menu;
 
-import com.github.gpluscb.toni.smashset.Ruleset;
-import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.menu.ActionMenu;
 import com.github.gpluscb.toni.menu.SelectionActionMenu;
+import com.github.gpluscb.toni.smashset.Ruleset;
+import com.github.gpluscb.toni.util.MiscUtil;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
@@ -14,6 +14,7 @@ import net.dv8tion.jda.api.events.interaction.SelectionMenuEvent;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import org.apache.commons.lang3.StringUtils;
@@ -79,6 +80,17 @@ public class RulesetSelectMenu extends ActionMenu {
     @Override
     public void displayDeferredReplying(@Nonnull InteractionHook hook) {
         underlying.displayDeferredReplying(hook);
+    }
+
+    @Nonnull
+    @Override
+    public List<ActionRow> getComponents() {
+        return underlying.getComponents();
+    }
+
+    @Override
+    public void start(@Nonnull Message message) {
+        underlying.start(message);
     }
 
     @Nonnull

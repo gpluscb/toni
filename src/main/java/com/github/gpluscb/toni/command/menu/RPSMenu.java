@@ -1,9 +1,9 @@
 package com.github.gpluscb.toni.command.menu;
 
-import com.github.gpluscb.toni.util.Constants;
-import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.menu.ButtonActionMenu;
 import com.github.gpluscb.toni.menu.TwoUsersChoicesActionMenu;
+import com.github.gpluscb.toni.util.Constants;
+import com.github.gpluscb.toni.util.MiscUtil;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Emoji;
@@ -14,11 +14,13 @@ import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.Button;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -73,6 +75,17 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
     @Override
     public void displayDeferredReplying(@Nonnull InteractionHook hook) {
         underlying.displayDeferredReplying(hook);
+    }
+
+    @Nonnull
+    @Override
+    public List<ActionRow> getComponents() {
+        return underlying.getComponents();
+    }
+
+    @Override
+    public void start(@Nonnull Message message) {
+        underlying.start(message);
     }
 
     @Nonnull

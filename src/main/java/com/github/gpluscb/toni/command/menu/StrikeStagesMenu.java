@@ -1,10 +1,10 @@
 package com.github.gpluscb.toni.command.menu;
 
-import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.menu.ButtonActionMenu;
 import com.github.gpluscb.toni.menu.TwoUsersChoicesActionMenu;
 import com.github.gpluscb.toni.smashset.Ruleset;
 import com.github.gpluscb.toni.smashset.Stage;
+import com.github.gpluscb.toni.util.MiscUtil;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Emoji;
@@ -67,7 +67,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
             int id = starter.stageId();
             underlyingBuilder.registerButton(
                     Button.secondary(String.valueOf(id), StringUtils.abbreviate(starter.name(), LABEL_MAX_LENGTH))
-                            .withEmoji(Emoji.fromEmote("a", starter.stageEmoteId(),false)), // a as placeholder because it may not be empty
+                            .withEmoji(Emoji.fromEmote("a", starter.stageEmoteId(), false)), // a as placeholder because it may not be empty
                     e -> handleStrike(e, id)
             );
         }
@@ -98,6 +98,17 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
     @Override
     public void displayDeferredReplying(@Nonnull InteractionHook hook) {
         underlying.displayDeferredReplying(hook);
+    }
+
+    @Nonnull
+    @Override
+    public List<ActionRow> getComponents() {
+        return underlying.getComponents();
+    }
+
+    @Override
+    public void start(@Nonnull Message message) {
+        underlying.start(message);
     }
 
     @Nonnull

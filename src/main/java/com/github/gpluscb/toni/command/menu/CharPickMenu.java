@@ -1,17 +1,17 @@
 package com.github.gpluscb.toni.command.menu;
 
-import com.github.gpluscb.toni.util.Constants;
-import com.github.gpluscb.toni.util.MiscUtil;
-import com.github.gpluscb.toni.util.discord.ChannelChoiceWaiter;
 import com.github.gpluscb.toni.menu.ActionMenu;
 import com.github.gpluscb.toni.smashset.Character;
 import com.github.gpluscb.toni.smashset.CharacterTree;
+import com.github.gpluscb.toni.util.MiscUtil;
+import com.github.gpluscb.toni.util.discord.ChannelChoiceWaiter;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.MessageReference;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.requests.RestAction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,9 +29,26 @@ public class CharPickMenu extends ActionMenu {
     @Nonnull
     private final Settings settings;
 
+    @Nullable
+    private final ChannelChoiceWaiter.WaitChoiceHandle handle;
+
     public CharPickMenu(@Nonnull Settings settings) {
         super(settings.actionMenuSettings());
         this.settings = settings;
+
+        handle = settings.waiter().waitForChoice(
+                Collections.singletonList(settings.user()),
+                settings.channelId(),
+                true,
+                this::verifyChoice,
+                this::onResult,
+                getActionMenuSettings().timeout(), getActionMenuSettings().unit(),
+                this::onTimeout
+        );
+    }
+
+    public boolean isInitFailure() {
+        return handle == null;
     }
 
     @Override
@@ -60,29 +77,25 @@ public class CharPickMenu extends ActionMenu {
         initWithMessageAction(hook.sendMessage(settings.start()));
     }
 
+    @Nonnull
+    @Override
+    public List<ActionRow> getComponents() {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public void start(@Nonnull Message message) {
+        setMessageInfo(message);
+        if (handle != null) handle.startListening();
+    }
+
     private void initWithMessageAction(@Nonnull RestAction<Message> action) {
-        ChannelChoiceWaiter.WaitChoiceHandle handle = settings.waiter().waitForChoice(
-                Collections.singletonList(settings.user()),
-                settings.channelId(),
-                true,
-                this::verifyChoice,
-                this::onResult,
-                getActionMenuSettings().timeout(), getActionMenuSettings().unit(),
-                this::onTimeout
-        );
-
-        if (handle == null) {
-            settings.onFailedInit().run();
-            return;
+        if (handle != null) {
+            action.queue(this::start, t -> {
+                log.catching(t);
+                handle.cancel();
+            });
         }
-
-        action.queue(message -> {
-            setMessageInfo(message);
-            handle.startListening();
-        }, t -> {
-            log.catching(t);
-            handle.cancel();
-        });
     }
 
     @Nonnull
@@ -146,15 +159,13 @@ public class CharPickMenu extends ActionMenu {
     public record Settings(@Nonnull ActionMenu.Settings actionMenuSettings, @Nonnull ChannelChoiceWaiter waiter,
                            long user, long channelId, @Nonnull Message start, @Nonnull List<Character> characters,
                            @Nonnull Consumer<Character> onChoice, @Nonnull Consumer<CharPickResult> onResult,
-                           @Nonnull Consumer<CharPickTimeoutEvent> onTimeout, @Nonnull Runnable onFailedInit) {
+                           @Nonnull Consumer<CharPickTimeoutEvent> onTimeout) {
         @Nonnull
         public static final Consumer<Character> DEFAULT_ON_CHOICE = MiscUtil.emptyConsumer();
         @Nonnull
         public static final Consumer<CharPickResult> DEFAULT_ON_RESULT = MiscUtil.emptyConsumer();
         @Nonnull
         public static final Consumer<CharPickTimeoutEvent> DEFAULT_ON_TIMEOUT = MiscUtil.emptyConsumer();
-        @Nonnull
-        public static final Runnable DEFAULT_ON_FAILED_INIT = Constants.EMPTY_RUNNABLE;
 
         public static class Builder {
             @Nullable
@@ -175,8 +186,6 @@ public class CharPickMenu extends ActionMenu {
             private Consumer<CharPickResult> onResult = DEFAULT_ON_RESULT;
             @Nonnull
             private Consumer<CharPickTimeoutEvent> onTimeout = DEFAULT_ON_TIMEOUT;
-            @Nonnull
-            private Runnable onFailedInit = DEFAULT_ON_FAILED_INIT;
 
             @Nonnull
             public Builder setActionMenuSettings(@Nonnull ActionMenu.Settings actionMenuSettings) {
@@ -239,12 +248,6 @@ public class CharPickMenu extends ActionMenu {
             }
 
             @Nonnull
-            public Builder setOnFailedInit(@Nonnull Runnable onFailedInit) {
-                this.onFailedInit = onFailedInit;
-                return this;
-            }
-
-            @Nonnull
             public Settings build() {
                 if (actionMenuSettings == null) throw new IllegalStateException("ActionMenuSettings must be set");
                 if (channelWaiter == null) throw new IllegalStateException("ChannelWaiter must be set");
@@ -253,7 +256,7 @@ public class CharPickMenu extends ActionMenu {
                 if (start == null) throw new IllegalStateException("Start must be set");
                 if (characters == null) throw new IllegalStateException("Characters must be set");
 
-                return new Settings(actionMenuSettings, channelWaiter, user, channelId, start, characters, onChoice, onResult, onTimeout, onFailedInit);
+                return new Settings(actionMenuSettings, channelWaiter, user, channelId, start, characters, onChoice, onResult, onTimeout);
             }
         }
     }

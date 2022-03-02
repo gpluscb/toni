@@ -75,12 +75,12 @@ public class ButtonActionMenu extends ActionMenu {
 
     @Override
     public void displaySlashReplying(@Nonnull SlashCommandEvent e) {
-        e.reply(settings.start()).addActionRows(initialActionRows).flatMap(InteractionHook::retrieveOriginal).queue(this::initWithMessage);
+        e.reply(settings.start()).addActionRows(initialActionRows).flatMap(InteractionHook::retrieveOriginal).queue(this::start);
     }
 
     @Override
     public void displayDeferredReplying(@Nonnull InteractionHook hook) {
-        hook.sendMessage(settings.start()).addActionRows(initialActionRows).queue(this::initWithMessage);
+        hook.sendMessage(settings.start()).addActionRows(initialActionRows).queue(this::start);
     }
 
     @Override
@@ -97,13 +97,20 @@ public class ButtonActionMenu extends ActionMenu {
             init(channel.sendMessage(start));
     }
 
-    private void init(@Nonnull MessageAction messageAction) {
-        messageAction.setActionRows(initialActionRows).queue(this::initWithMessage);
+    @Nonnull
+    @Override
+    public List<ActionRow> getComponents() {
+        return initialActionRows;
     }
 
-    private void initWithMessage(@Nonnull Message message) {
+    @Override
+    public void start(@Nonnull Message message) {
         setMessageInfo(message);
         awaitEvents();
+    }
+
+    private void init(@Nonnull MessageAction messageAction) {
+        messageAction.setActionRows(initialActionRows).queue(this::start);
     }
 
     private void awaitEvents() {

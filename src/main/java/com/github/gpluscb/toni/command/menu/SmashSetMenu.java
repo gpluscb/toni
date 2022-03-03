@@ -43,8 +43,8 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
     public SmashSetMenu(@Nonnull Settings settings) {
         super(settings.twoUsersChoicesActionMenuSettings());
-        this.settings = settings;
 
+        this.settings = settings;
 
         boolean doRPS = settings.rpsInfo() != null;
         Ruleset ruleset = settings.ruleset();

@@ -193,7 +193,7 @@ public class SelectionActionMenu extends ActionMenu {
             @Nullable
             private ActionMenu.Settings actionMenuSettings;
             @Nonnull
-            private final Set<Long> users = new HashSet<>();
+            private Set<Long> users = new HashSet<>();
             @Nonnull
             private final List<PairNonnull<SelectOption, BiFunction<SelectionInfo, SelectionMenuEvent, MenuAction>>> selectionActions = new ArrayList<>();
             @Nullable
@@ -211,6 +211,12 @@ public class SelectionActionMenu extends ActionMenu {
             @Nonnull
             public Builder addUsers(Long... users) {
                 this.users.addAll(Arrays.asList(users));
+                return this;
+            }
+
+            @Nonnull
+            public Builder setUsers(@Nonnull Set<Long> users) {
+                this.users = users;
                 return this;
             }
 

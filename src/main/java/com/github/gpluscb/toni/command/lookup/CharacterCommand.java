@@ -66,7 +66,7 @@ public class CharacterCommand implements Command {
             int argNum = msg.getArgNum();
 
             if (argNum == 0) {
-                ctx.reply("You haven't given a character name. Use `toni, help character` for detailed help.").queue();
+                ctx.reply("You haven't given a character name. Use `/help character` for detailed help.").queue();
                 return;
             }
 

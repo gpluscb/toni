@@ -275,7 +275,7 @@ public class Bot {
                     .setMemberCachePolicy(MemberCachePolicy.NONE)
                     .setChunkingFilter(ChunkingFilter.NONE)
                     .addEventListeners(waiter, loadListener)
-                    .setActivity(Activity.listening("Help: \"Toni, Help\""))
+                    .setActivity(Activity.listening("Help: /help"))
                     .setUseShutdownNow(true)
                     .build();
         } catch (LoginException e) {

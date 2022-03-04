@@ -48,6 +48,10 @@ public class CommandDispatcher {
                 ).findAny()
                 .ifPresent(command -> {
                     OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
+
+                    context.onT(msg -> msg.reply("**Important Notice:** Commands invoked by a prefix (e.g. `toni`, `!t`) or mention are being phased out in favour of slash commands. " +
+                            "These prefix commands might stop working in April, so please switch to slash commands until then.").queue());
+
                     boolean isFromGuild = context.map(msg -> msg.getEvent().isFromGuild(), slash -> slash.getEvent().isFromGuild());
                     if (isFromGuild) {
                         Permission[] perms = command.getInfo().getRequiredBotPerms();

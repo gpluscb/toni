@@ -97,7 +97,7 @@ public class HelpCommand implements Command {
         builder.setDescription("My prefixes are `!t`, `noti` and `toni`, but you can mention me instead too.\n")
                 .appendDescription("`|` means \"or\", `[brackets]` mean \"optional\", and `...` means that an argument is allowed to have spaces. ")
                 .appendDescription("If you want to use spaces in other arguments, you will have to wrap that argument in quotation marks (e.g. \"this is all one argument\").\n")
-                .appendDescription("Use `Toni, help [CATEGORY]` for more info on specific command categories.\n")
+                .appendDescription("Use `/help [CATEGORY]` for more info on specific command categories.\n")
                 .appendDescription("I am still in an early state. So if you have any questions, problems, bugs, or suggestions, **please** tell my dev about that.\n")
                 .appendDescription(String.format("• You can DM them directly if you have common servers: <@%d>%n", config.getDevId()))
                 .appendDescription(String.format("• You can go to [my support server](%s)%n", config.getSupportServer()))

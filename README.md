@@ -11,7 +11,7 @@ Hi, I'm SSBToni, a Discord bot for the competitive Super Smash Bros. community (
 I can show you frame data and hitbox images via ultimateframedata, look up players via the smashdata.gg database, and more.
 
 For a full list of features, see my [discord.bots.gg profile][dbots]. To invite me to your server, click [here][invite].
-`toni, help` will get you started.
+`/help` will get you started.
 
 Please note that I'm still a baby, so I appreciate any feedback, feature requests, bug reports, whatever! You can
 - [create an Issue](https://github.com/gpluscb/toni/issues/new/) here

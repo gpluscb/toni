@@ -35,7 +35,7 @@ public class UnrankedConfigCommand implements Command {
         }
 
         if (context.isT() && context.getTOrThrow().getArgNum() <= 0) {
-            ctx.reply("Too few arguments. For help, check out `toni, help unrankedcfg`.").queue();
+            ctx.reply("Too few arguments. For help, check out `/help unrankedconfig`.").queue();
             return;
         }
 
@@ -65,7 +65,7 @@ public class UnrankedConfigCommand implements Command {
 
         // Default variant / Setup variant
         if (context.isT() && context.getTOrThrow().getArgNum() < 1) {
-            ctx.reply("Too few arguments. Correct usage is `unrankedcfg <role mention> [channel mention]`.").queue();
+            ctx.reply("Too few arguments. Correct usage is `/unrankedconfig <role mention> [channel mention]`.").queue();
             return;
         }
 
@@ -191,7 +191,7 @@ public class UnrankedConfigCommand implements Command {
             }
 
             ctx.reply("I can't set up a matchmaking channel if there is no matchmaking role already." +
-                    " Use `toni, unrankedcfg <role mention> [channel mention]` to do both").queue();
+                    " Use `/unrankedconfig <role mention> [channel mention]` to do both").queue();
         } catch (SQLException e) {
             log.catching(e);
             ctx.reply("Something went horribly wrong trying to talk to my database!" +
@@ -240,7 +240,7 @@ public class UnrankedConfigCommand implements Command {
             manager.storeMatchmakingConfig(guildId, new UnrankedManager.MatchmakingConfig(roleId, null));
 
             ctx.reply("I have now set up unranked matchmaking with the given role." +
-                    " If you want to restrict the matchmaking to a specific channel, use `toni, matchmakingcfg channel [channel mention]`").queue();
+                    " If you want to restrict the matchmaking to a specific channel, use `/unrankedconfig channel [channel mention]`").queue();
         } catch (SQLException e) {
             log.catching(e);
             ctx.reply("Something went horribly wrong trying to talk to my database!" +
@@ -290,7 +290,7 @@ public class UnrankedConfigCommand implements Command {
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
                 .setAliases(new String[]{"unrankedconfig", "unrankedcfg"})
-                .setShortHelp("Helps you configure unranked matchmaking. For more info on usage, see `toni, help unrankedconfig`.")
+                .setShortHelp("Helps you configure unranked matchmaking. For more info on usage, see `/help unrankedconfig`.")
                 .setDetailedHelp("`unrankedconfig <ROLE> [CHANNEL]` Sets up matchmaking with the specified matchmaking role, optionally only in a specific channel.\n" +
                         "`unrankedconfig channel <CHANNEL|\"ALL\">`" +
                         " Sets a specific channel for the matchmaking configuration, or removes channel restrictions if the argument is `all`.\n" +

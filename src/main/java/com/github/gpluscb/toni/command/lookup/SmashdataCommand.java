@@ -54,7 +54,7 @@ public class SmashdataCommand implements Command {
             MessageCommandContext msg = context.getTOrThrow();
 
             if (msg.getArgs().isEmpty()) {
-                ctx.reply("Too few arguments. I can't just find you a player if I don't know what you're searching for. Use `help player` for help.").queue();
+                ctx.reply("Too few arguments. I can't just find you a player if I don't know what you're searching for. Use `/help player` for help.").queue();
                 return;
             }
 

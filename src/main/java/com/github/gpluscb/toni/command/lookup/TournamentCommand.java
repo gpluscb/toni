@@ -57,7 +57,7 @@ public class TournamentCommand implements Command {
             MessageCommandContext msg = context.getTOrThrow();
 
             if (msg.getArgs().isEmpty()) {
-                ctx.reply("Too few arguments. I can't just find you a tournament if I don't know what you're searching for. Use `help tournament` for help.").queue();
+                ctx.reply("Too few arguments. I can't just find you a tournament if I don't know what you're searching for. Use `/help tournament` for help.").queue();
                 return;
             }
 

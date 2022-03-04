@@ -22,6 +22,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
+import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -149,7 +151,9 @@ public class SmashdataCommand implements Command {
                 String.format("(%d/%d) Smasher: %s", idx + 1, players.size(), data.getTag())
                 : String.format("Smasher: %s", data.getTag());
 
-        String url = String.format("https://smashdata.gg/smash/ultimate/player/%s?id=%s", data.getTag(), data.getId());
+        String url = String.format("https://smashdata.gg/smash/ultimate/player/%s?id=%s",
+                URLEncoder.encode(data.getTag(), Charset.defaultCharset()),
+                URLEncoder.encode(data.getId(), Charset.defaultCharset()));
 
         builder.setTitle(title, url);
 

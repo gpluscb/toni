@@ -13,7 +13,7 @@ import com.github.gpluscb.toni.command.admin.UpdateSmashdataCommand;
 import com.github.gpluscb.toni.command.game.*;
 import com.github.gpluscb.toni.command.help.HelpCommand;
 import com.github.gpluscb.toni.command.help.PingCommand;
-import com.github.gpluscb.toni.command.help.PrivacyCommand;
+import com.github.gpluscb.toni.command.help.TermsCommand;
 import com.github.gpluscb.toni.command.lookup.CharacterCommand;
 import com.github.gpluscb.toni.command.lookup.SmashdataCommand;
 import com.github.gpluscb.toni.command.lookup.TournamentCommand;
@@ -298,7 +298,7 @@ public class Bot {
                     .setMemberCachePolicy(MemberCachePolicy.NONE)
                     .setChunkingFilter(ChunkingFilter.NONE)
                     .addEventListeners(waiter, loadListener)
-                    .setActivity(Activity.listening("Help: \"Toni, Help\""))
+                    .setActivity(Activity.listening("Help: /help"))
                     .setUseShutdownNow(true)
                     .build();
         } catch (LoginException e) {
@@ -371,7 +371,7 @@ public class Bot {
 
         List<Command> infoCommands = new ArrayList<>();
         infoCommands.add(new HelpCommand(commands));
-        infoCommands.add(new PrivacyCommand());
+        infoCommands.add(new TermsCommand());
         infoCommands.add(new PingCommand());
         commands.add(new CommandCategory("info", "Bot information commands", infoCommands));
 
@@ -409,10 +409,9 @@ public class Bot {
         List<CommandData> globalCommands = map.get(false).stream().map(cmd -> cmd.getInfo().commandData()).toList();
         List<CommandData> adminOnlyCommands = map.get(true).stream().map(cmd -> cmd.getInfo().commandData()).toList();
 
-        shardManager.getShardCache().forEachUnordered(jda -> {
-            jda.updateCommands().addCommands(globalCommands).queue();
-            adminGuild.updateCommands().addCommands(adminOnlyCommands).queue();
-        });
+        shardManager.getShardCache().forEachUnordered(jda -> jda.updateCommands().addCommands(globalCommands).queue());
+
+        adminGuild.updateCommands().addCommands(adminOnlyCommands).queue();
     }
 
     public void shutdown() {

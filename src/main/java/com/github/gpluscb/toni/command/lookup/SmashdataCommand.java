@@ -22,6 +22,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
+import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -53,7 +55,7 @@ public class SmashdataCommand implements Command {
             MessageCommandContext msg = context.getTOrThrow();
 
             if (msg.getArgs().isEmpty()) {
-                ctx.reply("Too few arguments. I can't just find you a player if I don't know what you're searching for. Use `help player` for help.").queue();
+                ctx.reply("Too few arguments. I can't just find you a player if I don't know what you're searching for. Use `/help player` for help.").queue();
                 return;
             }
 
@@ -150,7 +152,11 @@ public class SmashdataCommand implements Command {
                 String.format("(%d/%d) Smasher: %s", idx + 1, players.size(), data.tag())
                 : String.format("Smasher: %s", data.tag());
 
-        builder.setTitle(title);
+        String url = String.format("https://smashdata.gg/smash/ultimate/player/%s?id=%s",
+                URLEncoder.encode(data.getTag(), Charset.defaultCharset()),
+                URLEncoder.encode(data.getId(), Charset.defaultCharset()));
+
+        builder.setTitle(title, url);
 
         List<EmbedUtil.InlineField> fields = new ArrayList<>();
 

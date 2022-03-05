@@ -175,7 +175,7 @@ public class RandomCharacterCommand implements Command {
     }
 
     private void tooManyArgs(@Nonnull CommandContext<?> ctx) {
-        ctx.reply("Too many arguments. Use `toni, help random` for a detailed description.").queue();
+        ctx.reply("Too many arguments. Use `/help random` for a detailed description.").queue();
     }
 
     @Nullable

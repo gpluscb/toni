@@ -68,7 +68,7 @@ public class AvailableCommand implements Command {
                     log.error("This is really bad: we have an inconsistent state in the db (role deleted), and the auto fix failed. Guild: {}, Role: {}", guildId, roleId);
                     log.catching(e);
                     ctx.reply("Something went *really* wrong: it appears the matchmaking role I know has been deleted, but trying to reset the config for this server failed." +
-                            " This might fix itself if you use this command again, or if you use `toni, unrankedcfg reset`. If it doesn't, please contact my dev." +
+                            " This might fix itself if you use this command again, or if you use `/unrankedcfg reset`. If it doesn't, please contact my dev." +
                             " I've told them already but it's probably good if they have some more context.").queue();
                 }
 

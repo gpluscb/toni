@@ -373,9 +373,7 @@ public class Bot {
         List<CommandData> globalCommands = map.get(false).stream().map(cmd -> cmd.getInfo().getCommandData()).collect(Collectors.toList());
         List<CommandData> adminOnlyCommands = map.get(true).stream().map(cmd -> cmd.getInfo().getCommandData()).collect(Collectors.toList());
 
-        shardManager.getShardCache().forEachUnordered(jda -> {
-            jda.updateCommands().addCommands(globalCommands).queue();
-        });
+        shardManager.getShardCache().forEachUnordered(jda -> jda.updateCommands().addCommands(globalCommands).queue());
 
         adminGuild.updateCommands().addCommands(adminOnlyCommands).queue();
     }

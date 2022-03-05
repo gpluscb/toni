@@ -375,8 +375,9 @@ public class Bot {
 
         shardManager.getShardCache().forEachUnordered(jda -> {
             jda.updateCommands().addCommands(globalCommands).queue();
-            adminGuild.updateCommands().addCommands(adminOnlyCommands).queue();
         });
+
+        adminGuild.updateCommands().addCommands(adminOnlyCommands).queue();
     }
 
     public void shutdown() {

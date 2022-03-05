@@ -16,7 +16,7 @@ import com.github.gpluscb.toni.command.game.RandomPlayerCommand;
 import com.github.gpluscb.toni.command.game.RockPaperScissorsCommand;
 import com.github.gpluscb.toni.command.help.HelpCommand;
 import com.github.gpluscb.toni.command.help.PingCommand;
-import com.github.gpluscb.toni.command.help.PrivacyCommand;
+import com.github.gpluscb.toni.command.help.TermsCommand;
 import com.github.gpluscb.toni.command.lookup.CharacterCommand;
 import com.github.gpluscb.toni.command.lookup.SmashdataCommand;
 import com.github.gpluscb.toni.command.lookup.TournamentCommand;
@@ -339,7 +339,7 @@ public class Bot {
 
         List<Command> infoCommands = new ArrayList<>();
         infoCommands.add(new HelpCommand(commands));
-        infoCommands.add(new PrivacyCommand());
+        infoCommands.add(new TermsCommand());
         infoCommands.add(new PingCommand());
         commands.add(new CommandCategory("info", "Bot information commands", infoCommands));
 

@@ -1,5 +1,6 @@
 package com.github.gpluscb.toni.menu;
 
+import com.github.gpluscb.toni.util.OneOfTwo;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
@@ -15,6 +16,8 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
@@ -107,6 +110,7 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
     public void start(@Nonnull Message message) {
         selectionUnderlying.start(message);
         buttonUnderlying.start(message);
+        setMessageInfo(message);
     }
 
     @Nonnull
@@ -119,14 +123,72 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
 
         currentSelection = choice;
 
+        settings.onOptionChoice().accept(new OptionChoiceInfo(info), event);
+
         return MenuAction.CONTINUE;
     }
 
     @Nonnull
     private synchronized MenuAction onSubmit(@Nonnull ButtonClickEvent event) {
-
         isCancelled = true;
+
+        settings.onConfirmation().accept(new ConfirmationInfo(), event);
+
         return MenuAction.CANCEL;
+    }
+
+    private void onSelectionTimeout(@Nonnull SelectionActionMenu.SelectionMenuTimeoutEvent timeout) {
+        isCancelled = true;
+
+        settings.onTimeout().accept(new ConfirmationInfoTimeoutEvent(OneOfTwo.ofT(timeout)));
+    }
+
+    private void onSubmitTimeout(@Nonnull ButtonActionMenu.ButtonActionMenuTimeoutEvent timeout) {
+        isCancelled = true;
+
+        settings.onTimeout().accept(new ConfirmationInfoTimeoutEvent(OneOfTwo.ofU(timeout)));
+    }
+
+    private abstract class ConfirmableSelectionInfo extends MenuStateInfo {
+        @Nullable
+        public T getCurrentSelection() {
+            return currentSelection;
+        }
+
+        public boolean isCancelled() {
+            return isCancelled;
+        }
+    }
+
+    public class OptionChoiceInfo extends ConfirmableSelectionInfo {
+        @Nonnull
+        private final SelectionActionMenu.SelectionInfo info;
+
+        public OptionChoiceInfo(@Nonnull SelectionActionMenu.SelectionInfo info) {
+            this.info = info;
+        }
+
+        @Nonnull
+        public SelectionActionMenu.SelectionInfo getInfo() {
+            return info;
+        }
+    }
+
+    public class ConfirmationInfo extends ConfirmableSelectionInfo {
+    }
+
+    public class ConfirmationInfoTimeoutEvent extends ConfirmableSelectionInfo {
+        @Nonnull
+        private final OneOfTwo<SelectionActionMenu.SelectionMenuTimeoutEvent, ButtonActionMenu.ButtonActionMenuTimeoutEvent> underlyingTimeout;
+
+        public ConfirmationInfoTimeoutEvent(@Nonnull OneOfTwo<SelectionActionMenu.SelectionMenuTimeoutEvent, ButtonActionMenu.ButtonActionMenuTimeoutEvent> underlyingTimeout) {
+            this.underlyingTimeout = underlyingTimeout;
+        }
+
+        @Nonnull
+        public OneOfTwo<SelectionActionMenu.SelectionMenuTimeoutEvent, ButtonActionMenu.ButtonActionMenuTimeoutEvent> getUnderlyingTimeout() {
+            return underlyingTimeout;
+        }
     }
 
     public record ChoiceOption<T>(@Nonnull SelectOption option, @Nonnull T associatedChoice) {
@@ -134,6 +196,9 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
 
     public record Settings<T>(@Nonnull ActionMenu.Settings actionMenuSettings, @Nonnull Message start,
                               @Nonnull Set<Long> users, @Nonnull Button submitButton,
-                              @Nonnull List<ChoiceOption<T>> choices) {
+                              @Nonnull List<ChoiceOption<T>> choices,
+                              @Nonnull BiConsumer<ConfirmableSelectionActionMenu<T>.OptionChoiceInfo, SelectionMenuEvent> onOptionChoice,
+                              @Nonnull BiConsumer<ConfirmableSelectionActionMenu<T>.ConfirmationInfo, ButtonClickEvent> onConfirmation,
+                              @Nonnull Consumer<ConfirmableSelectionActionMenu<T>.ConfirmationInfoTimeoutEvent> onTimeout) {
     }
 }

@@ -81,7 +81,7 @@ public class SelectionActionMenu extends ActionMenu {
     @Nonnull
     @Override
     public List<ActionRow> getComponents() {
-        return Collections.emptyList();
+        return Collections.singletonList(ActionRow.of(SelectionMenu.create(settings.id()).addOptions(getInitialSelectOptions()).build()));
     }
 
     @Override

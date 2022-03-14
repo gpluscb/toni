@@ -156,8 +156,7 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
 
         settings.onConfirmation().accept(new ConfirmationInfo(user), event);
 
-        if (settings.users().stream().allMatch(id -> currentSelections.containsKey(id) && currentSelections.get(id).getU()))
-            return settings.onAllConfirmation().apply(new ConfirmationInfo(user), event);
+        if (isAllConfirmed()) return settings.onAllConfirmation().apply(new ConfirmationInfo(user), event);
 
         return MenuAction.CONTINUE;
     }
@@ -174,6 +173,10 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
         settings.onTimeout().accept(new ConfirmationInfoTimeoutEvent(OneOfTwo.ofU(timeout)));
     }
 
+    private boolean isAllConfirmed() {
+        return settings.users().stream().allMatch(id -> currentSelections.containsKey(id) && currentSelections.get(id).getU());
+    }
+
     private abstract class ConfirmableSelectionInfo extends MenuStateInfo {
         @Nonnull
         public Map<Long, PairNonnull<T, Boolean>> getCurrentSelections() {
@@ -182,6 +185,10 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
 
         public boolean isCancelled() {
             return isCancelled;
+        }
+
+        public boolean isAllConfirmed() {
+            return ConfirmableSelectionActionMenu.this.isAllConfirmed();
         }
     }
 

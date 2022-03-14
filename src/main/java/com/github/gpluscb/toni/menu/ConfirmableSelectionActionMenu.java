@@ -1,6 +1,7 @@
 package com.github.gpluscb.toni.menu;
 
 import com.github.gpluscb.toni.util.OneOfTwo;
+import com.github.gpluscb.toni.util.PairNonnull;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
@@ -20,9 +21,9 @@ import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -37,8 +38,12 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
     @Nonnull
     private final ButtonActionMenu buttonUnderlying;
 
-    @Nullable
-    private T currentSelection;
+    /**
+     * T: selection
+     * U: submitted
+     */
+    @Nonnull
+    private final Map<Long, PairNonnull<T, Boolean>> currentSelections;
     private boolean isCancelled;
 
     public ConfirmableSelectionActionMenu(@Nonnull Settings<T> settings) {
@@ -46,11 +51,11 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
 
         this.settings = settings;
 
-        currentSelection = null;
+        currentSelections = new HashMap<>();
 
         SelectionActionMenu.Settings.Builder selectionUnderlyingBuilder = new SelectionActionMenu.Settings.Builder()
                 .setActionMenuSettings(settings.actionMenuSettings())
-                .addUsers(settings.user())
+                .setUsers(settings.users())
                 .setStart(new MessageBuilder().build()) // Start must be set but will be ignored (tech debt yay!!)
                 .setOnTimeout(this::onSelectionTimeout);
 
@@ -61,7 +66,7 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
         selectionUnderlying = new SelectionActionMenu(selectionUnderlyingBuilder.build());
         buttonUnderlying = new ButtonActionMenu(new ButtonActionMenu.Settings.Builder()
                 .setActionMenuSettings(settings.actionMenuSettings())
-                .addUsers(settings.user())
+                .setUsers(settings.users())
                 .setStart(new MessageBuilder().build()) // Start must be set but will be ignored
                 .setDeletionButton(null)
                 .registerButton(settings.submitButton(), this::onSubmit)
@@ -129,20 +134,32 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
         // If this doesn't happen, we'll time out eventually, so it's not a leak
         if (isCancelled) return MenuAction.CANCEL;
 
-        currentSelection = choice;
+        long user = event.getUser().getIdLong();
 
-        settings.onOptionChoice().accept(new OptionChoiceInfo(info), event);
+        currentSelections.put(user, new PairNonnull<>(choice, false));
+
+        settings.onOptionChoice().accept(new OptionChoiceInfo(user, info), event);
 
         return MenuAction.CONTINUE;
     }
 
     @Nonnull
     private synchronized MenuAction onSubmit(@Nonnull ButtonClickEvent event) {
-        isCancelled = true;
+        long user = event.getUser().getIdLong();
 
-        settings.onConfirmation().accept(new ConfirmationInfo(), event);
+        if (!currentSelections.containsKey(user)) {
+            event.reply("You must select an option before submitting.").setEphemeral(true).queue();
+            return MenuAction.CONTINUE;
+        }
 
-        return MenuAction.CANCEL;
+        currentSelections.computeIfPresent(user, (id, pair) -> new PairNonnull<>(pair.getT(), true));
+
+        settings.onConfirmation().accept(new ConfirmationInfo(user), event);
+
+        if (settings.users().stream().allMatch(id -> currentSelections.containsKey(id) && currentSelections.get(id).getU()))
+            return settings.onAllConfirmation().apply(new ConfirmationInfo(user), event);
+
+        return MenuAction.CONTINUE;
     }
 
     private synchronized void onSelectionTimeout(@Nonnull SelectionActionMenu.SelectionMenuTimeoutEvent timeout) {
@@ -158,9 +175,9 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
     }
 
     private abstract class ConfirmableSelectionInfo extends MenuStateInfo {
-        @Nullable
-        public T getCurrentSelection() {
-            return currentSelection;
+        @Nonnull
+        public Map<Long, PairNonnull<T, Boolean>> getCurrentSelections() {
+            return currentSelections;
         }
 
         public boolean isCancelled() {
@@ -169,11 +186,22 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
     }
 
     public class OptionChoiceInfo extends ConfirmableSelectionInfo {
+        private final long user;
         @Nonnull
         private final SelectionActionMenu.SelectionInfo info;
 
-        public OptionChoiceInfo(@Nonnull SelectionActionMenu.SelectionInfo info) {
+        public OptionChoiceInfo(long user, @Nonnull SelectionActionMenu.SelectionInfo info) {
+            this.user = user;
             this.info = info;
+        }
+
+        public long getUser() {
+            return user;
+        }
+
+        @Nonnull
+        public T getUserSelection() {
+            return currentSelections.get(user).getT();
         }
 
         @Nonnull
@@ -183,6 +211,20 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
     }
 
     public class ConfirmationInfo extends ConfirmableSelectionInfo {
+        private final long user;
+
+        public ConfirmationInfo(long user) {
+            this.user = user;
+        }
+
+        public long getUser() {
+            return user;
+        }
+
+        @Nonnull
+        public T getUserSelection() {
+            return currentSelections.get(user).getT();
+        }
     }
 
     public class ConfirmationInfoTimeoutEvent extends ConfirmableSelectionInfo {
@@ -203,10 +245,11 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
     }
 
     public record Settings<T>(@Nonnull ActionMenu.Settings actionMenuSettings, @Nonnull Message start,
-                              long user, @Nonnull Button submitButton,
+                              @Nonnull Set<Long> users, @Nonnull Button submitButton,
                               @Nonnull List<ChoiceOption<T>> choices,
                               @Nonnull BiConsumer<ConfirmableSelectionActionMenu<T>.OptionChoiceInfo, SelectionMenuEvent> onOptionChoice,
                               @Nonnull BiConsumer<ConfirmableSelectionActionMenu<T>.ConfirmationInfo, ButtonClickEvent> onConfirmation,
+                              @Nonnull BiFunction<ConfirmableSelectionActionMenu<T>.ConfirmationInfo, ButtonClickEvent, MenuAction> onAllConfirmation,
                               @Nonnull Consumer<ConfirmableSelectionActionMenu<T>.ConfirmationInfoTimeoutEvent> onTimeout) {
         @Nonnull
         public static final Button DEFAULT_SUBMIT_BUTTON = Button.primary("submit", "Submit");
@@ -239,8 +282,8 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
             private ActionMenu.Settings actionMenuSettings;
             @Nullable
             private Message start;
-            @Nullable
-            private Long user;
+            @Nonnull
+            private Set<Long> users = new HashSet<>();
             @Nonnull
             private Button submitButton = DEFAULT_SUBMIT_BUTTON;
             @Nonnull
@@ -249,6 +292,8 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
             private BiConsumer<ConfirmableSelectionActionMenu<T>.OptionChoiceInfo, SelectionMenuEvent> onOptionChoice = Settings::DEFAULT_ON_OPTION_CHOICE;
             @Nonnull
             private BiConsumer<ConfirmableSelectionActionMenu<T>.ConfirmationInfo, ButtonClickEvent> onConfirmation = Settings::DEFAULT_ON_CONFIRMATION;
+            @Nullable
+            private BiFunction<ConfirmableSelectionActionMenu<T>.ConfirmationInfo, ButtonClickEvent, MenuAction> onAllConfirmation;
             @Nonnull
             private Consumer<ConfirmableSelectionActionMenu<T>.ConfirmationInfoTimeoutEvent> onTimeout = Settings::DEFAULT_ON_TIMEOUT;
 
@@ -265,8 +310,20 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
             }
 
             @Nonnull
-            public Builder<T> setUser(long user) {
-                this.user = user;
+            public Builder<T> addUser(long user) {
+                users.add(user);
+                return this;
+            }
+
+            @Nonnull
+            public Builder<T> addUsers(long... users) {
+                Arrays.stream(users).forEach(this.users::add);
+                return this;
+            }
+
+            @Nonnull
+            public Builder<T> setUsers(@Nonnull Set<Long> users) {
+                this.users = users;
                 return this;
             }
 
@@ -305,6 +362,11 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
                 return this;
             }
 
+            public Builder<T> setOnAllConfirmation(@Nonnull BiFunction<ConfirmableSelectionActionMenu<T>.ConfirmationInfo, ButtonClickEvent, MenuAction> onAllConfirmation) {
+                this.onAllConfirmation = onAllConfirmation;
+                return this;
+            }
+
             @Nonnull
             public Builder<T> setOnTimeout(@Nonnull Consumer<ConfirmableSelectionActionMenu<T>.ConfirmationInfoTimeoutEvent> onTimeout) {
                 this.onTimeout = onTimeout;
@@ -315,9 +377,9 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
             public Settings<T> build() {
                 if (actionMenuSettings == null) throw new IllegalStateException("ActionMenuSettings must be set");
                 if (start == null) throw new IllegalStateException("Start must be set");
-                if (user == null) throw new IllegalStateException("User must be set");
+                if (onAllConfirmation == null) throw new IllegalStateException("OnAllConfirmation must be set");
 
-                return new Settings<>(actionMenuSettings, start, user, submitButton, choices, onOptionChoice, onConfirmation, onTimeout);
+                return new Settings<>(actionMenuSettings, start, users, submitButton, choices, onOptionChoice, onConfirmation, onAllConfirmation, onTimeout);
             }
         }
     }

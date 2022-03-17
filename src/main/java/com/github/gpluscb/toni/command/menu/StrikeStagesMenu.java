@@ -112,7 +112,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
     }
 
     @Nonnull
-    private MenuAction handleStrike(@Nonnull ButtonClickEvent e, int stageId) {
+    private synchronized MenuAction handleStrike(@Nonnull ButtonClickEvent e, int stageId) {
         if (e.getUser().getIdLong() != currentStriker) {
             e.reply("It's not your turn to strike right now!").setEphemeral(true).queue();
             return MenuAction.CONTINUE;

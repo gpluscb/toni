@@ -597,7 +597,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                             Message start = new MessageBuilder(prepareEmbed("Winner Character Pick")
                                     .setDescription(String.format("It has been determined that **%s** won, and **%s** lost the last game. " +
                                                     "Now, %s, you have to pick the character you will play next game first.%n" +
-                                                    "Please reply to this message with the character you'll play in this channel.",
+                                                    "Please **__reply to**__ this message with the character you'll play in this channel.",
                                             displayFromUser(result.getWinner()),
                                             displayFromUser(result.getLoser()),
                                             displayFromUser(result.getWinner())))
@@ -638,7 +638,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
             Message start = new MessageBuilder(prepareEmbed("Winner Character Pick")
                     .setDescription(String.format("You will play the next game on %s. " +
                                     "Now the winner of the previous game will have to pick the character.%n" +
-                                    "**%s**, please reply to this message with the character you'll play next game in this channel.",
+                                    "**%s**, please **__reply to__** this message with the character you'll play next game in this channel.",
                             result.getPickedStage().getDisplayName(),
                             displayFromUser(prevWinner)))
                     .build())
@@ -676,7 +676,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
         Message start = new MessageBuilder(prepareEmbed("Loser Character Counterpick")
                 .setDescription(String.format("**%s** chose %s as their character, so now the loser of the previous game has to state their character.%n" +
-                                "**%s**, please reply to this message with the character you will use next game in this channel.",
+                                "**%s**, please **__reply to__** this message with the character you will use next game in this channel.",
                         displayFromUser(result.getCharPickMenuSettings().user()),
                         result.getPickedCharacter().getDisplayName(),
                         displayFromUser(prevLoser)))

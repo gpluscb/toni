@@ -111,10 +111,10 @@ public class CounterpickStagesCommand implements Command {
             return;
         }
 
-        long selectingUser = ctx.getUser().getIdLong();
         RulesetSelectMenu rulesetMenu = new RulesetSelectMenu(RulesetSelectMenu.Settings.getDefaultSettings(
                 waiter,
-                selectingUser,
+                ctx.getMember(),
+                ctx.getUser(),
                 rulesets,
                 (info, event) -> startCounterpickStages(pickingUser, banningUser, info.getSelectedRuleset(), OneOfTwo.ofT(event.getMessage()))
         ));

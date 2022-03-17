@@ -4,12 +4,12 @@ import com.github.gpluscb.toni.menu.ActionMenu;
 import com.github.gpluscb.toni.menu.SelectionActionMenu;
 import com.github.gpluscb.toni.smashset.Ruleset;
 import com.github.gpluscb.toni.util.MiscUtil;
+import com.github.gpluscb.toni.util.discord.EmbedUtil;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageChannel;
-import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.interaction.SelectionMenuEvent;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
@@ -165,20 +165,24 @@ public class RulesetSelectMenu extends ActionMenu {
         public static final Consumer<RulesetSelectTimeoutEvent> DEFAULT_ON_TIMEOUT = MiscUtil.emptyConsumer();
 
         @Nonnull
-        public static Settings getDefaultSettings(@Nonnull EventWaiter waiter, long user, @Nonnull List<Ruleset> rulesets,
+        public static Settings getDefaultSettings(@Nonnull EventWaiter waiter, @Nullable Member member, @Nonnull User user, @Nonnull List<Ruleset> rulesets,
                                                   @Nonnull BiConsumer<RulesetSelectMenu.RulesetSelectionInfo, SelectionMenuEvent> afterRulesetSelect) {
             return new RulesetSelectMenu.Settings.Builder()
                     .setActionMenuSettings(new ActionMenu.Settings.Builder()
                             .setWaiter(waiter)
                             .setTimeout(15, TimeUnit.MINUTES)
                             .build())
-                    .setUser(user)
+                    .setUser(user.getIdLong())
                     .setRulesets(rulesets)
-                    .setStart(new MessageBuilder(String.format("%s, please select a ruleset.", MiscUtil.mentionUser(user)))
-                            .mentionUsers(user)
-                            .build())
+                    .setStart(new MessageBuilder(EmbedUtil.getPreparedAuthor(member, user)
+                            .setTitle("Ruleset Selection")
+                            .setDescription(String.format("**%s**, please select a ruleset from the list below.", user.getName()))
+                            .build()).build())
                     .setOnRulesetSelect((info, event) -> {
-                        event.editMessage(String.format("You chose: %s", info.getSelectedRuleset().name())).setActionRows().queue();
+                        event.editMessageEmbeds(new EmbedBuilder()
+                                .setTitle("Ruleset Selection")
+                                .setDescription(String.format("You chose: **%s**", info.getSelectedRuleset().name()))
+                                .build()).setActionRows().queue();
                         afterRulesetSelect.accept(info, event);
                     })
                     .setOnTimeout(timeout -> {

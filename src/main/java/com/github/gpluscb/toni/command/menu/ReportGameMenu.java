@@ -1,6 +1,6 @@
 package com.github.gpluscb.toni.command.menu;
 
-import com.github.gpluscb.toni.menu.ButtonActionMenu;
+import com.github.gpluscb.toni.menu.ConfirmableSelectionActionMenu;
 import com.github.gpluscb.toni.menu.TwoUsersChoicesActionMenu;
 import com.github.gpluscb.toni.smashset.SmashSet;
 import com.github.gpluscb.toni.util.MiscUtil;
@@ -12,7 +12,7 @@ import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.Button;
+import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
@@ -22,21 +22,15 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
-import static net.dv8tion.jda.api.interactions.components.Button.LABEL_MAX_LENGTH;
+import static net.dv8tion.jda.api.interactions.components.selections.SelectOption.LABEL_MAX_LENGTH;
 
 public class ReportGameMenu extends TwoUsersChoicesActionMenu {
     @Nonnull
     private final Settings settings;
 
-    //    @Nonnull
-//    private final Button modButton;
     @Nonnull
-    private final ButtonActionMenu underlying;
+    private final ConfirmableSelectionActionMenu<Long> underlying;
 
-    @Nullable
-    private Long user1ReportedWinner;
-    @Nullable
-    private Long user2ReportedWinner;
     @Nullable
     private SmashSet.Conflict conflict;
 
@@ -44,18 +38,18 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
         super(settings.twoUsersChoicesActionMenuSettings());
         this.settings = settings;
 
-        //modButton = Button.danger("mod", "Call Moderator");
 
         long user1 = getTwoUsersChoicesActionMenuSettings().user1();
         long user2 = getTwoUsersChoicesActionMenuSettings().user2();
-        underlying = new ButtonActionMenu(new ButtonActionMenu.Settings.Builder()
+        underlying = new ConfirmableSelectionActionMenu<>(new ConfirmableSelectionActionMenu.Settings.Builder<Long>()
                 .setActionMenuSettings(getActionMenuSettings())
                 .setStart(settings.start())
                 .addUsers(user1, user2)
-                .setDeletionButton(null)
-                .registerButton(Button.primary("user1", StringUtils.abbreviate(String.format("%s won", settings.user1Display()), LABEL_MAX_LENGTH)), e -> onChoice(user1, e))
-                .registerButton(Button.primary("user2", StringUtils.abbreviate(String.format("%s won", settings.user2Display()), LABEL_MAX_LENGTH)), e -> onChoice(user2, e))
-                //.registerButton(modButton, this::onCallMod, false) TODO: In ranked we should be able to call mod, doesn't matter so much for unranked
+                .registerChoice(SelectOption.of(StringUtils.abbreviate(String.format("%s won", settings.user1Display()), LABEL_MAX_LENGTH), String.valueOf(user1)), user1)
+                .registerChoice(SelectOption.of(StringUtils.abbreviate(String.format("%s won", settings.user2Display()), LABEL_MAX_LENGTH), String.valueOf(user2)), user2)
+                .setOnOptionChoice((info, event) -> event.deferEdit().queue())
+                .setOnConfirmation(this::onConfirmation)
+                .setOnAllConfirmation(this::onAllConfirmation)
                 .setOnTimeout(this::onTimeout)
                 .build());
     }
@@ -96,36 +90,23 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
         underlying.start(message);
     }
 
-    @Nonnull
-    private synchronized MenuAction onChoice(long reportedWinner, @Nonnull ButtonClickEvent e) {
-        long reportingUser = e.getUser().getIdLong();
-        boolean updatedChoice;
+    private synchronized void onConfirmation(@Nonnull ConfirmableSelectionActionMenu<Long>.ConfirmationInfo info, @Nonnull ButtonClickEvent event) {
+        settings.onChoice().accept(new ReportGameChoiceInfo(info.getUser(), info.getUserSelection(), info), event);
 
+        if (!info.isAllConfirmed())
+            event.reply("I have noted your choice.").setEphemeral(true).queue();
+    }
+
+    @Nonnull
+    private synchronized MenuAction onAllConfirmation(@Nonnull ConfirmableSelectionActionMenu<Long>.ConfirmationInfo info, @Nonnull ButtonClickEvent event) {
         long user1 = getTwoUsersChoicesActionMenuSettings().user1();
         long user2 = getTwoUsersChoicesActionMenuSettings().user2();
 
-        Long previousUser1ReportedWinner = user1ReportedWinner;
-        Long previousUser2ReportedWinner = user2ReportedWinner;
-
-        if (reportingUser == user1) {
-            updatedChoice = user1ReportedWinner != null;
-            user1ReportedWinner = reportedWinner;
-        } else {
-            updatedChoice = user2ReportedWinner != null;
-            user2ReportedWinner = reportedWinner;
-        }
-
-        settings.onChoice().accept(new ReportGameChoiceInfo(reportingUser, reportedWinner, updatedChoice), e);
-
-        if (user1ReportedWinner == null || user2ReportedWinner == null) {
-            // Only one has reported
-            e.reply(String.format("I have %s your choice.", updatedChoice ? "updated" : "noted")).setEphemeral(true).queue();
-
-            return MenuAction.CONTINUE;
-        }
+        long user1ReportedWinner = info.getCurrentSelections().get(user1).getT();
+        long user2ReportedWinner = info.getCurrentSelections().get(user2).getT();
 
         // Both have reported the winner
-        if (user1ReportedWinner.equals(user2ReportedWinner)) {
+        if (user1ReportedWinner == user2ReportedWinner) {
             if (conflict != null) {
                 SmashSet.Player wrongfulUser;
                 if (conflict.isBothClaimedWin()) {
@@ -137,44 +118,26 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
                 conflict.setResolution(new SmashSet.ConflictResolution(wrongfulUser, null));
             }
 
-            settings.onResult().accept(new ReportGameResult(), e);
+            settings.onResult().accept(new ReportGameResult(info), event);
 
             return MenuAction.CANCEL;
         }
 
         // Conflict
 
-        // We only need to update ActionRows if a choice was *changed*
-        // If we try to update the ActionRows otherwise it'll error
-        // We also can't update the message with a full Message because of that reason
-        // Tho it'd be possible with a MessageBuilder
-        // Either way the conflict hasn't changed, so we don't update the message.
-        if ((reportingUser == user1 && user1ReportedWinner.equals(previousUser1ReportedWinner)) || (reportingUser == user2 && user2ReportedWinner.equals(previousUser2ReportedWinner))) {
-            e.reply("You have selected the same user you have already reported as the winner.").setEphemeral(true).queue();
-            return MenuAction.CONTINUE;
-        }
+        // TODO: We don't really need to do anything if the choice hasn't changed,
 
         conflict = new SmashSet.Conflict(user1ReportedWinner == user1);
-        settings.onConflict().accept(new ReportGameConflict(), e);
+        settings.onConflict().accept(new ReportGameConflict(info), event);
 
-        //List<ActionRow> actionRows = MiscUtil.splitList(
-        //        Stream.concat(e.getMessage().getButtons().stream(), Stream.of(modButton)).toList(), Component.Type.BUTTON.getMaxPerRow()
-        //).stream().map(ActionRow::of).toList();
-
-        e.editMessage(settings.conflictMessageProvider().apply(new ReportGameConflict(), e))
-                .setActionRows(e.getMessage().getActionRows())
+        event.editMessage(settings.conflictMessageProvider().apply(new ReportGameConflict(info), event))
+                .setActionRows(event.getMessage().getActionRows())
                 .queue();
 
         return MenuAction.CONTINUE;
     }
 
-    @Nonnull
-    private synchronized MenuAction onCallMod(@Nonnull ButtonClickEvent e) {
-        // TODO:
-        return MenuAction.CONTINUE;
-    }
-
-    private synchronized void onTimeout(@Nonnull ButtonActionMenu.ButtonActionMenuTimeoutEvent event) {
+    private synchronized void onTimeout(@Nonnull ConfirmableSelectionActionMenu<Long>.ConfirmationInfoTimeoutEvent event) {
         settings.onTimeout().accept(new ReportGameTimeoutEvent());
     }
 
@@ -201,18 +164,25 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
 
     private abstract class ReportGameMenuStateInfo extends TwoUsersMenuStateInfo {
         @Nonnull
+        private final ConfirmableSelectionActionMenu<Long>.ConfirmableSelectionInfo info;
+
+        protected ReportGameMenuStateInfo(@Nonnull ConfirmableSelectionActionMenu<Long>.ConfirmableSelectionInfo info) {
+            this.info = info;
+        }
+
+        @Nonnull
         public Settings getReportGameMenuSettings() {
             return ReportGameMenu.this.getReportGameMenuSettings();
         }
 
         @Nullable
         public Long getUser1ReportedWinner() {
-            return user1ReportedWinner;
+            return info.getCurrentSelections().get(settings.twoUsersChoicesActionMenuSettings().user1()).getT();
         }
 
         @Nullable
         public Long getUser2ReportedWinner() {
-            return user2ReportedWinner;
+            return info.getCurrentSelections().get(settings.twoUsersChoicesActionMenuSettings().user2()).getT();
         }
 
         @Nullable
@@ -224,12 +194,11 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
     public class ReportGameChoiceInfo extends ReportGameMenuStateInfo {
         private final long reportingUser;
         private final long reportedWinner;
-        private final boolean updatedChoice;
 
-        public ReportGameChoiceInfo(long reportingUser, long reportedWinner, boolean updatedChoice) {
+        public ReportGameChoiceInfo(long reportingUser, long reportedWinner, @Nonnull ConfirmableSelectionActionMenu<Long>.ConfirmableSelectionInfo info) {
+            super(info);
             this.reportingUser = reportingUser;
             this.reportedWinner = reportedWinner;
-            this.updatedChoice = updatedChoice;
         }
 
         public long getReportingUser() {
@@ -239,13 +208,13 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
         public long getReportedWinner() {
             return reportedWinner;
         }
-
-        public boolean isUpdatedChoice() {
-            return updatedChoice;
-        }
     }
 
     public class ReportGameConflict extends ReportGameMenuStateInfo {
+        public ReportGameConflict(@Nonnull ConfirmableSelectionActionMenu<Long>.ConfirmableSelectionInfo info) {
+            super(info);
+        }
+
         @Nonnull
         public Long getUser1ReportedWinner() {
             // Will not be null in conflict
@@ -269,10 +238,16 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
     }
 
     public class ReportGameResult extends ReportGameMenuStateInfo {
+        @Nonnull
+        private final ConfirmableSelectionActionMenu<Long>.ConfirmationInfo confirmation;
+
+        public ReportGameResult(@Nonnull ConfirmableSelectionActionMenu<Long>.ConfirmationInfo confirmation) {
+            super(confirmation);
+            this.confirmation = confirmation;
+        }
+
         public long getWinner() {
-            // Will not be null here
-            //noinspection ConstantConditions
-            return user1ReportedWinner;
+            return confirmation.getUserSelection();
         }
 
         public long getLoser() {
@@ -282,7 +257,8 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
         }
     }
 
-    public class ReportGameTimeoutEvent extends ReportGameMenuStateInfo {
+    public class ReportGameTimeoutEvent {
+        // TODO: extend ReportGameMenuStateInfo
         // TODO: Already conflicted?
     }
 

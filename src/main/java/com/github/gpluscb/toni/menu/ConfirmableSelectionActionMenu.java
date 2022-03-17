@@ -177,7 +177,7 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
         return settings.users().stream().allMatch(id -> currentSelections.containsKey(id) && currentSelections.get(id).getU());
     }
 
-    private abstract class ConfirmableSelectionInfo extends MenuStateInfo {
+    public abstract class ConfirmableSelectionInfo extends MenuStateInfo {
         @Nonnull
         public Map<Long, PairNonnull<T, Boolean>> getCurrentSelections() {
             return currentSelections;

@@ -56,7 +56,7 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
         SelectionActionMenu.Settings.Builder selectionUnderlyingBuilder = new SelectionActionMenu.Settings.Builder()
                 .setActionMenuSettings(settings.actionMenuSettings())
                 .setUsers(settings.users())
-                .setStart(new MessageBuilder().build()) // Start must be set but will be ignored (tech debt yay!!)
+                .setStart(new MessageBuilder(" ").build()) // Start must be set but will be ignored (tech debt yay!!)
                 .setOnTimeout(this::onSelectionTimeout);
 
         for (ChoiceOption<T> choiceOption : settings.choices())
@@ -67,7 +67,7 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
         buttonUnderlying = new ButtonActionMenu(new ButtonActionMenu.Settings.Builder()
                 .setActionMenuSettings(settings.actionMenuSettings())
                 .setUsers(settings.users())
-                .setStart(new MessageBuilder().build()) // Start must be set but will be ignored
+                .setStart(new MessageBuilder(" ").build()) // Start must be set but will be ignored
                 .setDeletionButton(null)
                 .registerButton(settings.submitButton(), this::onSubmit)
                 .setOnTimeout(this::onSubmitTimeout)

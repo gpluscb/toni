@@ -205,7 +205,7 @@ public class SmashSetCommand implements Command {
                 .setCommandData(new CommandData("playset", "Helps you play a set in a specific ruleset")
                         .addOption(OptionType.USER, "player-1", "The first player", true)
                         .addOption(OptionType.USER, "player-2", "The opponent. This is yourself by default", false)
-                        .addOption(OptionType.INTEGER, "best-of", "This will be a best of 3/5/whatever set. This is 3 by default", false)
+                        .addOption(OptionType.INTEGER, "best-of", "Will this be a best of 3/best of 5/best of whatever set? This is 3 by default", false)
                         .addOption(OptionType.INTEGER, "ruleset-id", "The ruleset id. Use the 'rulesets' command to check out the different rulesets", false)) // TODO: Yea that feels unintuitive
                 .build();
     }

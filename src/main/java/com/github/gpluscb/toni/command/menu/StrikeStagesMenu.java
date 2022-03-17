@@ -120,7 +120,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
 
         if (strikes.stream().anyMatch(struckStages -> struckStages.contains(stageId))) {
             log.warn("Stage was double struck. Race condition or failure to set as disabled?");
-            e.editMessage("That stage has already been struck. Please strike a different one.").queue();
+            e.reply("That stage has already been struck. Please strike a different one.").setEphemeral(true).queue();
             return MenuAction.CONTINUE;
         }
 

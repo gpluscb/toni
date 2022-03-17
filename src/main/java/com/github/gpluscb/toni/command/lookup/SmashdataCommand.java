@@ -153,8 +153,8 @@ public class SmashdataCommand implements Command {
                 : String.format("Smasher: %s", data.tag());
 
         String url = String.format("https://smashdata.gg/smash/ultimate/player/%s?id=%s",
-                URLEncoder.encode(data.getTag(), Charset.defaultCharset()),
-                URLEncoder.encode(data.getId(), Charset.defaultCharset()));
+                URLEncoder.encode(data.tag(), Charset.defaultCharset()),
+                URLEncoder.encode(data.id(), Charset.defaultCharset()));
 
         builder.setTitle(title, url);
 

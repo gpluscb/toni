@@ -1,7 +1,7 @@
 package com.github.gpluscb.toni.command.menu;
 
 import com.github.gpluscb.toni.menu.ActionMenu;
-import com.github.gpluscb.toni.menu.SelectionActionMenu;
+import com.github.gpluscb.toni.menu.ConfirmableSelectionActionMenu;
 import com.github.gpluscb.toni.smashset.Ruleset;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.discord.EmbedUtil;
@@ -10,7 +10,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
-import net.dv8tion.jda.api.events.interaction.SelectionMenuEvent;
+import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.interactions.InteractionHook;
@@ -32,29 +32,29 @@ public class RulesetSelectMenu extends ActionMenu {
 
     // TODO: ConfirmableSelectionChoiceMenu?
     @Nonnull
-    private final SelectionActionMenu underlying;
+    private final ConfirmableSelectionActionMenu<Ruleset> underlying;
 
     public RulesetSelectMenu(@Nonnull Settings settings) {
         super(settings.actionMenuSettings());
         this.settings = settings;
 
-        SelectionActionMenu.Settings.Builder menuBuilder = new SelectionActionMenu.Settings.Builder()
+        ConfirmableSelectionActionMenu.Settings.Builder<Ruleset> menuBuilder = new ConfirmableSelectionActionMenu.Settings.Builder<Ruleset>()
                 .setActionMenuSettings(getActionMenuSettings())
                 .addUsers(settings.user())
                 .setStart(settings.start())
+                .setOnOptionChoice((info, e) -> e.deferEdit().queue())
+                .setOnAllConfirmation(this::onConfirmation)
                 .setOnTimeout(this::onTimeout);
 
         List<Ruleset> rulesets = settings.rulesets();
-        for (int i = 0; i < rulesets.size(); i++) {
-            Ruleset ruleset = rulesets.get(i);
-            int i_ = i;
-            menuBuilder.registerOption(
+        for (Ruleset ruleset : rulesets) {
+            menuBuilder.registerChoice(
                     SelectOption.of(StringUtils.abbreviate(ruleset.name(), SelectOption.LABEL_MAX_LENGTH), String.valueOf(ruleset.rulesetId())),
-                    (info, e) -> onSelect(info, e, i_)
+                    ruleset
             );
         }
 
-        underlying = new SelectionActionMenu(menuBuilder.build());
+        underlying = new ConfirmableSelectionActionMenu<>(menuBuilder.build());
     }
 
     @Override
@@ -99,13 +99,13 @@ public class RulesetSelectMenu extends ActionMenu {
     }
 
     @Nonnull
-    private synchronized MenuAction onSelect(@Nonnull SelectionActionMenu.SelectionInfo info, @Nonnull SelectionMenuEvent event, int idx) {
-        settings.onRulesetSelect().accept(new RulesetSelectionInfo(info, idx), event);
+    private synchronized MenuAction onConfirmation(@Nonnull ConfirmableSelectionActionMenu<Ruleset>.ConfirmationInfo info, @Nonnull ButtonClickEvent event) {
+        settings.onRulesetSelect().accept(new RulesetSelectionInfo(info), event);
 
         return MenuAction.CANCEL;
     }
 
-    private synchronized void onTimeout(@Nonnull SelectionActionMenu.SelectionMenuTimeoutEvent timeout) {
+    private synchronized void onTimeout(@Nonnull ConfirmableSelectionActionMenu<Ruleset>.ConfirmationInfoTimeoutEvent timeout) {
         settings.onTimeout().accept(new RulesetSelectTimeoutEvent(timeout));
     }
 
@@ -118,55 +118,49 @@ public class RulesetSelectMenu extends ActionMenu {
 
     public class RulesetSelectionInfo extends RulesetSelectMenuInfo {
         @Nonnull
-        private final SelectionActionMenu.SelectionInfo selectionInfo;
-        private final int idx;
+        private final ConfirmableSelectionActionMenu<Ruleset>.ConfirmationInfo info;
 
-        public RulesetSelectionInfo(@Nonnull SelectionActionMenu.SelectionInfo selectionInfo, int idx) {
-            this.selectionInfo = selectionInfo;
-            this.idx = idx;
+        public RulesetSelectionInfo(@Nonnull ConfirmableSelectionActionMenu<Ruleset>.ConfirmationInfo info) {
+            this.info = info;
         }
 
         @Nonnull
-        public SelectionActionMenu.SelectionInfo getSelectionInfo() {
-            return selectionInfo;
-        }
-
-        public int getSelectedRulesetIdx() {
-            return idx;
+        public ConfirmableSelectionActionMenu<Ruleset>.ConfirmationInfo getInfo() {
+            return info;
         }
 
         @Nonnull
         public Ruleset getSelectedRuleset() {
-            return settings.rulesets().get(idx);
+            return info.getUserSelection();
         }
     }
 
     public class RulesetSelectTimeoutEvent extends RulesetSelectMenuInfo {
         @Nonnull
-        private final SelectionActionMenu.SelectionMenuTimeoutEvent selectionMenuTimeoutEvent;
+        private final ConfirmableSelectionActionMenu<Ruleset>.ConfirmationInfoTimeoutEvent timeout;
 
-        public RulesetSelectTimeoutEvent(@Nonnull SelectionActionMenu.SelectionMenuTimeoutEvent selectionMenuTimeoutEvent) {
-            this.selectionMenuTimeoutEvent = selectionMenuTimeoutEvent;
+        public RulesetSelectTimeoutEvent(@Nonnull ConfirmableSelectionActionMenu<Ruleset>.ConfirmationInfoTimeoutEvent timeout) {
+            this.timeout = timeout;
         }
 
         @Nonnull
-        public SelectionActionMenu.SelectionMenuTimeoutEvent getSelectionMenuTimeoutEvent() {
-            return selectionMenuTimeoutEvent;
+        public ConfirmableSelectionActionMenu<Ruleset>.ConfirmationInfoTimeoutEvent getTimeout() {
+            return timeout;
         }
     }
 
     public record Settings(@Nonnull ActionMenu.Settings actionMenuSettings, long user, @Nonnull List<Ruleset> rulesets,
                            @Nonnull Message start,
-                           @Nonnull BiConsumer<RulesetSelectionInfo, SelectionMenuEvent> onRulesetSelect,
+                           @Nonnull BiConsumer<RulesetSelectionInfo, ButtonClickEvent> onRulesetSelect,
                            @Nonnull Consumer<RulesetSelectTimeoutEvent> onTimeout) {
         @Nonnull
-        public static final BiConsumer<RulesetSelectionInfo, SelectionMenuEvent> DEFAULT_ON_RULESET_SELECT = MiscUtil.emptyBiConsumer();
+        public static final BiConsumer<RulesetSelectionInfo, ButtonClickEvent> DEFAULT_ON_RULESET_SELECT = MiscUtil.emptyBiConsumer();
         @Nonnull
         public static final Consumer<RulesetSelectTimeoutEvent> DEFAULT_ON_TIMEOUT = MiscUtil.emptyConsumer();
 
         @Nonnull
         public static Settings getDefaultSettings(@Nonnull EventWaiter waiter, @Nullable Member member, @Nonnull User user, @Nonnull List<Ruleset> rulesets,
-                                                  @Nonnull BiConsumer<RulesetSelectMenu.RulesetSelectionInfo, SelectionMenuEvent> afterRulesetSelect) {
+                                                  @Nonnull BiConsumer<RulesetSelectMenu.RulesetSelectionInfo, ButtonClickEvent> afterRulesetSelect) {
             return new RulesetSelectMenu.Settings.Builder()
                     .setActionMenuSettings(new ActionMenu.Settings.Builder()
                             .setWaiter(waiter)
@@ -210,7 +204,7 @@ public class RulesetSelectMenu extends ActionMenu {
             @Nullable
             private Message start;
             @Nonnull
-            private BiConsumer<RulesetSelectionInfo, SelectionMenuEvent> onRulesetSelect = DEFAULT_ON_RULESET_SELECT;
+            private BiConsumer<RulesetSelectionInfo, ButtonClickEvent> onRulesetSelect = DEFAULT_ON_RULESET_SELECT;
             @Nonnull
             private Consumer<RulesetSelectTimeoutEvent> onTimeout = DEFAULT_ON_TIMEOUT;
 
@@ -239,7 +233,7 @@ public class RulesetSelectMenu extends ActionMenu {
             }
 
             @Nonnull
-            public Builder setOnRulesetSelect(@Nonnull BiConsumer<RulesetSelectionInfo, SelectionMenuEvent> onRulesetSelect) {
+            public Builder setOnRulesetSelect(@Nonnull BiConsumer<RulesetSelectionInfo, ButtonClickEvent> onRulesetSelect) {
                 this.onRulesetSelect = onRulesetSelect;
                 return this;
             }

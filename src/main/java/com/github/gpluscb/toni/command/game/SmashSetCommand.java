@@ -14,18 +14,23 @@ import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.discord.ChannelChoiceWaiter;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class SmashSetCommand implements Command {
+    private final static Logger log = LogManager.getLogger(SmashSetCommand.class);
+
     @Nonnull
     private final ChannelChoiceWaiter channelWaiter;
     @Nonnull
@@ -150,18 +155,34 @@ public class SmashSetCommand implements Command {
                 .setTwoUsersChoicesActionMenuSettings(new TwoUsersChoicesActionMenu.Settings.Builder()
                         .setActionMenuSettings(new ActionMenu.Settings.Builder()
                                 .setWaiter(channelWaiter.getEventWaiter())
+                                .setTimeout(60, TimeUnit.MINUTES)
                                 .build())
                         .setUsers(user1.getIdLong(), user2.getIdLong())
                         .build())
+                .setBanTimeout(60, TimeUnit.MINUTES)
+                .setDoubleBlindTimeout(60, TimeUnit.MINUTES)
+                .setPickStageTimeout(60, TimeUnit.MINUTES)
+                .setReportGameTimeout(60, TimeUnit.MINUTES)
+                .setLoserCharCounterpickTimeout(60, TimeUnit.MINUTES)
+                .setWinnerCharPickTimeout(60, TimeUnit.MINUTES)
                 .setChannelWaiter(channelWaiter)
                 .setCharacters(characters)
                 .setRuleset(ruleset)
                 .setFirstToWhatScore(firstToWhatScore)
-                .setRpsInfo(new SmashSetMenu.RPSInfo(20, TimeUnit.MINUTES, 20, TimeUnit.MINUTES, a -> {
-                }, a -> {
-                }))
+                .setRpsInfo(new SmashSetMenu.RPSInfo(60, TimeUnit.MINUTES,
+                        60, TimeUnit.MINUTES,
+                        firstChoiceTimeout -> genericOnTimeout(firstChoiceTimeout.getTimeoutEvent(), "The choice for who will strike first timed out."),
+                        rpsTimeout -> genericOnTimeout(rpsTimeout.getTimeoutEvent(), "The RPS menu timed out.")))
                 .setUsersDisplay(user1.getName(), user2.getName())
                 .setOnResult(this::onResult)
+                .setOnStrikeTimeout(strikeTimeout -> genericOnTimeout(strikeTimeout.getTimeoutEvent(), "The stage strike menu timed out."))
+                .setOnBanTimeout(banTimeout -> genericOnTimeout(banTimeout.getTimeoutEvent(), "The stage ban menu timed out."))
+                .setOnDoubleBlindTimeout(doubleBlindTimeout -> genericOnTimeout(doubleBlindTimeout.getTimeoutEvent(), "The double blind menu timed out."))
+                .setOnWinnerCharPickTimeout(winnerCharPickTimeout -> genericOnTimeout(winnerCharPickTimeout.getTimeoutEvent(), "The winner char pick timed out."))
+                .setOnLoserCharCounterpickTimeout(loserCharPickTimeout -> genericOnTimeout(loserCharPickTimeout.getTimeoutEvent(), "The loser char counterpick timed out."))
+                .setOnMessageChannelNotInCache(messageChannelNotInCache -> log.warn("Message channel not in cache."))
+                .setOnReportGameTimeout(reportGameTimeout -> genericOnTimeout(reportGameTimeout.getTimeoutEvent(), "The game report menu timed out."))
+                .setOnPickStageTimeout(pickStageTimeout -> genericOnTimeout(pickStageTimeout.getTimeoutEvent(), "The stage counterpick menu timed out."))
                 .build());
 
         if (menu.isInitFailure()) {
@@ -187,6 +208,16 @@ public class SmashSetCommand implements Command {
         }
 
         event.getHook().sendMessage(String.format("Wowee %s you won the set congrats!!!!!!!!", MiscUtil.mentionUser(winner))).mentionUsers(winner).queue();
+    }
+
+    private void genericOnTimeout(@Nonnull ActionMenu.MenuStateInfo timeout, @Nonnull String message) {
+        MessageChannel channel = timeout.getChannel();
+        if (channel == null) {
+            log.warn("Channel for timeout not in cache");
+            return;
+        }
+
+        channel.editMessageById(timeout.getMessageId(), message).setActionRows().queue();
     }
 
     @Nonnull

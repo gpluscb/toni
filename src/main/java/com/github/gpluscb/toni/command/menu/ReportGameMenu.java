@@ -164,9 +164,21 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
 
     private abstract class ReportGameMenuStateInfo extends TwoUsersMenuStateInfo {
         @Nonnull
+        public Settings getReportGameMenuSettings() {
+            return ReportGameMenu.this.getReportGameMenuSettings();
+        }
+
+        @Nullable
+        public SmashSet.Conflict getConflict() {
+            return conflict;
+        }
+    }
+
+    private abstract class ContextReportGameMenuStateInfo extends ReportGameMenuStateInfo {
+        @Nonnull
         private final ConfirmableSelectionActionMenu<Long>.ConfirmableSelectionInfo info;
 
-        protected ReportGameMenuStateInfo(@Nonnull ConfirmableSelectionActionMenu<Long>.ConfirmableSelectionInfo info) {
+        protected ContextReportGameMenuStateInfo(@Nonnull ConfirmableSelectionActionMenu<Long>.ConfirmableSelectionInfo info) {
             this.info = info;
         }
 
@@ -191,7 +203,7 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
         }
     }
 
-    public class ReportGameChoiceInfo extends ReportGameMenuStateInfo {
+    public class ReportGameChoiceInfo extends ContextReportGameMenuStateInfo {
         private final long reportingUser;
         private final long reportedWinner;
 
@@ -210,7 +222,7 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
         }
     }
 
-    public class ReportGameConflict extends ReportGameMenuStateInfo {
+    public class ReportGameConflict extends ContextReportGameMenuStateInfo {
         public ReportGameConflict(@Nonnull ConfirmableSelectionActionMenu<Long>.ConfirmableSelectionInfo info) {
             super(info);
         }
@@ -237,7 +249,7 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
         }
     }
 
-    public class ReportGameResult extends ReportGameMenuStateInfo {
+    public class ReportGameResult extends ContextReportGameMenuStateInfo {
         @Nonnull
         private final ConfirmableSelectionActionMenu<Long>.ConfirmationInfo confirmation;
 
@@ -257,9 +269,7 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
         }
     }
 
-    public class ReportGameTimeoutEvent {
-        // TODO: extend ReportGameMenuStateInfo
-        // TODO: Already conflicted?
+    public class ReportGameTimeoutEvent extends ReportGameMenuStateInfo {
     }
 
     public record Settings(@Nonnull TwoUsersChoicesActionMenu.Settings twoUsersChoicesActionMenuSettings,

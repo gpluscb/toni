@@ -808,9 +808,10 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
     @Nonnull
     private EmbedBuilder prepareEmbed(@Nonnull String title, int gameNumber) {
         return EmbedUtil.getPrepared()
-                .setTitle(String.format("%s vs %s | Game %d | %s",
+                .setTitle(String.format("%s vs %s | BO%s | Game %d | %s",
                         settings.user1Display(),
                         settings.user2Display(),
+                        set.getBestOfWhatScore(),
                         gameNumber,
                         title))
                 .setFooter(String.format("%s vs %s", settings.user1Display(), settings.user2Display()));

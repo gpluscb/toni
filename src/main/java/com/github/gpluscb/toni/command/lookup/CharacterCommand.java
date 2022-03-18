@@ -526,7 +526,7 @@ public class CharacterCommand implements Command {
 
         private synchronized void awaitEvents(@Nonnull Message message) {
             messageId = message.getIdLong();
-            waiter.waitForEvent(SelectMenu.class,
+            waiter.waitForEvent(SelectMenuInteractionEvent.class,
                     this::checkSelection,
                     this::handleSelection,
                     20, TimeUnit.MINUTES,

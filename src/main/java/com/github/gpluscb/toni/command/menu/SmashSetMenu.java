@@ -579,7 +579,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                 notComplete -> notComplete.onT(stageBan -> {
                     Message pickStagesStart = new MessageBuilder(prepareEmbed("Stage Ban / Counterpick")
                             .setDescription(String.format("It has been determined that **%s** won, and **%s** lost the last game and the stages have been banned.%n" +
-                                            "So %s, please counterpick one of the remaining stages.",
+                                            "So **%s**, please counterpick one of the remaining stages.",
                                     displayFromUser(result.getWinner()),
                                     displayFromUser(result.getLoser()),
                                     displayFromUser(result.getLoser()))
@@ -727,7 +727,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
                     Message pickStageStart = new MessageBuilder(prepareEmbed("Stage Ban / Counterpick")
                             .setDescription(String.format("**%s** picked %s, **%s** picked %s, and the stages have been banned.%n" +
-                                            "%s, please counterpick a stage from the list below now.",
+                                            "**%s**, please counterpick a stage from the list below now.",
                                     settings.user1Display(),
                                     user1Char.getDisplayName(),
                                     settings.user2Display(),

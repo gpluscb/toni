@@ -597,7 +597,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                             Message start = new MessageBuilder(prepareEmbed("Winner Character Pick")
                                     .setDescription(String.format("It has been determined that **%s** won, and **%s** lost the last game. " +
                                                     "Now, %s, you have to pick the character you will play next game first.%n" +
-                                                    "Please **__reply to**__ this message with the character you'll play in this channel.",
+                                                    "Please **__reply to__** this message with the character you'll play in this channel.",
                                             displayFromUser(result.getWinner()),
                                             displayFromUser(result.getLoser()),
                                             displayFromUser(result.getWinner())))

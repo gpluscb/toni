@@ -15,7 +15,7 @@ import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.requests.restaction.MessageAction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -206,7 +206,7 @@ public class BlindPickCommand implements Command {
                         Assists you in doing a [blind pick](https://gist.github.com/gpluscb/559f00e750854b46c0a71827e094ab3e). After performing the command, everyone who participates in the blind pick will have to DM me. So you might have to unblock me (but what kind of monster would have me blocked in the first place?).
                         The slash command version supports at most two (2) participants.
                         Aliases: `doubleblind`, `blindpick`, `blind`""")
-                .setCommandData(new CommandData("doubleblind", "Helps you do a double blind pick")
+                .setCommandData(Commands.slash("doubleblind", "Helps you do a double blind pick")
                         .addOption(OptionType.USER, "player-1", "The first participant in the double blind", true)
                         .addOption(OptionType.USER, "player-2", "The second participant in the double blind. This is yourself by default", false))
                 .build();

@@ -24,6 +24,7 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -374,7 +375,7 @@ public class TournamentCommand implements Command {
                         String.format("If there are multiple tournaments matching the given term, use the %s/%s reactions to cycle through them.%n", Constants.ARROW_BACKWARD, Constants.ARROW_FORWARD) +
                         String.format("Use the %s/%s reactions to cycle through events in a tournament.%n", Constants.ARROW_DOWNWARD, Constants.ARROW_UPWARD) +
                         "Aliases: `tournaments`, `tournament`, `tourney`, `tourneys`")
-                .setCommandData(new CommandData("tournament", "Displays info about a tournament")
+                .setCommandData(Commands.slash("tournament", "Displays info about a tournament")
                         .addOption(OptionType.STRING, "search-term", "The search term (e.g. the end of the tournament url)", true))
                 .build();
     }

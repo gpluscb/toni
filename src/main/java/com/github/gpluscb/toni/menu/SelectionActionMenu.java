@@ -6,13 +6,13 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.events.interaction.SelectionMenuEvent;
-import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
-import net.dv8tion.jda.api.interactions.components.selections.SelectionMenu;
+import net.dv8tion.jda.api.interactions.components.selections.SelectMenu;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.requests.restaction.MessageAction;
 
@@ -30,7 +30,7 @@ public class SelectionActionMenu extends ActionMenu {
     private final Settings settings;
 
     @Nonnull
-    private final Map<String, BiFunction<SelectionInfo, SelectionMenuEvent, MenuAction>> selectionActions;
+    private final Map<String, BiFunction<SelectionInfo, SelectMenuInteractionEvent, MenuAction>> selectionActions;
 
     public SelectionActionMenu(@Nonnull Settings settings) {
         super(settings.actionMenuSettings());
@@ -54,14 +54,14 @@ public class SelectionActionMenu extends ActionMenu {
     }
 
     @Override
-    public void displaySlashReplying(@Nonnull SlashCommandEvent event) {
-        SelectionMenu selectionMenu = initSelectionMenu();
+    public void displaySlashReplying(@Nonnull SlashCommandInteractionEvent event) {
+        SelectMenu selectionMenu = initSelectionMenu();
         event.reply(settings.start()).addActionRow(selectionMenu).flatMap(InteractionHook::retrieveOriginal).queue(this::start);
     }
 
     @Override
     public void displayDeferredReplying(@Nonnull InteractionHook hook) {
-        SelectionMenu selectionMenu = initSelectionMenu();
+        SelectMenu selectionMenu = initSelectionMenu();
         hook.sendMessage(settings.start()).addActionRow(selectionMenu).queue(this::start);
     }
 
@@ -81,7 +81,7 @@ public class SelectionActionMenu extends ActionMenu {
     @Nonnull
     @Override
     public List<ActionRow> getComponents() {
-        return Collections.singletonList(ActionRow.of(SelectionMenu.create(settings.id()).addOptions(getInitialSelectOptions()).build()));
+        return Collections.singletonList(ActionRow.of(SelectMenu.create(settings.id()).addOptions(getInitialSelectOptions()).build()));
     }
 
     @Override
@@ -91,18 +91,18 @@ public class SelectionActionMenu extends ActionMenu {
     }
 
     private void init(@Nonnull MessageAction messageAction) {
-        SelectionMenu selectionMenu = SelectionMenu.create(settings.id()).addOptions(getInitialSelectOptions()).build();
+        SelectMenu selectionMenu = SelectMenu.create(settings.id()).addOptions(getInitialSelectOptions()).build();
         messageAction.setActionRow(selectionMenu).queue(this::start);
     }
 
 
     @Nonnull
-    private SelectionMenu initSelectionMenu() {
-        return SelectionMenu.create(settings.id()).addOptions(getInitialSelectOptions()).build();
+    private SelectMenu initSelectionMenu() {
+        return SelectMenu.create(settings.id()).addOptions(getInitialSelectOptions()).build();
     }
 
     private void awaitEvents() {
-        getActionMenuSettings().waiter().waitForEvent(SelectionMenuEvent.class,
+        getActionMenuSettings().waiter().waitForEvent(SelectMenuInteractionEvent.class,
                 e -> checkSelection(e, getMessageId()),
                 this::handleSelection,
                 getActionMenuSettings().timeout(), getActionMenuSettings().unit(), FailLogger.logFail(() -> { // This is the only thing that will be executed on not JDA-WS thread. So exceptions may get swallowed
@@ -110,13 +110,13 @@ public class SelectionActionMenu extends ActionMenu {
                 }));
     }
 
-    private boolean checkSelection(@Nonnull SelectionMenuEvent e, long messageId) {
+    private boolean checkSelection(@Nonnull SelectMenuInteractionEvent e, long messageId) {
         return e.getMessageIdLong() == messageId
                 && e.getComponentId().equals(settings.id())
                 && isValidUser(e.getUser().getIdLong());
     }
 
-    private void handleSelection(@Nonnull SelectionMenuEvent e) {
+    private void handleSelection(@Nonnull SelectMenuInteractionEvent e) {
         // We require exactly one selection.
         String value = e.getValues().get(0);
         MenuAction action = selectionActions.get(value).apply(new SelectionInfo(), e);
@@ -159,7 +159,7 @@ public class SelectionActionMenu extends ActionMenu {
     }
 
     public record Settings(@Nonnull ActionMenu.Settings actionMenuSettings, @Nonnull Set<Long> users,
-                           @Nonnull List<PairNonnull<SelectOption, BiFunction<SelectionInfo, SelectionMenuEvent, MenuAction>>> selectionActions,
+                           @Nonnull List<PairNonnull<SelectOption, BiFunction<SelectionInfo, SelectMenuInteractionEvent, MenuAction>>> selectionActions,
                            @Nonnull Message start, @Nonnull String id,
                            @Nonnull Consumer<SelectionMenuTimeoutEvent> onTimeout) {
         @Nonnull
@@ -195,7 +195,7 @@ public class SelectionActionMenu extends ActionMenu {
             @Nonnull
             private Set<Long> users = new HashSet<>();
             @Nonnull
-            private final List<PairNonnull<SelectOption, BiFunction<SelectionInfo, SelectionMenuEvent, MenuAction>>> selectionActions = new ArrayList<>();
+            private final List<PairNonnull<SelectOption, BiFunction<SelectionInfo, SelectMenuInteractionEvent, MenuAction>>> selectionActions = new ArrayList<>();
             @Nullable
             private Message start;
             @Nonnull
@@ -225,7 +225,7 @@ public class SelectionActionMenu extends ActionMenu {
              * @throws IllegalArgumentException if option is already registered
              */
             @Nonnull
-            public Builder registerOption(@Nonnull SelectOption option, @Nonnull BiFunction<SelectionInfo, SelectionMenuEvent, MenuAction> action) {
+            public Builder registerOption(@Nonnull SelectOption option, @Nonnull BiFunction<SelectionInfo, SelectMenuInteractionEvent, MenuAction> action) {
                 if (selectionActions.stream().map(PairNonnull::getT).anyMatch(option::equals))
                     throw new IllegalArgumentException("Option already registered");
                 selectionActions.add(new PairNonnull<>(option, action));

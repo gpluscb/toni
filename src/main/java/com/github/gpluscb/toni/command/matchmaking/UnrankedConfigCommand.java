@@ -7,7 +7,7 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -301,7 +301,7 @@ public class UnrankedConfigCommand implements Command {
                         `unrankedconfig role <ROLE>` Sets a matchmaking role.
                         `unrankedconfig reset` Removes matchmaking from this server.
                         Aliases: `unrankedconfig`, `unrankedcfg`""")
-                .setCommandData(new CommandData("unrankedconfig", "Configuration for unranked matchmaking")
+                .setCommandData(Commands.slash("unrankedconfig", "Configuration for unranked matchmaking")
                         .addSubcommands(new SubcommandData("channel", "Update the matchmaking channel. Resets the channel to none if no channel is given")
                                         .addOption(OptionType.CHANNEL, "channel", "The new matchmaking channel", true),
                                 new SubcommandData("role", "Update the matchmaking role")

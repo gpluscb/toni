@@ -8,7 +8,7 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.Event;
-import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.requests.RestAction;
 import net.dv8tion.jda.api.utils.AllowedMentions;
@@ -32,7 +32,7 @@ public class CommandContext<T extends RestAction<?> & AllowedMentions<T>> implem
     }
 
     @Nonnull
-    public static CommandContext<?> fromSlashCommandEvent(@Nonnull SlashCommandEvent e, @Nonnull Config config) {
+    public static CommandContext<?> fromSlashCommandEvent(@Nonnull SlashCommandInteractionEvent e, @Nonnull Config config) {
         return new CommandContext<>(OneOfTwo.ofU(new SlashCommandContext(e, config)));
     }
 

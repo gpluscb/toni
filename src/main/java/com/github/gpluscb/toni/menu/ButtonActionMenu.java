@@ -7,13 +7,13 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
-import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.Button;
-import net.dv8tion.jda.api.interactions.components.ButtonStyle;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.dv8tion.jda.api.interactions.components.Component;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.requests.restaction.MessageAction;
@@ -33,7 +33,7 @@ public class ButtonActionMenu extends ActionMenu {
     @Nonnull
     private final List<ActionRow> initialActionRows;
     @Nonnull
-    private final Map<String, Function<ButtonClickEvent, MenuAction>> buttonActions;
+    private final Map<String, Function<ButtonInteractionEvent, MenuAction>> buttonActions;
 
     public ButtonActionMenu(@Nonnull Settings settings) {
         super(settings.settings());
@@ -74,7 +74,7 @@ public class ButtonActionMenu extends ActionMenu {
     }
 
     @Override
-    public void displaySlashReplying(@Nonnull SlashCommandEvent e) {
+    public void displaySlashReplying(@Nonnull SlashCommandInteractionEvent e) {
         e.reply(settings.start()).addActionRows(initialActionRows).flatMap(InteractionHook::retrieveOriginal).queue(this::start);
     }
 
@@ -115,7 +115,7 @@ public class ButtonActionMenu extends ActionMenu {
 
     private void awaitEvents() {
         getActionMenuSettings().waiter().waitForEvent(
-                ButtonClickEvent.class,
+                ButtonInteractionEvent.class,
                 e -> checkButtonClick(e, getMessageId()),
                 this::handleButtonClick,
                 getActionMenuSettings().timeout(),
@@ -131,7 +131,7 @@ public class ButtonActionMenu extends ActionMenu {
         return users.isEmpty() || users.contains(user);
     }
 
-    private boolean checkButtonClick(@Nonnull ButtonClickEvent e, long messageId) {
+    private boolean checkButtonClick(@Nonnull ButtonInteractionEvent e, long messageId) {
         if (e.getMessageIdLong() != messageId) return false;
         if (!isValidUser(e.getUser().getIdLong())) return false;
 
@@ -141,7 +141,7 @@ public class ButtonActionMenu extends ActionMenu {
                 (deletionButton != null && buttonId.equals(deletionButton.getId()));
     }
 
-    private void handleButtonClick(@Nonnull ButtonClickEvent e) {
+    private void handleButtonClick(@Nonnull ButtonInteractionEvent e) {
         String buttonId = e.getComponentId();
         Button deletionButton = settings.deletionButton();
         if (deletionButton != null && buttonId.equals(deletionButton.getId())) {
@@ -172,9 +172,9 @@ public class ButtonActionMenu extends ActionMenu {
     }
 
     public record RegisteredButton(@Nonnull Button button,
-                                   @Nonnull Function<ButtonClickEvent, MenuAction> onClick,
+                                   @Nonnull Function<ButtonInteractionEvent, MenuAction> onClick,
                                    boolean displayInitially) {
-        public RegisteredButton(@Nonnull Button button, @Nonnull Function<ButtonClickEvent, MenuAction> onClick, boolean displayInitially) {
+        public RegisteredButton(@Nonnull Button button, @Nonnull Function<ButtonInteractionEvent, MenuAction> onClick, boolean displayInitially) {
             this.button = button;
             this.onClick = onClick;
             this.displayInitially = displayInitially;
@@ -237,12 +237,12 @@ public class ButtonActionMenu extends ActionMenu {
             }
 
             @Nonnull
-            public Builder registerButton(@Nonnull Button button, @Nonnull Function<ButtonClickEvent, MenuAction> function) {
+            public Builder registerButton(@Nonnull Button button, @Nonnull Function<ButtonInteractionEvent, MenuAction> function) {
                 return registerButton(button, function, true);
             }
 
             @Nonnull
-            public Builder registerButton(@Nonnull Button button, @Nonnull Function<ButtonClickEvent, MenuAction> function, boolean displayInitially) {
+            public Builder registerButton(@Nonnull Button button, @Nonnull Function<ButtonInteractionEvent, MenuAction> function, boolean displayInitially) {
                 return registerButton(new RegisteredButton(button, function, displayInitially));
             }
 

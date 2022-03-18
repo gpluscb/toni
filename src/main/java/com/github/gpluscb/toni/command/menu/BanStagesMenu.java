@@ -10,11 +10,11 @@ import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Emoji;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
-import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
-import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.Button;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,7 +30,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static net.dv8tion.jda.api.interactions.components.Button.LABEL_MAX_LENGTH;
+import static net.dv8tion.jda.api.interactions.components.buttons.Button.LABEL_MAX_LENGTH;
 
 public class BanStagesMenu extends ActionMenu {
     private static final Logger log = LogManager.getLogger(BanStagesMenu.class);
@@ -90,7 +90,7 @@ public class BanStagesMenu extends ActionMenu {
     }
 
     @Override
-    public void displaySlashReplying(@Nonnull SlashCommandEvent event) {
+    public void displaySlashReplying(@Nonnull SlashCommandInteractionEvent event) {
         underlying.displaySlashReplying(event);
     }
 
@@ -111,7 +111,7 @@ public class BanStagesMenu extends ActionMenu {
     }
 
     @Nonnull
-    private synchronized MenuAction onBan(int stageId, @Nonnull ButtonClickEvent e) {
+    private synchronized MenuAction onBan(int stageId, @Nonnull ButtonInteractionEvent e) {
         if (bannedStageIds.contains(stageId)) {
             log.warn("Stage was banned twice: {}", stageId);
             e.reply("I have recorded that you banned this stage already earlier.").setEphemeral(true).queue();
@@ -244,8 +244,8 @@ public class BanStagesMenu extends ActionMenu {
     public record Settings(@Nonnull ActionMenu.Settings actionMenuSettings, long banningUser, @Nonnull Ruleset ruleset,
                            @Nonnull Set<Integer> dsrIllegalStages,
                            @Nonnull Function<UpcomingBanInfo, Message> banMessageProducer,
-                           @Nonnull BiConsumer<StageBan, ButtonClickEvent> onBan,
-                           @Nonnull BiConsumer<BanResult, ButtonClickEvent> onResult,
+                           @Nonnull BiConsumer<StageBan, ButtonInteractionEvent> onBan,
+                           @Nonnull BiConsumer<BanResult, ButtonInteractionEvent> onResult,
                            @Nonnull Consumer<BanStagesTimeoutEvent> onTimeout) {
         @Nonnull
         public static final Function<UpcomingBanInfo, Message> DEFAULT_BAN_MESSAGE_PRODUCER = info -> {
@@ -269,9 +269,9 @@ public class BanStagesMenu extends ActionMenu {
             }
         };
         @Nonnull
-        public static final BiConsumer<StageBan, ButtonClickEvent> DEFAULT_ON_BAN = MiscUtil.emptyBiConsumer();
+        public static final BiConsumer<StageBan, ButtonInteractionEvent> DEFAULT_ON_BAN = MiscUtil.emptyBiConsumer();
         @Nonnull
-        public static final BiConsumer<BanResult, ButtonClickEvent> DEFAULT_ON_RESULT = MiscUtil.emptyBiConsumer();
+        public static final BiConsumer<BanResult, ButtonInteractionEvent> DEFAULT_ON_RESULT = MiscUtil.emptyBiConsumer();
         @Nonnull
         public static final Consumer<BanStagesTimeoutEvent> DEFAULT_ON_TIMEOUT = MiscUtil.emptyConsumer();
 
@@ -287,9 +287,9 @@ public class BanStagesMenu extends ActionMenu {
             @Nonnull
             private Function<UpcomingBanInfo, Message> banMessageProducer = DEFAULT_BAN_MESSAGE_PRODUCER;
             @Nonnull
-            private BiConsumer<StageBan, ButtonClickEvent> onBan = DEFAULT_ON_BAN;
+            private BiConsumer<StageBan, ButtonInteractionEvent> onBan = DEFAULT_ON_BAN;
             @Nonnull
-            private BiConsumer<BanResult, ButtonClickEvent> onResult = DEFAULT_ON_RESULT;
+            private BiConsumer<BanResult, ButtonInteractionEvent> onResult = DEFAULT_ON_RESULT;
             @Nonnull
             private Consumer<BanStagesTimeoutEvent> onTimeout = DEFAULT_ON_TIMEOUT;
 
@@ -324,13 +324,13 @@ public class BanStagesMenu extends ActionMenu {
             }
 
             @Nonnull
-            public Builder setOnBan(@Nonnull BiConsumer<StageBan, ButtonClickEvent> onBan) {
+            public Builder setOnBan(@Nonnull BiConsumer<StageBan, ButtonInteractionEvent> onBan) {
                 this.onBan = onBan;
                 return this;
             }
 
             @Nonnull
-            public Builder setOnResult(@Nonnull BiConsumer<BanResult, ButtonClickEvent> onResult) {
+            public Builder setOnResult(@Nonnull BiConsumer<BanResult, ButtonInteractionEvent> onResult) {
                 this.onResult = onResult;
                 return this;
             }

@@ -15,11 +15,11 @@ import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
-import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
-import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -124,7 +124,7 @@ public class CounterpickStagesCommand implements Command {
                 .onU(slash -> rulesetMenu.displaySlashReplying(slash.getEvent()));
     }
 
-    private void startCounterpickStages(long pickingUser, long banningUser, @Nonnull Ruleset ruleset, @Nonnull OneOfTwo<Message, SlashCommandEvent> replyTo) {
+    private void startCounterpickStages(long pickingUser, long banningUser, @Nonnull Ruleset ruleset, @Nonnull OneOfTwo<Message, SlashCommandInteractionEvent> replyTo) {
         Message pickStagesStart = new MessageBuilder(String.format("%s, since %s has chosen their bans, you can now pick one stage from the remaining stages.",
                 MiscUtil.mentionUser(pickingUser),
                 MiscUtil.mentionUser(banningUser)))
@@ -176,7 +176,7 @@ public class CounterpickStagesCommand implements Command {
                 .queue();
     }
 
-    private void onResult(@Nonnull BanPickStagesMenu.BanPickStagesResult result, @Nonnull ButtonClickEvent event) {
+    private void onResult(@Nonnull BanPickStagesMenu.BanPickStagesResult result, @Nonnull ButtonInteractionEvent event) {
         Stage pickedStage = result.getPickResult().getPickedStage();
 
         event.editMessage(String.format("You will be playing your next game on %s!", pickedStage.getDisplayName()))
@@ -195,7 +195,7 @@ public class CounterpickStagesCommand implements Command {
                         Helps you perform the [stage counterpicking procedure](https://www.ssbwiki.com/Counterpick) after a match for a given ruleset.
                         For a list of rulesets and their IDs, use the `rulesets` command.
                         Aliases: `counterpick`, `banstages`""")
-                .setCommandData(new CommandData("counterpick", "Helps you through the stage ban/counterpick phase of a set")
+                .setCommandData(Commands.slash("counterpick", "Helps you through the stage ban/counterpick phase of a set")
                         .addOption(OptionType.USER, "banning-user", "The user banning the stage", true)
                         .addOption(OptionType.USER, "counterpicking-user", "The user counterpicking. This is yourself by default", false)
                         .addOption(OptionType.INTEGER, "ruleset-id", "The ruleset id. Use the 'rulesets' command to check out the different rulesets", false)) // TODO: Yea that feels unintuitive

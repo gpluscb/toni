@@ -7,8 +7,8 @@ import com.github.gpluscb.toni.util.MiscUtil;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
-import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
-import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 
@@ -74,7 +74,7 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
     }
 
     @Override
-    public void displaySlashReplying(@Nonnull SlashCommandEvent event) {
+    public void displaySlashReplying(@Nonnull SlashCommandInteractionEvent event) {
         underlying.displaySlashReplying(event);
     }
 
@@ -94,7 +94,7 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
         underlying.start(message);
     }
 
-    private synchronized void onBanResult(@Nonnull BanStagesMenu.BanResult result, @Nonnull ButtonClickEvent e) {
+    private synchronized void onBanResult(@Nonnull BanStagesMenu.BanResult result, @Nonnull ButtonInteractionEvent e) {
         e.deferEdit().queue();
 
         settings.onBanResult().accept(result, e);
@@ -123,7 +123,7 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
                 .build());
     }
 
-    private synchronized void onPickResult(@Nonnull PickStageMenu.PickStageResult pickResult, @Nonnull ButtonClickEvent e) {
+    private synchronized void onPickResult(@Nonnull PickStageMenu.PickStageResult pickResult, @Nonnull ButtonInteractionEvent e) {
         settings.onPickResult().accept(pickResult, e);
 
         // banResult will be set at this point
@@ -181,31 +181,31 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
 
     public record Settings(@Nonnull TwoUsersChoicesActionMenu.Settings twoUsersChoicesActionMenuSettings,
                            @Nonnull Ruleset ruleset, @Nonnull Set<Integer> dsrIllegalStages,
-                           @Nonnull BiConsumer<BanStagesMenu.StageBan, ButtonClickEvent> onBan,
+                           @Nonnull BiConsumer<BanStagesMenu.StageBan, ButtonInteractionEvent> onBan,
                            @Nonnull Function<BanStagesMenu.UpcomingBanInfo, Message> banMessageProducer,
-                           @Nonnull BiConsumer<BanStagesMenu.BanResult, ButtonClickEvent> onBanResult,
+                           @Nonnull BiConsumer<BanStagesMenu.BanResult, ButtonInteractionEvent> onBanResult,
                            @Nonnull Consumer<BanStagesMenu.BanStagesTimeoutEvent> onBanTimeout, long pickStageTimeout,
                            @Nonnull TimeUnit pickStageUnit, @Nonnull Message pickStageStart,
-                           @Nonnull BiConsumer<PickStageMenu.PickStageResult, ButtonClickEvent> onPickResult,
+                           @Nonnull BiConsumer<PickStageMenu.PickStageResult, ButtonInteractionEvent> onPickResult,
                            @Nonnull Consumer<PickStageMenu.PickStageTimeoutEvent> onPickTimeout,
-                           @Nonnull BiConsumer<BanPickStagesResult, ButtonClickEvent> onResult) {
+                           @Nonnull BiConsumer<BanPickStagesResult, ButtonInteractionEvent> onResult) {
         @Nonnull
         public static final Function<BanStagesMenu.UpcomingBanInfo, Message> DEFAULT_BAN_MESSAGE_PRODUCER = BanStagesMenu.Settings.DEFAULT_BAN_MESSAGE_PRODUCER;
         @Nonnull
-        public static final BiConsumer<BanStagesMenu.StageBan, ButtonClickEvent> DEFAULT_ON_BAN = BanStagesMenu.Settings.DEFAULT_ON_BAN;
+        public static final BiConsumer<BanStagesMenu.StageBan, ButtonInteractionEvent> DEFAULT_ON_BAN = BanStagesMenu.Settings.DEFAULT_ON_BAN;
         @Nonnull
-        public static final BiConsumer<BanStagesMenu.BanResult, ButtonClickEvent> DEFAULT_ON_BAN_RESULT = BanStagesMenu.Settings.DEFAULT_ON_RESULT;
+        public static final BiConsumer<BanStagesMenu.BanResult, ButtonInteractionEvent> DEFAULT_ON_BAN_RESULT = BanStagesMenu.Settings.DEFAULT_ON_RESULT;
         @Nonnull
         public static final Consumer<BanStagesMenu.BanStagesTimeoutEvent> DEFAULT_ON_BAN_TIMEOUT = BanStagesMenu.Settings.DEFAULT_ON_TIMEOUT;
         public static final long DEFAULT_PICK_STAGE_TIMEOUT = 5;
         @Nonnull
         public static final TimeUnit DEFAULT_PICK_STAGE_UNIT = TimeUnit.MINUTES;
         @Nonnull
-        public static final BiConsumer<PickStageMenu.PickStageResult, ButtonClickEvent> DEFAULT_ON_PICK_RESULT = PickStageMenu.Settings.DEFAULT_ON_RESULT;
+        public static final BiConsumer<PickStageMenu.PickStageResult, ButtonInteractionEvent> DEFAULT_ON_PICK_RESULT = PickStageMenu.Settings.DEFAULT_ON_RESULT;
         @Nonnull
         public static final Consumer<PickStageMenu.PickStageTimeoutEvent> DEFAULT_ON_PICK_TIMEOUT = PickStageMenu.Settings.DEFAULT_ON_TIMEOUT;
         @Nonnull
-        public static final BiConsumer<BanPickStagesResult, ButtonClickEvent> DEFAULT_ON_RESULT = MiscUtil.emptyBiConsumer();
+        public static final BiConsumer<BanPickStagesResult, ButtonInteractionEvent> DEFAULT_ON_RESULT = MiscUtil.emptyBiConsumer();
 
         public static class Builder {
             @Nullable
@@ -217,9 +217,9 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
             @Nonnull
             private Function<BanStagesMenu.UpcomingBanInfo, Message> banMessageProducer = DEFAULT_BAN_MESSAGE_PRODUCER;
             @Nonnull
-            private BiConsumer<BanStagesMenu.StageBan, ButtonClickEvent> onBan = DEFAULT_ON_BAN;
+            private BiConsumer<BanStagesMenu.StageBan, ButtonInteractionEvent> onBan = DEFAULT_ON_BAN;
             @Nonnull
-            private BiConsumer<BanStagesMenu.BanResult, ButtonClickEvent> onBanResult = DEFAULT_ON_BAN_RESULT;
+            private BiConsumer<BanStagesMenu.BanResult, ButtonInteractionEvent> onBanResult = DEFAULT_ON_BAN_RESULT;
             @Nonnull
             private Consumer<BanStagesMenu.BanStagesTimeoutEvent> onBanTimeout = DEFAULT_ON_BAN_TIMEOUT;
             private long pickStageTimeout = DEFAULT_PICK_STAGE_TIMEOUT;
@@ -228,11 +228,11 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
             @Nullable
             private Message pickStageStart;
             @Nonnull
-            private BiConsumer<PickStageMenu.PickStageResult, ButtonClickEvent> onPickResult = DEFAULT_ON_PICK_RESULT;
+            private BiConsumer<PickStageMenu.PickStageResult, ButtonInteractionEvent> onPickResult = DEFAULT_ON_PICK_RESULT;
             @Nonnull
             private Consumer<PickStageMenu.PickStageTimeoutEvent> onPickTimeout = DEFAULT_ON_PICK_TIMEOUT;
             @Nonnull
-            private BiConsumer<BanPickStagesResult, ButtonClickEvent> onResult = DEFAULT_ON_RESULT;
+            private BiConsumer<BanPickStagesResult, ButtonInteractionEvent> onResult = DEFAULT_ON_RESULT;
 
             /**
              * user1 is banning user, user2 is picking user
@@ -263,13 +263,13 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
             }
 
             @Nonnull
-            public Builder setOnBan(@Nonnull BiConsumer<BanStagesMenu.StageBan, ButtonClickEvent> onBan) {
+            public Builder setOnBan(@Nonnull BiConsumer<BanStagesMenu.StageBan, ButtonInteractionEvent> onBan) {
                 this.onBan = onBan;
                 return this;
             }
 
             @Nonnull
-            public Builder setOnBanResult(@Nonnull BiConsumer<BanStagesMenu.BanResult, ButtonClickEvent> onBanResult) {
+            public Builder setOnBanResult(@Nonnull BiConsumer<BanStagesMenu.BanResult, ButtonInteractionEvent> onBanResult) {
                 this.onBanResult = onBanResult;
                 return this;
             }
@@ -294,7 +294,7 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
             }
 
             @Nonnull
-            public Builder setOnPickResult(@Nonnull BiConsumer<PickStageMenu.PickStageResult, ButtonClickEvent> onPickResult) {
+            public Builder setOnPickResult(@Nonnull BiConsumer<PickStageMenu.PickStageResult, ButtonInteractionEvent> onPickResult) {
                 this.onPickResult = onPickResult;
                 return this;
             }
@@ -306,7 +306,7 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
             }
 
             @Nonnull
-            public Builder setOnResult(@Nonnull BiConsumer<BanPickStagesResult, ButtonClickEvent> onResult) {
+            public Builder setOnResult(@Nonnull BiConsumer<BanPickStagesResult, ButtonInteractionEvent> onResult) {
                 this.onResult = onResult;
                 return this;
             }

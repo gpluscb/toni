@@ -1,12 +1,12 @@
 package com.github.gpluscb.toni.command.lookup;
 
 import com.github.gpluscb.toni.command.*;
+import com.github.gpluscb.toni.menu.ReactionActionMenu;
 import com.github.gpluscb.toni.smashdata.SmashdataManager;
 import com.github.gpluscb.toni.util.Constants;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.discord.EmbedUtil;
-import com.github.gpluscb.toni.menu.ReactionActionMenu;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
@@ -17,7 +17,7 @@ import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -216,7 +216,7 @@ public class SmashdataCommand implements Command {
                         "Looks up a smash ultimate player by their tag using data from [smashdata.gg](https://smashdata.gg).\n" +
                         String.format("If there are multiple smashers matching the given tag, use the %s/%s to cycle through them.%n", Constants.ARROW_BACKWARD, Constants.ARROW_FORWARD) +
                         "Aliases: `smashdata`, `player`, `smasher`, `data`")
-                .setCommandData(new CommandData("smasher", "Displays info about a smasher")
+                .setCommandData(Commands.slash("smasher", "Displays info about a smasher")
                         .addOption(OptionType.STRING, "tag", "The smasher's tag", true))
                 .build();
     }

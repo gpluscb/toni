@@ -4,7 +4,7 @@ import com.github.gpluscb.toni.command.Command;
 import com.github.gpluscb.toni.command.CommandContext;
 import com.github.gpluscb.toni.command.CommandInfo;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
 
 import javax.annotation.Nonnull;
 import javax.script.Bindings;
@@ -54,7 +54,7 @@ public class EvalCommand implements Command {
         return new CommandInfo.Builder()
                 .setAdminOnly(true)
                 .setAliases(new String[]{"eval"})
-                .setCommandData(new CommandData("eval", "Evaluates some js")
+                .setCommandData(Commands.slash("eval", "Evaluates some js")
                         .addOption(OptionType.STRING, "js", "The JS to evaluate", true))
                 .build();
     }

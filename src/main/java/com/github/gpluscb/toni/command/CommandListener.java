@@ -3,7 +3,7 @@ package com.github.gpluscb.toni.command;
 import com.github.gpluscb.toni.Config;
 import com.github.gpluscb.toni.util.discord.ChannelChoiceWaiter;
 import net.dv8tion.jda.api.entities.ChannelType;
-import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.apache.logging.log4j.LogManager;
@@ -47,7 +47,7 @@ public class CommandListener extends ListenerAdapter {
     }
 
     @Override
-    public void onSlashCommand(@Nonnull SlashCommandEvent event) {
+    public void onSlashCommandInteraction(@Nonnull SlashCommandInteractionEvent event) {
         CommandContext<?> ctx = CommandContext.fromSlashCommandEvent(event, config);
         if (event.getChannelType() == ChannelType.TEXT && !event.getTextChannel().canTalk()) {
             event.reply("I don't have permissions in this channel.").queue();

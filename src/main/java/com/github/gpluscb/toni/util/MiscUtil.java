@@ -3,10 +3,10 @@ package com.github.gpluscb.toni.util;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.Button;
-import net.dv8tion.jda.api.interactions.components.ComponentLayout;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 import net.dv8tion.jda.api.requests.RestAction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -103,7 +103,7 @@ public class MiscUtil {
     }
 
     @Nonnull
-    public static List<ActionRow> disabledButtonActionRows(@Nonnull ButtonClickEvent e) {
+    public static List<ActionRow> disabledButtonActionRows(@Nonnull ButtonInteractionEvent e) {
         if (e.getMessage().isEphemeral()) throw new IllegalStateException("Message may not be ephemeral");
 
         List<ActionRow> actionRows = new ArrayList<>(e.getMessage().getActionRows());
@@ -111,9 +111,7 @@ public class MiscUtil {
 
         // Update the actionRows to disable the current button
 
-        // not ephemeral => button not null
-        //noinspection ConstantConditions
-        if (!ComponentLayout.updateComponent(actionRows, e.getComponentId(), button.asDisabled()))
+        if (!LayoutComponent.updateComponent(actionRows, e.getComponentId(), button.asDisabled()))
             log.warn("Updating button as disabled failed: actionRows: {}, componentId: {}", actionRows, e.getComponentId());
 
         return actionRows;

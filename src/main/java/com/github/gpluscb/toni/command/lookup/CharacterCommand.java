@@ -1,27 +1,27 @@
 package com.github.gpluscb.toni.command.lookup;
 
 import com.github.gpluscb.toni.command.*;
+import com.github.gpluscb.toni.smashset.Character;
+import com.github.gpluscb.toni.smashset.CharacterTree;
 import com.github.gpluscb.toni.ultimateframedata.CharacterData;
 import com.github.gpluscb.toni.ultimateframedata.UltimateframedataClient;
 import com.github.gpluscb.toni.util.*;
 import com.github.gpluscb.toni.util.discord.EmbedUtil;
-import com.github.gpluscb.toni.smashset.Character;
-import com.github.gpluscb.toni.smashset.CharacterTree;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
-import net.dv8tion.jda.api.events.interaction.SelectionMenuEvent;
-import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
-import net.dv8tion.jda.api.interactions.components.selections.SelectionMenu;
+import net.dv8tion.jda.api.interactions.components.selections.SelectMenu;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.requests.restaction.MessageAction;
 import org.apache.commons.lang3.StringUtils;
@@ -442,7 +442,7 @@ public class CharacterCommand implements Command {
                         Looks up the moves of a character on [ultimateframedata.com](https://ultimateframedata.com).
                         Use the drop-down menus to select the move section, move, and hitbox image.
                         Aliases: `character`, `char`, `ufd`, `move`, `moves`, `hitboxes`, `hitbox`""")
-                .setCommandData(new CommandData("moves", "Displays moves of a smash ultimate character")
+                .setCommandData(Commands.slash("moves", "Displays moves of a smash ultimate character")
                         .addOption(OptionType.STRING, "character", "The character name", true)
                         .addOption(OptionType.STRING, "move", "The move name (e.g. `fair`, `down b`)", false))
                 .build();
@@ -469,7 +469,7 @@ public class CharacterCommand implements Command {
 
         private boolean displayCouldNotFindMove;
 
-        public CustomSelectionActionMenu(@Nonnull MessageEmbed template, long user, @Nonnull CharacterData data, @Nonnull OneOfTwo<Message, SlashCommandEvent> referenceOrSlashEvent, @Nullable PairNonnull<Integer, Integer> startMove, boolean startMoveRequested) {
+        public CustomSelectionActionMenu(@Nonnull MessageEmbed template, long user, @Nonnull CharacterData data, @Nonnull OneOfTwo<Message, SlashCommandInteractionEvent> referenceOrSlashEvent, @Nullable PairNonnull<Integer, Integer> startMove, boolean startMoveRequested) {
             this.user = user;
             this.template = template;
             messageId = null;
@@ -487,7 +487,7 @@ public class CharacterCommand implements Command {
             }
 
             boolean hasPerms = true;
-            MessageChannel channel = referenceOrSlashEvent.map(Message::getChannel, SlashCommandEvent::getChannel);
+            MessageChannel channel = referenceOrSlashEvent.map(Message::getChannel, SlashCommandInteractionEvent::getChannel);
             if (channel instanceof TextChannel textChannel) {
                 hasPerms = textChannel.getGuild().getSelfMember().hasPermission(textChannel, Permission.MESSAGE_HISTORY);
             }
@@ -506,7 +506,7 @@ public class CharacterCommand implements Command {
                 action.setActionRows(actionRows).queue(this::awaitEvents);
             } else {
                 // is slash event
-                SlashCommandEvent slash = referenceOrSlashEvent.getUOrThrow();
+                SlashCommandInteractionEvent slash = referenceOrSlashEvent.getUOrThrow();
                 slash.getHook().sendMessage(start).addActionRows(actionRows).queue(this::awaitEvents);
             }
         }
@@ -514,19 +514,19 @@ public class CharacterCommand implements Command {
         private List<ActionRow> prepareActionRows() {
             List<ActionRow> actionRows = new ArrayList<>(3);
 
-            actionRows.add(ActionRow.of(SelectionMenu.create(sectionMenuId).addOptions(currentSectionOptions()).build()));
-            actionRows.add(ActionRow.of(SelectionMenu.create(moveMenuId).addOptions(currentMoveOptions()).build()));
+            actionRows.add(ActionRow.of(SelectMenu.create(sectionMenuId).addOptions(currentSectionOptions()).build()));
+            actionRows.add(ActionRow.of(SelectMenu.create(moveMenuId).addOptions(currentMoveOptions()).build()));
 
             List<SelectOption> hitboxOptions = currentHitboxOptions();
             if (!hitboxOptions.isEmpty())
-                actionRows.add(ActionRow.of(SelectionMenu.create(hitboxMenuId).addOptions(currentHitboxOptions()).build()));
+                actionRows.add(ActionRow.of(SelectMenu.create(hitboxMenuId).addOptions(currentHitboxOptions()).build()));
 
             return actionRows;
         }
 
         private synchronized void awaitEvents(@Nonnull Message message) {
             messageId = message.getIdLong();
-            waiter.waitForEvent(SelectionMenuEvent.class,
+            waiter.waitForEvent(SelectMenu.class,
                     this::checkSelection,
                     this::handleSelection,
                     20, TimeUnit.MINUTES,
@@ -534,7 +534,7 @@ public class CharacterCommand implements Command {
             );
         }
 
-        private boolean checkSelection(@Nonnull SelectionMenuEvent e) {
+        private boolean checkSelection(@Nonnull SelectMenuInteractionEvent e) {
             String id = e.getComponentId();
             return messageId != null // Should never be null here but still
                     && e.getMessageIdLong() == messageId
@@ -544,7 +544,7 @@ public class CharacterCommand implements Command {
                     || id.equals(hitboxMenuId));
         }
 
-        private void handleSelection(@Nonnull SelectionMenuEvent e) {
+        private void handleSelection(@Nonnull SelectMenuInteractionEvent e) {
             e.deferEdit().queue();
             String id = e.getComponentId();
             String value = e.getValues().get(0); // We require exactly one selection

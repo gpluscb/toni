@@ -16,11 +16,11 @@ import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
-import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
-import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -161,7 +161,7 @@ public class StrikeStagesCommand implements Command {
                 .onU(slash -> rulesetMenu.displaySlashReplying(slash.getEvent()));
     }
 
-    private void startStrikeStages(@Nonnull Ruleset ruleset, @Nonnull OneOfTwo<Message, SlashCommandEvent> replyTo, boolean doRPS, long user1, long user2) {
+    private void startStrikeStages(@Nonnull Ruleset ruleset, @Nonnull OneOfTwo<Message, SlashCommandInteractionEvent> replyTo, boolean doRPS, long user1, long user2) {
         int[] starterStrikePattern = ruleset.starterStrikePattern();
         if (starterStrikePattern.length == 0) {
             // Has exactly one element in this case
@@ -267,7 +267,7 @@ public class StrikeStagesCommand implements Command {
                 .queue();
     }
 
-    private void onStrikeResult(@Nonnull StrikeStagesMenu.StrikeResult result, @Nonnull ButtonClickEvent event) {
+    private void onStrikeResult(@Nonnull StrikeStagesMenu.StrikeResult result, @Nonnull ButtonInteractionEvent event) {
         Stage resultingStage = result.getRemainingStage();
         // In that case we have already printed the message
         if (resultingStage == null) return;
@@ -288,7 +288,7 @@ public class StrikeStagesCommand implements Command {
                         Helps you perform the [stage striking procedure](https://www.ssbwiki.com/Stage_striking) for a given ruleset. Depending on the `DO RPS` argument, you'll play a game of RPS first to determine who gets to strike first.
                         For a list of rulesets and their IDs, use the `rulesets` command.
                         Aliases: `strike`, `strikestarters`, `strikestages`""")
-                .setCommandData(new CommandData("strikestarters", "Helps you perform the stage striking procedure")
+                .setCommandData(Commands.slash("strikestarters", "Helps you perform the stage striking procedure")
                         .addOption(OptionType.USER, "striker-1", "One participant in the striking procedure", true)
                         .addOption(OptionType.USER, "striker-2", "The other participant in the striking procedure. This is yourself by default", false)
                         .addOption(OptionType.BOOLEAN, "rps", "Whether to play RPS for who strikes first. By default the first striker is determined randomly", false)

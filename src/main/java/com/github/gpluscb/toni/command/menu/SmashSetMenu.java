@@ -14,8 +14,8 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
-import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
-import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 
@@ -112,7 +112,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
     }
 
     @Override
-    public void displaySlashReplying(@Nonnull SlashCommandEvent event) {
+    public void displaySlashReplying(@Nonnull SlashCommandInteractionEvent event) {
         if (startUnderlying == null) throw new IllegalStateException("Tried to display when double blind init failed");
         startUnderlying.displaySlashReplying(event);
     }
@@ -215,7 +215,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
     }
 
     @Nonnull
-    private RPSAndStrikeStagesMenu createRPSAndStrikeStagesMenu(@Nonnull Message start, @Nonnull BiFunction<RPSMenu.RPSResult, ButtonClickEvent, Message> rpsTieMessageProvider, @Nonnull BiFunction<RPSMenu.RPSResult, ButtonClickEvent, Message> strikeFirstMessageProvider, @Nonnull Function<StrikeStagesMenu.UpcomingStrikeInfo, Message> strikeMessageProducer) {
+    private RPSAndStrikeStagesMenu createRPSAndStrikeStagesMenu(@Nonnull Message start, @Nonnull BiFunction<RPSMenu.RPSResult, ButtonInteractionEvent, Message> rpsTieMessageProvider, @Nonnull BiFunction<RPSMenu.RPSResult, ButtonInteractionEvent, Message> strikeFirstMessageProvider, @Nonnull Function<StrikeStagesMenu.UpcomingStrikeInfo, Message> strikeMessageProducer) {
         RPSInfo rpsInfo = settings.rpsInfo();
 
         // Will only be called if we do rps
@@ -306,7 +306,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         long user1 = getTwoUsersChoicesActionMenuSettings().user1();
         long user2 = getTwoUsersChoicesActionMenuSettings().user2();
 
-        BiFunction<ReportGameMenu.ReportGameConflict, ButtonClickEvent, Message> conflictMessageProvider = (conflict, e) ->
+        BiFunction<ReportGameMenu.ReportGameConflict, ButtonInteractionEvent, Message> conflictMessageProvider = (conflict, e) ->
                 new MessageBuilder(prepareEmbed("Game Reporting")
                         .setDescription(String.format("You reported different winners. **%s** reported **%s**, and **%s** reported **%s** as the winner. " +
                                         "One of you can now either change your choice or you can call a moderator to sort this out.",
@@ -409,7 +409,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                 .build());
     }
 
-    private synchronized void onStrikeFirstChoice(@Nonnull RPSAndStrikeStagesMenu.StrikeFirstChoiceResult result, @Nonnull ButtonClickEvent event) {
+    private synchronized void onStrikeFirstChoice(@Nonnull RPSAndStrikeStagesMenu.StrikeFirstChoiceResult result, @Nonnull ButtonInteractionEvent event) {
         SmashSet.Player winner = playerFromUser(result.getUserMakingChoice());
         SmashSet.Player firstStriker = playerFromUser(result.getFirstStriker());
 
@@ -418,7 +418,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         state = ((SmashSet.SetRPSState) state).completeRPS(winner, firstStriker);
     }
 
-    private synchronized void onUserStrikes(@Nonnull StrikeStagesMenu.UserStrikesInfo info, @Nonnull ButtonClickEvent event) {
+    private synchronized void onUserStrikes(@Nonnull StrikeStagesMenu.UserStrikesInfo info, @Nonnull ButtonInteractionEvent event) {
         // At this point it will be displayed => not null
         @SuppressWarnings("ConstantConditions")
         OneOfTwo<SmashSet.SetDoubleBlindState, SmashSet.SetInGameState> newState = ((SmashSet.SetStarterStrikingState) state)
@@ -526,7 +526,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         ).displayReplying(channel, messageId);
     }
 
-    private synchronized void onReportGameConflict(@Nonnull ReportGameMenu.ReportGameConflict reportConflict, @Nonnull ButtonClickEvent event) {
+    private synchronized void onReportGameConflict(@Nonnull ReportGameMenu.ReportGameConflict reportConflict, @Nonnull ButtonInteractionEvent event) {
         boolean bothClaimedWin = reportConflict.getUser1ReportedWinner() == getTwoUsersChoicesActionMenuSettings().user1();
         SmashSet.Conflict conflict = new SmashSet.Conflict(bothClaimedWin);
 
@@ -536,7 +536,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         ((SmashSet.SetInGameState) state).registerConflict(new SmashSet.Conflict(conflict.isBothClaimedWin()));
     }
 
-    private synchronized void onReportGameResult(@Nonnull ReportGameMenu.ReportGameResult result, @Nonnull ButtonClickEvent event) {
+    private synchronized void onReportGameResult(@Nonnull ReportGameMenu.ReportGameResult result, @Nonnull ButtonInteractionEvent event) {
         SmashSet.SetInGameState inGameState = (SmashSet.SetInGameState) state;
         OneOfTwo<OneOfTwo<SmashSet.SetWinnerStageBanState, SmashSet.SetWinnerCharPickState>, SmashSet.SetCompletedState> newState;
 
@@ -612,13 +612,13 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         ).onU(completed -> this.onResult(event));
     }
 
-    private synchronized void onBanResult(@Nonnull BanStagesMenu.BanResult result, @Nonnull ButtonClickEvent event) {
+    private synchronized void onBanResult(@Nonnull BanStagesMenu.BanResult result, @Nonnull ButtonInteractionEvent event) {
         // At this point it will be displayed => not null
         //noinspection ConstantConditions
         state = ((SmashSet.SetWinnerStageBanState) state).banStages(result.getBannedStageIds());
     }
 
-    private synchronized void onPickStageResult(@Nonnull PickStageMenu.PickStageResult result, @Nonnull ButtonClickEvent event) {
+    private synchronized void onPickStageResult(@Nonnull PickStageMenu.PickStageResult result, @Nonnull ButtonInteractionEvent event) {
         // At this point it will be displayed => not null
         @SuppressWarnings("ConstantConditions")
         OneOfTwo<SmashSet.SetWinnerCharPickState, SmashSet.SetInGameState> newState = ((SmashSet.SetLoserStageCounterpickState) state)
@@ -742,7 +742,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         ).displayReplying(channel, messageId);
     }
 
-    private void onResult(@Nonnull ButtonClickEvent event) {
+    private void onResult(@Nonnull ButtonInteractionEvent event) {
         settings.onResult().accept(new SmashSetResult(), event);
     }
 
@@ -1000,7 +1000,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                            long loserCharCounterpickTimeout, @Nonnull TimeUnit loserCharCounterpickUnit,
                            @Nonnull Consumer<SmashSetCharPickTimeoutEvent> onLoserCharCounterpickTimeout,
                            @Nonnull Consumer<SmashSetStateInfo> onMessageChannelNotInCache,
-                           @Nonnull BiConsumer<SmashSetResult, ButtonClickEvent> onResult) {
+                           @Nonnull BiConsumer<SmashSetResult, ButtonInteractionEvent> onResult) {
         @Nonnull
         public static final Consumer<SmashSetStrikeTimeoutEvent> DEFAULT_ON_STRIKE_TIMEOUT = MiscUtil.emptyConsumer();
         public static final long DEFAULT_DOUBLE_BLIND_TIMEOUT = 5;
@@ -1042,7 +1042,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         @Nonnull
         public static final Consumer<SmashSetStateInfo> DEFAULT_ON_MESSAGE_CHANNEL_NOT_IN_CACHE = MiscUtil.emptyConsumer();
         @Nonnull
-        public static final BiConsumer<SmashSetResult, ButtonClickEvent> DEFAULT_ON_RESULT = MiscUtil.emptyBiConsumer();
+        public static final BiConsumer<SmashSetResult, ButtonInteractionEvent> DEFAULT_ON_RESULT = MiscUtil.emptyBiConsumer();
 
         public static class Builder {
             @Nullable
@@ -1107,7 +1107,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
             private Consumer<SmashSetStateInfo> onMessageChannelNotInCache = DEFAULT_ON_MESSAGE_CHANNEL_NOT_IN_CACHE;
 
             @Nonnull
-            private BiConsumer<SmashSetResult, ButtonClickEvent> onResult = DEFAULT_ON_RESULT;
+            private BiConsumer<SmashSetResult, ButtonInteractionEvent> onResult = DEFAULT_ON_RESULT;
 
             /**
              * timeout is strike stages timeout
@@ -1251,7 +1251,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
             }
 
             @Nonnull
-            public Builder setOnResult(@Nonnull BiConsumer<SmashSetResult, ButtonClickEvent> onResult) {
+            public Builder setOnResult(@Nonnull BiConsumer<SmashSetResult, ButtonInteractionEvent> onResult) {
                 this.onResult = onResult;
                 return this;
             }

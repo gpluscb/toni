@@ -4,7 +4,7 @@ import com.github.gpluscb.toni.command.*;
 import com.github.gpluscb.toni.smashdata.SmashdataManager;
 import com.github.gpluscb.toni.util.OneOfTwo;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -50,7 +50,7 @@ public class UpdateSmashdataCommand implements Command {
         return new CommandInfo.Builder()
                 .setAdminOnly(true)
                 .setAliases(new String[]{"updatesmashdata"})
-                .setCommandData(new CommandData("updatesmashdata", "Updates the smashdata db path")
+                .setCommandData(Commands.slash("updatesmashdata", "Updates the smashdata db path")
                         .addOption(OptionType.STRING, "path", "The new path", true))
                 .build();
     }

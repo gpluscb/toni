@@ -4,7 +4,7 @@ import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
-import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.requests.restaction.MessageAction;
@@ -95,7 +95,7 @@ public abstract class ActionMenu {
 
     public abstract void displayReplying(@Nonnull MessageChannel channel, long messageId);
 
-    public abstract void displaySlashReplying(@Nonnull SlashCommandEvent event);
+    public abstract void displaySlashReplying(@Nonnull SlashCommandInteractionEvent event);
 
     public abstract void displayDeferredReplying(@Nonnull InteractionHook hook);
 

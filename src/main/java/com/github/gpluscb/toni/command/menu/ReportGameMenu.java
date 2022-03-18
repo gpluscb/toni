@@ -8,8 +8,8 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
-import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
-import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
@@ -70,7 +70,7 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
     }
 
     @Override
-    public void displaySlashReplying(@Nonnull SlashCommandEvent event) {
+    public void displaySlashReplying(@Nonnull SlashCommandInteractionEvent event) {
         underlying.displaySlashReplying(event);
     }
 
@@ -90,7 +90,7 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
         underlying.start(message);
     }
 
-    private synchronized void onConfirmation(@Nonnull ConfirmableSelectionActionMenu<Long>.ConfirmationInfo info, @Nonnull ButtonClickEvent event) {
+    private synchronized void onConfirmation(@Nonnull ConfirmableSelectionActionMenu<Long>.ConfirmationInfo info, @Nonnull ButtonInteractionEvent event) {
         settings.onChoice().accept(new ReportGameChoiceInfo(info.getUser(), info.getUserSelection(), info), event);
 
         if (!info.isAllConfirmed())
@@ -98,7 +98,7 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
     }
 
     @Nonnull
-    private synchronized MenuAction onAllConfirmation(@Nonnull ConfirmableSelectionActionMenu<Long>.ConfirmationInfo info, @Nonnull ButtonClickEvent event) {
+    private synchronized MenuAction onAllConfirmation(@Nonnull ConfirmableSelectionActionMenu<Long>.ConfirmationInfo info, @Nonnull ButtonInteractionEvent event) {
         long user1 = getTwoUsersChoicesActionMenuSettings().user1();
         long user2 = getTwoUsersChoicesActionMenuSettings().user2();
 
@@ -274,13 +274,14 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
 
     public record Settings(@Nonnull TwoUsersChoicesActionMenu.Settings twoUsersChoicesActionMenuSettings,
                            @Nonnull String user1Display, @Nonnull String user2Display,
-                           @Nonnull BiFunction<ReportGameConflict, ButtonClickEvent, Message> conflictMessageProvider,
-                           @Nonnull BiConsumer<ReportGameChoiceInfo, ButtonClickEvent> onChoice,
-                           @Nonnull BiConsumer<ReportGameConflict, ButtonClickEvent> onConflict,
-                           @Nonnull BiConsumer<ReportGameResult, ButtonClickEvent> onResult, @Nonnull Message start,
+                           @Nonnull BiFunction<ReportGameConflict, ButtonInteractionEvent, Message> conflictMessageProvider,
+                           @Nonnull BiConsumer<ReportGameChoiceInfo, ButtonInteractionEvent> onChoice,
+                           @Nonnull BiConsumer<ReportGameConflict, ButtonInteractionEvent> onConflict,
+                           @Nonnull BiConsumer<ReportGameResult, ButtonInteractionEvent> onResult,
+                           @Nonnull Message start,
                            @Nonnull Consumer<ReportGameTimeoutEvent> onTimeout) {
         @Nonnull
-        public static final BiFunction<ReportGameConflict, ButtonClickEvent, Message> DEFAULT_CONFLICT_MESSAGE_PROVIDER = (conflict, e) -> {
+        public static final BiFunction<ReportGameConflict, ButtonInteractionEvent, Message> DEFAULT_CONFLICT_MESSAGE_PROVIDER = (conflict, e) -> {
             long user1 = conflict.getTwoUsersChoicesActionMenuSettings().user1();
             long user2 = conflict.getTwoUsersChoicesActionMenuSettings().user2();
             return new MessageBuilder(String.format("You reported different winners. %s reported %s, and %s reported %s as the winner. " +
@@ -293,11 +294,11 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
                     .build();
         };
         @Nonnull
-        public static final BiConsumer<ReportGameChoiceInfo, ButtonClickEvent> DEFAULT_ON_CHOICE = MiscUtil.emptyBiConsumer();
+        public static final BiConsumer<ReportGameChoiceInfo, ButtonInteractionEvent> DEFAULT_ON_CHOICE = MiscUtil.emptyBiConsumer();
         @Nonnull
-        public static final BiConsumer<ReportGameConflict, ButtonClickEvent> DEFAULT_ON_CONFLICT = MiscUtil.emptyBiConsumer();
+        public static final BiConsumer<ReportGameConflict, ButtonInteractionEvent> DEFAULT_ON_CONFLICT = MiscUtil.emptyBiConsumer();
         @Nonnull
-        public static final BiConsumer<ReportGameResult, ButtonClickEvent> DEFAULT_ON_RESULT = MiscUtil.emptyBiConsumer();
+        public static final BiConsumer<ReportGameResult, ButtonInteractionEvent> DEFAULT_ON_RESULT = MiscUtil.emptyBiConsumer();
         @Nonnull
         public static final Consumer<ReportGameTimeoutEvent> DEFAULT_ON_TIMEOUT = MiscUtil.emptyConsumer();
 
@@ -309,13 +310,13 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
             @Nullable
             private String user2Display;
             @Nonnull
-            private BiFunction<ReportGameConflict, ButtonClickEvent, Message> conflictMessageProvider = DEFAULT_CONFLICT_MESSAGE_PROVIDER;
+            private BiFunction<ReportGameConflict, ButtonInteractionEvent, Message> conflictMessageProvider = DEFAULT_CONFLICT_MESSAGE_PROVIDER;
             @Nonnull
-            private BiConsumer<ReportGameChoiceInfo, ButtonClickEvent> onChoice = DEFAULT_ON_CHOICE;
+            private BiConsumer<ReportGameChoiceInfo, ButtonInteractionEvent> onChoice = DEFAULT_ON_CHOICE;
             @Nonnull
-            private BiConsumer<ReportGameConflict, ButtonClickEvent> onConflict = DEFAULT_ON_CONFLICT;
+            private BiConsumer<ReportGameConflict, ButtonInteractionEvent> onConflict = DEFAULT_ON_CONFLICT;
             @Nonnull
-            private BiConsumer<ReportGameResult, ButtonClickEvent> onResult = DEFAULT_ON_RESULT;
+            private BiConsumer<ReportGameResult, ButtonInteractionEvent> onResult = DEFAULT_ON_RESULT;
             @Nullable
             private Message start;
             @Nonnull
@@ -335,25 +336,25 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
             }
 
             @Nonnull
-            public Builder setConflictMessageProvider(@Nonnull BiFunction<ReportGameConflict, ButtonClickEvent, Message> conflictMessageProvider) {
+            public Builder setConflictMessageProvider(@Nonnull BiFunction<ReportGameConflict, ButtonInteractionEvent, Message> conflictMessageProvider) {
                 this.conflictMessageProvider = conflictMessageProvider;
                 return this;
             }
 
             @Nonnull
-            public Builder setOnChoice(@Nonnull BiConsumer<ReportGameChoiceInfo, ButtonClickEvent> onChoice) {
+            public Builder setOnChoice(@Nonnull BiConsumer<ReportGameChoiceInfo, ButtonInteractionEvent> onChoice) {
                 this.onChoice = onChoice;
                 return this;
             }
 
             @Nonnull
-            public Builder setOnConflict(@Nonnull BiConsumer<ReportGameConflict, ButtonClickEvent> onConflict) {
+            public Builder setOnConflict(@Nonnull BiConsumer<ReportGameConflict, ButtonInteractionEvent> onConflict) {
                 this.onConflict = onConflict;
                 return this;
             }
 
             @Nonnull
-            public Builder setOnResult(@Nonnull BiConsumer<ReportGameResult, ButtonClickEvent> onResult) {
+            public Builder setOnResult(@Nonnull BiConsumer<ReportGameResult, ButtonInteractionEvent> onResult) {
                 this.onResult = onResult;
                 return this;
             }

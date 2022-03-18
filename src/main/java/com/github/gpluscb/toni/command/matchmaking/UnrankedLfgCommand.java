@@ -2,12 +2,12 @@ package com.github.gpluscb.toni.command.matchmaking;
 
 import com.github.gpluscb.toni.command.*;
 import com.github.gpluscb.toni.matchmaking.UnrankedManager;
+import com.github.gpluscb.toni.menu.ActionMenu;
+import com.github.gpluscb.toni.menu.ButtonActionMenu;
 import com.github.gpluscb.toni.util.Constants;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.PairNonnull;
-import com.github.gpluscb.toni.menu.ActionMenu;
-import com.github.gpluscb.toni.menu.ButtonActionMenu;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
@@ -15,12 +15,12 @@ import net.dv8tion.jda.api.entities.Emoji;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
-import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.build.CommandData;
-import net.dv8tion.jda.api.interactions.components.Button;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.utils.TimeFormat;
 import org.apache.logging.log4j.LogManager;
@@ -166,7 +166,7 @@ public class UnrankedLfgCommand implements Command {
                         `lfg [DURATION (default 2h)]`
                         Pings the matchmaking role and asks players to react if they want to play. Notifies you when they react within the given duration. The duration can have the format `Xh Xm Xs`, and it has to be between 10m and 5h.
                         Aliases: `lfg`, `unranked`, `fight`, `fite`""")
-                .setCommandData(new CommandData("lfg", "Pings matchmaking and lets you know if someone is available to play")
+                .setCommandData(Commands.slash("lfg", "Pings matchmaking and lets you know if someone is available to play")
                         .addOption(OptionType.STRING, "duration", "How long you are looking for a game. Default is two hours", false))
                 .build();
     }
@@ -187,7 +187,7 @@ public class UnrankedLfgCommand implements Command {
         }
 
         @Nonnull
-        public ActionMenu.MenuAction fightButton(@Nonnull ButtonClickEvent e) {
+        public ActionMenu.MenuAction fightButton(@Nonnull ButtonInteractionEvent e) {
             synchronized (currentlyLfgPerGuild) {
                 // Was it cancelled?
                 if (!currentlyLfgPerGuild.contains(new PairNonnull<>(guildId, originalAuthorId)))
@@ -240,7 +240,7 @@ public class UnrankedLfgCommand implements Command {
         }
 
         @Nonnull
-        public ActionMenu.MenuAction cancelButton(@Nonnull ButtonClickEvent e) {
+        public ActionMenu.MenuAction cancelButton(@Nonnull ButtonInteractionEvent e) {
             if (e.getUser().getIdLong() != originalAuthorId) return ActionMenu.MenuAction.CONTINUE;
 
             synchronized (currentlyLfgPerGuild) {
@@ -284,7 +284,7 @@ public class UnrankedLfgCommand implements Command {
             }
 
             @Nonnull
-            public ActionMenu.MenuAction confirmButton(@Nonnull ButtonClickEvent e) {
+            public ActionMenu.MenuAction confirmButton(@Nonnull ButtonInteractionEvent e) {
                 MessageChannel channel = e.getChannel();
 
                 synchronized (currentlyLfgPerGuild) {

@@ -6,7 +6,7 @@ import com.github.gpluscb.toni.util.OneOfTwo;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -74,7 +74,7 @@ public class RandomPlayerCommand implements Command {
                         Picks a random choice out of the given choices. Useful if you don't want to play rock paper scissors for example.
                         The slash command version supports only two (2) choices.
                         Aliases: `choose`, `randomplayer`, `chooseplayer`""")
-                .setCommandData(new CommandData("choose", "Choose between two options")
+                .setCommandData(Commands.slash("choose", "Choose between two options")
                         .addOption(OptionType.STRING, "choice-1", "The first choice", true)
                         .addOption(OptionType.STRING, "choice-2", "The second choice", true))
                 .build();

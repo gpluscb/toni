@@ -10,7 +10,7 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.requests.RestAction;
@@ -66,11 +66,11 @@ public class ReactionActionMenu extends Menu {
     /**
      * Needs MESSAGE_HISTORY perms
      */
-    public void displaySlashCommandReplying(@Nonnull SlashCommandEvent e) {
+    public void displaySlashCommandReplying(@Nonnull SlashCommandInteractionEvent e) {
         e.reply(start).flatMap(InteractionHook::retrieveOriginal).queue(this::init);
     }
 
-    public void displaySlashCommandDeferred(@Nonnull SlashCommandEvent e) {
+    public void displaySlashCommandDeferred(@Nonnull SlashCommandInteractionEvent e) {
         e.getHook().sendMessage(start).queue(this::init);
     }
 

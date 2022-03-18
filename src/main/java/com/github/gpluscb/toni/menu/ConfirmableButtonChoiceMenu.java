@@ -1,6 +1,7 @@
 package com.github.gpluscb.toni.menu;
 
 import com.github.gpluscb.toni.util.MiscUtil;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
@@ -9,7 +10,6 @@ import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.Button;
 import net.dv8tion.jda.api.interactions.components.ComponentLayout;
-import net.dv8tion.jda.api.requests.restaction.MessageAction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -183,6 +183,22 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
     @Nonnull
     public ButtonActionMenu.Settings getUnderlyingButtonActionMenuSettings() {
         return underlying.getButtonActionMenuSettings();
+    }
+
+    @Nonnull
+    @Override
+    public JDA getJDA() {
+        return underlying.getJDA();
+    }
+
+    @Override
+    public long getChannelId() {
+        return underlying.getChannelId();
+    }
+
+    @Override
+    public long getMessageId() {
+        return underlying.getMessageId();
     }
 
     private abstract class ConfirmableButtonChoiceInfo extends MenuStateInfo {

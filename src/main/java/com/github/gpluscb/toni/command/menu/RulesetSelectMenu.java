@@ -7,6 +7,7 @@ import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.discord.EmbedUtil;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
@@ -103,6 +104,22 @@ public class RulesetSelectMenu extends ActionMenu {
         settings.onRulesetSelect().accept(new RulesetSelectionInfo(info), event);
 
         return MenuAction.CANCEL;
+    }
+
+    @Nonnull
+    @Override
+    public JDA getJDA() {
+        return underlying.getJDA();
+    }
+
+    @Override
+    public long getChannelId() {
+        return underlying.getChannelId();
+    }
+
+    @Override
+    public long getMessageId() {
+        return underlying.getMessageId();
     }
 
     private synchronized void onTimeout(@Nonnull ConfirmableSelectionActionMenu<Ruleset>.ConfirmationInfoTimeoutEvent timeout) {

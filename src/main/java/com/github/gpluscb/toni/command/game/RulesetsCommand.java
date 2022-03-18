@@ -136,7 +136,7 @@ public class RulesetsCommand implements Command {
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
                 .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_HISTORY, Permission.MESSAGE_EMBED_LINKS})
-                .setAliases(new String[]{"ruleset", "rulesets"})
+                .setAliases(new String[]{"rulesets", "ruleset"})
                 .setShortHelp("Lists all the available rulesets. Usage: `rulesets`")
                 .setDetailedHelp("""
                         `rulesets`

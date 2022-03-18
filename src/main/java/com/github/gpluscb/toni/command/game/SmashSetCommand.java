@@ -207,7 +207,12 @@ public class SmashSetCommand implements Command {
             winner = result.getTwoUsersChoicesActionMenuSettings().user2();
         }
 
-        event.getHook().sendMessage(String.format("Wowee %s you won the set congrats!!!!!!!!", MiscUtil.mentionUser(winner))).mentionUsers(winner).queue();
+        long user1Score = games.stream().filter(game -> game.getWinner() == SmashSet.Player.PLAYER1).count();
+        long user2Score = games.stream().filter(game -> game.getWinner() == SmashSet.Player.PLAYER2).count();
+        event.getHook()
+                .sendMessage(String.format("%s, you won the set %d - %d. Congrats!", MiscUtil.mentionUser(winner), user1Score, user2Score))
+                .mentionUsers(winner)
+                .queue();
     }
 
     private void genericOnTimeout(@Nonnull ActionMenu.MenuStateInfo timeout, @Nonnull String message) {

@@ -190,7 +190,7 @@ public class RulesetSelectMenu extends ActionMenu {
                             .setDescription(String.format("**%s**, please select a ruleset from the list below.", user.getName()))
                             .build()).build())
                     .setOnRulesetSelect((info, event) -> {
-                        event.editMessageEmbeds(new EmbedBuilder()
+                        event.editMessageEmbeds(EmbedUtil.getPreparedAuthor(member, user)
                                 .setTitle("Ruleset Selection")
                                 .setDescription(String.format("You chose: **%s**", info.getSelectedRuleset().name()))
                                 .build()).setActionRows().queue();

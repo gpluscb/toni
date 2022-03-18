@@ -309,7 +309,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         BiFunction<ReportGameMenu.ReportGameConflict, ButtonInteractionEvent, Message> conflictMessageProvider = (conflict, e) ->
                 new MessageBuilder(prepareEmbed("Game Reporting")
                         .setDescription(String.format("You reported different winners. **%s** reported **%s**, and **%s** reported **%s** as the winner. " +
-                                        "One of you can now either change your choice or you can call a moderator to sort this out.",
+                                        "One of you has to change their choice.",
                                 displayFromUser(user1),
                                 displayFromUser(conflict.getUser1ReportedWinner()),
                                 displayFromUser(user2),

@@ -156,21 +156,30 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
 
         settings.onConfirmation().accept(new ConfirmationInfo(user), event);
 
-        if (isAllConfirmed()) return settings.onAllConfirmation().apply(new ConfirmationInfo(user), event);
+        if (isAllConfirmed()) {
+            // Return won't cancel the selection menu, so cancel manually
+            MenuAction action = settings.onAllConfirmation().apply(new ConfirmationInfo(user), event);
+            if (action == MenuAction.CANCEL) isCancelled = true;
+            return action;
+        }
 
         return MenuAction.CONTINUE;
     }
 
     private synchronized void onSelectionTimeout(@Nonnull SelectionActionMenu.SelectionMenuTimeoutEvent timeout) {
-        isCancelled = true;
+        if (!isCancelled) {
+            isCancelled = true;
 
-        settings.onTimeout().accept(new ConfirmationInfoTimeoutEvent(OneOfTwo.ofT(timeout)));
+            settings.onTimeout().accept(new ConfirmationInfoTimeoutEvent(OneOfTwo.ofT(timeout)));
+        }
     }
 
     private synchronized void onSubmitTimeout(@Nonnull ButtonActionMenu.ButtonActionMenuTimeoutEvent timeout) {
-        isCancelled = true;
+        if (!isCancelled) {
+            isCancelled = true;
 
-        settings.onTimeout().accept(new ConfirmationInfoTimeoutEvent(OneOfTwo.ofU(timeout)));
+            settings.onTimeout().accept(new ConfirmationInfoTimeoutEvent(OneOfTwo.ofU(timeout)));
+        }
     }
 
     private boolean isAllConfirmed() {

@@ -3,7 +3,8 @@ package com.github.gpluscb.toni.command.game;
 import com.github.gpluscb.toni.command.*;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
-import com.github.gpluscb.toni.util.smash.CharacterTree;
+import com.github.gpluscb.toni.smashset.Character;
+import com.github.gpluscb.toni.smashset.CharacterTree;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
@@ -18,6 +19,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 // TODO: Melee Wolf? P+ Mewtwo?? This gonna be a headache
+@SuppressWarnings("ClassCanBeRecord")
 public class RandomCharacterCommand implements Command {
     private static final Logger log = LogManager.getLogger(RandomCharacterCommand.class);
 
@@ -156,17 +158,17 @@ public class RandomCharacterCommand implements Command {
             if (stackEchosMapping != null) stackEchos = stackEchosMapping.getAsBoolean();
         }
 
-        List<List<CharacterTree.Character>> possibleCharacters = characterTree.getAllCharacters(game, stackEchos, stackMiis, stackSheikZelda, stackZssSamus);
+        List<List<Character>> possibleCharacters = characterTree.getAllCharacters(game, stackEchos, stackMiis, stackSheikZelda, stackZssSamus);
         ThreadLocalRandom rng = ThreadLocalRandom.current();
         int rngIndex = rng.nextInt(possibleCharacters.size());
-        List<CharacterTree.Character> selectedCharacters = possibleCharacters.get(rngIndex);
+        List<Character> selectedCharacters = possibleCharacters.get(rngIndex);
 
         sendResponse(ctx, selectedCharacters);
     }
 
-    private void sendResponse(@Nonnull CommandContext<?> ctx, @Nonnull List<CharacterTree.Character> selectedCharacters) {
+    private void sendResponse(@Nonnull CommandContext<?> ctx, @Nonnull List<Character> selectedCharacters) {
         String emotes = selectedCharacters.stream()
-                .map(character -> String.format("%s(%s)", MiscUtil.mentionEmote(character.getEmoteId()), character.getName()))
+                .map(Character::getDisplayName)
                 .collect(Collectors.joining("/"));
 
         ctx.reply(emotes).queue();
@@ -191,14 +193,15 @@ public class RandomCharacterCommand implements Command {
         return new CommandInfo.Builder()
                 .setAliases(new String[]{"random", "randomchar", "random-char", "random-character", "randomcharacter"})
                 .setShortHelp("Picks a random character for you. Usage: `random [GAME] [GAME SPECIFIC OPTIONS...]`")
-                .setDetailedHelp("`random` (default game is ult)\n" +
-                        "`random 64`\n" +
-                        "`random melee [TREAT SHEIK/ZELDA AS ONE CHARACTER? (true(default)|false)]`\n" +
-                        "`random brawl [TREAT SHEIK/ZELDA AS ONE? (true(default)|false)] [TREAT SAMUS/ZSS AS ONE? (true(default)|false)]`\n" +
-                        "`random 4 [TREAT MIIS AS ONE? (true|false(default))]`\n" +
-                        "`random ult [TREAT MIIS AS ONE? (true|false(default))] [TREAT ECHOES AS ONE? (true|false(default))]`\n" +
-                        "Selects a random character from the roster of a smash game.\n" +
-                        "Aliases: `random`, `randomchar`, `randomcharacter`")
+                .setDetailedHelp("""
+                        `random` (default game is ult)
+                        `random 64`
+                        `random melee [TREAT SHEIK/ZELDA AS ONE CHARACTER? (true(default)|false)]`
+                        `random brawl [TREAT SHEIK/ZELDA AS ONE? (true(default)|false)] [TREAT SAMUS/ZSS AS ONE? (true(default)|false)]`
+                        `random 4 [TREAT MIIS AS ONE? (true|false(default))]`
+                        `random ult [TREAT MIIS AS ONE? (true|false(default))] [TREAT ECHOES AS ONE? (true|false(default))]`
+                        Selects a random character from the roster of a smash game.
+                        Aliases: `random`, `randomchar`, `randomcharacter`""")
                 .setCommandData(new CommandData("random", "Picks a random character")
                         .addSubcommands(new SubcommandData("64", "Random character for smash 64"),
                                 new SubcommandData("melee", "Random character for melee")

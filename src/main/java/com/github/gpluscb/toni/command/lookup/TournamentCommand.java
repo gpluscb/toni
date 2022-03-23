@@ -12,7 +12,7 @@ import com.github.gpluscb.toni.command.*;
 import com.github.gpluscb.toni.smashgg.GGManager;
 import com.github.gpluscb.toni.util.*;
 import com.github.gpluscb.toni.util.discord.EmbedUtil;
-import com.github.gpluscb.toni.util.discord.ReactionActionMenu;
+import com.github.gpluscb.toni.menu.ReactionActionMenu;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
@@ -35,6 +35,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@SuppressWarnings("ClassCanBeRecord")
 public class TournamentCommand implements Command {
     private static final Logger log = LogManager.getLogger(TournamentCommand.class);
 
@@ -256,30 +257,15 @@ public class TournamentCommand implements Command {
 
         ActivityStateResponse stateResponse = event.getState();
         if (stateResponse != null) {
-            String state = null;
-            switch (stateResponse.getValue()) {
-                case CREATED:
-                    state = "Created";
-                    break;
-                case ACTIVE:
-                    state = "Active";
-                    break;
-                case COMPLETED:
-                    state = "Completed";
-                    break;
-                case READY:
-                    state = "Ready";
-                    break;
-                case INVALID:
-                    state = "Invalid";
-                    break;
-                case CALLED:
-                    state = "Called";
-                    break;
-                case QUEUED:
-                    state = "Queued";
-                    break;
-            }
+            String state = switch (stateResponse.getValue()) {
+                case CREATED -> "Created";
+                case ACTIVE -> "Active";
+                case COMPLETED -> "Completed";
+                case READY -> "Ready";
+                case INVALID -> "Invalid";
+                case CALLED -> "Called";
+                case QUEUED -> "Queued";
+            };
             fields.add(new EmbedUtil.InlineField("State", state));
         }
 
@@ -301,36 +287,18 @@ public class TournamentCommand implements Command {
 
                 BracketTypeResponse type = bracket.getBracketType();
                 if (type != null) {
-                    String bracketType = null;
-                    switch (type.getValue()) {
-                        case SINGLE_ELIMINATION:
-                            bracketType = "SE";
-                            break;
-                        case DOUBLE_ELIMINATION:
-                            bracketType = "DE";
-                            break;
-                        case ROUND_ROBIN:
-                            bracketType = "RR";
-                            break;
-                        case SWISS:
-                            bracketType = "Swiss";
-                            break;
-                        case EXHIBITION:
-                            bracketType = "Exhibition";
-                            break;
-                        case CUSTOM_SCHEDULE:
-                            bracketType = "Custom schedule";
-                            break;
-                        case MATCHMAKING:
-                            bracketType = "Matchmaking";
-                            break;
-                        case ELIMINATION_ROUNDS:
-                            bracketType = "Elimination rounds";
-                            break;
-                        case RACE:
-                            bracketType = "Race";
-                            break;
-                    }
+                    String bracketType = switch (type.getValue()) {
+                        case SINGLE_ELIMINATION -> "SE";
+                        case DOUBLE_ELIMINATION -> "DE";
+                        case ROUND_ROBIN -> "RR";
+                        case SWISS -> "Swiss";
+                        case EXHIBITION -> "Exhibition";
+                        case CUSTOM_SCHEDULE -> "Custom schedule";
+                        case MATCHMAKING -> "Matchmaking";
+                        case ELIMINATION_ROUNDS -> "Elimination rounds";
+                        case RACE -> "Race";
+                        default -> null;
+                    };
                     stringBuilder.append(String.format(" `%s`", bracketType));
                 }
 
@@ -436,10 +404,10 @@ public class TournamentCommand implements Command {
                 List<EventResponse> eventsResponse = tournament.getEvents();
                 List<EventResponse> events = eventsResponse == null ?
                         Collections.emptyList()
-                        : eventsResponse.stream().filter(Objects::nonNull).collect(Collectors.toList());
+                        : eventsResponse.stream().filter(Objects::nonNull).toList();
 
                 return new PairNonnull<>(tournament, events);
-            }).collect(Collectors.toList());
+            }).toList();
 
             lazyMessages = new Message[tournaments.size()][];
             for (int i = 0; i < lazyMessages.length; i++) {

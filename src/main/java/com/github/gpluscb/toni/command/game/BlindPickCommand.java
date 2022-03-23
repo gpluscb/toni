@@ -1,32 +1,41 @@
 package com.github.gpluscb.toni.command.game;
 
 import com.github.gpluscb.toni.command.*;
+import com.github.gpluscb.toni.command.menu.BlindPickMenu;
+import com.github.gpluscb.toni.menu.ActionMenu;
+import com.github.gpluscb.toni.smashset.Character;
+import com.github.gpluscb.toni.smashset.CharacterTree;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
-import com.github.gpluscb.toni.util.discord.DMChoiceWaiter;
-import com.github.gpluscb.toni.util.smash.CharacterTree;
+import com.github.gpluscb.toni.util.discord.ChannelChoiceWaiter;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.requests.restaction.MessageAction;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class BlindPickCommand implements Command {
-    @Nonnull
-    private final DMChoiceWaiter waiter;
+    private static final Logger log = LogManager.getLogger(BlindPickCommand.class);
 
     @Nonnull
-    private final List<CharacterTree.Character> characters;
+    private final ChannelChoiceWaiter waiter;
+    @Nonnull
+    private final List<Character> characters;
 
-    public BlindPickCommand(@Nonnull DMChoiceWaiter waiter, @Nonnull CharacterTree characterTree) {
+    public BlindPickCommand(@Nonnull ChannelChoiceWaiter waiter, @Nonnull CharacterTree characterTree) {
         this.waiter = waiter;
         this.characters = characterTree.getAllCharacters();
     }
@@ -99,33 +108,91 @@ public class BlindPickCommand implements Command {
         String userMentions = users.stream().map(id -> String.format("<@%d>", id)).collect(Collectors.joining(", "));
         long[] userMentionsArray = users.stream().mapToLong(u -> u).toArray(); // TODO: Could be a bit more efficient, do the two streams in one pass...
 
-        boolean worked = waiter.waitForDMChoice(users, true, e -> {
-            Message message = e.getMessage();
-            String choice = message.getContentRaw();
+        JDA jda = ctx.getJDA();
+        long channelId = ctx.getChannel().getIdLong();
+        Long referenceId = context.map(msg -> msg.getMessage().getIdLong(), slash -> null);
 
-            CharacterTree.Character character = characters.stream().filter(c -> c.getAltNames().contains(choice.toLowerCase())).findAny().orElse(null);
-            if (character == null) message.reply("I don't know that character.").queue();
-            else message.reply("Accepted!").queue();
+        Message start = new MessageBuilder(String.format("Alright, %s, please send me a DM with your character choice now. You have three (3) minutes!", userMentions))
+                .mentionUsers(userMentionsArray)
+                .build();
 
-            return Optional.ofNullable(character);
-        }, map -> {
-            String choices = users.stream().map(u -> {
-                CharacterTree.Character c = map.get(u);
-                return String.format("%s: %s(%s)", MiscUtil.mentionUser(u), MiscUtil.mentionEmote(c.getEmoteId()), c.getName());
-            }).collect(Collectors.joining("\n"));
+        BlindPickMenu menu = new BlindPickMenu(new BlindPickMenu.Settings.Builder()
+                .setActionMenuSettings(new ActionMenu.Settings.Builder()
+                        .setTimeout(3, TimeUnit.MINUTES)
+                        .setWaiter(waiter.getEventWaiter())
+                        .build())
+                .setChannelWaiter(waiter)
+                .setUsers(users)
+                .setStart(start)
+                .setCharacters(characters)
+                .setOnResult(result -> onResult(result, jda, channelId, referenceId))
+                .setOnTimeout(timeout -> onTimeout(timeout, jda, channelId, referenceId))
+                .build());
 
-            ctx.reply(String.format("The characters have been decided:%n%n%s", choices)).mentionUsers(userMentionsArray).queue();
-        }, 3, TimeUnit.MINUTES, map -> {
-            // TODO: Variable naming
-            String lazyIdiots = users.stream().filter(Predicate.not(map::containsKey)).map(MiscUtil::mentionUser).collect(Collectors.joining(", "));
+        if (menu.isInitFailure()) {
+            ctx.reply("Some of you fools already have a DM thing going on with me. I can't have you do multiple of those at the same time. That's just too complicated for me!").queue();
+            return;
+        }
 
-            ctx.reply(String.format("The three (3) minutes are done. Not all of you have given me your characters. Shame on you, %s!", lazyIdiots)).mentionUsers(userMentionsArray).queue();
-        });
+        context
+                .onT(msg -> menu.displayReplying(msg.getMessage()))
+                .onU(slash -> menu.displaySlashReplying(slash.getEvent()));
+    }
 
-        if (worked) // TODO: Trusts that this message will go through. Not that big an issue, but still iffy.
-            ctx.reply(String.format("Alright, %s, please send me a DM with your character choice now. You have three (3) minutes!", userMentions)).mentionUsers(userMentionsArray).queue();
-        else
-            ctx.reply("Some of you fools already have a DM thing going on with me. I can't have you do multiple of those at the same time. I'd lose my mind!").queue();
+    private void onResult(@Nonnull BlindPickMenu.BlindPickResult result, @Nonnull JDA jda, long channelId, @Nullable Long referenceId) {
+        // TODO: Somehow edit here, sounds like a bit of a pain tho
+        MessageChannel channel = jda.getTextChannelById(channelId);
+        if (channel == null) channel = jda.getPrivateChannelById(channelId);
+        if (channel == null) {
+            log.warn("MessageChannel not in cache for blind pick result: {}", channelId);
+            return;
+        }
+
+        List<Long> users = result.getBlindPickMenuSettings().users();
+
+        String choicesString = result.getPicks().stream().map(choice -> {
+            Character character = choice.getChoice();
+            // Since we're done here choice will not be null
+            //noinspection ConstantConditions
+            return String.format("%s: %s",
+                    MiscUtil.mentionUser(choice.getUserId()),
+                    character.getDisplayName());
+        }).collect(Collectors.joining("\n"));
+
+        MessageAction action = channel.sendMessage(String.format("The characters have been decided:%n%n%s", choicesString));
+
+        for (long user : users) action = action.mentionUsers(user);
+
+        if (referenceId != null) action = action.referenceById(referenceId);
+
+        action.queue();
+    }
+
+    private void onTimeout(@Nonnull BlindPickMenu.BlindPickTimeoutEvent timeout, @Nonnull JDA jda, long channelId, @Nullable Long referenceId) {
+        MessageChannel channel = jda.getTextChannelById(channelId);
+        if (channel == null) channel = jda.getPrivateChannelById(channelId);
+        if (channel == null) {
+            log.warn("MessageChannel not in cache for timeout: {}", channelId);
+            return;
+        }
+
+        // TODO: Variable naming
+        String lazyIdiots = timeout.getPicksSoFar().stream()
+                .filter(choice -> choice.getChoice() == null)
+                .map(ChannelChoiceWaiter.UserChoiceInfo::getUserId)
+                .map(MiscUtil::mentionUser)
+                .collect(Collectors.joining(", "));
+
+        List<Long> users = timeout.getBlindPickMenuSettings().users();
+
+        MessageAction action = channel.sendMessage(String.format("The three (3) minutes are done." +
+                " Not all of you have given me your characters. Shame on you, %s!", lazyIdiots));
+
+        for (long user : users) action = action.mentionUsers(user);
+
+        if (referenceId != null) action = action.referenceById(referenceId);
+
+        action.queue();
     }
 
     @Nonnull
@@ -134,12 +201,11 @@ public class BlindPickCommand implements Command {
         return new CommandInfo.Builder()
                 .setAliases(new String[]{"doubleblind", "doubleblindpick", "blind", "blindpick"})
                 .setShortHelp("Helps you do a (double) blind pick. Usage: `blind <USERS...>`")
-                .setDetailedHelp("`doubleblind <USERS...>`\n" +
-                        "Assists you in doing a [blind pick](https://gist.github.com/gpluscb/559f00e750854b46c0a71827e094ab3e). " +
-                        "After performing the command, everyone who participates in the blind pick will have to DM me. " +
-                        "So you might have to unblock me (but what kind of monster would have me blocked in the first place?).\n" +
-                        "The slash command version supports at most two (2) participants.\n" +
-                        "Aliases: `doubleblind`, `blindpick`, `blind`")
+                .setDetailedHelp("""
+                        `doubleblind <USERS...>`
+                        Assists you in doing a [blind pick](https://gist.github.com/gpluscb/559f00e750854b46c0a71827e094ab3e). After performing the command, everyone who participates in the blind pick will have to DM me. So you might have to unblock me (but what kind of monster would have me blocked in the first place?).
+                        The slash command version supports at most two (2) participants.
+                        Aliases: `doubleblind`, `blindpick`, `blind`""")
                 .setCommandData(new CommandData("doubleblind", "Helps you do a double blind pick")
                         .addOption(OptionType.USER, "player-1", "The first participant in the double blind", true)
                         .addOption(OptionType.USER, "player-2", "The second participant in the double blind. This is yourself by default", false))

@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@SuppressWarnings("ClassCanBeRecord")
 public class StringTokenizer {
     @Nonnull
     private final char[] quoteChars;
@@ -111,7 +112,7 @@ public class StringTokenizer {
 
         @Nonnull
         public List<String> getTokens() {
-            return tokensInfo.stream().map(tokenInfo -> originalString.substring(tokenInfo.getStartPos(), tokenInfo.getEndPos())).collect(Collectors.toList());
+            return tokensInfo.stream().map(tokenInfo -> originalString.substring(tokenInfo.getStartPos(), tokenInfo.getEndPos())).toList();
         }
 
         @Nonnull
@@ -149,9 +150,9 @@ public class StringTokenizer {
         }
 
         public static class TokenInfo {
-            int startPos;
-            int endPos;
-            int quoteCharLength;
+            private final int startPos;
+            private final int endPos;
+            private final int quoteCharLength;
 
             public TokenInfo(int startPos, int endPos, int quoteCharLength) {
                 this.startPos = startPos;

@@ -12,6 +12,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+// TODO: Maaaybe replace with DefaultUncaughtExceptionHandler oops that exists
 public class FailLogger {
     private static final Logger log = LogManager.getLogger(FailLogger.class);
 
@@ -54,7 +55,7 @@ public class FailLogger {
 
     @Nonnull
     public static <T> retrofit2.Callback<T> logFail(@Nonnull retrofit2.Callback<T> callback) {
-        return new retrofit2.Callback<T>() {
+        return new retrofit2.Callback<>() {
             @Override
             public void onResponse(@Nonnull Call<T> call, @Nonnull Response<T> response) {
                 try {

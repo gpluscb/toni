@@ -18,8 +18,8 @@ public class SmashdataManager {
     @Nonnull
     private final Gson gson;
 
-    public SmashdataManager(@Nonnull String dbLocation) throws SQLException {
-        gson = new Gson();
+    public SmashdataManager(@Nonnull String dbLocation, @Nonnull Gson gson) throws SQLException {
+        this.gson = gson;
 
         connection = DriverManager.getConnection("jdbc:sqlite:" + dbLocation);
         pgru = loadPgru();
@@ -101,95 +101,15 @@ public class SmashdataManager {
         connection.close();
     }
 
-    public static class Social {
-        @Nonnull
-        private final List<String> twitter;
-
-        public Social(@Nonnull List<String> twitter) {
-            this.twitter = twitter;
-        }
-
-        @Nonnull
-        public List<String> getTwitter() {
-            return twitter;
-        }
+    public record Social(@Nonnull List<String> twitter) {
     }
 
-    public static class PlayerData {
-        @Nonnull
-        private final String id;
-        @Nonnull
-        private final String tag;
-        @Nonnull
-        private final List<String> prefixes;
-        @Nonnull
-        private final Social social;
-        @Nullable
-        private final String country;
-        @Nullable
-        private final String state;
-        @Nullable
-        private final String region;
-        @Nonnull
-        private final Map<String, Integer> characters;
-        @Nullable
-        private final Integer pgru;
-
-        public PlayerData(@Nonnull String id, @Nonnull String tag, @Nonnull List<String> prefixes, @Nonnull Social social, @Nullable String country, @Nullable String state, @Nullable String region, @Nonnull Map<String, Integer> characters, @Nullable Integer pgru) {
-            this.id = id;
-            this.tag = tag;
-            this.prefixes = prefixes;
-            this.social = social;
-            this.country = country;
-            this.state = state;
-            this.region = region;
-            this.characters = characters;
-            this.pgru = pgru;
-        }
-
-        @Nonnull
-        public String getId() {
-            return id;
-        }
-
-        @Nonnull
-        public String getTag() {
-            return tag;
-        }
-
-        @Nonnull
-        public List<String> getPrefixes() {
-            return prefixes;
-        }
-
-        @Nonnull
-        public Social getSocial() {
-            return social;
-        }
-
-        @Nullable
-        public String getCountry() {
-            return country;
-        }
-
-        @Nullable
-        public String getState() {
-            return state;
-        }
-
-        @Nullable
-        public String getRegion() {
-            return region;
-        }
-
-        @Nonnull
-        public Map<String, Integer> getCharacters() {
-            return characters;
-        }
-
-        @Nullable
-        public Integer getPgru() {
-            return pgru;
-        }
+    public record PlayerData(@Nonnull String id, @Nonnull String tag,
+                             @Nonnull List<String> prefixes,
+                             @Nonnull Social social,
+                             @Nullable String country, @Nullable String state,
+                             @Nullable String region,
+                             @Nonnull Map<String, Integer> characters,
+                             @Nullable Integer pgru) {
     }
 }

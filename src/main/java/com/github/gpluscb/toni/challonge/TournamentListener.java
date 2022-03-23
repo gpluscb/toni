@@ -103,14 +103,14 @@ public class TournamentListener extends ListenerAdapter {
     @Nonnull
     public List<Subscription> findSubscriptionsByTournamentId(long tournamentId) {
         synchronized (subscriptions) {
-            return subscriptions.stream().filter(sub -> sub.getTournamentId() == tournamentId).collect(Collectors.toList());
+            return subscriptions.stream().filter(sub -> sub.getTournamentId() == tournamentId).toList();
         }
     }
 
     @Nonnull
     public List<Subscription> findSubscriptionsByChannelId(long logChannelId) {
         synchronized (subscriptions) {
-            return subscriptions.stream().filter(sub -> sub.getLogChannelId() == logChannelId).collect(Collectors.toList());
+            return subscriptions.stream().filter(sub -> sub.getLogChannelId() == logChannelId).toList();
         }
     }
 

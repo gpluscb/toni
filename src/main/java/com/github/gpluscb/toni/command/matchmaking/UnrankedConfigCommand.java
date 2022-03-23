@@ -15,6 +15,7 @@ import org.apache.logging.log4j.Logger;
 import javax.annotation.Nonnull;
 import java.sql.SQLException;
 
+@SuppressWarnings("ClassCanBeRecord")
 public class UnrankedConfigCommand implements Command {
     private static final Logger log = LogManager.getLogger(UnrankedConfigCommand.class);
 
@@ -52,15 +53,18 @@ public class UnrankedConfigCommand implements Command {
         String variant = context.map(msg -> msg.getArg(0).toLowerCase(), slash -> slash.getEvent().getSubcommandName());
 
         switch (variant) {
-            case "channel":
+            case "channel" -> {
                 channelVariant(ctx);
                 return;
-            case "role":
+            }
+            case "role" -> {
                 roleVariant(ctx);
                 return;
-            case "reset":
+            }
+            case "reset" -> {
                 resetVariant(ctx);
                 return;
+            }
         }
 
         // Default variant / Setup variant
@@ -291,12 +295,12 @@ public class UnrankedConfigCommand implements Command {
         return new CommandInfo.Builder()
                 .setAliases(new String[]{"unrankedconfig", "unrankedcfg"})
                 .setShortHelp("Helps you configure unranked matchmaking. For more info on usage, see `/help unrankedconfig`.")
-                .setDetailedHelp("`unrankedconfig <ROLE> [CHANNEL]` Sets up matchmaking with the specified matchmaking role, optionally only in a specific channel.\n" +
-                        "`unrankedconfig channel <CHANNEL|\"ALL\">`" +
-                        " Sets a specific channel for the matchmaking configuration, or removes channel restrictions if the argument is `all`.\n" +
-                        "`unrankedconfig role <ROLE>` Sets a matchmaking role.\n" +
-                        "`unrankedconfig reset` Removes matchmaking from this server.\n" +
-                        "Aliases: `unrankedconfig`, `unrankedcfg`")
+                .setDetailedHelp("""
+                        `unrankedconfig <ROLE> [CHANNEL]` Sets up matchmaking with the specified matchmaking role, optionally only in a specific channel.
+                        `unrankedconfig channel <CHANNEL|"ALL">` Sets a specific channel for the matchmaking configuration, or removes channel restrictions if the argument is `all`.
+                        `unrankedconfig role <ROLE>` Sets a matchmaking role.
+                        `unrankedconfig reset` Removes matchmaking from this server.
+                        Aliases: `unrankedconfig`, `unrankedcfg`""")
                 .setCommandData(new CommandData("unrankedconfig", "Configuration for unranked matchmaking")
                         .addSubcommands(new SubcommandData("channel", "Update the matchmaking channel. Resets the channel to none if no channel is given")
                                         .addOption(OptionType.CHANNEL, "channel", "The new matchmaking channel", true),

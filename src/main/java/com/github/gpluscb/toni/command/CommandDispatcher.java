@@ -39,11 +39,11 @@ public class CommandDispatcher {
     }
 
     public void dispatch(@Nonnull CommandContext<?> ctx) {
-        commands.stream().flatMap(category -> category.getCommands().stream())
+        commands.stream().flatMap(category -> category.commands().stream())
                 .filter(command ->
                         ctx.getContext().map(
-                                msg -> Arrays.asList(command.getInfo().getAliases()).contains(msg.getInvokedName().toLowerCase()),
-                                slash -> command.getInfo().getCommandData().getName().equals(slash.getName())
+                                msg -> Arrays.asList(command.getInfo().aliases()).contains(msg.getInvokedName().toLowerCase()),
+                                slash -> command.getInfo().commandData().getName().equals(slash.getName())
                         )
                 ).findAny()
                 .ifPresent(command -> {
@@ -55,7 +55,7 @@ public class CommandDispatcher {
 
                     boolean isFromGuild = context.map(msg -> msg.getEvent().isFromGuild(), slash -> slash.getEvent().isFromGuild());
                     if (isFromGuild) {
-                        Permission[] perms = command.getInfo().getRequiredBotPerms();
+                        Permission[] perms = command.getInfo().requiredBotPerms();
                         Guild guild = context.map(msg -> msg.getEvent().getGuild(), slash -> slash.getEvent().getGuild());
                         TextChannel channel = context.map(msg -> msg.getEvent().getTextChannel(), slash -> slash.getEvent().getTextChannel());
 

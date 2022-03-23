@@ -62,7 +62,7 @@ public class TopggClient implements BotListClient<Void> {
 
         CompletableFuture<Void> ret = new CompletableFuture<>();
 
-        service.postStats(token, id, body).enqueue(new Callback<JsonObject>() {
+        service.postStats(token, id, body).enqueue(new Callback<>() {
             @Override
             public void onResponse(@Nonnull Call<JsonObject> call, @Nonnull Response<JsonObject> response) {
                 if (response.isSuccessful()) {

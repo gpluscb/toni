@@ -6,7 +6,7 @@ import com.github.gpluscb.toni.util.Constants;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.discord.EmbedUtil;
-import com.github.gpluscb.toni.util.discord.ReactionActionMenu;
+import com.github.gpluscb.toni.menu.ReactionActionMenu;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+@SuppressWarnings("ClassCanBeRecord")
 public class SmashdataCommand implements Command {
     private static final Logger log = LogManager.getLogger(SmashdataCommand.class);
 
@@ -74,8 +75,8 @@ public class SmashdataCommand implements Command {
 
             Comparator<SmashdataManager.PlayerData> comp = (a, b) -> {
                 // Find the higher ranked player
-                Integer aPgru = a.getPgru();
-                Integer bPgru = b.getPgru();
+                Integer aPgru = a.pgru();
+                Integer bPgru = b.pgru();
                 if (aPgru != null) {
                     if (bPgru == null) return 1;
                     else return -Integer.compare(aPgru, bPgru);
@@ -84,26 +85,26 @@ public class SmashdataCommand implements Command {
                 }
 
                 // Find player with socials
-                int aSocial = a.getSocial().getTwitter().size();
-                int bSocial = b.getSocial().getTwitter().size();
+                int aSocial = a.social().twitter().size();
+                int bSocial = b.social().twitter().size();
                 if (aSocial != bSocial) return Integer.compare(aSocial, bSocial);
 
                 // Find player with higher character count
-                int aCount = a.getCharacters().values().stream().mapToInt(c -> c).sum();
-                int bCount = b.getCharacters().values().stream().mapToInt(c -> c).sum();
+                int aCount = a.characters().values().stream().mapToInt(c -> c).sum();
+                int bCount = b.characters().values().stream().mapToInt(c -> c).sum();
                 if (aCount != bCount) return Integer.compare(aCount, bCount);
 
                 int aTotalData = 0;
-                if (a.getState() != null && !a.getState().isEmpty()) aTotalData++;
-                if (a.getCountry() != null && !a.getCountry().isEmpty()) aTotalData++;
-                if (!a.getPrefixes().isEmpty()) aTotalData++;
-                if (a.getRegion() != null && !a.getRegion().isEmpty()) aTotalData++;
+                if (a.state() != null && !a.state().isEmpty()) aTotalData++;
+                if (a.country() != null && !a.country().isEmpty()) aTotalData++;
+                if (!a.prefixes().isEmpty()) aTotalData++;
+                if (a.region() != null && !a.region().isEmpty()) aTotalData++;
 
                 int bTotalData = 0;
-                if (b.getState() != null && !b.getState().isEmpty()) bTotalData++;
-                if (b.getCountry() != null && !b.getCountry().isEmpty()) bTotalData++;
-                if (!b.getPrefixes().isEmpty()) bTotalData++;
-                if (b.getRegion() != null && !b.getRegion().isEmpty()) bTotalData++;
+                if (b.state() != null && !b.state().isEmpty()) bTotalData++;
+                if (b.country() != null && !b.country().isEmpty()) bTotalData++;
+                if (!b.prefixes().isEmpty()) bTotalData++;
+                if (b.region() != null && !b.region().isEmpty()) bTotalData++;
 
                 return Integer.compare(aTotalData, bTotalData);
             };
@@ -148,35 +149,35 @@ public class SmashdataCommand implements Command {
     private EmbedBuilder applyData(@Nonnull EmbedBuilder builder, @Nonnull List<SmashdataManager.PlayerData> players, int idx) {
         SmashdataManager.PlayerData data = players.get(idx);
         String title = players.size() > 1 ?
-                String.format("(%d/%d) Smasher: %s", idx + 1, players.size(), data.getTag())
-                : String.format("Smasher: %s", data.getTag());
+                String.format("(%d/%d) Smasher: %s", idx + 1, players.size(), data.tag())
+                : String.format("Smasher: %s", data.tag());
 
         String url = String.format("https://smashdata.gg/smash/ultimate/player/%s?id=%s",
-                URLEncoder.encode(data.getTag(), Charset.defaultCharset()),
-                URLEncoder.encode(data.getId(), Charset.defaultCharset()));
+                URLEncoder.encode(data.tag(), Charset.defaultCharset()),
+                URLEncoder.encode(data.id(), Charset.defaultCharset()));
 
         builder.setTitle(title, url);
 
         List<EmbedUtil.InlineField> fields = new ArrayList<>();
 
-        List<String> prefixes = data.getPrefixes();
+        List<String> prefixes = data.prefixes();
         if (!prefixes.isEmpty())
             fields.add(new EmbedUtil.InlineField("Prefixes", String.join(", ", prefixes)));
 
-        String country = data.getCountry();
+        String country = data.country();
         if (country != null && !country.isEmpty()) {
             fields.add(new EmbedUtil.InlineField("Country", country));
 
-            String state = data.getState();
+            String state = data.state();
             if (state != null && !state.isEmpty())
                 fields.add(new EmbedUtil.InlineField("State", state));
 
-            String region = data.getRegion();
+            String region = data.region();
             if (region != null && !region.isEmpty())
                 fields.add(new EmbedUtil.InlineField("Region", region));
         }
 
-        Map<String, Integer> characters = data.getCharacters();
+        Map<String, Integer> characters = data.characters();
         if (!characters.isEmpty()) {
             // Filter for the ones they play more than 5% of the time
             int total = characters.values().stream().mapToInt(it -> it).sum();
@@ -188,11 +189,11 @@ public class SmashdataCommand implements Command {
             fields.add(new EmbedUtil.InlineField("Characters", mostPlayedChars));
         }
 
-        Integer ranking = data.getPgru();
+        Integer ranking = data.pgru();
         if (ranking != null)
             fields.add(new EmbedUtil.InlineField("PGRU Season 2", ranking.toString()));
 
-        List<String> twitter = data.getSocial().getTwitter();
+        List<String> twitter = data.social().twitter();
         if (!twitter.isEmpty()) {
             String twitters = twitter.stream().filter(Predicate.not(String::isEmpty)).map(it -> String.format("[@%s](https://twitter.com/%1$s)", it)).collect(Collectors.joining(", "));
             if (!twitters.isEmpty())
@@ -258,7 +259,7 @@ public class SmashdataCommand implements Command {
                 return new MessageBuilder().setEmbeds(embed.build()).build();
             } catch (Exception e) {
                 log.catching(e);
-                return new MessageBuilder("There was a severe unexpected problem with displaying the player data, I don't really know how that happened. I'll tell  my dev, you can go shoot them a message about this too if you want to.").build();
+                return new MessageBuilder("There was a severe unexpected problem with displaying the player data, I don't really know how that happened. I've told my dev, you can go shoot them a message about this too if you want to.").build();
             }
         }
     }

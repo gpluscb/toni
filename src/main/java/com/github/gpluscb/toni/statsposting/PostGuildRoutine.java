@@ -1,17 +1,13 @@
 package com.github.gpluscb.toni.statsposting;
 
 import com.github.gpluscb.toni.statsposting.dbots.StatsResponse;
-import net.dv8tion.jda.api.events.ReadyEvent;
-import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.sharding.ShardManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class PostGuildRoutine {
     private static final Logger log = LogManager.getLogger(PostGuildRoutine.class);
@@ -39,7 +35,7 @@ public class PostGuildRoutine {
             dBotsClient.postStats(guildCount).whenComplete((r, t) -> {
                 if (t != null) log.catching(t);
                 else
-                    log.debug("Successful guild stats post to dbots: guilds: {}, shards: {}", r.getGuildCount(), r.getShardCount());
+                    log.debug("Successful guild stats post to dbots: guilds: {}, shards: {}", r.guildCount(), r.shardCount());
             });
             topggClient.postStats(guildCount).whenComplete((r, t) -> {
                 if (t != null) log.catching(t);

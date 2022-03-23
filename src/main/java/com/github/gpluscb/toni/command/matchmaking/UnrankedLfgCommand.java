@@ -6,7 +6,8 @@ import com.github.gpluscb.toni.util.Constants;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.PairNonnull;
-import com.github.gpluscb.toni.util.discord.ButtonActionMenu;
+import com.github.gpluscb.toni.menu.ActionMenu;
+import com.github.gpluscb.toni.menu.ButtonActionMenu;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
@@ -26,7 +27,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.util.HashSet;
@@ -75,7 +75,7 @@ public class UnrankedLfgCommand implements Command {
             return;
         }
 
-        Long lfgChannelId = config.getChannelId();
+        Long lfgChannelId = config.channelId();
         if (lfgChannelId != null && ctx.getChannel().getIdLong() != lfgChannelId) {
             ctx.reply(String.format("This command is configured to only work in %s.", MiscUtil.mentionChannel(lfgChannelId))).queue();
             return;
@@ -118,7 +118,7 @@ public class UnrankedLfgCommand implements Command {
 
         long guildId = guild.getIdLong();
         long userId = ctx.getUser().getIdLong();
-        long roleId = config.getLfgRoleId();
+        long roleId = config.lfgRoleId();
 
         synchronized (currentlyLfgPerGuild) {
             if (currentlyLfgPerGuild.contains(new PairNonnull<>(guildId, userId))) {
@@ -138,19 +138,21 @@ public class UnrankedLfgCommand implements Command {
                 .mentionRoles(roleId).mentionUsers(userId).build();
 
         ButtonHandler handler = new ButtonHandler(guildId, userId, roleId);
-        ButtonActionMenu menu = new ButtonActionMenu.Builder()
-                .setEventWaiter(waiter)
+        ButtonActionMenu menu = new ButtonActionMenu(new ButtonActionMenu.Settings.Builder()
+                .setActionMenuSettings(new ActionMenu.Settings.Builder()
+                        .setWaiter(waiter)
+                        .setTimeout(duration.getSeconds(), TimeUnit.SECONDS)
+                        .build())
                 .setDeletionButton(null)
                 .registerButton(Button.success("fight", Emoji.fromUnicode(Constants.FENCER)).withLabel("Fight"), handler::fightButton)
                 .registerButton(Button.danger("cancel", Emoji.fromUnicode(Constants.CROSS_MARK)), handler::cancelButton)
                 .setStart(start)
-                .setTimeout(duration.getSeconds(), TimeUnit.SECONDS)
-                .setTimeoutAction(handler::timeout)
-                .build();
+                .setOnTimeout(handler::timeout)
+                .build());
 
         context
                 .onT(msg -> menu.displayReplying(msg.getMessage()))
-                .onU(slash -> menu.displaySlashCommandReplying(slash.getEvent()));
+                .onU(slash -> menu.displaySlashReplying(slash.getEvent()));
     }
 
     @Nonnull
@@ -160,10 +162,10 @@ public class UnrankedLfgCommand implements Command {
                 .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_HISTORY})
                 .setAliases(new String[]{"unranked", "lfg", "fight", "fite"})
                 .setShortHelp("Pings the matchmaking role and lets you know if someone wants to play for a given duration. Usage: `unranked [DURATION]`")
-                .setDetailedHelp("`lfg [DURATION (default 2h)]`\n" +
-                        "Pings the matchmaking role and asks players to react if they want to play. Notifies you when they react within the given duration." +
-                        " The duration can have the format `Xh Xm Xs`, and it has to be between 10m and 5h.\n" +
-                        "Aliases: `lfg`, `unranked`, `fight`, `fite`")
+                .setDetailedHelp("""
+                        `lfg [DURATION (default 2h)]`
+                        Pings the matchmaking role and asks players to react if they want to play. Notifies you when they react within the given duration. The duration can have the format `Xh Xm Xs`, and it has to be between 10m and 5h.
+                        Aliases: `lfg`, `unranked`, `fight`, `fite`""")
                 .setCommandData(new CommandData("lfg", "Pings matchmaking and lets you know if someone is available to play")
                         .addOption(OptionType.STRING, "duration", "How long you are looking for a game. Default is two hours", false))
                 .build();
@@ -184,21 +186,23 @@ public class UnrankedLfgCommand implements Command {
             currentlyChallenging = new HashSet<>();
         }
 
-        @Nullable
-        public Message fightButton(@Nonnull ButtonClickEvent e) {
+        @Nonnull
+        public ActionMenu.MenuAction fightButton(@Nonnull ButtonClickEvent e) {
             synchronized (currentlyLfgPerGuild) {
                 // Was it cancelled?
-                if (!currentlyLfgPerGuild.contains(new PairNonnull<>(guildId, originalAuthorId))) return null;
+                if (!currentlyLfgPerGuild.contains(new PairNonnull<>(guildId, originalAuthorId)))
+                    return ActionMenu.MenuAction.CANCEL;
             }
 
             long challengerId = e.getUser().getIdLong();
             if (challengerId == originalAuthorId) {
-                e.getChannel().sendMessage("If you are trying to play with yourself, that's ok too. But there's no need to ping matchmaking for that my friend.").queue();
-                return null;
+                e.reply("If you are trying to play with yourself, that's ok too. But there's no need to ping matchmaking for that my friend.").queue();
+                return ActionMenu.MenuAction.CONTINUE;
             }
 
             synchronized (currentlyChallenging) {
-                if (currentlyChallenging.contains(challengerId)) return null;
+                if (currentlyChallenging.contains(challengerId))
+                    return ActionMenu.MenuAction.CONTINUE;
 
                 currentlyChallenging.add(challengerId);
             }
@@ -218,46 +222,52 @@ public class UnrankedLfgCommand implements Command {
 
             // TODO: Should we keep that "if you want me to disable" stuff to just the main message?
             DisableButtonHandler handler = new DisableButtonHandler(originalMessageId, challengerId);
-            ButtonActionMenu menu = new ButtonActionMenu.Builder()
-                    .setEventWaiter(waiter)
+            ButtonActionMenu menu = new ButtonActionMenu(new ButtonActionMenu.Settings.Builder()
+                    .setActionMenuSettings(new ActionMenu.Settings.Builder()
+                            .setWaiter(waiter)
+                            .setTimeout(3, TimeUnit.MINUTES)
+                            .build())
                     .setDeletionButton(null)
-                    .registerButton(Button.success("confirm", Constants.CHECK_MARK), handler::confirmReaction)
+                    .registerButton(Button.success("confirm", Constants.CHECK_MARK), handler::confirmButton)
                     .setStart(start)
                     .addUsers(originalAuthorId)
-                    .setTimeout(3, TimeUnit.MINUTES)
-                    .setTimeoutAction(handler::timeout)
-                    .build();
+                    .setOnTimeout(handler::timeout)
+                    .build());
 
             menu.displayReplying(originalChannel, originalMessageId);
 
-            return null;
+            return ActionMenu.MenuAction.CONTINUE;
         }
 
-        @Nullable
-        public Message cancelButton(@Nonnull ButtonClickEvent e) {
-            if (e.getUser().getIdLong() != originalAuthorId) return null;
-
-            e.deferEdit().queue();
+        @Nonnull
+        public ActionMenu.MenuAction cancelButton(@Nonnull ButtonClickEvent e) {
+            if (e.getUser().getIdLong() != originalAuthorId) return ActionMenu.MenuAction.CONTINUE;
 
             synchronized (currentlyLfgPerGuild) {
                 currentlyLfgPerGuild.remove(new PairNonnull<>(guildId, originalAuthorId));
             }
 
-            return new MessageBuilder(String.format("%s, %s was looking for a game, but cancelled their search.",
-                    MiscUtil.mentionRole(matchmakingRoleId), MiscUtil.mentionUser(originalAuthorId)))
-                    .mentionRoles(matchmakingRoleId).mentionUsers(originalAuthorId)
+            e.editMessage(new MessageBuilder(String.format("%s, %s was looking for a game, but cancelled their search.",
+                            MiscUtil.mentionRole(matchmakingRoleId),
+                            MiscUtil.mentionUser(originalAuthorId)))
+                            .mentionRoles(matchmakingRoleId)
+                            .mentionUsers(originalAuthorId)
+                            .build())
                     .setActionRows()
-                    .build();
+                    .queue();
+
+            return ActionMenu.MenuAction.CANCEL;
         }
 
-        public void timeout(@Nullable MessageChannel channel, long messageId) {
+        public void timeout(@Nonnull ButtonActionMenu.ButtonActionMenuTimeoutEvent event) {
             synchronized (currentlyLfgPerGuild) {
                 currentlyLfgPerGuild.remove(new PairNonnull<>(guildId, originalAuthorId));
             }
 
+            MessageChannel channel = event.getChannel();
             if (channel == null) return;
 
-            channel.editMessageById(messageId, String.format("%s, %s was looking for a game.",
+            channel.editMessageById(event.getMessageId(), String.format("%s, %s was looking for a game.",
                             MiscUtil.mentionRole(matchmakingRoleId), MiscUtil.mentionUser(originalAuthorId)))
                     .mentionRoles(matchmakingRoleId).mentionUsers(originalAuthorId)
                     .setActionRows()
@@ -273,14 +283,11 @@ public class UnrankedLfgCommand implements Command {
                 this.challengerId = challengerId;
             }
 
-            @Nullable
-            public Message confirmReaction(@Nonnull ButtonClickEvent e) {
-                e.deferEdit().queue();
-
+            @Nonnull
+            public ActionMenu.MenuAction confirmButton(@Nonnull ButtonClickEvent e) {
                 MessageChannel channel = e.getChannel();
 
                 synchronized (currentlyLfgPerGuild) {
-                    // This is the Object variant, not index
                     currentlyLfgPerGuild.remove(new PairNonnull<>(guildId, originalAuthorId));
                 }
 
@@ -290,16 +297,20 @@ public class UnrankedLfgCommand implements Command {
                         .setActionRows()
                         .queue();
 
-                return new MessageBuilder(String.format("%s, %s wants to play with you.", MiscUtil.mentionUser(originalAuthorId), MiscUtil.mentionUser(challengerId)))
-                        .mentionUsers(originalAuthorId, challengerId)
+                e.editMessage(new MessageBuilder(String.format("%s, %s wants to play with you.", MiscUtil.mentionUser(originalAuthorId), MiscUtil.mentionUser(challengerId)))
+                                .mentionUsers(originalAuthorId, challengerId)
+                                .build())
                         .setActionRows()
-                        .build();
+                        .queue();
+
+                return ActionMenu.MenuAction.CANCEL;
             }
 
-            public void timeout(@Nullable MessageChannel channel, long messageId) {
+            public void timeout(@Nonnull ButtonActionMenu.ButtonActionMenuTimeoutEvent event) {
+                MessageChannel channel = event.getChannel();
                 if (channel == null) return;
 
-                channel.editMessageById(messageId, String.format("%s, %s wants to play with you.", MiscUtil.mentionUser(originalAuthorId), MiscUtil.mentionUser(challengerId)))
+                channel.editMessageById(event.getMessageId(), String.format("%s, %s wants to play with you.", MiscUtil.mentionUser(originalAuthorId), MiscUtil.mentionUser(challengerId)))
                         .mentionUsers(originalAuthorId, challengerId)
                         .setActionRows()
                         .queue(null, new ErrorHandler().ignore(ErrorResponse.UNKNOWN_MESSAGE));

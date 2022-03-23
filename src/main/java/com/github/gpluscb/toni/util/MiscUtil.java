@@ -3,6 +3,10 @@ package com.github.gpluscb.toni.util;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.Button;
+import net.dv8tion.jda.api.interactions.components.ComponentLayout;
 import net.dv8tion.jda.api.requests.RestAction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -11,10 +15,13 @@ import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 public class MiscUtil {
     private static final Logger log = LogManager.getLogger(MiscUtil.class);
@@ -37,41 +44,79 @@ public class MiscUtil {
     }
 
     @Nonnull
+    public static <T> Consumer<T> emptyConsumer() {
+        return t -> {
+        };
+    }
+
+    @Nonnull
+    public static <T, U> BiConsumer<T, U> emptyBiConsumer() {
+        return (t, u) -> {
+        };
+    }
+
+    @Nonnull
     public static String capitalizeFirst(@Nonnull String string) {
         return string.substring(0, 1).toUpperCase() + string.substring(1);
     }
 
     @Nullable
     public static Boolean boolFromString(@Nonnull String string) {
-        switch (string.toLowerCase()) {
-            case "0":
-            case "false":
-            case "no":
-            case "n":
-                return false;
-            case "1":
-            case "true":
-            case "yes":
-            case "y":
-                return true;
-            default:
-                return null;
+        return switch (string.toLowerCase()) {
+            case "0", "false", "no", "n" -> false;
+            case "1", "true", "yes", "y" -> true;
+            default -> null;
+        };
+    }
+
+    @Nonnull
+    public static <T> List<List<T>> splitList(@Nonnull List<T> toSplit, int maxLength) {
+        List<List<T>> ret = new ArrayList<>();
+        List<T> currentList = new ArrayList<>();
+
+        for (T elem : toSplit) {
+            currentList.add(elem);
+            if (currentList.size() >= maxLength) {
+                ret.add(currentList);
+                currentList = new ArrayList<>();
+            }
+
         }
+
+        if (!currentList.isEmpty()) ret.add(currentList);
+
+        return ret;
     }
 
     @Nonnull
     @CheckReturnValue
     public static RestAction<Void> clearReactionsOrRemoveOwnReactions(@Nonnull MessageChannel channel, long messageId, @Nonnull String... reactions) {
-        if (channel instanceof TextChannel) {
-            TextChannel textChannel = (TextChannel) channel;
+        if (channel instanceof TextChannel textChannel) {
             if (textChannel.getGuild().getSelfMember().hasPermission(textChannel, Permission.MESSAGE_MANAGE))
                 return textChannel.clearReactionsById(messageId);
         }
 
         return RestAction.allOf(
                 Arrays.stream(reactions).map(r -> channel.removeReactionById(messageId, r))
-                        .collect(Collectors.toList())
+                        .toList()
         ).map(v -> null);
+    }
+
+    @Nonnull
+    public static List<ActionRow> disabledButtonActionRows(@Nonnull ButtonClickEvent e) {
+        if (e.getMessage().isEphemeral()) throw new IllegalStateException("Message may not be ephemeral");
+
+        List<ActionRow> actionRows = new ArrayList<>(e.getMessage().getActionRows());
+        Button button = e.getButton();
+
+        // Update the actionRows to disable the current button
+
+        // not ephemeral => button not null
+        //noinspection ConstantConditions
+        if (!ComponentLayout.updateComponent(actionRows, e.getComponentId(), button.asDisabled()))
+            log.warn("Updating button as disabled failed: actionRows: {}, componentId: {}", actionRows, e.getComponentId());
+
+        return actionRows;
     }
 
     @Nonnull
@@ -147,15 +192,13 @@ public class MiscUtil {
         return builder.toString();
     }
 
+    // TODO: I don't think this is necessary, getName should just do that for me
     @Nonnull
     public static String getPermName(@Nonnull Permission perm) {
-        switch (perm) {
-            case MESSAGE_EMBED_LINKS:
-                return "Embed Links";
-            case MESSAGE_HISTORY:
-                return "Read Message History";
-            default:
-                return perm.getName();
-        }
+        return switch (perm) {
+            case MESSAGE_EMBED_LINKS -> "Embed Links";
+            case MESSAGE_HISTORY -> "Read Message History";
+            default -> perm.getName();
+        };
     }
 }

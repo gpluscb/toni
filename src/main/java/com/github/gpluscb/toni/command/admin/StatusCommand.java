@@ -30,21 +30,14 @@ public class StatusCommand implements Command {
 
         Activity.ActivityType activityType;
         switch (activityString.toLowerCase()) {
-            case "listening":
-                activityType = Activity.ActivityType.LISTENING;
-                break;
-            case "watching":
-                activityType = Activity.ActivityType.WATCHING;
-                break;
-            case "playing":
-                activityType = Activity.ActivityType.DEFAULT;
-                break;
-            case "competing":
-                activityType = Activity.ActivityType.COMPETING;
-                break;
-            default:
+            case "listening" -> activityType = Activity.ActivityType.LISTENING;
+            case "watching" -> activityType = Activity.ActivityType.WATCHING;
+            case "playing" -> activityType = Activity.ActivityType.DEFAULT;
+            case "competing" -> activityType = Activity.ActivityType.COMPETING;
+            default -> {
                 ctx.reply("Unknown activity. `status <ACTIVITY(listening|watching|playing|competing)> <STATUS...>`").queue();
                 return;
+            }
         }
 
         String newStatus = context.map(msg -> msg.getArgsFrom(1), slash -> slash.getOptionNonNull("status").getAsString());

@@ -57,7 +57,7 @@ public class AvailableCommand implements Command {
                 return;
             }
 
-            long roleId = config.getLfgRoleId();
+            long roleId = config.lfgRoleId();
             Role role = guild.getRoleById(roleId);
 
             if (role == null) {
@@ -145,7 +145,7 @@ public class AvailableCommand implements Command {
                             reply.append(". Use this command again to remove it.");
                         } else {
                             reply.append(String.format(" for %s (until %s)." +
-                                    " Note that in case I reboot during that time, I won't be able to remove the role.",
+                                            " Note that in case I reboot during that time, I won't be able to remove the role.",
                                     MiscUtil.durationToString(duration),
                                     TimeFormat.RELATIVE.after(duration)));
 

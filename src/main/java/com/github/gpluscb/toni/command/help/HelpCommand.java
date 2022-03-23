@@ -18,8 +18,8 @@ import net.dv8tion.jda.api.interactions.components.Button;
 import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
+@SuppressWarnings("ClassCanBeRecord")
 public class HelpCommand implements Command {
     @Nonnull
     private final List<CommandCategory> commands;
@@ -43,24 +43,24 @@ public class HelpCommand implements Command {
             return;
         }
 
-        EmbedBuilder builder = EmbedUtil.getPrepared(ctx.getMember(), ctx.getUser());
+        EmbedBuilder builder = EmbedUtil.getPreparedAuthor(ctx.getMember(), ctx.getUser());
 
         CommandCategory requestedCategory = commands.stream()
-                .filter(category -> commandArg.equals(category.getCategoryName()))
-                .filter(category -> category.getShortDescription() != null)
+                .filter(category -> commandArg.equals(category.categoryName()))
+                .filter(category -> category.shortDescription() != null)
                 .findAny().orElse(null);
 
         if (requestedCategory != null) {
-            builder.setTitle(String.format("Toni's %s help", requestedCategory.getCategoryName()));
+            builder.setTitle(String.format("Toni's %s help", requestedCategory.categoryName()));
 
-            String shortDescription = requestedCategory.getShortDescription();
+            String shortDescription = requestedCategory.shortDescription();
             builder.setDescription(shortDescription);
 
-            List<EmbedUtil.InlineField> helpFields = requestedCategory.getCommands().stream()
+            List<EmbedUtil.InlineField> helpFields = requestedCategory.commands().stream()
                     .map(Command::getInfo)
-                    .filter(info -> info.getShortHelp() != null)
-                    .map(info -> new EmbedUtil.InlineField(info.getAliases()[0], info.getShortHelp()))
-                    .collect(Collectors.toList());
+                    .filter(info -> info.shortHelp() != null)
+                    .map(info -> new EmbedUtil.InlineField(info.aliases()[0], info.shortHelp()))
+                    .toList();
             String parsedFields = EmbedUtil.parseInlineFields(helpFields);
             builder.addField("Commands", parsedFields, false);
 
@@ -69,17 +69,17 @@ public class HelpCommand implements Command {
             return;
         }
 
-        CommandInfo requestedCommand = commands.stream().flatMap(category -> category.getCommands().stream())
+        CommandInfo requestedCommand = commands.stream().flatMap(category -> category.commands().stream())
                 .map(Command::getInfo)
-                .filter(info -> Arrays.asList(info.getAliases()).contains(commandArg))
-                .filter(info -> info.getDetailedHelp() != null)
+                .filter(info -> Arrays.asList(info.aliases()).contains(commandArg))
+                .filter(info -> info.detailedHelp() != null)
                 .findAny().orElse(null);
 
         if (requestedCommand != null) {
-            String[] aliases = requestedCommand.getAliases();
+            String[] aliases = requestedCommand.aliases();
 
             builder.setTitle(String.format("Toni's %s help", aliases[0]))
-                    .setDescription(requestedCommand.getDetailedHelp());
+                    .setDescription(requestedCommand.detailedHelp());
 
             ctx.reply(builder.build()).queue();
 
@@ -92,30 +92,30 @@ public class HelpCommand implements Command {
     private void generalHelp(@Nonnull CommandContext<?> ctx) {
         Config config = ctx.getConfig();
 
-        EmbedBuilder builder = EmbedUtil.getPrepared(ctx.getMember(), ctx.getUser()).setTitle("Toni's general help");
+        EmbedBuilder builder = EmbedUtil.getPreparedAuthor(ctx.getMember(), ctx.getUser()).setTitle("Toni's general help");
 
         builder.setDescription("My prefixes are `!t`, `noti` and `toni`, but you can mention me instead too.\n")
                 .appendDescription("`|` means \"or\", `[brackets]` mean \"optional\", and `...` means that an argument is allowed to have spaces. ")
                 .appendDescription("If you want to use spaces in other arguments, you will have to wrap that argument in quotation marks (e.g. \"this is all one argument\").\n")
                 .appendDescription("Use `/help [CATEGORY]` for more info on specific command categories.\n")
                 .appendDescription("I am still in an early state. So if you have any questions, problems, bugs, or suggestions, **please** tell my dev about that.\n")
-                .appendDescription(String.format("• You can DM them directly if you have common servers: <@%d>%n", config.getDevId()))
-                .appendDescription(String.format("• You can go to [my support server](%s)%n", config.getSupportServer()))
-                .appendDescription(String.format("• You can @ or dm me on Twitter, I promise you only the highest quality of tweets: [@%s](https://twitter.com/%1$s)%n", config.getTwitterHandle()))
-                .appendDescription(String.format("Invite me to your server by clicking [here](%s)", config.getInviteUrl()));
+                .appendDescription(String.format("• You can DM them directly if you have common servers: <@%d>%n", config.devId()))
+                .appendDescription(String.format("• You can go to [my support server](%s)%n", config.supportServer()))
+                .appendDescription(String.format("• You can @ or dm me on Twitter, I promise you only the highest quality of tweets: [@%s](https://twitter.com/%1$s)%n", config.twitterHandle()))
+                .appendDescription(String.format("Invite me to your server by clicking [here](%s)", config.inviteUrl()));
 
         List<EmbedUtil.InlineField> helpFields = commands.stream()
-                .filter(category -> category.getCategoryName() != null)
-                .filter(category -> category.getShortDescription() != null)
-                .map(category -> new EmbedUtil.InlineField(category.getCategoryName(), category.getShortDescription()))
-                .collect(Collectors.toList());
+                .filter(category -> category.categoryName() != null)
+                .filter(category -> category.shortDescription() != null)
+                .map(category -> new EmbedUtil.InlineField(category.categoryName(), category.shortDescription()))
+                .toList();
         String parsedFields = EmbedUtil.parseInlineFields(helpFields);
         builder.addField("Command categories", parsedFields, false);
 
-        Button topGGButton = Button.link(String.format("https://top.gg/bot/%d", config.getBotId()), "Vote for me");
-        Button githubButton = Button.link(config.getGithub(), "Source code");
-        Button inviteButton = Button.link(config.getInviteUrl(), "Invite me");
-        Button supportButton = Button.link(config.getSupportServer(), "Support server");
+        Button topGGButton = Button.link(String.format("https://top.gg/bot/%d", config.botId()), "Vote for me");
+        Button githubButton = Button.link(config.github(), "Source code");
+        Button inviteButton = Button.link(config.inviteUrl(), "Invite me");
+        Button supportButton = Button.link(config.supportServer(), "Support server");
 
         MessageEmbed embed = builder.build();
         ctx.getContext().onT(msg ->

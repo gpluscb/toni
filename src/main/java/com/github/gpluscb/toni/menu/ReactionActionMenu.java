@@ -1,4 +1,4 @@
-package com.github.gpluscb.toni.util.discord;
+package com.github.gpluscb.toni.menu;
 
 import com.github.gpluscb.toni.util.Constants;
 import com.github.gpluscb.toni.util.FailLogger;
@@ -80,8 +80,7 @@ public class ReactionActionMenu extends Menu {
 
     public void displayReplying(@Nonnull MessageChannel channel, long messageId) {
         boolean hasPerms = true;
-        if (channel instanceof TextChannel) {
-            TextChannel textChannel = (TextChannel) channel;
+        if (channel instanceof TextChannel textChannel) {
             hasPerms = textChannel.getGuild().getSelfMember().hasPermission(textChannel, Permission.MESSAGE_HISTORY);
         }
 
@@ -119,7 +118,7 @@ public class ReactionActionMenu extends Menu {
                     MessageChannel channel = jda.getTextChannelById(channelId);
                     if (channel == null) channel = jda.getPrivateChannelById(channelId);
                     timeoutAction.accept(channel, messageId);
-                    if (channel == null) log.warn("MessageChannel for timeoutAction not in cache for timeoutAction");
+                    if (channel == null) log.warn("MessageChannel for onTimeout not in cache for onTimeout");
                 }));
     }
 
@@ -243,8 +242,7 @@ public class ReactionActionMenu extends Menu {
             if (timeoutAction == null) {
                 timeoutAction = (channel, id) -> {
                     if (channel == null) return;
-                    if (channel instanceof TextChannel) {
-                        TextChannel textChannel = (TextChannel) channel;
+                    if (channel instanceof TextChannel textChannel) {
                         if (textChannel.getGuild().getSelfMember().hasPermission(textChannel, Permission.MESSAGE_MANAGE))
                             textChannel.clearReactionsById(id).queue();
                     } else {

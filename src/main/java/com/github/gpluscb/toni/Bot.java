@@ -10,10 +10,7 @@ import com.github.gpluscb.toni.command.admin.EvalCommand;
 import com.github.gpluscb.toni.command.admin.ShutdownCommand;
 import com.github.gpluscb.toni.command.admin.StatusCommand;
 import com.github.gpluscb.toni.command.admin.UpdateSmashdataCommand;
-import com.github.gpluscb.toni.command.game.BlindPickCommand;
-import com.github.gpluscb.toni.command.game.RandomCharacterCommand;
-import com.github.gpluscb.toni.command.game.RandomPlayerCommand;
-import com.github.gpluscb.toni.command.game.RockPaperScissorsCommand;
+import com.github.gpluscb.toni.command.game.*;
 import com.github.gpluscb.toni.command.help.HelpCommand;
 import com.github.gpluscb.toni.command.help.PingCommand;
 import com.github.gpluscb.toni.command.help.TermsCommand;
@@ -34,11 +31,15 @@ import com.github.gpluscb.toni.statsposting.dbots.StatsResponse;
 import com.github.gpluscb.toni.statsposting.topgg.TopggClient;
 import com.github.gpluscb.toni.statsposting.topgg.TopggClientMock;
 import com.github.gpluscb.toni.ultimateframedata.UltimateframedataClient;
-import com.github.gpluscb.toni.util.discord.DMChoiceWaiter;
+import com.github.gpluscb.toni.util.RecordTypeAdapterFactory;
+import com.github.gpluscb.toni.util.discord.ChannelChoiceWaiter;
 import com.github.gpluscb.toni.util.discord.DiscordAppenderImpl;
 import com.github.gpluscb.toni.util.discord.ShardsLoadListener;
-import com.github.gpluscb.toni.util.smash.CharacterTree;
+import com.github.gpluscb.toni.smashset.CharacterTree;
+import com.github.gpluscb.toni.smashset.Ruleset;
+import com.github.gpluscb.toni.smashset.Rulesets;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
@@ -75,7 +76,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-// TODO: Update to java 14
 public class Bot {
     private static final Logger log = LogManager.getLogger(Bot.class);
 
@@ -99,6 +99,8 @@ public class Bot {
     private final UnrankedManager unrankedManager;
     @Nonnull
     private final ScheduledExecutorService waiterPool;
+    @Nonnull
+    private final Gson gson;
 
     public static void main(String[] args) {
         if (args.length < 1) {
@@ -130,13 +132,18 @@ public class Bot {
     }
 
     public Bot(@Nonnull String configLocation, boolean hookCommands) throws LoginException, SQLException, DataAccessException, IOException {
+        log.trace("Loading Gson");
+        gson = new GsonBuilder()
+                .registerTypeAdapterFactory(new RecordTypeAdapterFactory())
+                .create();
+
         log.trace("Loading config");
         Config cfg = loadConfig(configLocation);
 
         log.trace("Loading stopwords");
         List<String> stopwords;
         try {
-            Path path = FileSystems.getDefault().getPath(cfg.getStopwordListLocation());
+            Path path = FileSystems.getDefault().getPath(cfg.stopwordListLocation());
             stopwords = Files.readAllLines(path);
         } catch (Exception e) {
             log.error("Exception while loading stopwords - shutting down", e);
@@ -147,7 +154,7 @@ public class Bot {
         OkHttpClient okHttp = new OkHttpClient.Builder().build();
 
         log.trace("Building GGManager");
-        ggManager = new GGManager(GGClient.builder(cfg.getGGToken()).client(okHttp).build(), stopwords);
+        ggManager = new GGManager(GGClient.builder(cfg.ggToken()).client(okHttp).build(), stopwords);
 
 		/*log.trace("Building ListenerManager");
 		client = new RetrofitRestClient();
@@ -171,23 +178,23 @@ public class Bot {
         RestAction.setDefaultTimeout(30, TimeUnit.SECONDS);
 
         log.trace("Building UltimateframedataClient");
-        UltimateframedataClient ufdClient = new UltimateframedataClient(okHttp);
+        UltimateframedataClient ufdClient = new UltimateframedataClient(okHttp, gson);
 
         log.trace("Building EventWaiter");
         waiterPool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "EventWaiterPool [0 / 1] Waiter-Thread"));
         EventWaiter waiter = new EventWaiter(waiterPool, false);
-        DMChoiceWaiter dmWaiter = new DMChoiceWaiter(waiter);
+        ChannelChoiceWaiter channelWaiter = new ChannelChoiceWaiter(waiter);
 
-        long botId = cfg.getBotId();
+        long botId = cfg.botId();
 
-        boolean mockBotLists = cfg.isMockBotLists();
+        boolean mockBotLists = cfg.mockBotLists();
         BotListClient<StatsResponse> dBotsClient;
         if (mockBotLists) {
             log.trace("Creating DBotsClientMock");
             dBotsClient = new DBotsClientMock();
         } else {
             log.trace("Creating DBotsClient");
-            dBotsClient = new DBotsClient(cfg.getDbotsToken(), okHttp, botId);
+            dBotsClient = new DBotsClient(cfg.dbotsToken(), okHttp, botId, gson);
         }
 
         BotListClient<Void> topggClient;
@@ -196,7 +203,7 @@ public class Bot {
             topggClient = new TopggClientMock();
         } else {
             log.trace("Creating TopggClient");
-            topggClient = new TopggClient(cfg.getTopggToken(), okHttp, botId);
+            topggClient = new TopggClient(cfg.topggToken(), okHttp, botId);
         }
 
         log.trace("Constructing post stats routine");
@@ -204,7 +211,7 @@ public class Bot {
 
         log.trace("Loading characters");
         CharacterTree characterTree;
-        try (Reader file = new FileReader(cfg.getCharactersFileLocation())) {
+        try (Reader file = new FileReader(cfg.charactersFileLocation())) {
             JsonArray json = JsonParser.parseReader(file).getAsJsonArray();
             characterTree = CharacterTree.fromJson(json);
         } catch (Exception e) {
@@ -219,7 +226,7 @@ public class Bot {
 
         log.trace("Loading unranked manager");
         try {
-            unrankedManager = new UnrankedManager(cfg.getStateDbLocation());
+            unrankedManager = new UnrankedManager(cfg.stateDbLocation());
         } catch (SQLException e) {
             log.error("Exception while loading unranked manager - shutting down", e);
             ggManager.shutdown();
@@ -230,9 +237,25 @@ public class Bot {
             throw e;
         }
 
+        // TODO: Have this in the DB because custom rulesets??
+        log.trace("Loading rulesets");
+        List<Ruleset> rulesets;
+        try {
+            rulesets = loadRulesets(cfg.rulesetsLocation());
+        } catch (Exception e) {
+            log.error("Exception while loading rulesets - shutting down", e);
+            ggManager.shutdown();
+            unrankedManager.shutdown();
+            // challongeManager.shutdown();
+            // listener.shutdown();
+            // client.close();
+            waiterPool.shutdownNow();
+            throw e;
+        }
+
         log.trace("Loading smashdata");
         try {
-            smashdata = new SmashdataManager(cfg.getSmashdataDbLocation());
+            smashdata = new SmashdataManager(cfg.smashdataDbLocation(), gson);
         } catch (SQLException e) {
             log.error("Exception while loading smashdata - shutting down", e);
             ggManager.shutdown();
@@ -245,10 +268,10 @@ public class Bot {
         }
 
         log.trace("Loading commands");
-        List<CommandCategory> commands = loadCommands(ufdClient, waiter, dmWaiter, /*challonge, listener, */characterTree);
+        List<CommandCategory> commands = loadCommands(ufdClient, waiter, channelWaiter, /*challonge, listener, */characterTree, rulesets);
 
         log.trace("Creating loadListener");
-        long adminGuildId = cfg.getAdminGuildId();
+        long adminGuildId = cfg.adminGuildId();
 
         // TODO: Somehow notice if slash commands could not be hooked?
         ShardsLoadListener loadListener = new ShardsLoadListener(jda -> {
@@ -269,7 +292,7 @@ public class Bot {
 
         try {
             log.trace("Building ShardManager");
-            shardManager = DefaultShardManagerBuilder.createLight(cfg.getDiscordToken())
+            shardManager = DefaultShardManagerBuilder.createLight(cfg.discordToken())
                     .enableIntents(GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGE_REACTIONS, GatewayIntent.GUILD_MESSAGE_REACTIONS)
                     .enableCache(CacheFlag.MEMBER_OVERRIDES)
                     .setMemberCachePolicy(MemberCachePolicy.NONE)
@@ -306,7 +329,7 @@ public class Bot {
         log.trace("Starting command listener and dispatcher");
         dispatcher = new CommandDispatcher(commands);
 
-        CommandListener commandListener = new CommandListener(dmWaiter, dispatcher, cfg);
+        CommandListener commandListener = new CommandListener(channelWaiter, dispatcher, cfg);
         shardManager.addEventListener(commandListener);
 
         log.trace("Enabling discord appender");
@@ -318,7 +341,6 @@ public class Bot {
     @Nonnull
     private Config loadConfig(@Nonnull String location) throws IOException {
         try (Reader configFile = new FileReader(location)) {
-            Gson gson = new Gson();
             Config config = gson.fromJson(configFile, Config.class);
             config.check();
 
@@ -327,7 +349,17 @@ public class Bot {
     }
 
     @Nonnull
-    private List<CommandCategory> loadCommands(@Nonnull UltimateframedataClient ufdClient, @Nonnull EventWaiter waiter, @Nonnull DMChoiceWaiter dmWaiter, /*@Nonnull ChallongeExtension challonge, @Nonnull TournamentListener listener, */@Nonnull CharacterTree characterTree) {
+    private List<Ruleset> loadRulesets(@Nonnull String location) throws IOException {
+        try (Reader rulesetsFile = new FileReader(location)) {
+            Rulesets rulesets = gson.fromJson(rulesetsFile, Rulesets.class);
+            rulesets.check();
+
+            return rulesets.toRulesetList();
+        }
+    }
+
+    @Nonnull
+    private List<CommandCategory> loadCommands(@Nonnull UltimateframedataClient ufdClient, @Nonnull EventWaiter waiter, @Nonnull ChannelChoiceWaiter channelWaiter, /*@Nonnull ChallongeExtension challonge, @Nonnull TournamentListener listener, */@Nonnull CharacterTree characterTree, @Nonnull List<Ruleset> rulesets) {
         List<CommandCategory> commands = new ArrayList<>();
 
         List<Command> adminCommands = new ArrayList<>();
@@ -346,8 +378,12 @@ public class Bot {
         List<Command> gameCommands = new ArrayList<>();
         gameCommands.add(new RandomCharacterCommand(characterTree));
         gameCommands.add(new RandomPlayerCommand());
-        gameCommands.add(new RockPaperScissorsCommand(waiter));
-        gameCommands.add(new BlindPickCommand(dmWaiter, characterTree));
+        gameCommands.add(new RPSCommand(waiter));
+        gameCommands.add(new BlindPickCommand(channelWaiter, characterTree));
+        gameCommands.add(new StrikeStagesCommand(waiter, rulesets));
+        gameCommands.add(new CounterpickStagesCommand(waiter, rulesets));
+        gameCommands.add(new SmashSetCommand(channelWaiter, rulesets, characterTree));
+        gameCommands.add(new RulesetsCommand(waiter, rulesets));
         commands.add(new CommandCategory("game", "Smash Bros. utility commands", gameCommands));
 
         List<Command> lookupCommands = new ArrayList<>();
@@ -369,13 +405,11 @@ public class Bot {
     }
 
     private void hookSlashCommands(@Nonnull Guild adminGuild, @Nonnull List<CommandCategory> commands) {
-        Map<Boolean, List<Command>> map = commands.stream().flatMap(cat -> cat.getCommands().stream()).collect(Collectors.groupingBy(cmd -> cmd.getInfo().isAdminGuildOnly()));
-        List<CommandData> globalCommands = map.get(false).stream().map(cmd -> cmd.getInfo().getCommandData()).collect(Collectors.toList());
-        List<CommandData> adminOnlyCommands = map.get(true).stream().map(cmd -> cmd.getInfo().getCommandData()).collect(Collectors.toList());
+        Map<Boolean, List<Command>> map = commands.stream().flatMap(cat -> cat.commands().stream()).collect(Collectors.groupingBy(cmd -> cmd.getInfo().adminOnly()));
+        List<CommandData> globalCommands = map.get(false).stream().map(cmd -> cmd.getInfo().commandData()).toList();
+        List<CommandData> adminOnlyCommands = map.get(true).stream().map(cmd -> cmd.getInfo().commandData()).toList();
 
-        shardManager.getShardCache().forEachUnordered(jda -> {
-            jda.updateCommands().addCommands(globalCommands).queue();
-        });
+        shardManager.getShardCache().forEachUnordered(jda -> jda.updateCommands().addCommands(globalCommands).queue());
 
         adminGuild.updateCommands().addCommands(adminOnlyCommands).queue();
     }

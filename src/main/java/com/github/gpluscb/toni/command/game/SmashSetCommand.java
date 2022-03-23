@@ -231,7 +231,7 @@ public class SmashSetCommand implements Command {
         return new CommandInfo.Builder()
                 .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_HISTORY, Permission.MESSAGE_EMBED_LINKS})
                 .setAliases(new String[]{"playset", "set"})
-                .setShortHelp("Helps you play a competitive set of Smash for a specific ruleset. Usage: `playset [PLAYER 1] <PLAYER 2> [BEST OF X] [RULESET ID]`")
+                .setShortHelp("[Beta] Helps you play a competitive set of Smash for a specific ruleset. Usage: `playset [PLAYER 1] <PLAYER 2> [BEST OF X] [RULESET ID]`")
                 .setDetailedHelp("""
                         `playset [PLAYER 1 (default: you)] <PLAYER 2> [BEST OF X (default: 3)] [RULESET ID (default: selection menu)]`
                         Guides you through a competitive set of Smash Bros. Ultimate according to a given ruleset. This will help you with double blind character picks, stage striking, game reporting, and character and stage counterpicking.

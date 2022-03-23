@@ -189,7 +189,7 @@ public class CounterpickStagesCommand implements Command {
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
                 .setAliases(new String[]{"counterpick", "banstages"})
-                .setShortHelp("Helps you through the stage ban/counterpick phase of a set. Usage: `counterpick <BANNING USER> [COUNTERPICKING USER] [RULESET ID]`")
+                .setShortHelp("[Beta] Helps you through the stage ban/counterpick phase of a set. Usage: `counterpick <BANNING USER> [COUNTERPICKING USER] [RULESET ID]`")
                 .setDetailedHelp("""
                         `counterpick <BANNING USER> [COUNTERPICKING USER (default: you)] [RULESET ID (default: selection menu)]`
                         Helps you perform the [stage counterpicking procedure](https://www.ssbwiki.com/Counterpick) after a match for a given ruleset.

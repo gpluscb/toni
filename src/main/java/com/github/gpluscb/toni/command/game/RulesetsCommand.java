@@ -94,7 +94,7 @@ public class RulesetsCommand implements Command {
         return new CommandInfo.Builder()
                 .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_HISTORY, Permission.MESSAGE_EMBED_LINKS})
                 .setAliases(new String[]{"rulesets", "ruleset"})
-                .setShortHelp("Lists all the available rulesets. Usage: `rulesets`")
+                .setShortHelp("[Beta] Lists all the available rulesets. Usage: `rulesets`")
                 .setDetailedHelp("""
                         `rulesets`
                         Lists all the available rulesets with their IDs. You can select a specific ruleset through the menu to see how it operates.

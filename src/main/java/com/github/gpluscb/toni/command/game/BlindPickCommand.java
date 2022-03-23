@@ -200,7 +200,7 @@ public class BlindPickCommand implements Command {
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
                 .setAliases(new String[]{"doubleblind", "doubleblindpick", "blind", "blindpick"})
-                .setShortHelp("[Beta] Helps you do a (double) blind pick. Usage: `blind <USERS...>`")
+                .setShortHelp("Helps you do a (double) blind pick. Usage: `blind <USERS...>`")
                 .setDetailedHelp("""
                         `doubleblind <USERS...>`
                         Assists you in doing a [blind pick](https://gist.github.com/gpluscb/559f00e750854b46c0a71827e094ab3e). After performing the command, everyone who participates in the blind pick will have to DM me. So you might have to unblock me (but what kind of monster would have me blocked in the first place?).

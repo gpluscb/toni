@@ -281,7 +281,7 @@ public class StrikeStagesCommand implements Command {
         return new CommandInfo.Builder()
                 .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_HISTORY})
                 .setAliases(new String[]{"strike", "strikestarters", "strikestages"})
-                .setShortHelp("Helps you do the stage striking procedure with a specific ruleset. Usage: `strike [PLAYER 1] <PLAYER 2> [RULESET ID] [DO RPS]`")
+                .setShortHelp("[Beta] Helps you do the stage striking procedure with a specific ruleset. Usage: `strike [PLAYER 1] <PLAYER 2> [RULESET ID] [DO RPS]`")
                 // TODO If we get passed ctx here, we can actually name the server default ruleset
                 .setDetailedHelp("""
                         `strike [PLAYER 1] <PLAYER 2> [RULESET ID (default: selection menu)] [DO RPS (true|false(default))]`

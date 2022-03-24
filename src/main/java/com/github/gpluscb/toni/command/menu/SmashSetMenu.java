@@ -14,6 +14,7 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
@@ -33,7 +34,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
     @Nonnull
     private final Settings settings;
 
-    @Nullable
+    @Nonnull
     private final ActionMenu startUnderlying;
 
     @Nonnull
@@ -69,13 +70,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                     .build())
                     .build();
 
-            BlindPickMenu doubleBlindMenu = createDoubleBlindMenu(start);
-            if (doubleBlindMenu.isInitFailure()) {
-                startUnderlying = null;
-                return;
-            }
-
-            startUnderlying = doubleBlindMenu;
+            startUnderlying = createDoubleBlindMenu(start);
         } else if (doRPS) {
             // Manually set game number because we haven't tarted set yet
             Message start = new MessageBuilder(prepareEmbed("RPS", 1)
@@ -89,50 +84,39 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         }
     }
 
-    public boolean isInitFailure() {
-        return startUnderlying == null;
-    }
-
     @Override
     public void display(@Nonnull MessageChannel channel) {
-        if (startUnderlying == null) throw new IllegalStateException("Tried to display when double blind init failed");
         startUnderlying.display(channel);
     }
 
     @Override
     public void display(@Nonnull MessageChannel channel, long messageId) {
-        if (startUnderlying == null) throw new IllegalStateException("Tried to display when double blind init failed");
         startUnderlying.display(channel, messageId);
     }
 
     @Override
     public void displayReplying(@Nonnull MessageChannel channel, long messageId) {
-        if (startUnderlying == null) throw new IllegalStateException("Tried to display when double blind init failed");
         startUnderlying.displayReplying(channel, messageId);
     }
 
     @Override
     public void displaySlashReplying(@Nonnull SlashCommandInteractionEvent event) {
-        if (startUnderlying == null) throw new IllegalStateException("Tried to display when double blind init failed");
         startUnderlying.displaySlashReplying(event);
     }
 
     @Override
     public void displayDeferredReplying(@Nonnull InteractionHook hook) {
-        if (startUnderlying == null) throw new IllegalStateException("Tried to display when double blind init failed");
         startUnderlying.displayDeferredReplying(hook);
     }
 
     @Nonnull
     @Override
     public List<ActionRow> getComponents() {
-        if (startUnderlying == null) throw new IllegalStateException("Tried to display when double blind init failed");
         return startUnderlying.getComponents();
     }
 
     @Override
     public void start(@Nonnull Message message) {
-        if (startUnderlying == null) throw new IllegalStateException("Tried to display when double blind init failed");
         startUnderlying.start(message);
     }
 
@@ -446,29 +430,19 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                             .build())
                             .build();
 
-                    BlindPickMenu doubleBlindMenu = createDoubleBlindMenu(start);
-                    if (!doubleBlindMenu.isInitFailure())
-                        doubleBlindMenu.displayReplying(event.getMessage());
+                    createDoubleBlindMenu(start).displayReplying(event.getMessage());
                 })
                 .onU(inGame -> createReportGameMenu().displayReplying(event.getMessage()));
     }
 
-    private synchronized void onDoubleBlindResult(@Nonnull BlindPickMenu.BlindPickResult result) {
-        // Will always be found
-        @SuppressWarnings("OptionalGetWithoutIsPresent")
-        Character user1Choice = result.getPicks().stream()
-                .filter(choice -> choice.getUserId() == getTwoUsersChoicesActionMenuSettings().user1())
-                .map(ChannelChoiceWaiter.UserChoiceInfo::getChoice)
-                .findAny()
-                .get();
+    private synchronized void onDoubleBlindResult(@Nonnull BlindPickMenu.BlindPickResult result, @Nonnull ModalInteractionEvent event) {
+        event.deferEdit().queue();
 
         // Will always be found
-        @SuppressWarnings("OptionalGetWithoutIsPresent")
-        Character user2Choice = result.getPicks().stream()
-                .filter(choice -> choice.getUserId() == getTwoUsersChoicesActionMenuSettings().user2())
-                .map(ChannelChoiceWaiter.UserChoiceInfo::getChoice)
-                .findAny()
-                .get();
+        Character user1Choice = result.getChoices().get(getTwoUsersChoicesActionMenuSettings().user1());
+
+        // Will always be found
+        Character user2Choice = result.getChoices().get(getTwoUsersChoicesActionMenuSettings().user2());
 
         // At this point it will be displayed => not null
         @SuppressWarnings("ConstantConditions")
@@ -820,19 +794,16 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
     @Nonnull
     @Override
     public JDA getJDA() {
-        if (startUnderlying == null) throw new IllegalStateException("Double blind init has failed");
         return startUnderlying.getJDA();
     }
 
     @Override
     public long getMessageId() {
-        if (startUnderlying == null) throw new IllegalStateException("Double blind init has failed");
         return startUnderlying.getMessageId();
     }
 
     @Override
     public long getChannelId() {
-        if (startUnderlying == null) throw new IllegalStateException("Double blind init has failed");
         return startUnderlying.getChannelId();
     }
 

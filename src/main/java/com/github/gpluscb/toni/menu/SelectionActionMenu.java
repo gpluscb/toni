@@ -1,6 +1,7 @@
 package com.github.gpluscb.toni.menu;
 
 import com.github.gpluscb.toni.util.FailLogger;
+import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.PairNonnull;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
@@ -163,18 +164,7 @@ public class SelectionActionMenu extends ActionMenu {
                            @Nonnull Message start, @Nonnull String id,
                            @Nonnull Consumer<SelectionMenuTimeoutEvent> onTimeout) {
         @Nonnull
-        public static final Supplier<String> DEFAULT_ID_GENERATOR = () -> {
-            // Source: https://www.baeldung.com/java-random-string lol
-            int leftLimit = 97; // letter 'a'
-            int rightLimit = 122; // letter 'z'
-            int targetStringLength = 5;
-            ThreadLocalRandom rng = ThreadLocalRandom.current();
-
-            return rng.ints(leftLimit, rightLimit + 1)
-                    .limit(targetStringLength)
-                    .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
-                    .toString();
-        };
+        public static final Supplier<String> DEFAULT_ID_GENERATOR = () -> MiscUtil.randomString(5);
         @Nonnull
         public static final Consumer<SelectionMenuTimeoutEvent> DEFAULT_ON_TIMEOUT = timeout -> {
             MessageChannel channel = timeout.getChannel();

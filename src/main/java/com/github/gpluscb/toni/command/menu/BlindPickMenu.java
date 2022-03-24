@@ -1,111 +1,147 @@
 package com.github.gpluscb.toni.command.menu;
 
 import com.github.gpluscb.toni.menu.ActionMenu;
+import com.github.gpluscb.toni.menu.ButtonActionMenu;
 import com.github.gpluscb.toni.smashset.Character;
 import com.github.gpluscb.toni.smashset.CharacterTree;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.discord.ChannelChoiceWaiter;
+import com.github.gpluscb.toni.util.discord.WaitableModalHandler;
+import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.requests.RestAction;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.interactions.components.text.Modal;
+import net.dv8tion.jda.api.interactions.components.text.TextInput;
+import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class BlindPickMenu extends ActionMenu {
-    private static final Logger log = LogManager.getLogger(BlindPickMenu.class);
-
     @Nonnull
     private final Settings settings;
 
-    @Nullable
-    private final ChannelChoiceWaiter.WaitChoiceHandle handle;
+    @Nonnull
+    private final BlindPickModalHandler modalHandler;
+    @Nonnull
+    private final ButtonActionMenu buttonMenu;
+
+    @Nonnull
+    private final HashMap<Long, Character> choices;
+    @Nonnull
+    private final AtomicBoolean finished;
 
     public BlindPickMenu(@Nonnull Settings settings) {
         super(settings.actionMenuSettings());
         this.settings = settings;
 
-        handle = settings.waiter().waitForDMChoice(
-                settings.users(),
-                true,
-                this::verifyChoice,
-                choices -> settings.onResult().accept(new BlindPickResult(choices)),
-                getActionMenuSettings().timeout(), getActionMenuSettings().unit(),
-                choices -> settings.onTimeout().accept(new BlindPickTimeoutEvent(choices))
-        );
-    }
+        modalHandler = new BlindPickModalHandler(settings.waiter().getEventWaiter());
+        buttonMenu = new ButtonActionMenu(new ButtonActionMenu.Settings.Builder()
+                .setActionMenuSettings(settings.actionMenuSettings())
+                .setStart(settings.start())
+                .setOnTimeout(this::onTimeout)
+                .setUsers(settings.users())
+                .registerButton(Button.primary("select", "Select Character"), this::onButtonClick)
+                .setDeletionButton(null)
+                .build());
 
-    public boolean isInitFailure() {
-        return handle == null;
+        finished = new AtomicBoolean(false);
+        choices = new HashMap<>();
     }
 
     @Override
     public void display(@Nonnull MessageChannel channel) {
-        initWithMessageAction(channel.sendMessage(settings.start()));
+        buttonMenu.display(channel);
     }
 
     @Override
     public void display(@Nonnull MessageChannel channel, long messageId) {
-        initWithMessageAction(channel.editMessageById(messageId, settings.start()));
+        buttonMenu.display(channel, messageId);
     }
 
     @Override
     public void displayReplying(@Nonnull MessageChannel channel, long messageId) {
-        // TODO: MESSAGE_HISTORY
-        initWithMessageAction(channel.sendMessage(settings.start()).referenceById(messageId));
+        buttonMenu.displayReplying(channel, messageId);
     }
 
     @Override
     public void displaySlashReplying(@Nonnull SlashCommandInteractionEvent event) {
-        initWithMessageAction(event.reply(settings.start()).flatMap(InteractionHook::retrieveOriginal));
+        buttonMenu.displaySlashReplying(event);
     }
 
     @Override
     public void displayDeferredReplying(@Nonnull InteractionHook hook) {
-        initWithMessageAction(hook.sendMessage(settings.start()));
+        buttonMenu.displayDeferredReplying(hook);
+    }
+
+    @Override
+    public void start(@Nonnull Message message) {
+        buttonMenu.start(message);
     }
 
     @Nonnull
     @Override
     public List<ActionRow> getComponents() {
-        return Collections.emptyList();
-    }
-
-    @Override
-    public void start(@Nonnull Message message) {
-        if (handle == null) throw new IllegalStateException("Tried to start when init failed");
-
-        setMessageInfo(message);
-        handle.startListening();
-    }
-
-    private void initWithMessageAction(@Nonnull RestAction<Message> action) {
-        if (handle == null) throw new IllegalStateException("Tried to start when init failed");
-
-        action.queue(this::start, t -> {
-            log.catching(t);
-            handle.cancel();
-        });
+        return buttonMenu.getComponents();
     }
 
     @Nonnull
-    private Optional<Character> verifyChoice(@Nonnull MessageReceivedEvent event) {
-        Message message = event.getMessage();
-        String choice = message.getContentRaw();
+    private MenuAction onButtonClick(@Nonnull ButtonInteractionEvent event) {
+        if (finished.get()) return MenuAction.CANCEL;
+        modalHandler.replyWith(event.getInteraction(), this::onChoice).queue();
+        return MenuAction.CONTINUE;
+    }
 
-        Character character = settings.characters().stream().filter(c -> c.altNames().contains(choice.toLowerCase())).findAny().orElse(null);
-        if (character == null) message.reply("I don't know that character.").queue();
-        else message.reply("Accepted!").queue();
+    private void onChoice(@Nonnull String choice, @Nonnull ModalInteractionEvent event) {
+        if (finished.get()) {
+            event.reply("All characters have already been selected and published, or this interaction timed out." +
+                            " So your choice wasn't recorded")
+                    .setEphemeral(true)
+                    .queue();
+            return;
+        }
 
-        return Optional.ofNullable(character);
+        Character characterChoice = settings.characters().stream()
+                .filter(c -> c.altNames().contains(choice.toLowerCase()))
+                .findAny()
+                .orElse(null);
+
+        if (characterChoice == null) {
+            // TODO: Maybe block while another modal is open?
+            event.reply("I don't recognise that character. Please try again.").setEphemeral(true).queue();
+            return;
+        }
+
+        boolean firstChoice = choices.put(event.getUser().getIdLong(), characterChoice) == null;
+
+        if (settings.users().stream().allMatch(choices::containsKey)) {
+            finished.set(true);
+
+            settings.onResult().accept(new BlindPickResult(), event);
+
+            return;
+        }
+
+        event.reply(String.format("I have %s your choice.", firstChoice ? "noted" : "updated"))
+                .setEphemeral(true)
+                .queue();
+    }
+
+    public void onTimeout(@Nonnull ButtonActionMenu.ButtonActionMenuTimeoutEvent timeout) {
+        if (finished.getAndSet(true)) return;
+
+        settings.onTimeout().accept(new BlindPickTimeoutEvent());
     }
 
     @Nonnull
@@ -113,47 +149,73 @@ public class BlindPickMenu extends ActionMenu {
         return settings;
     }
 
+    @Nonnull
+    @Override
+    public JDA getJDA() {
+        return buttonMenu.getJDA();
+    }
+
+    @Override
+    public long getChannelId() {
+        return buttonMenu.getChannelId();
+    }
+
+    @Override
+    public long getMessageId() {
+        return buttonMenu.getMessageId();
+    }
+
+    private static class BlindPickModalHandler extends WaitableModalHandler<String> {
+        public BlindPickModalHandler(@Nonnull EventWaiter waiter) {
+            super(waiter);
+        }
+
+        @Nonnull
+        @Override
+        public Modal.Builder toModal() {
+            TextInput characterComponent = TextInput.create("character", "Character", TextInputStyle.SHORT)
+                    .setPlaceholder("e.g. 'Rosalina', 'Link'")
+                    .setRequired(true)
+                    .setRequiredRange(1, 50)
+                    .build();
+
+            // ID will be overwritten
+            return Modal.create("_", "Character Selection").addActionRows(ActionRow.of(characterComponent));
+        }
+
+        @Nonnull
+        @Override
+        public String fromModalInteraction(@Nonnull ModalInteractionEvent event) {
+            // It is expected to throw here on invalid modal
+            //noinspection ConstantConditions
+            return event.getValue("character").getAsString();
+        }
+    }
+
     private abstract class BlindPickMenuStateInfo extends MenuStateInfo {
         @Nonnull
         public Settings getBlindPickMenuSettings() {
             return BlindPickMenu.this.getBlindPickMenuSettings();
         }
+
+        @Nonnull
+        public HashMap<Long, Character> getChoices() {
+            return choices;
+        }
     }
 
     public class BlindPickResult extends BlindPickMenuStateInfo {
-        @Nonnull
-        private final List<ChannelChoiceWaiter.UserChoiceInfo<Character>> picks;
-
-        public BlindPickResult(@Nonnull List<ChannelChoiceWaiter.UserChoiceInfo<Character>> picks) {
-            this.picks = picks;
-        }
-
-        @Nonnull
-        public List<ChannelChoiceWaiter.UserChoiceInfo<Character>> getPicks() {
-            return picks;
-        }
     }
 
     public class BlindPickTimeoutEvent extends BlindPickMenuStateInfo {
-        @Nonnull
-        private final List<ChannelChoiceWaiter.UserChoiceInfo<Character>> picksSoFar;
-
-        public BlindPickTimeoutEvent(@Nonnull List<ChannelChoiceWaiter.UserChoiceInfo<Character>> picksSoFar) {
-            this.picksSoFar = picksSoFar;
-        }
-
-        @Nonnull
-        public List<ChannelChoiceWaiter.UserChoiceInfo<Character>> getPicksSoFar() {
-            return picksSoFar;
-        }
     }
 
     public record Settings(@Nonnull ActionMenu.Settings actionMenuSettings, @Nonnull ChannelChoiceWaiter waiter,
-                           @Nonnull List<Long> users, @Nonnull Message start, @Nonnull List<Character> characters,
-                           @Nonnull Consumer<BlindPickResult> onResult,
+                           @Nonnull Set<Long> users, @Nonnull Message start, @Nonnull List<Character> characters,
+                           @Nonnull BiConsumer<BlindPickResult, ModalInteractionEvent> onResult,
                            @Nonnull Consumer<BlindPickTimeoutEvent> onTimeout) {
         @Nonnull
-        public static final Consumer<BlindPickResult> DEFAULT_ON_RESULT = MiscUtil.emptyConsumer();
+        public static final BiConsumer<BlindPickResult, ModalInteractionEvent> DEFAULT_ON_RESULT = MiscUtil.emptyBiConsumer();
         @Nonnull
         public static final Consumer<BlindPickTimeoutEvent> DEFAULT_ON_TIMEOUT = MiscUtil.emptyConsumer();
 
@@ -163,13 +225,13 @@ public class BlindPickMenu extends ActionMenu {
             @Nullable
             private ChannelChoiceWaiter channelWaiter;
             @Nonnull
-            private List<Long> users = new ArrayList<>();
+            private Set<Long> users = new HashSet<>();
             @Nullable
             private Message start;
             @Nullable
             private List<Character> characters;
             @Nonnull
-            private Consumer<BlindPickResult> onResult = DEFAULT_ON_RESULT;
+            private BiConsumer<BlindPickResult, ModalInteractionEvent> onResult = DEFAULT_ON_RESULT;
             @Nonnull
             private Consumer<BlindPickTimeoutEvent> onTimeout = DEFAULT_ON_TIMEOUT;
 
@@ -192,7 +254,7 @@ public class BlindPickMenu extends ActionMenu {
             }
 
             @Nonnull
-            public Builder setUsers(@Nonnull List<Long> users) {
+            public Builder setUsers(@Nonnull Set<Long> users) {
                 this.users = users;
                 return this;
             }
@@ -216,7 +278,7 @@ public class BlindPickMenu extends ActionMenu {
             }
 
             @Nonnull
-            public Builder setOnResult(@Nonnull Consumer<BlindPickResult> onResult) {
+            public Builder setOnResult(@Nonnull BiConsumer<BlindPickResult, ModalInteractionEvent> onResult) {
                 this.onResult = onResult;
                 return this;
             }

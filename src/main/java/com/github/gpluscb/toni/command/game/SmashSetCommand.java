@@ -185,12 +185,6 @@ public class SmashSetCommand implements Command {
                 .setOnPickStageTimeout(pickStageTimeout -> genericOnTimeout(pickStageTimeout.getTimeoutEvent(), "The stage counterpick menu timed out."))
                 .build());
 
-        if (menu.isInitFailure()) {
-            String failureMessage = "Some of you already have a DM thing going on with me, so I can't initiate the double blind pick procedure.";
-            replyTo.map(message -> message.reply(failureMessage), slash -> slash.reply(failureMessage)).queue();
-            return;
-        }
-
         replyTo
                 .onT(menu::displayReplying)
                 .onU(menu::displaySlashReplying);

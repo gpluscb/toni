@@ -2,6 +2,7 @@ package com.github.gpluscb.toni.command;
 
 import com.github.gpluscb.toni.Config;
 import net.dv8tion.jda.api.entities.ChannelType;
+import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -54,5 +55,10 @@ public class CommandListener extends ListenerAdapter {
         log.trace("Slash command - ctx: {}", ctx);
 
         dispatcher.dispatch(ctx);
+    }
+
+    @Override
+    public void onCommandAutoCompleteInteraction(@Nonnull CommandAutoCompleteInteractionEvent event) {
+        dispatcher.dispatchAutoComplete(event);
     }
 }

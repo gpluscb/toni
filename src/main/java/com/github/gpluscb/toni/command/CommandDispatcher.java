@@ -6,10 +6,12 @@ import com.github.gpluscb.toni.util.OneOfTwo;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -39,42 +41,38 @@ public class CommandDispatcher {
     }
 
     public void dispatch(@Nonnull CommandContext<?> ctx) {
-        commands.stream().flatMap(category -> category.commands().stream())
-                .filter(command ->
-                        ctx.getContext().map(
-                                msg -> Arrays.asList(command.getInfo().aliases()).contains(msg.getInvokedName().toLowerCase()),
-                                slash -> command.getInfo().commandData().getName().equals(slash.getName())
-                        )
-                ).findAny()
-                .ifPresent(command -> {
-                    OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
+        OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
 
-                    context.onT(msg -> msg.reply("Commands invoked by a prefix (e.g. `toni`, `!t`) or mention are being phased out in favour of slash commands. " +
-                            "These prefix commands might stop working after April, so please switch to slash commands until then. " +
-                            "To use slash commands, just type `/` and a selection of slash commands should appear.").queue());
+        Command command = context.map(msg -> findMsgCommandByName(msg.getInvokedName()),
+                slash -> findSlashCommandByName(slash.getName()));
 
-                    boolean isFromGuild = context.map(msg -> msg.getEvent().isFromGuild(), slash -> slash.getEvent().isFromGuild());
-                    if (isFromGuild) {
-                        Permission[] perms = command.getInfo().requiredBotPerms();
-                        Guild guild = context.map(msg -> msg.getEvent().getGuild(), slash -> slash.getEvent().getGuild());
-                        TextChannel channel = context.map(msg -> msg.getEvent().getTextChannel(), slash -> slash.getEvent().getTextChannel());
+        if (command != null) {
+            context.onT(msg -> msg.reply("Commands invoked by a prefix (e.g. `toni`, `!t`) or mention are being phased out in favour of slash commands. " +
+                    "These prefix commands might stop working after April, so please switch to slash commands until then. " +
+                    "To use slash commands, just type `/` and a selection of slash commands should appear.").queue());
 
-                        if (!guild.getSelfMember().hasPermission(channel, perms)) {
-                            log.debug("Missing perms: {}", (Object) perms);
-                            ctx.reply(String.format("I need the following permissions for this command: %s.",
-                                            Arrays.stream(perms).map(MiscUtil::getPermName).collect(Collectors.joining(", "))))
-                                    .queue();
-                            return;
-                        }
-                    }
+            boolean isFromGuild = context.map(msg -> msg.getEvent().isFromGuild(), slash -> slash.getEvent().isFromGuild());
+            if (isFromGuild) {
+                Permission[] perms = command.getInfo().requiredBotPerms();
+                Guild guild = context.map(msg -> msg.getEvent().getGuild(), slash -> slash.getEvent().getGuild());
+                TextChannel channel = context.map(msg -> msg.getEvent().getTextChannel(), slash -> slash.getEvent().getTextChannel());
 
-                    synchronized (executor) {
-                        if (!executor.isShutdown()) {
-                            log.trace("Dispatching command: {}", command);
-                            executor.execute(FailLogger.logFail(() -> executeCommandSafe(command, ctx)));
-                        } else log.info("Rejecting dispatch of command {} - already shut down", command);
-                    }
-                });
+                if (!guild.getSelfMember().hasPermission(channel, perms)) {
+                    log.debug("Missing perms: {}", (Object) perms);
+                    ctx.reply(String.format("I need the following permissions for this command: %s.",
+                                    Arrays.stream(perms).map(MiscUtil::getPermName).collect(Collectors.joining(", "))))
+                            .queue();
+                    return;
+                }
+            }
+
+            synchronized (executor) {
+                if (!executor.isShutdown()) {
+                    log.trace("Dispatching command: {}", command);
+                    executor.execute(FailLogger.logFail(() -> executeCommandSafe(command, ctx)));
+                } else log.info("Rejecting dispatch of command {} - already shut down", command);
+            }
+        }
     }
 
     private void executeCommandSafe(@Nonnull Command command, @Nonnull CommandContext<?> ctx) {
@@ -84,6 +82,35 @@ public class CommandDispatcher {
             log.error(String.format("Command %s had uncaught exception, ctx: %s", command, ctx), e);
             ctx.reply("One of my commands had a really bad error... I'll go yell at my dev about it (at least if they managed to implement that feature right), but you should give them some context too.").queue();
         }
+    }
+
+    public void dispatchAutoComplete(@Nonnull CommandAutoCompleteInteractionEvent event) {
+        Command command = findSlashCommandByName(event.getName());
+        if (command == null) {
+            log.error("Auto complete event was received, but no corresponding command was found: {}", event.getName());
+            return;
+        }
+
+        List<net.dv8tion.jda.api.interactions.commands.Command.Choice> choices = command.onAutocomplete(event);
+        if (choices == null) return;
+
+        event.replyChoices(choices).queue();
+    }
+
+    @Nullable
+    private Command findMsgCommandByName(@Nonnull String name) {
+        return commands.stream().flatMap(category -> category.commands().stream())
+                .filter(command -> Arrays.asList(command.getInfo().aliases()).contains(name.toLowerCase()))
+                .findAny()
+                .orElse(null);
+    }
+
+    @Nullable
+    private Command findSlashCommandByName(@Nonnull String name) {
+        return commands.stream().flatMap(category -> category.commands().stream())
+                .filter(command -> command.getInfo().commandData().getName().equals(name))
+                .findAny()
+                .orElse(null);
     }
 
     public void shutdown() {

@@ -13,15 +13,15 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
-import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
 import net.dv8tion.jda.api.interactions.components.selections.SelectMenu;
+import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.requests.restaction.MessageAction;
 import org.apache.commons.lang3.StringUtils;
@@ -527,8 +527,12 @@ public class MovesCommand implements Command {
         private synchronized void awaitEvents(@Nonnull Message message) {
             messageId = message.getIdLong();
             waiter.waitForEvent(SelectMenuInteractionEvent.class,
-                    this::checkSelection,
-                    this::handleSelection,
+                    e -> {
+                        if (checkSelection(e)) handleSelection(e);
+                        // Return false to endlessly keep awaiting until timeout
+                        return false;
+                    },
+                    MiscUtil.emptyConsumer(),
                     20, TimeUnit.MINUTES,
                     FailLogger.logFail(() -> timeout(message.getJDA(), message.getChannel().getIdLong())) // This might swallow exceptions otherwise
             );
@@ -577,7 +581,7 @@ public class MovesCommand implements Command {
                 Message current = getCurrent();
                 // We know because of the check that messageId is not null here
                 //noinspection ConstantConditions
-                e.getChannel().editMessageById(messageId, current).setActionRows(prepareActionRows()).queue(this::awaitEvents);
+                e.getChannel().editMessageById(messageId, current).setActionRows(prepareActionRows()).queue();
             } catch (NumberFormatException ex) {
                 log.error("Non-Integer component value: {}", value);
                 // We know because of the check that messageId is not null here

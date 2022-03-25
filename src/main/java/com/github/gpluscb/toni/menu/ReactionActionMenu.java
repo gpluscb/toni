@@ -2,6 +2,7 @@ package com.github.gpluscb.toni.menu;
 
 import com.github.gpluscb.toni.util.Constants;
 import com.github.gpluscb.toni.util.FailLogger;
+import com.github.gpluscb.toni.util.MiscUtil;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import com.jagrosh.jdautilities.menu.Menu;
 import net.dv8tion.jda.api.JDA;
@@ -107,13 +108,20 @@ public class ReactionActionMenu extends Menu {
     }
 
     private void awaitEvents(@Nonnull Message message) {
-        awaitEvents(message.getJDA(), message.getIdLong(), message.getChannel().getIdLong());
-    }
+        JDA jda = message.getJDA();
+        long messageId = message.getIdLong();
+        long channelId = message.getChannel().getIdLong();
 
-    private void awaitEvents(@Nonnull JDA jda, long messageId, long channelId) {
         waiter.waitForEvent(MessageReactionAddEvent.class,
-                e -> checkReaction(e, messageId),
-                this::handleMessageReactionAdd,
+                e -> {
+                    if (checkReaction(e, messageId)) {
+                        // Stop awaiting on CANCEL
+                        return handleMessageReactionAdd(e) == ActionMenu.MenuAction.CANCEL;
+                    }
+                    // Return false to endlessly keep awaiting until timeout
+                    return false;
+                },
+                MiscUtil.emptyConsumer(),
                 timeout, unit, FailLogger.logFail(() -> { // This is the only thing that will be executed on not JDA-WS thread. So exceptions may get swallowed
                     MessageChannel channel = jda.getTextChannelById(channelId);
                     if (channel == null) channel = jda.getPrivateChannelById(channelId);
@@ -136,14 +144,15 @@ public class ReactionActionMenu extends Menu {
         return buttonActions.containsKey(reactionName) || reactionName.equals(deletionButton);
     }
 
-    private void handleMessageReactionAdd(@Nonnull MessageReactionAddEvent e) {
+    @Nonnull
+    private ActionMenu.MenuAction handleMessageReactionAdd(@Nonnull MessageReactionAddEvent e) {
         String reactionName = e.getReactionEmote().getName();
 
         long messageId = e.getMessageIdLong();
         MessageChannel channel = e.getChannel();
         if (reactionName.equals(deletionButton)) {
             channel.deleteMessageById(e.getMessageId()).queue();
-            return;
+            return ActionMenu.MenuAction.CANCEL;
         }
 
         if (e.isFromGuild() && e.getGuild().getSelfMember().hasPermission(e.getTextChannel(), Permission.MESSAGE_MANAGE)) {
@@ -153,8 +162,9 @@ public class ReactionActionMenu extends Menu {
         }
 
         Message edited = buttonActions.get(reactionName).apply(e);
-        if (edited != null) channel.editMessageById(messageId, edited).queue(this::awaitEvents);
-        else awaitEvents(e.getJDA(), messageId, channel.getIdLong());
+        if (edited != null) channel.editMessageById(messageId, edited).queue();
+
+        return ActionMenu.MenuAction.CONTINUE;
     }
 
     public static class Builder extends Menu.Builder<Builder, ReactionActionMenu> {

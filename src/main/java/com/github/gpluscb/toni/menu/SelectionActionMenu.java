@@ -103,8 +103,15 @@ public class SelectionActionMenu extends ActionMenu {
 
     private void awaitEvents() {
         getActionMenuSettings().waiter().waitForEvent(SelectMenuInteractionEvent.class,
-                e -> checkSelection(e, getMessageId()),
-                this::handleSelection,
+                e -> {
+                    if (checkSelection(e, getMessageId())) {
+                        // Stop awaiting on CANCEL
+                        return handleSelection(e) == ActionMenu.MenuAction.CANCEL;
+                    }
+                    // Return false to endlessly keep awaiting until timeout
+                    return false;
+                },
+                MiscUtil.emptyConsumer(),
                 getActionMenuSettings().timeout(), getActionMenuSettings().unit(), FailLogger.logFail(() -> { // This is the only thing that will be executed on not JDA-WS thread. So exceptions may get swallowed
                     settings.onTimeout().accept(new SelectionMenuTimeoutEvent());
                 }));
@@ -116,12 +123,11 @@ public class SelectionActionMenu extends ActionMenu {
                 && isValidUser(e.getUser().getIdLong());
     }
 
-    private void handleSelection(@Nonnull SelectMenuInteractionEvent e) {
+    @Nonnull
+    private MenuAction handleSelection(@Nonnull SelectMenuInteractionEvent e) {
         // We require exactly one selection.
         String value = e.getValues().get(0);
-        MenuAction action = selectionActions.get(value).apply(new SelectionInfo(), e);
-
-        if (action == MenuAction.CONTINUE) awaitEvents();
+        return selectionActions.get(value).apply(new SelectionInfo(), e);
     }
 
     private boolean isValidUser(long user) {

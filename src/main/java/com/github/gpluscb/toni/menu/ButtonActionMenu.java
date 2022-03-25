@@ -116,8 +116,15 @@ public class ButtonActionMenu extends ActionMenu {
     private void awaitEvents() {
         getActionMenuSettings().waiter().waitForEvent(
                 ButtonInteractionEvent.class,
-                e -> checkButtonClick(e, getMessageId()),
-                this::handleButtonClick,
+                e -> {
+                    if (checkButtonClick(e, getMessageId())) {
+                        // Stop awaiting on CANCEL
+                        return handleButtonClick(e) == MenuAction.CANCEL;
+                    }
+                    // Return false to endlessly keep awaiting until timeout
+                    return false;
+                },
+                MiscUtil.emptyConsumer(),
                 getActionMenuSettings().timeout(),
                 getActionMenuSettings().unit(),
                 FailLogger.logFail(() -> { // This is the only thing that will be executed on not JDA-WS thread. So exceptions may get swallowed
@@ -141,17 +148,16 @@ public class ButtonActionMenu extends ActionMenu {
                 (deletionButton != null && buttonId.equals(deletionButton.getId()));
     }
 
-    private void handleButtonClick(@Nonnull ButtonInteractionEvent e) {
+    @Nonnull
+    private MenuAction handleButtonClick(@Nonnull ButtonInteractionEvent e) {
         String buttonId = e.getComponentId();
         Button deletionButton = settings.deletionButton();
         if (deletionButton != null && buttonId.equals(deletionButton.getId())) {
             e.getMessage().delete().queue();
-            return;
+            return MenuAction.CANCEL;
         }
 
-        MenuAction action = buttonActions.get(buttonId).apply(e);
-
-        if (action == MenuAction.CONTINUE) awaitEvents();
+        return buttonActions.get(buttonId).apply(e);
     }
 
     @Nonnull

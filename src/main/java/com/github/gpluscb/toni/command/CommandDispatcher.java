@@ -92,7 +92,7 @@ public class CommandDispatcher {
         }
 
         List<net.dv8tion.jda.api.interactions.commands.Command.Choice> choices = command.onAutocomplete(event);
-        if (choices == null) return;
+        if (choices == null || choices.isEmpty()) return;
 
         event.replyChoices(choices).queue();
     }

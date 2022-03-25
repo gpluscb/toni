@@ -13,6 +13,7 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
@@ -36,6 +37,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import static net.dv8tion.jda.api.interactions.commands.build.OptionData.MAX_CHOICES;
 import static net.dv8tion.jda.api.interactions.components.selections.SelectOption.LABEL_MAX_LENGTH;
 
 public class MovesCommand implements Command {
@@ -432,6 +434,41 @@ public class MovesCommand implements Command {
 
     @Nonnull
     @Override
+    public List<net.dv8tion.jda.api.interactions.commands.Command.Choice> onAutocomplete(@Nonnull CommandAutoCompleteInteractionEvent event) {
+        String incompleteInput = event.getFocusedOption().getValue().toLowerCase();
+        String name = event.getFocusedOption().getName();
+        return switch (name) {
+            case "character" -> autocompleteCharName(incompleteInput);
+            case "move" -> autocompleteMove(incompleteInput);
+            default -> {
+                log.error("Received autocomplete for option that didn't have autocomplete enabled: {}, input: {}", name, incompleteInput);
+                yield Collections.emptyList();
+            }
+        };
+    }
+
+    @Nonnull
+    private List<net.dv8tion.jda.api.interactions.commands.Command.Choice> autocompleteCharName(@Nonnull String input) {
+        // Limiting to one name per character for more diversity
+        // More "proper" names will tend to be earlier in the altNames, so we choose the most "proper" matching name
+        return characters.stream()
+                .flatMap(character -> character.altNames().stream()
+                        .filter(name -> name.startsWith(input))
+                        .limit(1))
+                .map(name -> new net.dv8tion.jda.api.interactions.commands.Command.Choice(name, name))
+                .limit(MAX_CHOICES)
+                .toList();
+    }
+
+    @Nonnull
+    private List<net.dv8tion.jda.api.interactions.commands.Command.Choice> autocompleteMove(@Nonnull String input) {
+        // TODO
+        // Prolly can't tailor-make this per character
+        return Collections.emptyList();
+    }
+
+    @Nonnull
+    @Override
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
                 .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_EMBED_LINKS, Permission.MESSAGE_HISTORY})
@@ -443,8 +480,8 @@ public class MovesCommand implements Command {
                         Use the drop-down menus to select the move section, move, and hitbox image.
                         Aliases: `character`, `char`, `ufd`, `move`, `moves`, `hitboxes`, `hitbox`""")
                 .setCommandData(Commands.slash("moves", "Displays moves of a smash ultimate character")
-                        .addOption(OptionType.STRING, "character", "The character name", true)
-                        .addOption(OptionType.STRING, "move", "The move name (e.g. `fair`, `down b`)", false))
+                        .addOption(OptionType.STRING, "character", "The character name", true, true)
+                        .addOption(OptionType.STRING, "move", "The move name (e.g. `fair`, `down b`)", false, true))
                 .build();
     }
 

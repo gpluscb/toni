@@ -3,7 +3,6 @@ package com.github.gpluscb.toni.command;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 
 // TODO: Neat system for getting arguments out of CommandContext with defaults optionals and such and such
@@ -14,8 +13,8 @@ public interface Command {
     @Nonnull
     CommandInfo getInfo();
 
-    @Nullable
+    @Nonnull
     default List<net.dv8tion.jda.api.interactions.commands.Command.Choice> onAutocomplete(@Nonnull CommandAutoCompleteInteractionEvent event) {
-        return null;
+        throw new UnsupportedOperationException("onAutocomplete called without implementation");
     }
 }

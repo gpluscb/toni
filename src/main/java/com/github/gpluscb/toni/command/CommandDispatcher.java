@@ -13,6 +13,7 @@ import org.apache.logging.log4j.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -92,8 +93,6 @@ public class CommandDispatcher {
         }
 
         List<net.dv8tion.jda.api.interactions.commands.Command.Choice> choices = command.onAutocomplete(event);
-        if (choices == null || choices.isEmpty()) return;
-
         event.replyChoices(choices).queue();
     }
 

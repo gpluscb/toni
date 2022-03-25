@@ -268,7 +268,7 @@ public class Bot {
         }
 
         log.trace("Loading commands");
-        List<CommandCategory> commands = loadCommands(ufdClient, waiter, channelWaiter, /*challonge, listener, */characterTree, rulesets);
+        List<CommandCategory> commands = loadCommands(ufdClient, waiter, /*challonge, listener, */characterTree, rulesets);
 
         log.trace("Creating loadListener");
         long adminGuildId = cfg.adminGuildId();
@@ -359,7 +359,7 @@ public class Bot {
     }
 
     @Nonnull
-    private List<CommandCategory> loadCommands(@Nonnull UltimateframedataClient ufdClient, @Nonnull EventWaiter waiter, @Nonnull ChannelChoiceWaiter channelWaiter, /*@Nonnull ChallongeExtension challonge, @Nonnull TournamentListener listener, */@Nonnull CharacterTree characterTree, @Nonnull List<Ruleset> rulesets) {
+    private List<CommandCategory> loadCommands(@Nonnull UltimateframedataClient ufdClient, @Nonnull EventWaiter waiter, /*@Nonnull ChallongeExtension challonge, @Nonnull TournamentListener listener, */@Nonnull CharacterTree characterTree, @Nonnull List<Ruleset> rulesets) {
         List<CommandCategory> commands = new ArrayList<>();
 
         List<Command> adminCommands = new ArrayList<>();
@@ -379,10 +379,10 @@ public class Bot {
         gameCommands.add(new RandomCharacterCommand(characterTree));
         gameCommands.add(new RandomPlayerCommand());
         gameCommands.add(new RPSCommand(waiter));
-        gameCommands.add(new BlindPickCommand(channelWaiter, characterTree));
+        gameCommands.add(new BlindPickCommand(waiter, characterTree));
         gameCommands.add(new StrikeStagesCommand(waiter, rulesets));
         gameCommands.add(new CounterpickStagesCommand(waiter, rulesets));
-        gameCommands.add(new SmashSetCommand(channelWaiter, rulesets, characterTree));
+        gameCommands.add(new SmashSetCommand(waiter, rulesets, characterTree));
         gameCommands.add(new RulesetsCommand(waiter, rulesets));
         commands.add(new CommandCategory("game", "Smash Bros. utility commands", gameCommands));
 

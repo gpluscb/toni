@@ -1,12 +1,11 @@
 package com.github.gpluscb.toni.command.menu;
 
+import com.github.gpluscb.toni.command.modal.CharPickModalHandler;
 import com.github.gpluscb.toni.menu.ActionMenu;
 import com.github.gpluscb.toni.menu.ButtonActionMenu;
 import com.github.gpluscb.toni.smashset.Character;
 import com.github.gpluscb.toni.smashset.CharacterTree;
 import com.github.gpluscb.toni.util.MiscUtil;
-import com.github.gpluscb.toni.util.discord.ChannelChoiceWaiter;
-import com.github.gpluscb.toni.util.discord.WaitableModalHandler;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Message;
@@ -17,9 +16,6 @@ import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
-import net.dv8tion.jda.api.interactions.components.text.Modal;
-import net.dv8tion.jda.api.interactions.components.text.TextInput;
-import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -33,7 +29,7 @@ public class BlindPickMenu extends ActionMenu {
     private final Settings settings;
 
     @Nonnull
-    private final BlindPickModalHandler modalHandler;
+    private final CharPickModalHandler modalHandler;
     @Nonnull
     private final ButtonActionMenu buttonMenu;
 
@@ -46,7 +42,7 @@ public class BlindPickMenu extends ActionMenu {
         super(settings.actionMenuSettings());
         this.settings = settings;
 
-        modalHandler = new BlindPickModalHandler(settings.waiter().getEventWaiter());
+        modalHandler = new CharPickModalHandler(settings.waiter());
         buttonMenu = new ButtonActionMenu(new ButtonActionMenu.Settings.Builder()
                 .setActionMenuSettings(settings.actionMenuSettings())
                 .setStart(settings.start())
@@ -165,33 +161,6 @@ public class BlindPickMenu extends ActionMenu {
         return buttonMenu.getMessageId();
     }
 
-    private static class BlindPickModalHandler extends WaitableModalHandler<String> {
-        public BlindPickModalHandler(@Nonnull EventWaiter waiter) {
-            super(waiter);
-        }
-
-        @Nonnull
-        @Override
-        public Modal.Builder toModal() {
-            TextInput characterComponent = TextInput.create("character", "Character", TextInputStyle.SHORT)
-                    .setPlaceholder("e.g. 'Rosalina', 'Link'")
-                    .setRequired(true)
-                    .setRequiredRange(1, 50)
-                    .build();
-
-            // ID will be overwritten
-            return Modal.create("_", "Character Selection").addActionRows(ActionRow.of(characterComponent));
-        }
-
-        @Nonnull
-        @Override
-        public String fromModalInteraction(@Nonnull ModalInteractionEvent event) {
-            // It is expected to throw here on invalid modal
-            //noinspection ConstantConditions
-            return event.getValue("character").getAsString();
-        }
-    }
-
     private abstract class BlindPickMenuStateInfo extends MenuStateInfo {
         @Nonnull
         public Settings getBlindPickMenuSettings() {
@@ -210,7 +179,7 @@ public class BlindPickMenu extends ActionMenu {
     public class BlindPickTimeoutEvent extends BlindPickMenuStateInfo {
     }
 
-    public record Settings(@Nonnull ActionMenu.Settings actionMenuSettings, @Nonnull ChannelChoiceWaiter waiter,
+    public record Settings(@Nonnull ActionMenu.Settings actionMenuSettings, @Nonnull EventWaiter waiter,
                            @Nonnull Set<Long> users, @Nonnull Message start, @Nonnull List<Character> characters,
                            @Nonnull BiConsumer<BlindPickResult, ModalInteractionEvent> onResult,
                            @Nonnull Consumer<BlindPickTimeoutEvent> onTimeout) {
@@ -223,7 +192,7 @@ public class BlindPickMenu extends ActionMenu {
             @Nullable
             private ActionMenu.Settings actionMenuSettings;
             @Nullable
-            private ChannelChoiceWaiter channelWaiter;
+            private EventWaiter waiter;
             @Nonnull
             private Set<Long> users = new HashSet<>();
             @Nullable
@@ -242,8 +211,8 @@ public class BlindPickMenu extends ActionMenu {
             }
 
             @Nonnull
-            public Builder setChannelWaiter(@Nonnull ChannelChoiceWaiter channelWaiter) {
-                this.channelWaiter = channelWaiter;
+            public Builder setWaiter(@Nonnull EventWaiter waiter) {
+                this.waiter = waiter;
                 return this;
             }
 
@@ -292,11 +261,11 @@ public class BlindPickMenu extends ActionMenu {
             @Nonnull
             public Settings build() {
                 if (actionMenuSettings == null) throw new IllegalStateException("ActionMenuSettings must be set");
-                if (channelWaiter == null) throw new IllegalStateException("ChannelWaiter must be set");
+                if (waiter == null) throw new IllegalStateException("Waiter must be set");
                 if (start == null) throw new IllegalStateException("Start must be set");
                 if (characters == null) throw new IllegalStateException("Characters must be set");
 
-                return new Settings(actionMenuSettings, channelWaiter, users, start, characters, onResult, onTimeout);
+                return new Settings(actionMenuSettings, waiter, users, start, characters, onResult, onTimeout);
             }
         }
     }

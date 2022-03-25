@@ -11,7 +11,7 @@ import com.github.gpluscb.toni.smashset.Ruleset;
 import com.github.gpluscb.toni.smashset.SmashSet;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
-import com.github.gpluscb.toni.util.discord.ChannelChoiceWaiter;
+import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
@@ -32,14 +32,14 @@ public class SmashSetCommand implements Command {
     private final static Logger log = LogManager.getLogger(SmashSetCommand.class);
 
     @Nonnull
-    private final ChannelChoiceWaiter channelWaiter;
+    private final EventWaiter waiter;
     @Nonnull
     private final List<Ruleset> rulesets;
     @Nonnull
     private final List<Character> characters;
 
-    public SmashSetCommand(@Nonnull ChannelChoiceWaiter channelWaiter, @Nonnull List<Ruleset> rulesets, @Nonnull CharacterTree characterTree) {
-        this.channelWaiter = channelWaiter;
+    public SmashSetCommand(@Nonnull EventWaiter waiter, @Nonnull List<Ruleset> rulesets, @Nonnull CharacterTree characterTree) {
+        this.waiter = waiter;
         this.rulesets = rulesets;
         this.characters = characterTree.getAllCharacters();
     }
@@ -138,7 +138,7 @@ public class SmashSetCommand implements Command {
         }
 
         RulesetSelectMenu rulesetMenu = new RulesetSelectMenu(RulesetSelectMenu.Settings.getDefaultSettings(
-                channelWaiter.getEventWaiter(),
+                waiter,
                 ctx.getMember(),
                 ctx.getUser(),
                 rulesets,
@@ -154,7 +154,7 @@ public class SmashSetCommand implements Command {
         SmashSetMenu menu = new SmashSetMenu(new SmashSetMenu.Settings.Builder()
                 .setTwoUsersChoicesActionMenuSettings(new TwoUsersChoicesActionMenu.Settings.Builder()
                         .setActionMenuSettings(new ActionMenu.Settings.Builder()
-                                .setWaiter(channelWaiter.getEventWaiter())
+                                .setWaiter(waiter)
                                 .setTimeout(60, TimeUnit.MINUTES)
                                 .build())
                         .setUsers(user1.getIdLong(), user2.getIdLong())
@@ -165,7 +165,7 @@ public class SmashSetCommand implements Command {
                 .setReportGameTimeout(60, TimeUnit.MINUTES)
                 .setLoserCharCounterpickTimeout(60, TimeUnit.MINUTES)
                 .setWinnerCharPickTimeout(60, TimeUnit.MINUTES)
-                .setChannelWaiter(channelWaiter)
+                .setWaiter(waiter)
                 .setCharacters(characters)
                 .setRuleset(ruleset)
                 .setFirstToWhatScore(firstToWhatScore)

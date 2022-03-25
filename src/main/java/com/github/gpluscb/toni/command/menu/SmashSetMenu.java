@@ -7,8 +7,8 @@ import com.github.gpluscb.toni.smashset.*;
 import com.github.gpluscb.toni.util.Constants;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
-import com.github.gpluscb.toni.util.discord.ChannelChoiceWaiter;
 import com.github.gpluscb.toni.util.discord.EmbedUtil;
+import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
@@ -66,7 +66,8 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         if (ruleset.blindPickBeforeStage()) {
             // Manually set game number because we haven't tarted set yet
             Message start = new MessageBuilder(prepareEmbed("Double Blind Pick", 1)
-                    .setDescription("Alright, we start by doing a double blind pick. Please DM me the character you will play in the first game now.")
+                    .setDescription("Alright, we start by doing a double blind pick." +
+                            " Please click on the button below to select the character you will play in the first game now.")
                     .build())
                     .build();
 
@@ -250,12 +251,28 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                         .setWaiter(getActionMenuSettings().waiter())
                         .setTimeout(settings.doubleBlindTimeout(), settings.doubleBlindUnit())
                         .build())
-                .setChannelWaiter(settings.channelWaiter())
+                .setWaiter(settings.waiter())
                 .addUsers(getTwoUsersChoicesActionMenuSettings().user1(), getTwoUsersChoicesActionMenuSettings().user2())
                 .setStart(start)
                 .setCharacters(settings.characters())
                 .setOnResult(this::onDoubleBlindResult)
                 .setOnTimeout(this::onDoubleBlindTimeout)
+                .build());
+    }
+
+    @Nonnull
+    private BlindPickMenu createCharPickMenu(@Nonnull Message start, long user, long timeout, @Nonnull TimeUnit unit, @Nonnull BiConsumer<BlindPickMenu.BlindPickResult, ModalInteractionEvent> onResult, @Nonnull Consumer<BlindPickMenu.BlindPickTimeoutEvent> onTimeout) {
+        return new BlindPickMenu(new BlindPickMenu.Settings.Builder()
+                .setActionMenuSettings(new ActionMenu.Settings.Builder()
+                        .setWaiter(getActionMenuSettings().waiter())
+                        .setTimeout(timeout, unit)
+                        .build())
+                .setWaiter(settings.waiter())
+                .addUsers(user)
+                .setStart(start)
+                .setCharacters(settings.characters())
+                .setOnResult(onResult)
+                .setOnTimeout(onTimeout)
                 .build());
     }
 
@@ -352,45 +369,25 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
     }
 
     @Nonnull
-    private CharPickMenu createWinnerCharPickMenu(@Nonnull Message start) {
+    private BlindPickMenu createWinnerCharPickMenu(@Nonnull Message start) {
         // At this point it will be displayed => not null
         @SuppressWarnings("ConstantConditions")
         long winner = userFromPlayer(((SmashSet.SetWinnerCharPickState) state).getPrevWinner());
 
-        return new CharPickMenu(new CharPickMenu.Settings.Builder()
-                .setActionMenuSettings(new ActionMenu.Settings.Builder()
-                        .setWaiter(getActionMenuSettings().waiter())
-                        .setTimeout(settings.winnerCharPickTimeout(), settings.winnerCharPickUnit())
-                        .build())
-                .setChannelWaiter(settings.channelWaiter())
-                .setUser(winner)
-                .setChannelId(getChannelId())
-                .setCharacters(settings.characters())
-                .setStart(start)
-                .setOnResult(this::onWinnerCharPickResult)
-                .setOnTimeout(this::onWinnerCharPickTimeout)
-                .build());
+        return createCharPickMenu(start, winner,
+                settings.winnerCharPickTimeout(), settings.winnerCharPickUnit(),
+                this::onWinnerCharPickResult, this::onWinnerCharPickTimeout);
     }
 
     @Nonnull
-    private CharPickMenu createLoserCharCounterpickMenu(@Nonnull Message start) {
+    private BlindPickMenu createLoserCharCounterpickMenu(@Nonnull Message start) {
         // At this point it will be displayed => not null
         @SuppressWarnings("ConstantConditions")
         long loser = userFromPlayer(((SmashSet.SetLoserCharCounterpickState) state).getPrevLoser());
 
-        return new CharPickMenu(new CharPickMenu.Settings.Builder()
-                .setActionMenuSettings(new ActionMenu.Settings.Builder()
-                        .setWaiter(getActionMenuSettings().waiter())
-                        .setTimeout(settings.loserCharCounterpickTimeout(), settings.loserCharCounterpickUnit())
-                        .build())
-                .setChannelWaiter(settings.channelWaiter())
-                .setUser(loser)
-                .setChannelId(getChannelId())
-                .setCharacters(settings.characters())
-                .setStart(start)
-                .setOnResult(this::onLoserCharCounterpickResult)
-                .setOnTimeout(this::onLoserCharCounterpickTimeout)
-                .build());
+        return createCharPickMenu(start, loser,
+                settings.loserCharCounterpickTimeout(), settings.loserCharCounterpickUnit(),
+                this::onLoserCharCounterpickResult, this::onLoserCharCounterpickTimeout);
     }
 
     private synchronized void onStrikeFirstChoice(@Nonnull RPSAndStrikeStagesMenu.StrikeFirstChoiceResult result, @Nonnull ButtonInteractionEvent event) {
@@ -425,7 +422,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                     Message start = new MessageBuilder(prepareEmbed("Double Blind Pick")
                             .setDescription(String.format("You have struck to %s, " +
                                             "so now we'll determine the characters you play by doing a double blind pick.%n" +
-                                            "Please DM me the character you'll play next game.",
+                                            "Please click on the button below to select the character you'll play next game.",
                                     remainingStage.getDisplayName()))
                             .build())
                             .build();
@@ -436,8 +433,6 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
     }
 
     private synchronized void onDoubleBlindResult(@Nonnull BlindPickMenu.BlindPickResult result, @Nonnull ModalInteractionEvent event) {
-        event.deferEdit().queue();
-
         // Will always be found
         Character user1Choice = result.getChoices().get(getTwoUsersChoicesActionMenuSettings().user1());
 
@@ -459,13 +454,14 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
         long messageId = result.getMessageId();
 
-        channel.editMessageEmbedsById(messageId, prepareEmbed("Double Blind Pick")
+        event.editMessageEmbeds(prepareEmbed("Double Blind Pick")
                         .setDescription(String.format("**%s** chose %s and **%s** chose %s.",
                                 settings.user1Display(),
                                 user1Choice.getDisplayName(),
                                 settings.user2Display(),
                                 user2Choice.getDisplayName()))
                         .build())
+                .setActionRows()
                 .queue();
 
         newState.map(
@@ -571,16 +567,14 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                             Message start = new MessageBuilder(prepareEmbed("Winner Character Pick")
                                     .setDescription(String.format("It has been determined that **%s** won, and **%s** lost the last game. " +
                                                     "Now, **%s**, you have to pick the character you will play next game first.%n" +
-                                                    "Please **__reply to__** this message with the character you'll play in this channel.",
+                                                    "Please click on the button below to select the character you'll play.",
                                             displayFromUser(result.getWinner()),
                                             displayFromUser(result.getLoser()),
                                             displayFromUser(result.getWinner())))
                                     .build())
                                     .build();
 
-                            CharPickMenu charPickMenu = createWinnerCharPickMenu(start);
-                            if (!charPickMenu.isInitFailure())
-                                charPickMenu.displayReplying(event.getMessage());
+                            createWinnerCharPickMenu(start).displayReplying(event.getMessage());
                         }
                 )
         ).onU(completed -> this.onResult(event));
@@ -612,23 +606,23 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
             Message start = new MessageBuilder(prepareEmbed("Winner Character Pick")
                     .setDescription(String.format("You will play the next game on %s. " +
                                     "Now the winner of the previous game will have to pick the character.%n" +
-                                    "**%s**, please **__reply to__** this message with the character you'll play next game in this channel.",
+                                    "**%s**, please click on the button below to select the character you'll play next game.",
                             result.getPickedStage().getDisplayName(),
                             displayFromUser(prevWinner)))
                     .build())
                     .build();
 
-            CharPickMenu charPickMenu = createWinnerCharPickMenu(start);
-            if (!charPickMenu.isInitFailure())
-                charPickMenu.displayReplying(event.getMessage());
-
+            createWinnerCharPickMenu(start).displayReplying(event.getMessage());
         }).onU(inGame -> createReportGameMenu().displayReplying(event.getMessage()));
     }
 
-    private synchronized void onWinnerCharPickResult(@Nonnull CharPickMenu.CharPickResult result) {
+    private synchronized void onWinnerCharPickResult(@Nonnull BlindPickMenu.BlindPickResult result, @Nonnull ModalInteractionEvent event) {
+        long user = result.getBlindPickMenuSettings().users().stream().findAny().orElseThrow();
+        Character picked = result.getChoices().get(user);
+
         // At this point it will be displayed => not null
         //noinspection ConstantConditions
-        SmashSet.SetLoserCharCounterpickState newState = ((SmashSet.SetWinnerCharPickState) state).pickCharacter(result.getPickedCharacter());
+        SmashSet.SetLoserCharCounterpickState newState = ((SmashSet.SetWinnerCharPickState) state).pickCharacter(picked);
         state = newState;
 
         MessageChannel channel = result.getChannel();
@@ -639,34 +633,36 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
         long messageId = result.getMessageId();
 
-        channel.editMessageEmbedsById(messageId, prepareEmbed("Winner Character Pick")
+        event.editMessageEmbeds(prepareEmbed("Winner Character Pick")
                         .setDescription(String.format("**%s** picked %s.",
-                                displayFromUser(result.getCharPickMenuSettings().user()),
-                                result.getPickedCharacter().getDisplayName()))
+                                displayFromUser(user),
+                                picked.getDisplayName()))
                         .build())
+                .setActionRows()
                 .queue();
 
         long prevLoser = userFromPlayer(newState.getPrevLoser());
 
         Message start = new MessageBuilder(prepareEmbed("Loser Character Counterpick")
                 .setDescription(String.format("**%s** chose %s as their character, so now the loser of the previous game has to state their character.%n" +
-                                "**%s**, please **__reply to__** this message with the character you will use next game in this channel.",
-                        displayFromUser(result.getCharPickMenuSettings().user()),
-                        result.getPickedCharacter().getDisplayName(),
+                                "**%s**, please click on the button below to select the character you will use next game.",
+                        displayFromUser(user),
+                        picked.getDisplayName(),
                         displayFromUser(prevLoser)))
                 .build())
                 .build();
 
-        CharPickMenu charPickMenu = createLoserCharCounterpickMenu(start);
-        if (!charPickMenu.isInitFailure())
-            charPickMenu.displayReplying(channel, messageId);
+        createLoserCharCounterpickMenu(start).displayReplying(channel, messageId);
     }
 
-    private synchronized void onLoserCharCounterpickResult(@Nonnull CharPickMenu.CharPickResult result) {
+    private synchronized void onLoserCharCounterpickResult(@Nonnull BlindPickMenu.BlindPickResult result, @Nonnull ModalInteractionEvent event) {
+        long user = result.getBlindPickMenuSettings().users().stream().findAny().orElseThrow();
+        Character picked = result.getChoices().get(user);
+
         // At this point it will be displayed => not null
         @SuppressWarnings("ConstantConditions")
         OneOfTwo<SmashSet.SetWinnerStageBanState, SmashSet.SetInGameState> newState = ((SmashSet.SetLoserCharCounterpickState) state)
-                .pickCharacter(result.getPickedCharacter());
+                .pickCharacter(picked);
 
         state = newState.map(ban -> ban, inGame -> inGame);
 
@@ -678,11 +674,12 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
         long messageId = result.getMessageId();
 
-        channel.editMessageEmbedsById(messageId, prepareEmbed("Loser Character Counterpick")
+        event.editMessageEmbeds(prepareEmbed("Loser Character Counterpick")
                         .setDescription(String.format("**%s** counterpicked %s.",
-                                displayFromUser(result.getCharPickMenuSettings().user()),
-                                result.getPickedCharacter().getDisplayName()))
+                                displayFromUser(user),
+                                picked.getDisplayName()))
                         .build())
+                .setActionRows()
                 .queue();
 
         newState.map(
@@ -752,11 +749,11 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         settings.onPickStageTimeout().accept(new SmashSetPickStageTimeoutEvent(event));
     }
 
-    private void onWinnerCharPickTimeout(@Nonnull CharPickMenu.CharPickTimeoutEvent event) {
+    private void onWinnerCharPickTimeout(@Nonnull BlindPickMenu.BlindPickTimeoutEvent event) {
         settings.onWinnerCharPickTimeout().accept(new SmashSetCharPickTimeoutEvent(event));
     }
 
-    private void onLoserCharCounterpickTimeout(@Nonnull CharPickMenu.CharPickTimeoutEvent event) {
+    private void onLoserCharCounterpickTimeout(@Nonnull BlindPickMenu.BlindPickTimeoutEvent event) {
         settings.onLoserCharCounterpickTimeout().accept(new SmashSetCharPickTimeoutEvent(event));
     }
 
@@ -934,14 +931,14 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
     public class SmashSetCharPickTimeoutEvent extends SmashSetStateInfo {
         @Nonnull
-        private final CharPickMenu.CharPickTimeoutEvent timeoutEvent;
+        private final BlindPickMenu.BlindPickTimeoutEvent timeoutEvent;
 
-        public SmashSetCharPickTimeoutEvent(@Nonnull CharPickMenu.CharPickTimeoutEvent timeoutEvent) {
+        public SmashSetCharPickTimeoutEvent(@Nonnull BlindPickMenu.BlindPickTimeoutEvent timeoutEvent) {
             this.timeoutEvent = timeoutEvent;
         }
 
         @Nonnull
-        public CharPickMenu.CharPickTimeoutEvent getTimeoutEvent() {
+        public BlindPickMenu.BlindPickTimeoutEvent getTimeoutEvent() {
             return timeoutEvent;
         }
     }
@@ -953,7 +950,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
     }
 
     public record Settings(@Nonnull TwoUsersChoicesActionMenu.Settings twoUsersChoicesActionMenuSettings,
-                           @Nonnull ChannelChoiceWaiter channelWaiter, @Nonnull Ruleset ruleset,
+                           @Nonnull EventWaiter waiter, @Nonnull Ruleset ruleset,
                            @Nonnull List<Character> characters, int firstToWhatScore,
                            @Nullable RPSInfo rpsInfo,
                            @Nonnull Consumer<SmashSetStrikeTimeoutEvent> onStrikeTimeout,
@@ -1020,7 +1017,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
             private TwoUsersChoicesActionMenu.Settings twoUsersChoicesActionMenuSettings;
 
             @Nullable
-            private ChannelChoiceWaiter channelWaiter;
+            private EventWaiter waiter;
 
             @Nullable
             private Ruleset ruleset;
@@ -1090,8 +1087,8 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
             }
 
             @Nonnull
-            public Builder setChannelWaiter(@Nonnull ChannelChoiceWaiter channelWaiter) {
-                this.channelWaiter = channelWaiter;
+            public Builder setWaiter(@Nonnull EventWaiter waiter) {
+                this.waiter = waiter;
                 return this;
             }
 
@@ -1231,14 +1228,14 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
             public Settings build() {
                 if (twoUsersChoicesActionMenuSettings == null)
                     throw new IllegalStateException("TwoUsersChoicesActionMenuSettings must be set");
-                if (channelWaiter == null) throw new IllegalStateException("ChannelWaiter must be set");
+                if (waiter == null) throw new IllegalStateException("ChannelWaiter must be set");
                 if (ruleset == null) throw new IllegalStateException("Ruleset must be set");
                 if (characters == null) throw new IllegalStateException("Characters must be set");
                 if (firstToWhatScore == null) throw new IllegalStateException("FirstToWhatScore must be set");
                 if (user1Display == null || user2Display == null)
                     throw new IllegalStateException("UsersDisplay must be set");
 
-                return new Settings(twoUsersChoicesActionMenuSettings, channelWaiter, ruleset, characters, firstToWhatScore,
+                return new Settings(twoUsersChoicesActionMenuSettings, waiter, ruleset, characters, firstToWhatScore,
                         rpsInfo,
                         onStrikeTimeout,
                         doubleBlindTimeout, doubleBlindUnit, onDoubleBlindTimeout,

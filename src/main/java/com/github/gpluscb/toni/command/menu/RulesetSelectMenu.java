@@ -6,7 +6,6 @@ import com.github.gpluscb.toni.smashset.Ruleset;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.discord.EmbedUtil;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
-import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;

@@ -7,7 +7,7 @@ import com.github.gpluscb.toni.smashset.Character;
 import com.github.gpluscb.toni.smashset.CharacterTree;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
-import com.github.gpluscb.toni.util.discord.ChannelChoiceWaiter;
+import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
@@ -33,11 +33,11 @@ public class BlindPickCommand implements Command {
     private static final Logger log = LogManager.getLogger(BlindPickCommand.class);
 
     @Nonnull
-    private final ChannelChoiceWaiter waiter;
+    private final EventWaiter waiter;
     @Nonnull
     private final List<Character> characters;
 
-    public BlindPickCommand(@Nonnull ChannelChoiceWaiter waiter, @Nonnull CharacterTree characterTree) {
+    public BlindPickCommand(@Nonnull EventWaiter waiter, @Nonnull CharacterTree characterTree) {
         this.waiter = waiter;
         this.characters = characterTree.getAllCharacters();
     }
@@ -121,9 +121,9 @@ public class BlindPickCommand implements Command {
         BlindPickMenu menu = new BlindPickMenu(new BlindPickMenu.Settings.Builder()
                 .setActionMenuSettings(new ActionMenu.Settings.Builder()
                         .setTimeout(3, TimeUnit.MINUTES)
-                        .setWaiter(waiter.getEventWaiter())
+                        .setWaiter(waiter)
                         .build())
-                .setChannelWaiter(waiter)
+                .setWaiter(waiter)
                 .setUsers(users)
                 .setStart(start)
                 .setCharacters(characters)
@@ -200,7 +200,7 @@ public class BlindPickCommand implements Command {
                 .setShortHelp("Helps you do a (double) blind pick. Usage: `blind <USERS...>`")
                 .setDetailedHelp("""
                         `doubleblind <USERS...>`
-                        Assists you in doing a [blind pick](https://gist.github.com/gpluscb/559f00e750854b46c0a71827e094ab3e). After performing the command, everyone who participates in the blind pick will have to DM me. So you might have to unblock me (but what kind of monster would have me blocked in the first place?).
+                        Assists you in doing a [blind pick](https://gist.github.com/gpluscb/559f00e750854b46c0a71827e094ab3e).
                         The slash command version supports at most two (2) participants.
                         Aliases: `doubleblind`, `blindpick`, `blind`""")
                 .setCommandData(Commands.slash("doubleblind", "Helps you do a double blind pick")

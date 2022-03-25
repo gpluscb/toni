@@ -12,6 +12,7 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
@@ -42,7 +43,7 @@ public class RulesetSelectMenu extends ActionMenu {
                 .setActionMenuSettings(getActionMenuSettings())
                 .addUsers(settings.user())
                 .setStart(settings.start())
-                .setOnOptionChoice((info, e) -> e.deferEdit().queue())
+                .setOnOptionChoice(this::onSelect)
                 .setOnAllConfirmation(this::onConfirmation)
                 .setOnTimeout(this::onTimeout);
 
@@ -98,6 +99,10 @@ public class RulesetSelectMenu extends ActionMenu {
         return settings;
     }
 
+    private synchronized void onSelect(@Nonnull ConfirmableSelectionActionMenu<Ruleset>.OptionChoiceInfo info, @Nonnull SelectMenuInteractionEvent event) {
+        settings.onOptionSelect().accept(new RulesetSelectOptionInfo(info), event);
+    }
+
     @Nonnull
     private synchronized MenuAction onConfirmation(@Nonnull ConfirmableSelectionActionMenu<Ruleset>.ConfirmationInfo info, @Nonnull ButtonInteractionEvent event) {
         settings.onRulesetSelect().accept(new RulesetSelectionInfo(info), event);
@@ -129,6 +134,20 @@ public class RulesetSelectMenu extends ActionMenu {
         @Nonnull
         public Settings getRulesetSelectMenuSettings() {
             return RulesetSelectMenu.this.getRulesetSelectMenuSettings();
+        }
+    }
+
+    public class RulesetSelectOptionInfo extends RulesetSelectMenuInfo {
+        @Nonnull
+        private final ConfirmableSelectionActionMenu<Ruleset>.OptionChoiceInfo info;
+
+        public RulesetSelectOptionInfo(@Nonnull ConfirmableSelectionActionMenu<Ruleset>.OptionChoiceInfo info) {
+            this.info = info;
+        }
+
+        @Nonnull
+        public ConfirmableSelectionActionMenu<Ruleset>.OptionChoiceInfo getInfo() {
+            return info;
         }
     }
 
@@ -167,10 +186,13 @@ public class RulesetSelectMenu extends ActionMenu {
 
     public record Settings(@Nonnull ActionMenu.Settings actionMenuSettings, long user, @Nonnull List<Ruleset> rulesets,
                            @Nonnull Message start,
+                           @Nonnull BiConsumer<RulesetSelectOptionInfo, SelectMenuInteractionEvent> onOptionSelect,
                            @Nonnull BiConsumer<RulesetSelectionInfo, ButtonInteractionEvent> onRulesetSelect,
                            @Nonnull Consumer<RulesetSelectTimeoutEvent> onTimeout) {
         @Nonnull
         public static final BiConsumer<RulesetSelectionInfo, ButtonInteractionEvent> DEFAULT_ON_RULESET_SELECT = MiscUtil.emptyBiConsumer();
+        @Nonnull
+        public static final BiConsumer<RulesetSelectOptionInfo, SelectMenuInteractionEvent> DEFAULT_ON_OPTION_SELECT = MiscUtil.emptyBiConsumer();
         @Nonnull
         public static final Consumer<RulesetSelectTimeoutEvent> DEFAULT_ON_TIMEOUT = MiscUtil.emptyConsumer();
 
@@ -188,6 +210,12 @@ public class RulesetSelectMenu extends ActionMenu {
                             .setTitle("Ruleset Selection")
                             .setDescription(String.format("**%s**, please select a ruleset from the list below.", user.getName()))
                             .build()).build())
+                    .setOnOptionSelect((info, event) -> {
+                        MessageEmbed embed = EmbedUtil.applyRuleset(EmbedUtil.getPreparedAuthor(member, user), info.getInfo().getUserSelection()).build();
+
+                        // TODO: This resets choice in select menu
+                        event.editMessageEmbeds(embed).queue();
+                    })
                     .setOnRulesetSelect((info, event) -> {
                         event.editMessageEmbeds(EmbedUtil.getPreparedAuthor(member, user)
                                 .setTitle("Ruleset Selection")
@@ -220,6 +248,8 @@ public class RulesetSelectMenu extends ActionMenu {
             @Nullable
             private Message start;
             @Nonnull
+            private BiConsumer<RulesetSelectOptionInfo, SelectMenuInteractionEvent> onOptionSelect = DEFAULT_ON_OPTION_SELECT;
+            @Nonnull
             private BiConsumer<RulesetSelectionInfo, ButtonInteractionEvent> onRulesetSelect = DEFAULT_ON_RULESET_SELECT;
             @Nonnull
             private Consumer<RulesetSelectTimeoutEvent> onTimeout = DEFAULT_ON_TIMEOUT;
@@ -249,6 +279,12 @@ public class RulesetSelectMenu extends ActionMenu {
             }
 
             @Nonnull
+            public Builder setOnOptionSelect(@Nonnull BiConsumer<RulesetSelectOptionInfo, SelectMenuInteractionEvent> onOptionSelect) {
+                this.onOptionSelect = onOptionSelect;
+                return this;
+            }
+
+            @Nonnull
             public Builder setOnRulesetSelect(@Nonnull BiConsumer<RulesetSelectionInfo, ButtonInteractionEvent> onRulesetSelect) {
                 this.onRulesetSelect = onRulesetSelect;
                 return this;
@@ -267,7 +303,7 @@ public class RulesetSelectMenu extends ActionMenu {
                 if (rulesets == null) throw new IllegalStateException("Rulesets must be set");
                 if (start == null) throw new IllegalStateException("Start must be set");
 
-                return new Settings(actionMenuSettings, user, rulesets, start, onRulesetSelect, onTimeout);
+                return new Settings(actionMenuSettings, user, rulesets, start, onOptionSelect, onRulesetSelect, onTimeout);
             }
         }
     }

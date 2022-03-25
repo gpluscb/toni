@@ -38,8 +38,8 @@ import java.util.concurrent.TimeUnit;
 
 import static net.dv8tion.jda.api.interactions.components.selections.SelectOption.LABEL_MAX_LENGTH;
 
-public class CharacterCommand implements Command {
-    private static final Logger log = LogManager.getLogger(CharacterCommand.class);
+public class MovesCommand implements Command {
+    private static final Logger log = LogManager.getLogger(MovesCommand.class);
 
     @Nonnull
     private final UltimateframedataClient client;
@@ -48,7 +48,7 @@ public class CharacterCommand implements Command {
     @Nonnull
     private final List<Character> characters;
 
-    public CharacterCommand(@Nonnull UltimateframedataClient client, @Nonnull EventWaiter waiter, @Nonnull CharacterTree characters) {
+    public MovesCommand(@Nonnull UltimateframedataClient client, @Nonnull EventWaiter waiter, @Nonnull CharacterTree characters) {
         this.client = client;
         this.waiter = waiter;
         this.characters = characters.getAllCharacters();

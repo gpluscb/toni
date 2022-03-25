@@ -14,7 +14,7 @@ import com.github.gpluscb.toni.command.game.*;
 import com.github.gpluscb.toni.command.help.HelpCommand;
 import com.github.gpluscb.toni.command.help.PingCommand;
 import com.github.gpluscb.toni.command.help.TermsCommand;
-import com.github.gpluscb.toni.command.lookup.CharacterCommand;
+import com.github.gpluscb.toni.command.lookup.MovesCommand;
 import com.github.gpluscb.toni.command.lookup.SmashdataCommand;
 import com.github.gpluscb.toni.command.lookup.TournamentCommand;
 import com.github.gpluscb.toni.command.matchmaking.AvailableCommand;
@@ -386,7 +386,7 @@ public class Bot {
 
         List<Command> lookupCommands = new ArrayList<>();
         lookupCommands.add(new TournamentCommand(ggManager, waiter));
-        lookupCommands.add(new CharacterCommand(ufdClient, waiter, characterTree));
+        lookupCommands.add(new MovesCommand(ufdClient, waiter, characterTree));
         lookupCommands.add(new SmashdataCommand(waiter, smashdata));
         // TODO: Feature is on hold
         // lookupCommands.add(new SubscribeCommand(challonge, listener));

@@ -31,10 +31,7 @@ import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static net.dv8tion.jda.api.interactions.commands.build.OptionData.MAX_CHOICES;
@@ -460,11 +457,50 @@ public class MovesCommand implements Command {
                 .toList();
     }
 
+    private static final String[] autocompleteMoveNames = new String[]{
+            "jab",
+            "forward tilt", "ftilt",
+            "down tilt", "dtilt",
+            "up tilt", "utilt",
+            "neutral air", "nair",
+            "forward air", "fair",
+            "dash attack",
+            "forward smash", "fsmash",
+            "up smash", "usmash",
+            "down smash", "dsmash",
+            "back air", "bair",
+            "up air", "uair",
+            "down air", "dair",
+            "neutral b",
+            "side b",
+            "down b",
+            "up b",
+            "grab",
+            "dash grab",
+            "pivot grab",
+            "pummel",
+            "forward throw", "fthrow",
+            "back throw", "bthrow",
+            "up throw", "uthrow",
+            "down throw", "dthrow",
+            "spot dodge",
+            "forward roll",
+            "backward roll",
+            "air dodge",
+            "misc",
+            "ledge grab",
+            "ledge hang",
+            "getup attack",
+    };
+
     @Nonnull
     private List<net.dv8tion.jda.api.interactions.commands.Command.Choice> autocompleteMove(@Nonnull String input) {
-        // TODO
-        // Prolly can't tailor-make this per character
-        return Collections.emptyList();
+        // TODO tailor-make this per character?
+        return Arrays.stream(autocompleteMoveNames)
+                .filter(move -> move.startsWith(input))
+                .map(move -> new net.dv8tion.jda.api.interactions.commands.Command.Choice(move, move))
+                .limit(MAX_CHOICES)
+                .toList();
     }
 
     @Nonnull

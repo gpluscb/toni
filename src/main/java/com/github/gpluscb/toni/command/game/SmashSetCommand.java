@@ -66,6 +66,7 @@ public class SmashSetCommand implements Command {
                 };
 
                 ctx.reply(reply).queue();
+                return;
             }
 
             CommandUtil.OneOrTwoUserArgs users = argResult.getTOrThrow();

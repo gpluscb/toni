@@ -31,7 +31,10 @@ import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static net.dv8tion.jda.api.interactions.commands.build.OptionData.MAX_CHOICES;
@@ -432,20 +435,8 @@ public class MovesCommand implements Command {
     @Nonnull
     @Override
     public List<net.dv8tion.jda.api.interactions.commands.Command.Choice> onAutocomplete(@Nonnull CommandAutoCompleteInteractionEvent event) {
-        String incompleteInput = event.getFocusedOption().getValue().toLowerCase();
-        String name = event.getFocusedOption().getName();
-        return switch (name) {
-            case "character" -> autocompleteCharName(incompleteInput);
-            case "move" -> autocompleteMove(incompleteInput);
-            default -> {
-                log.error("Received autocomplete for option that didn't have autocomplete enabled: {}, input: {}", name, incompleteInput);
-                yield Collections.emptyList();
-            }
-        };
-    }
+        String input = event.getFocusedOption().getValue().toLowerCase();
 
-    @Nonnull
-    private List<net.dv8tion.jda.api.interactions.commands.Command.Choice> autocompleteCharName(@Nonnull String input) {
         // Limiting to one name per character for more diversity
         // More "proper" names will tend to be earlier in the altNames, so we choose the most "proper" matching name
         return characters.stream()
@@ -453,52 +444,6 @@ public class MovesCommand implements Command {
                         .filter(name -> name.startsWith(input))
                         .limit(1))
                 .map(name -> new net.dv8tion.jda.api.interactions.commands.Command.Choice(name, name))
-                .limit(MAX_CHOICES)
-                .toList();
-    }
-
-    private static final String[] autocompleteMoveNames = new String[]{
-            "jab",
-            "forward tilt", "ftilt",
-            "down tilt", "dtilt",
-            "up tilt", "utilt",
-            "neutral air", "nair",
-            "forward air", "fair",
-            "dash attack",
-            "forward smash", "fsmash",
-            "up smash", "usmash",
-            "down smash", "dsmash",
-            "back air", "bair",
-            "up air", "uair",
-            "down air", "dair",
-            "neutral b",
-            "side b",
-            "down b",
-            "up b",
-            "grab",
-            "dash grab",
-            "pivot grab",
-            "pummel",
-            "forward throw", "fthrow",
-            "back throw", "bthrow",
-            "up throw", "uthrow",
-            "down throw", "dthrow",
-            "spot dodge",
-            "forward roll",
-            "backward roll",
-            "air dodge",
-            "misc",
-            "ledge grab",
-            "ledge hang",
-            "getup attack",
-    };
-
-    @Nonnull
-    private List<net.dv8tion.jda.api.interactions.commands.Command.Choice> autocompleteMove(@Nonnull String input) {
-        // TODO tailor-make this per character?
-        return Arrays.stream(autocompleteMoveNames)
-                .filter(move -> move.startsWith(input))
-                .map(move -> new net.dv8tion.jda.api.interactions.commands.Command.Choice(move, move))
                 .limit(MAX_CHOICES)
                 .toList();
     }
@@ -516,7 +461,7 @@ public class MovesCommand implements Command {
                         Use the drop-down menus to select the move section, move, and hitbox image.
                         Aliases: `character`, `char`, `ufd`, `move`, `moves`, `hitboxes`, `hitbox`""")
                 .setCommandData(Commands.slash("moves", "Displays moves of a smash ultimate character")
-                        .addOption(OptionType.STRING, "character", "The character name", true, true)
+                        .addOption(OptionType.STRING, "character", "The character name", true)
                         .addOption(OptionType.STRING, "move", "The move name (e.g. `fair`, `down b`)", false, true))
                 .build();
     }

@@ -166,8 +166,7 @@ public class BlindPickCommand implements Command {
     }
 
     private void onTimeout(@Nonnull BlindPickMenu.BlindPickTimeoutEvent timeout, @Nonnull JDA jda, long channelId, @Nullable Long referenceId) {
-        MessageChannel channel = jda.getTextChannelById(channelId);
-        if (channel == null) channel = jda.getPrivateChannelById(channelId);
+        MessageChannel channel = jda.getChannelById(MessageChannel.class, channelId);
         if (channel == null) {
             log.warn("MessageChannel not in cache for timeout: {}", channelId);
             return;

@@ -5,6 +5,7 @@ import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.GuildMessageChannel;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import org.apache.logging.log4j.LogManager;
@@ -56,7 +57,7 @@ public class CommandDispatcher {
             if (isFromGuild) {
                 Permission[] perms = command.getInfo().requiredBotPerms();
                 Guild guild = context.map(msg -> msg.getEvent().getGuild(), slash -> slash.getEvent().getGuild());
-                TextChannel channel = context.map(msg -> msg.getEvent().getTextChannel(), slash -> slash.getEvent().getTextChannel());
+                GuildMessageChannel channel = context.map(msg -> msg.getEvent().getGuildChannel(), slash -> slash.getEvent().getGuildChannel());
 
                 if (!guild.getSelfMember().hasPermission(channel, perms)) {
                     log.debug("Missing perms: {}", (Object) perms);

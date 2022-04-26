@@ -1,7 +1,6 @@
 package com.github.gpluscb.toni.command;
 
 import com.github.gpluscb.toni.Config;
-import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -30,7 +29,7 @@ public class CommandListener extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
-        if (event.isFromGuild() && !event.getTextChannel().canTalk()) return;
+        if (event.isFromGuild() && !event.getGuildChannel().canTalk()) return;
         if (event.getAuthor().isBot() || !prefixPattern.matcher(event.getMessage().getContentRaw()).matches()) return;
 
         CommandContext<?> ctx = CommandContext.fromMessageReceivedEvent(event, config);
@@ -42,13 +41,8 @@ public class CommandListener extends ListenerAdapter {
     @Override
     public void onSlashCommandInteraction(@Nonnull SlashCommandInteractionEvent event) {
         CommandContext<?> ctx = CommandContext.fromSlashCommandEvent(event, config);
-        if (event.getChannelType() == ChannelType.TEXT && !event.getTextChannel().canTalk()) {
+        if (event.isFromGuild() && !event.getGuildChannel().canTalk()) {
             event.reply("I don't have permissions in this channel.").queue();
-            return;
-        }
-
-        if (event.getChannelType() == ChannelType.UNKNOWN) {
-            event.reply("I can't respond to commands in threads yet.").queue();
             return;
         }
 

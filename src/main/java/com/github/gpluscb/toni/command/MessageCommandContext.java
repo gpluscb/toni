@@ -53,8 +53,8 @@ public class MessageCommandContext implements ICommandContext<MessageReceivedEve
         log.debug("Reply: {}", content.isEmpty() ? message.getEmbeds() : content);
 
         MessageReceivedEvent e = getEvent();
-        if (e.isFromGuild() && !e.getGuild().getSelfMember().hasPermission(e.getTextChannel(), Permission.MESSAGE_HISTORY))
-            return e.getTextChannel().sendMessage(message);
+        if (e.isFromGuild() && !e.getGuild().getSelfMember().hasPermission(e.getGuildChannel(), Permission.MESSAGE_HISTORY))
+            return e.getGuildChannel().sendMessage(message);
         else
             return getMessage().reply(message);
     }

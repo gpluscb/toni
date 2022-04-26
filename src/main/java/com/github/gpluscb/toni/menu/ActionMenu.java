@@ -7,7 +7,6 @@ import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.requests.restaction.MessageAction;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -62,10 +61,7 @@ public abstract class ActionMenu {
         long channelId = getChannelId();
         JDA jda = getJDA();
 
-        MessageChannel channel = jda.getTextChannelById(channelId);
-        if (channel == null) channel = jda.getPrivateChannelById(channelId);
-
-        return channel;
+        return jda.getChannelById(MessageChannel.class, channelId);
     }
 
     /**

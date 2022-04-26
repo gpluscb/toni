@@ -99,7 +99,7 @@ public class ReactionActionMenu extends Menu {
     private void init(@Nonnull Message message) {
         botId.set(message.getAuthor().getIdLong());
 
-        if (!message.isFromGuild() || message.getGuild().getSelfMember().hasPermission(message.getTextChannel(), Permission.MESSAGE_ADD_REACTION, Permission.MESSAGE_HISTORY)) {
+        if (!message.isFromGuild() || message.getGuild().getSelfMember().hasPermission(message.getGuildChannel(), Permission.MESSAGE_ADD_REACTION, Permission.MESSAGE_HISTORY)) {
             buttonActions.keySet().stream().map(message::addReaction).forEach(RestAction::queue);
             if (deletionButton != null) message.addReaction(deletionButton).queue();
         }
@@ -123,8 +123,8 @@ public class ReactionActionMenu extends Menu {
                 },
                 MiscUtil.emptyConsumer(),
                 timeout, unit, FailLogger.logFail(() -> { // This is the only thing that will be executed on not JDA-WS thread. So exceptions may get swallowed
-                    MessageChannel channel = jda.getTextChannelById(channelId);
-                    if (channel == null) channel = jda.getPrivateChannelById(channelId);
+                    MessageChannel channel = jda.getChannelById(MessageChannel.class, channelId);
+
                     timeoutAction.accept(channel, messageId);
                     if (channel == null) log.warn("MessageChannel for onTimeout not in cache for onTimeout");
                 }));
@@ -155,7 +155,7 @@ public class ReactionActionMenu extends Menu {
             return ActionMenu.MenuAction.CANCEL;
         }
 
-        if (e.isFromGuild() && e.getGuild().getSelfMember().hasPermission(e.getTextChannel(), Permission.MESSAGE_MANAGE)) {
+        if (e.isFromGuild() && e.getGuild().getSelfMember().hasPermission(e.getGuildChannel(), Permission.MESSAGE_MANAGE)) {
             User user = e.getUser();
             if (user != null) e.getReaction().removeReaction(user).queue();
             else log.warn("User was null despite event being from guild. Not removing reaction");

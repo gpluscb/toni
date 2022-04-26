@@ -41,11 +41,11 @@ public class UnrankedConfigCommand implements Command {
         }
 
         Member member = ctx.getMember();
-        TextChannel textChannel = context.map(msg -> msg.getEvent().getTextChannel(), slash -> slash.getEvent().getTextChannel());
+        GuildMessageChannel messageChannel = context.map(msg -> msg.getEvent().getGuildChannel(), slash -> slash.getEvent().getGuildChannel());
         // TODO: Is this too restrictive?
         // We know the member is not null because we're in a guild
         //noinspection ConstantConditions
-        if (!(member.hasPermission(textChannel, Permission.MANAGE_CHANNEL) && member.hasPermission(Permission.MANAGE_ROLES))) {
+        if (!(member.hasPermission(messageChannel, Permission.MANAGE_CHANNEL) && member.hasPermission(Permission.MANAGE_ROLES))) {
             ctx.reply("I don't trust you... you need to have both the Manage Channel and Manage Roles permission to use this.").queue();
             return;
         }

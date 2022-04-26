@@ -611,8 +611,7 @@ public class MovesCommand implements Command {
         }
 
         private void timeout(@Nonnull JDA jda, long messageChannel) {
-            MessageChannel channel = jda.getTextChannelById(messageChannel);
-            if (channel == null) channel = jda.getPrivateChannelById(messageChannel);
+            MessageChannel channel = jda.getChannelById(MessageChannel.class, messageChannel);
             if (channel == null) {
                 log.warn("MessageChannel for onTimeout not in cache for onTimeout");
                 return;

@@ -17,7 +17,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.RecordComponent;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Gson support for Java 16+ record types.
@@ -39,18 +38,12 @@ public class RecordTypeAdapterFactory implements TypeAdapterFactory {
         PRIMITIVE_DEFAULTS.put(boolean.class, false);
     }
 
-    private final Map<RecordComponent, List<String>> recordComponentNameCache = new ConcurrentHashMap<>();
-
     /**
      * Get all names of a record component
      * If annotated with {@link SerializedName} the list returned will be the primary name first, then any alternative names
      * Otherwise, the component name will be returned.
      */
     private List<String> getRecordComponentNames(final RecordComponent recordComponent) {
-        List<String> inCache = recordComponentNameCache.get(recordComponent);
-        if (inCache != null) {
-            return inCache;
-        }
         List<String> names = new ArrayList<>();
         // The @SerializedName is compiled to be part of the componentName() method
         // The use of a loop is also deliberate, getAnnotation seemed to return null if Gson's package was relocated
@@ -68,9 +61,7 @@ public class RecordTypeAdapterFactory implements TypeAdapterFactory {
         } else {
             names.add(recordComponent.getName());
         }
-        var namesList = List.copyOf(names);
-        recordComponentNameCache.put(recordComponent, namesList);
-        return namesList;
+        return names;
     }
 
     @Override

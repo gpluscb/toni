@@ -461,8 +461,8 @@ public class MovesCommand implements Command {
                         Use the drop-down menus to select the move section, move, and hitbox image.
                         Aliases: `character`, `char`, `ufd`, `move`, `moves`, `hitboxes`, `hitbox`""")
                 .setCommandData(Commands.slash("moves", "Displays moves of a smash ultimate character")
-                        .addOption(OptionType.STRING, "character", "The character name", true)
-                        .addOption(OptionType.STRING, "move", "The move name (e.g. `fair`, `down b`)", false, true))
+                        .addOption(OptionType.STRING, "character", "The character name", true, true)
+                        .addOption(OptionType.STRING, "move", "The move name (e.g. `fair`, `down b`)", false))
                 .build();
     }
 

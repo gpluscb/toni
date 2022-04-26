@@ -5,7 +5,7 @@ import com.github.gpluscb.toni.util.OneOfTwo;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.sharding.ShardManager;
 import org.apache.logging.log4j.LogManager;
@@ -32,7 +32,7 @@ public class StatusCommand implements Command {
         switch (activityString.toLowerCase()) {
             case "listening" -> activityType = Activity.ActivityType.LISTENING;
             case "watching" -> activityType = Activity.ActivityType.WATCHING;
-            case "playing" -> activityType = Activity.ActivityType.DEFAULT;
+            case "playing" -> activityType = Activity.ActivityType.PLAYING;
             case "competing" -> activityType = Activity.ActivityType.COMPETING;
             default -> {
                 ctx.reply("Unknown activity. `status <ACTIVITY(listening|watching|playing|competing)> <STATUS...>`").queue();
@@ -59,7 +59,7 @@ public class StatusCommand implements Command {
         return new CommandInfo.Builder()
                 .setAdminOnly(true)
                 .setAliases(new String[]{"setstatus", "status"})
-                .setCommandData(new CommandData("status", "Changes the bot status")
+                .setCommandData(Commands.slash("status", "Changes the bot status")
                         .addOptions(new OptionData(OptionType.STRING, "activity", "The displayed activity", true)
                                 .addChoice("listening", "listening")
                                 .addChoice("watching", "watching")

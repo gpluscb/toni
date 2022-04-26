@@ -4,7 +4,7 @@ import com.github.gpluscb.toni.Bot;
 import com.github.gpluscb.toni.command.Command;
 import com.github.gpluscb.toni.command.CommandContext;
 import com.github.gpluscb.toni.command.CommandInfo;
-import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -39,7 +39,7 @@ public class ShutdownCommand implements Command {
         return new CommandInfo.Builder()
                 .setAdminOnly(true)
                 .setAliases(new String[]{"shutdown", "shut", "stfu"})
-                .setCommandData(new CommandData("shutdown", "Shuts down the bot"))
+                .setCommandData(Commands.slash("shutdown", "Shuts down the bot"))
                 .build();
     }
 }

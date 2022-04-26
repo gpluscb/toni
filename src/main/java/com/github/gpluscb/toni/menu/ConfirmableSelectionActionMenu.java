@@ -7,13 +7,13 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
-import net.dv8tion.jda.api.events.interaction.SelectionMenuEvent;
-import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.Button;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import org.apache.logging.log4j.LogManager;
@@ -99,7 +99,7 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
     }
 
     @Override
-    public void displaySlashReplying(@Nonnull SlashCommandEvent event) {
+    public void displaySlashReplying(@Nonnull SlashCommandInteractionEvent event) {
         event.reply(settings.start())
                 .addActionRows(getComponents())
                 .flatMap(InteractionHook::retrieveOriginal)
@@ -127,7 +127,7 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
     }
 
     @Nonnull
-    private synchronized MenuAction onOptionChoice(@Nonnull T choice, @Nonnull SelectionActionMenu.SelectionInfo info, @Nonnull SelectionMenuEvent event) {
+    private synchronized MenuAction onOptionChoice(@Nonnull T choice, @Nonnull SelectionActionMenu.SelectionInfo info, @Nonnull SelectMenuInteractionEvent event) {
         // Cancel SelectionActionMenu if already submitted
         // The choice shouldn't happen because the menu will already be removed
         // tho it kinda is a race condition.
@@ -144,7 +144,7 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
     }
 
     @Nonnull
-    private synchronized MenuAction onSubmit(@Nonnull ButtonClickEvent event) {
+    private synchronized MenuAction onSubmit(@Nonnull ButtonInteractionEvent event) {
         long user = event.getUser().getIdLong();
 
         if (!currentSelections.containsKey(user)) {
@@ -156,30 +156,21 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
 
         settings.onConfirmation().accept(new ConfirmationInfo(user), event);
 
-        if (isAllConfirmed()) {
-            // Return won't cancel the selection menu, so cancel manually
-            MenuAction action = settings.onAllConfirmation().apply(new ConfirmationInfo(user), event);
-            if (action == MenuAction.CANCEL) isCancelled = true;
-            return action;
-        }
+        if (isAllConfirmed()) return settings.onAllConfirmation().apply(new ConfirmationInfo(user), event);
 
         return MenuAction.CONTINUE;
     }
 
     private synchronized void onSelectionTimeout(@Nonnull SelectionActionMenu.SelectionMenuTimeoutEvent timeout) {
-        if (!isCancelled) {
-            isCancelled = true;
+        isCancelled = true;
 
-            settings.onTimeout().accept(new ConfirmationInfoTimeoutEvent(OneOfTwo.ofT(timeout)));
-        }
+        settings.onTimeout().accept(new ConfirmationInfoTimeoutEvent(OneOfTwo.ofT(timeout)));
     }
 
     private synchronized void onSubmitTimeout(@Nonnull ButtonActionMenu.ButtonActionMenuTimeoutEvent timeout) {
-        if (!isCancelled) {
-            isCancelled = true;
+        isCancelled = true;
 
-            settings.onTimeout().accept(new ConfirmationInfoTimeoutEvent(OneOfTwo.ofU(timeout)));
-        }
+        settings.onTimeout().accept(new ConfirmationInfoTimeoutEvent(OneOfTwo.ofU(timeout)));
     }
 
     private boolean isAllConfirmed() {
@@ -263,17 +254,17 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
     public record Settings<T>(@Nonnull ActionMenu.Settings actionMenuSettings, @Nonnull Message start,
                               @Nonnull Set<Long> users, @Nonnull Button submitButton,
                               @Nonnull List<ChoiceOption<T>> choices,
-                              @Nonnull BiConsumer<ConfirmableSelectionActionMenu<T>.OptionChoiceInfo, SelectionMenuEvent> onOptionChoice,
-                              @Nonnull BiConsumer<ConfirmableSelectionActionMenu<T>.ConfirmationInfo, ButtonClickEvent> onConfirmation,
-                              @Nonnull BiFunction<ConfirmableSelectionActionMenu<T>.ConfirmationInfo, ButtonClickEvent, MenuAction> onAllConfirmation,
+                              @Nonnull BiConsumer<ConfirmableSelectionActionMenu<T>.OptionChoiceInfo, SelectMenuInteractionEvent> onOptionChoice,
+                              @Nonnull BiConsumer<ConfirmableSelectionActionMenu<T>.ConfirmationInfo, ButtonInteractionEvent> onConfirmation,
+                              @Nonnull BiFunction<ConfirmableSelectionActionMenu<T>.ConfirmationInfo, ButtonInteractionEvent, MenuAction> onAllConfirmation,
                               @Nonnull Consumer<ConfirmableSelectionActionMenu<T>.ConfirmationInfoTimeoutEvent> onTimeout) {
         @Nonnull
         public static final Button DEFAULT_SUBMIT_BUTTON = Button.primary("submit", "Submit");
 
-        public static <T> void DEFAULT_ON_OPTION_CHOICE(ConfirmableSelectionActionMenu<T>.OptionChoiceInfo choiceInfo, SelectionMenuEvent event) {
+        public static <T> void DEFAULT_ON_OPTION_CHOICE(ConfirmableSelectionActionMenu<T>.OptionChoiceInfo choiceInfo, SelectMenuInteractionEvent event) {
         }
 
-        public static <T> void DEFAULT_ON_CONFIRMATION(ConfirmableSelectionActionMenu<T>.ConfirmationInfo submitInfo, ButtonClickEvent event) {
+        public static <T> void DEFAULT_ON_CONFIRMATION(ConfirmableSelectionActionMenu<T>.ConfirmationInfo submitInfo, ButtonInteractionEvent event) {
         }
 
         public static <T> void DEFAULT_ON_TIMEOUT(ConfirmableSelectionActionMenu<T>.ConfirmationInfoTimeoutEvent timeout) {
@@ -305,11 +296,11 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
             @Nonnull
             private List<ChoiceOption<T>> choices = new ArrayList<>();
             @Nonnull
-            private BiConsumer<ConfirmableSelectionActionMenu<T>.OptionChoiceInfo, SelectionMenuEvent> onOptionChoice = Settings::DEFAULT_ON_OPTION_CHOICE;
+            private BiConsumer<ConfirmableSelectionActionMenu<T>.OptionChoiceInfo, SelectMenuInteractionEvent> onOptionChoice = Settings::DEFAULT_ON_OPTION_CHOICE;
             @Nonnull
-            private BiConsumer<ConfirmableSelectionActionMenu<T>.ConfirmationInfo, ButtonClickEvent> onConfirmation = Settings::DEFAULT_ON_CONFIRMATION;
+            private BiConsumer<ConfirmableSelectionActionMenu<T>.ConfirmationInfo, ButtonInteractionEvent> onConfirmation = Settings::DEFAULT_ON_CONFIRMATION;
             @Nullable
-            private BiFunction<ConfirmableSelectionActionMenu<T>.ConfirmationInfo, ButtonClickEvent, MenuAction> onAllConfirmation;
+            private BiFunction<ConfirmableSelectionActionMenu<T>.ConfirmationInfo, ButtonInteractionEvent, MenuAction> onAllConfirmation;
             @Nonnull
             private Consumer<ConfirmableSelectionActionMenu<T>.ConfirmationInfoTimeoutEvent> onTimeout = Settings::DEFAULT_ON_TIMEOUT;
 
@@ -367,18 +358,18 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
             }
 
             @Nonnull
-            public Builder<T> setOnOptionChoice(@Nonnull BiConsumer<ConfirmableSelectionActionMenu<T>.OptionChoiceInfo, SelectionMenuEvent> onOptionChoice) {
+            public Builder<T> setOnOptionChoice(@Nonnull BiConsumer<ConfirmableSelectionActionMenu<T>.OptionChoiceInfo, SelectMenuInteractionEvent> onOptionChoice) {
                 this.onOptionChoice = onOptionChoice;
                 return this;
             }
 
             @Nonnull
-            public Builder<T> setOnConfirmation(@Nonnull BiConsumer<ConfirmableSelectionActionMenu<T>.ConfirmationInfo, ButtonClickEvent> onConfirmation) {
+            public Builder<T> setOnConfirmation(@Nonnull BiConsumer<ConfirmableSelectionActionMenu<T>.ConfirmationInfo, ButtonInteractionEvent> onConfirmation) {
                 this.onConfirmation = onConfirmation;
                 return this;
             }
 
-            public Builder<T> setOnAllConfirmation(@Nonnull BiFunction<ConfirmableSelectionActionMenu<T>.ConfirmationInfo, ButtonClickEvent, MenuAction> onAllConfirmation) {
+            public Builder<T> setOnAllConfirmation(@Nonnull BiFunction<ConfirmableSelectionActionMenu<T>.ConfirmationInfo, ButtonInteractionEvent, MenuAction> onAllConfirmation) {
                 this.onAllConfirmation = onAllConfirmation;
                 return this;
             }

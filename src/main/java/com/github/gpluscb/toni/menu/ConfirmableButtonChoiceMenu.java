@@ -4,12 +4,12 @@ import com.github.gpluscb.toni.util.MiscUtil;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
-import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
-import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.Button;
-import net.dv8tion.jda.api.interactions.components.ComponentLayout;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -75,7 +75,7 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
     }
 
     @Override
-    public void displaySlashReplying(@Nonnull SlashCommandEvent event) {
+    public void displaySlashReplying(@Nonnull SlashCommandInteractionEvent event) {
         underlying.displaySlashReplying(event);
     }
 
@@ -96,7 +96,7 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
     }
 
     @Nonnull
-    private synchronized MenuAction onChoice(@Nullable T choice, @Nonnull ButtonClickEvent event) {
+    private synchronized MenuAction onChoice(@Nullable T choice, @Nonnull ButtonInteractionEvent event) {
         if (choice == null) {
             log.warn("Invalid choice chosen - id: {}", event.getComponentId());
 
@@ -124,13 +124,13 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
         // Activate reset
         // resetButton will not be a link button, otherwise build of underlying would have failed
         //noinspection ConstantConditions
-        ComponentLayout.updateComponent(actionRows, settings.resetButton().getId(), settings.resetButton().asEnabled());
+        LayoutComponent.updateComponent(actionRows, settings.resetButton().getId(), settings.resetButton().asEnabled());
 
         // (De)Activate confirm
         boolean canConfirm = currentChoices.size() >= settings.minChoices() && currentChoices.size() <= settings.maxChoices();
         // confirmButton will not be a link button, otherwise build of underlying would have failed
         //noinspection ConstantConditions
-        ComponentLayout.updateComponent(actionRows, settings.confirmButton().getId(), settings.confirmButton().withDisabled(!canConfirm));
+        LayoutComponent.updateComponent(actionRows, settings.confirmButton().getId(), settings.confirmButton().withDisabled(!canConfirm));
 
         event.editMessage(message)
                 .setActionRows(actionRows)
@@ -140,7 +140,7 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
     }
 
     @Nonnull
-    private synchronized MenuAction onConfirm(@Nonnull ButtonClickEvent event) {
+    private synchronized MenuAction onConfirm(@Nonnull ButtonInteractionEvent event) {
         if (currentChoices.size() < settings.minChoices() || currentChoices.size() > settings.maxChoices()) {
             log.warn("Confirm was activated with illegal number of choices.");
 
@@ -157,7 +157,7 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
     }
 
     @Nonnull
-    private synchronized MenuAction onReset(@Nonnull ButtonClickEvent event) {
+    private synchronized MenuAction onReset(@Nonnull ButtonInteractionEvent event) {
         currentChoices.clear();
 
         Message message = settings.resetMessageProvider().apply(new ResetInfo(), event);
@@ -260,9 +260,9 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
                               @Nonnull List<ChoiceButton<T>> choiceButtons, @Nonnull Message start,
                               @Nonnull Button confirmButton, @Nonnull Button resetButton,
                               int minChoices, int maxChoices,
-                              @Nonnull BiFunction<ConfirmableButtonChoiceMenu<? super T>.ChoiceInfo, ButtonClickEvent, Message> choiceMessageProvider,
-                              @Nonnull BiFunction<ConfirmableButtonChoiceMenu<? super T>.ResetInfo, ButtonClickEvent, Message> resetMessageProvider,
-                              @Nonnull BiConsumer<ConfirmableButtonChoiceMenu<? super T>.ConfirmInfo, ButtonClickEvent> onChoicesConfirmed,
+                              @Nonnull BiFunction<ConfirmableButtonChoiceMenu<? super T>.ChoiceInfo, ButtonInteractionEvent, Message> choiceMessageProvider,
+                              @Nonnull BiFunction<ConfirmableButtonChoiceMenu<? super T>.ResetInfo, ButtonInteractionEvent, Message> resetMessageProvider,
+                              @Nonnull BiConsumer<ConfirmableButtonChoiceMenu<? super T>.ConfirmInfo, ButtonInteractionEvent> onChoicesConfirmed,
                               @Nonnull Consumer<ConfirmableButtonChoiceMenu<? super T>.ConfirmableButtonChoiceTimeoutEvent> onTimeout) {
         public static class Builder<T> {
             @Nullable
@@ -282,11 +282,11 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
             @Nullable
             private Integer maxChoices;
             @Nullable
-            private BiFunction<ConfirmableButtonChoiceMenu<? super T>.ChoiceInfo, ButtonClickEvent, Message> choiceMessageProvider;
+            private BiFunction<ConfirmableButtonChoiceMenu<? super T>.ChoiceInfo, ButtonInteractionEvent, Message> choiceMessageProvider;
             @Nullable
-            private BiFunction<ConfirmableButtonChoiceMenu<? super T>.ResetInfo, ButtonClickEvent, Message> resetMessageProvider;
+            private BiFunction<ConfirmableButtonChoiceMenu<? super T>.ResetInfo, ButtonInteractionEvent, Message> resetMessageProvider;
             @Nullable
-            private BiConsumer<ConfirmableButtonChoiceMenu<? super T>.ConfirmInfo, ButtonClickEvent> onChoicesConfirmed;
+            private BiConsumer<ConfirmableButtonChoiceMenu<? super T>.ConfirmInfo, ButtonInteractionEvent> onChoicesConfirmed;
             @Nullable
             private Consumer<ConfirmableButtonChoiceMenu<? super T>.ConfirmableButtonChoiceTimeoutEvent> onTimeout;
 
@@ -345,19 +345,19 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
             }
 
             @Nonnull
-            public Builder<T> setChoiceMessageProvider(@Nullable BiFunction<ConfirmableButtonChoiceMenu<? super T>.ChoiceInfo, ButtonClickEvent, Message> choiceMessageProvider) {
+            public Builder<T> setChoiceMessageProvider(@Nullable BiFunction<ConfirmableButtonChoiceMenu<? super T>.ChoiceInfo, ButtonInteractionEvent, Message> choiceMessageProvider) {
                 this.choiceMessageProvider = choiceMessageProvider;
                 return this;
             }
 
             @Nonnull
-            public Builder<T> setResetMessageProvider(@Nullable BiFunction<ConfirmableButtonChoiceMenu<? super T>.ResetInfo, ButtonClickEvent, Message> resetMessageProvider) {
+            public Builder<T> setResetMessageProvider(@Nullable BiFunction<ConfirmableButtonChoiceMenu<? super T>.ResetInfo, ButtonInteractionEvent, Message> resetMessageProvider) {
                 this.resetMessageProvider = resetMessageProvider;
                 return this;
             }
 
             @Nonnull
-            public Builder<T> setOnChoicesConfirmed(@Nullable BiConsumer<ConfirmableButtonChoiceMenu<? super T>.ConfirmInfo, ButtonClickEvent> onChoicesConfirmed) {
+            public Builder<T> setOnChoicesConfirmed(@Nullable BiConsumer<ConfirmableButtonChoiceMenu<? super T>.ConfirmInfo, ButtonInteractionEvent> onChoicesConfirmed) {
                 this.onChoicesConfirmed = onChoicesConfirmed;
                 return this;
             }

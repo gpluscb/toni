@@ -10,12 +10,12 @@ import net.dv8tion.jda.api.entities.Emoji;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
-import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.Button;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 
 import javax.annotation.Nonnull;
@@ -68,7 +68,7 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
     }
 
     @Override
-    public void displaySlashReplying(@Nonnull SlashCommandEvent e) {
+    public void displaySlashReplying(@Nonnull SlashCommandInteractionEvent e) {
         underlying.displaySlashReplying(e);
     }
 
@@ -89,7 +89,7 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
     }
 
     @Nonnull
-    private synchronized MenuAction choose(@Nonnull ButtonClickEvent e, @Nonnull RPS choice) {
+    private synchronized MenuAction choose(@Nonnull ButtonInteractionEvent e, @Nonnull RPS choice) {
         boolean isUser1 = e.getUser().getIdLong() == getTwoUsersChoicesActionMenuSettings().user1();
         if ((isUser1 && choice1 != null) || (!isUser1 && choice2 != null)) {
             e.reply("You have already chosen, and you must learn to live with that choice!")
@@ -253,13 +253,13 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
     }
 
     public record Settings(@Nonnull TwoUsersChoicesActionMenu.Settings twoUsersChoicesActionMenuSettings,
-                           @Nonnull BiConsumer<RPS, ButtonClickEvent> onChoiceMade,
-                           @Nonnull BiConsumer<RPSResult, ButtonClickEvent> onResult, @Nonnull Message start,
+                           @Nonnull BiConsumer<RPS, ButtonInteractionEvent> onChoiceMade,
+                           @Nonnull BiConsumer<RPSResult, ButtonInteractionEvent> onResult, @Nonnull Message start,
                            @Nonnull Consumer<RPSTimeoutEvent> onTimeout) {
         @Nonnull
-        public static final BiConsumer<RPS, ButtonClickEvent> DEFAULT_ON_CHOICE_MADE = MiscUtil.emptyBiConsumer();
+        public static final BiConsumer<RPS, ButtonInteractionEvent> DEFAULT_ON_CHOICE_MADE = MiscUtil.emptyBiConsumer();
         @Nonnull
-        public static final BiConsumer<RPSResult, ButtonClickEvent> DEFAULT_ON_RESULT = MiscUtil.emptyBiConsumer();
+        public static final BiConsumer<RPSResult, ButtonInteractionEvent> DEFAULT_ON_RESULT = MiscUtil.emptyBiConsumer();
         @Nonnull
         public static final Consumer<RPSTimeoutEvent> DEFAULT_ON_TIMEOUT = event -> {
             MessageChannel channel = event.getChannel();
@@ -281,9 +281,9 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
             @Nullable
             private Message start;
             @Nonnull
-            private BiConsumer<RPS, ButtonClickEvent> onChoiceMade = DEFAULT_ON_CHOICE_MADE;
+            private BiConsumer<RPS, ButtonInteractionEvent> onChoiceMade = DEFAULT_ON_CHOICE_MADE;
             @Nonnull
-            private BiConsumer<RPSResult, ButtonClickEvent> onResult = DEFAULT_ON_RESULT;
+            private BiConsumer<RPSResult, ButtonInteractionEvent> onResult = DEFAULT_ON_RESULT;
             @Nonnull
             private Consumer<RPSTimeoutEvent> onTimeout = DEFAULT_ON_TIMEOUT;
 
@@ -299,13 +299,13 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
             }
 
             @Nonnull
-            public Builder setOnChoiceMade(@Nonnull BiConsumer<RPS, ButtonClickEvent> onChoiceMade) {
+            public Builder setOnChoiceMade(@Nonnull BiConsumer<RPS, ButtonInteractionEvent> onChoiceMade) {
                 this.onChoiceMade = onChoiceMade;
                 return this;
             }
 
             @Nonnull
-            public Builder setOnResult(@Nonnull BiConsumer<RPSResult, ButtonClickEvent> onResult) {
+            public Builder setOnResult(@Nonnull BiConsumer<RPSResult, ButtonInteractionEvent> onResult) {
                 this.onResult = onResult;
                 return this;
             }

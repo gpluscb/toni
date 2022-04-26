@@ -11,16 +11,16 @@ import com.github.gpluscb.toni.smashset.Ruleset;
 import com.github.gpluscb.toni.smashset.SmashSet;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
-import com.github.gpluscb.toni.util.discord.ChannelChoiceWaiter;
+import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
-import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -32,14 +32,14 @@ public class SmashSetCommand implements Command {
     private final static Logger log = LogManager.getLogger(SmashSetCommand.class);
 
     @Nonnull
-    private final ChannelChoiceWaiter channelWaiter;
+    private final EventWaiter waiter;
     @Nonnull
     private final List<Ruleset> rulesets;
     @Nonnull
     private final List<Character> characters;
 
-    public SmashSetCommand(@Nonnull ChannelChoiceWaiter channelWaiter, @Nonnull List<Ruleset> rulesets, @Nonnull CharacterTree characterTree) {
-        this.channelWaiter = channelWaiter;
+    public SmashSetCommand(@Nonnull EventWaiter waiter, @Nonnull List<Ruleset> rulesets, @Nonnull CharacterTree characterTree) {
+        this.waiter = waiter;
         this.rulesets = rulesets;
         this.characters = characterTree.getAllCharacters();
     }
@@ -139,7 +139,7 @@ public class SmashSetCommand implements Command {
         }
 
         RulesetSelectMenu rulesetMenu = new RulesetSelectMenu(RulesetSelectMenu.Settings.getDefaultSettings(
-                channelWaiter.getEventWaiter(),
+                waiter,
                 ctx.getMember(),
                 ctx.getUser(),
                 rulesets,
@@ -151,11 +151,11 @@ public class SmashSetCommand implements Command {
                 .onU(slash -> rulesetMenu.displaySlashReplying(slash.getEvent()));
     }
 
-    private void startSmashSet(@Nonnull Ruleset ruleset, @Nonnull OneOfTwo<Message, SlashCommandEvent> replyTo, int firstToWhatScore, @Nonnull User user1, @Nonnull User user2) {
+    private void startSmashSet(@Nonnull Ruleset ruleset, @Nonnull OneOfTwo<Message, SlashCommandInteractionEvent> replyTo, int firstToWhatScore, @Nonnull User user1, @Nonnull User user2) {
         SmashSetMenu menu = new SmashSetMenu(new SmashSetMenu.Settings.Builder()
                 .setTwoUsersChoicesActionMenuSettings(new TwoUsersChoicesActionMenu.Settings.Builder()
                         .setActionMenuSettings(new ActionMenu.Settings.Builder()
-                                .setWaiter(channelWaiter.getEventWaiter())
+                                .setWaiter(waiter)
                                 .setTimeout(60, TimeUnit.MINUTES)
                                 .build())
                         .setUsers(user1.getIdLong(), user2.getIdLong())
@@ -166,7 +166,7 @@ public class SmashSetCommand implements Command {
                 .setReportGameTimeout(60, TimeUnit.MINUTES)
                 .setLoserCharCounterpickTimeout(60, TimeUnit.MINUTES)
                 .setWinnerCharPickTimeout(60, TimeUnit.MINUTES)
-                .setChannelWaiter(channelWaiter)
+                .setWaiter(waiter)
                 .setCharacters(characters)
                 .setRuleset(ruleset)
                 .setFirstToWhatScore(firstToWhatScore)
@@ -186,18 +186,12 @@ public class SmashSetCommand implements Command {
                 .setOnPickStageTimeout(pickStageTimeout -> genericOnTimeout(pickStageTimeout.getTimeoutEvent(), "The stage counterpick menu timed out."))
                 .build());
 
-        if (menu.isInitFailure()) {
-            String failureMessage = "Some of you already have a DM thing going on with me, so I can't initiate the double blind pick procedure.";
-            replyTo.map(message -> message.reply(failureMessage), slash -> slash.reply(failureMessage)).queue();
-            return;
-        }
-
         replyTo
                 .onT(menu::displayReplying)
                 .onU(menu::displaySlashReplying);
     }
 
-    private void onResult(@Nonnull SmashSetMenu.SmashSetResult result, @Nonnull ButtonClickEvent event) {
+    private void onResult(@Nonnull SmashSetMenu.SmashSetResult result, @Nonnull ButtonInteractionEvent event) {
         List<SmashSet.GameData> games = result.getSet().getGames();
         SmashSet.GameData lastGame = games.get(games.size() - 1);
 
@@ -239,7 +233,7 @@ public class SmashSetCommand implements Command {
                         The `BEST OF X` argument specifies how many games you will play (i.e. with `3` you'll play a best of 3, with `5` you'll play a best of 5 etc.).
                         For a list of rulesets and their IDs, use the `rulesets` command.
                         Aliases: `playset`, `set`""")
-                .setCommandData(new CommandData("playset", "Helps you play a set in a specific ruleset")
+                .setCommandData(Commands.slash("playset", "Helps you play a set in a specific ruleset")
                         .addOption(OptionType.USER, "player-1", "The first player", true)
                         .addOption(OptionType.USER, "player-2", "The opponent. This is yourself by default", false)
                         .addOption(OptionType.INTEGER, "best-of", "Will this be a best of 3/best of 5/best of whatever set? This is 3 by default", false)

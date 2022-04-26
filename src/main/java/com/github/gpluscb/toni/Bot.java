@@ -14,7 +14,7 @@ import com.github.gpluscb.toni.command.game.*;
 import com.github.gpluscb.toni.command.help.HelpCommand;
 import com.github.gpluscb.toni.command.help.PingCommand;
 import com.github.gpluscb.toni.command.help.TermsCommand;
-import com.github.gpluscb.toni.command.lookup.CharacterCommand;
+import com.github.gpluscb.toni.command.lookup.MovesCommand;
 import com.github.gpluscb.toni.command.lookup.SmashdataCommand;
 import com.github.gpluscb.toni.command.lookup.TournamentCommand;
 import com.github.gpluscb.toni.command.matchmaking.AvailableCommand;
@@ -23,6 +23,9 @@ import com.github.gpluscb.toni.command.matchmaking.UnrankedLfgCommand;
 import com.github.gpluscb.toni.matchmaking.UnrankedManager;
 import com.github.gpluscb.toni.smashdata.SmashdataManager;
 import com.github.gpluscb.toni.smashgg.GGManager;
+import com.github.gpluscb.toni.smashset.CharacterTree;
+import com.github.gpluscb.toni.smashset.Ruleset;
+import com.github.gpluscb.toni.smashset.Rulesets;
 import com.github.gpluscb.toni.statsposting.BotListClient;
 import com.github.gpluscb.toni.statsposting.PostGuildRoutine;
 import com.github.gpluscb.toni.statsposting.dbots.DBotsClient;
@@ -32,12 +35,8 @@ import com.github.gpluscb.toni.statsposting.topgg.TopggClient;
 import com.github.gpluscb.toni.statsposting.topgg.TopggClientMock;
 import com.github.gpluscb.toni.ultimateframedata.UltimateframedataClient;
 import com.github.gpluscb.toni.util.RecordTypeAdapterFactory;
-import com.github.gpluscb.toni.util.discord.ChannelChoiceWaiter;
 import com.github.gpluscb.toni.util.discord.DiscordAppenderImpl;
 import com.github.gpluscb.toni.util.discord.ShardsLoadListener;
-import com.github.gpluscb.toni.smashset.CharacterTree;
-import com.github.gpluscb.toni.smashset.Ruleset;
-import com.github.gpluscb.toni.smashset.Rulesets;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -183,7 +182,6 @@ public class Bot {
         log.trace("Building EventWaiter");
         waiterPool = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "EventWaiterPool [0 / 1] Waiter-Thread"));
         EventWaiter waiter = new EventWaiter(waiterPool, false);
-        ChannelChoiceWaiter channelWaiter = new ChannelChoiceWaiter(waiter);
 
         long botId = cfg.botId();
 
@@ -268,7 +266,7 @@ public class Bot {
         }
 
         log.trace("Loading commands");
-        List<CommandCategory> commands = loadCommands(ufdClient, waiter, channelWaiter, /*challonge, listener, */characterTree, rulesets);
+        List<CommandCategory> commands = loadCommands(ufdClient, waiter, /*challonge, listener, */characterTree, rulesets);
 
         log.trace("Creating loadListener");
         long adminGuildId = cfg.adminGuildId();
@@ -329,7 +327,7 @@ public class Bot {
         log.trace("Starting command listener and dispatcher");
         dispatcher = new CommandDispatcher(commands);
 
-        CommandListener commandListener = new CommandListener(channelWaiter, dispatcher, cfg);
+        CommandListener commandListener = new CommandListener(dispatcher, cfg);
         shardManager.addEventListener(commandListener);
 
         log.trace("Enabling discord appender");
@@ -359,7 +357,7 @@ public class Bot {
     }
 
     @Nonnull
-    private List<CommandCategory> loadCommands(@Nonnull UltimateframedataClient ufdClient, @Nonnull EventWaiter waiter, @Nonnull ChannelChoiceWaiter channelWaiter, /*@Nonnull ChallongeExtension challonge, @Nonnull TournamentListener listener, */@Nonnull CharacterTree characterTree, @Nonnull List<Ruleset> rulesets) {
+    private List<CommandCategory> loadCommands(@Nonnull UltimateframedataClient ufdClient, @Nonnull EventWaiter waiter, /*@Nonnull ChallongeExtension challonge, @Nonnull TournamentListener listener, */@Nonnull CharacterTree characterTree, @Nonnull List<Ruleset> rulesets) {
         List<CommandCategory> commands = new ArrayList<>();
 
         List<Command> adminCommands = new ArrayList<>();
@@ -379,16 +377,16 @@ public class Bot {
         gameCommands.add(new RandomCharacterCommand(characterTree));
         gameCommands.add(new RandomPlayerCommand());
         gameCommands.add(new RPSCommand(waiter));
-        gameCommands.add(new BlindPickCommand(channelWaiter, characterTree));
+        gameCommands.add(new BlindPickCommand(waiter, characterTree));
         gameCommands.add(new StrikeStagesCommand(waiter, rulesets));
         gameCommands.add(new CounterpickStagesCommand(waiter, rulesets));
-        gameCommands.add(new SmashSetCommand(channelWaiter, rulesets, characterTree));
+        gameCommands.add(new SmashSetCommand(waiter, rulesets, characterTree));
         gameCommands.add(new RulesetsCommand(waiter, rulesets));
         commands.add(new CommandCategory("game", "Smash Bros. utility commands", gameCommands));
 
         List<Command> lookupCommands = new ArrayList<>();
         lookupCommands.add(new TournamentCommand(ggManager, waiter));
-        lookupCommands.add(new CharacterCommand(ufdClient, waiter, characterTree));
+        lookupCommands.add(new MovesCommand(ufdClient, waiter, characterTree));
         lookupCommands.add(new SmashdataCommand(waiter, smashdata));
         // TODO: Feature is on hold
         // lookupCommands.add(new SubscribeCommand(challonge, listener));

@@ -11,7 +11,7 @@ import net.dv8tion.jda.api.exceptions.HierarchyException;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.requests.RestAction;
 import net.dv8tion.jda.api.utils.TimeFormat;
 import org.apache.logging.log4j.LogManager;
@@ -187,7 +187,7 @@ public class AvailableCommand implements Command {
                         "Gives you the matchmaking role for the given duration, or permanently if you don't specify a duration." +
                         " The duration can have the format `Xh Xm Xs`, and it can't be longer than 12h." +
                         " Note that I can't remember to remove the role if I shut down during that time.") // TODO: Maybe fix that? That sounds so painful to fix tho.
-                .setCommandData(new CommandData("available", "Gives you the matchmaking role for a given duration")
+                .setCommandData(Commands.slash("available", "Gives you the matchmaking role for a given duration")
                         .addOption(OptionType.STRING, "duration", "The duration after which I should remove the matchmaking role. Default is to never remove it", false))
                 .build();
     }

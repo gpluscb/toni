@@ -3,7 +3,7 @@ package com.github.gpluscb.toni.command.help;
 import com.github.gpluscb.toni.command.Command;
 import com.github.gpluscb.toni.command.CommandContext;
 import com.github.gpluscb.toni.command.CommandInfo;
-import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
@@ -47,7 +47,7 @@ public class PingCommand implements Command {
                         **Keep in mind that this might yield inaccurate results during leap seconds!**
                         *(Idea of repeating 'o's stolen from [FloofBot](https://top.gg/bot/177222984157757440) with no permission and no shame (Floof's a really really good bot for the smash community and you should check him out))*
                         Aliases: `ping`, `rtt`""")
-                .setCommandData(new CommandData("ping", "Displays my current ping"))
+                .setCommandData(Commands.slash("ping", "Displays my current ping"))
                 .build();
     }
 }

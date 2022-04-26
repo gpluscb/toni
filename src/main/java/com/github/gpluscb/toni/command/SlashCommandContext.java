@@ -6,7 +6,7 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.requests.RestAction;
 import org.apache.logging.log4j.LogManager;
@@ -17,23 +17,23 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 @SuppressWarnings("ClassCanBeRecord")
-public class SlashCommandContext implements ICommandContext<SlashCommandEvent, RestAction<?>> {
+public class SlashCommandContext implements ICommandContext<SlashCommandInteractionEvent, RestAction<?>> {
     private static final Logger log = LogManager.getLogger(SlashCommandContext.class);
 
     @Nonnull
-    private final SlashCommandEvent event;
+    private final SlashCommandInteractionEvent event;
 
     @Nonnull
     private final Config config;
 
-    public SlashCommandContext(@Nonnull SlashCommandEvent event, @Nonnull Config config) {
+    public SlashCommandContext(@Nonnull SlashCommandInteractionEvent event, @Nonnull Config config) {
         this.event = event;
         this.config = config;
     }
 
     @Nonnull
     @Override
-    public SlashCommandEvent getEvent() {
+    public SlashCommandInteractionEvent getEvent() {
         return event;
     }
 

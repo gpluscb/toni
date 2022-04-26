@@ -16,17 +16,19 @@ repositories {
         url 'https://m2.dv8tion.net/releases'
     }
     mavenCentral()
-    jcenter()
     maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
     maven { url 'https://jitpack.io' }
+
+    // For JDA-Chewtils
+    maven { url "https://m2.chew.pro/snapshots" }
 }
 
 dependencies {
-    implementation(group: 'net.dv8tion', name: 'JDA', version: '4.3.0_330') {
+    // Custom branch and commit for modals
+    implementation(group: 'net.dv8tion', name: 'JDA', version: '5.0.0-alpha.11') {
         exclude module: 'opus-java'
     }
-
-    implementation group: 'com.jagrosh', name: 'jda-utilities', version: '3.0.5'
+    implementation 'pw.chew:jda-chewtils:2.0-SNAPSHOT'
 
     implementation group: 'com.github.gpluscb', name: 'gg-java', version: '1.0.2'
 

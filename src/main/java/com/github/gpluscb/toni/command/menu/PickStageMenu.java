@@ -1,19 +1,19 @@
 package com.github.gpluscb.toni.command.menu;
 
-import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.menu.ActionMenu;
 import com.github.gpluscb.toni.menu.ButtonActionMenu;
 import com.github.gpluscb.toni.smashset.Ruleset;
 import com.github.gpluscb.toni.smashset.Stage;
+import com.github.gpluscb.toni.util.MiscUtil;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Emoji;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
-import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
-import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.Button;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,7 +26,7 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import static net.dv8tion.jda.api.interactions.components.Button.LABEL_MAX_LENGTH;
+import static net.dv8tion.jda.api.interactions.components.buttons.Button.LABEL_MAX_LENGTH;
 
 public class PickStageMenu extends ActionMenu {
     private static final Logger log = LogManager.getLogger(PickStageMenu.class);
@@ -54,7 +54,7 @@ public class PickStageMenu extends ActionMenu {
         settings.ruleset().getStagesStream().forEach(stage -> {
             int id = stage.stageId();
             Button stageButton = Button.secondary(String.valueOf(id), StringUtils.abbreviate(stage.name(), LABEL_MAX_LENGTH))
-                    .withEmoji(Emoji.fromEmote("a", stage.stageEmoteId(),false)) // a as placeholder because it may not be empty
+                    .withEmoji(Emoji.fromEmote("a", stage.stageEmoteId(), false)) // a as placeholder because it may not be empty
                     .withDisabled(settings.bannedStageIds().contains(id));
 
             underlyingBuilder.registerButton(stageButton, e -> onPick(id, e));
@@ -79,7 +79,7 @@ public class PickStageMenu extends ActionMenu {
     }
 
     @Override
-    public void displaySlashReplying(@Nonnull SlashCommandEvent event) {
+    public void displaySlashReplying(@Nonnull SlashCommandInteractionEvent event) {
         underlying.displaySlashReplying(event);
     }
 
@@ -100,7 +100,7 @@ public class PickStageMenu extends ActionMenu {
     }
 
     @Nonnull
-    private synchronized MenuAction onPick(int stageId, @Nonnull ButtonClickEvent e) {
+    private synchronized MenuAction onPick(int stageId, @Nonnull ButtonInteractionEvent e) {
         if (settings.bannedStageIds().contains(stageId)) {
             log.error("Banned stage was picked: {}", stageId);
             e.reply("This stage cannot be picked.").setEphemeral(true).queue();
@@ -171,10 +171,11 @@ public class PickStageMenu extends ActionMenu {
 
     public record Settings(@Nonnull ActionMenu.Settings actionMenuSettings, long pickingUser, @Nonnull Ruleset ruleset,
                            @Nonnull Set<Integer> bannedStageIds,
-                           @Nonnull BiConsumer<PickStageResult, ButtonClickEvent> onResult, @Nonnull Message start,
+                           @Nonnull BiConsumer<PickStageResult, ButtonInteractionEvent> onResult,
+                           @Nonnull Message start,
                            @Nonnull Consumer<PickStageTimeoutEvent> onTimeout) {
         @Nonnull
-        public static final BiConsumer<PickStageResult, ButtonClickEvent> DEFAULT_ON_RESULT = MiscUtil.emptyBiConsumer();
+        public static final BiConsumer<PickStageResult, ButtonInteractionEvent> DEFAULT_ON_RESULT = MiscUtil.emptyBiConsumer();
         @Nonnull
         public static final Consumer<PickStageTimeoutEvent> DEFAULT_ON_TIMEOUT = MiscUtil.emptyConsumer();
 
@@ -190,7 +191,7 @@ public class PickStageMenu extends ActionMenu {
             @Nonnull
             private Set<Integer> bannedStageIds = new HashSet<>();
             @Nonnull
-            private BiConsumer<PickStageResult, ButtonClickEvent> onResult = DEFAULT_ON_RESULT;
+            private BiConsumer<PickStageResult, ButtonInteractionEvent> onResult = DEFAULT_ON_RESULT;
             @Nonnull
             private Consumer<PickStageTimeoutEvent> onTimeout = DEFAULT_ON_TIMEOUT;
 
@@ -224,7 +225,7 @@ public class PickStageMenu extends ActionMenu {
             }
 
             @Nonnull
-            public Builder setOnResult(@Nonnull BiConsumer<PickStageResult, ButtonClickEvent> onResult) {
+            public Builder setOnResult(@Nonnull BiConsumer<PickStageResult, ButtonInteractionEvent> onResult) {
                 this.onResult = onResult;
                 return this;
             }

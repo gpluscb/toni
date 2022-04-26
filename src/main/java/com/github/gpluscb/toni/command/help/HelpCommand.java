@@ -12,8 +12,8 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.build.CommandData;
-import net.dv8tion.jda.api.interactions.components.Button;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;
@@ -136,7 +136,7 @@ public class HelpCommand implements Command {
                 .setAliases(new String[]{"help", "h"})
                 .setShortHelp("Helps you out. Usage: `help [CATEGORY|COMMAND]`")
                 .setDetailedHelp("`stack owoflow - Circular reference`")
-                .setCommandData(new CommandData("help", "Helps you out")
+                .setCommandData(Commands.slash("help", "Helps you out")
                         .addOption(OptionType.STRING, "command-or-category", "The specific command or category name", false))
                 .build();
     }

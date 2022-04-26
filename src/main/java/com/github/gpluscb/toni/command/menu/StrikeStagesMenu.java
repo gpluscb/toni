@@ -10,11 +10,11 @@ import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Emoji;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
-import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
-import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.Button;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,7 +26,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static net.dv8tion.jda.api.interactions.components.Button.LABEL_MAX_LENGTH;
+import static net.dv8tion.jda.api.interactions.components.buttons.Button.LABEL_MAX_LENGTH;
 
 public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
     private static final Logger log = LogManager.getLogger(StrikeStagesMenu.class);
@@ -91,7 +91,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
     }
 
     @Override
-    public void displaySlashReplying(@Nonnull SlashCommandEvent event) {
+    public void displaySlashReplying(@Nonnull SlashCommandInteractionEvent event) {
         underlying.displaySlashReplying(event);
     }
 
@@ -112,7 +112,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
     }
 
     @Nonnull
-    private synchronized MenuAction handleStrike(@Nonnull ButtonClickEvent e, int stageId) {
+    private synchronized MenuAction handleStrike(@Nonnull ButtonInteractionEvent e, int stageId) {
         if (e.getUser().getIdLong() != currentStriker) {
             e.reply("It's not your turn to strike right now!").setEphemeral(true).queue();
             return MenuAction.CONTINUE;
@@ -293,9 +293,9 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
 
     public record Settings(@Nonnull TwoUsersChoicesActionMenu.Settings twoUsersChoicesActionMenuSettings,
                            @Nonnull Function<UpcomingStrikeInfo, Message> strikeMessageProducer,
-                           @Nonnull BiConsumer<StrikeInfo, ButtonClickEvent> onStrike,
-                           @Nonnull BiConsumer<UserStrikesInfo, ButtonClickEvent> onUserStrikes,
-                           @Nonnull BiConsumer<StrikeResult, ButtonClickEvent> onResult, @Nonnull Ruleset ruleset,
+                           @Nonnull BiConsumer<StrikeInfo, ButtonInteractionEvent> onStrike,
+                           @Nonnull BiConsumer<UserStrikesInfo, ButtonInteractionEvent> onUserStrikes,
+                           @Nonnull BiConsumer<StrikeResult, ButtonInteractionEvent> onResult, @Nonnull Ruleset ruleset,
                            @Nonnull Consumer<StrikeStagesTimeoutEvent> onTimeout) {
         @Nonnull
         public static final Function<UpcomingStrikeInfo, Message> DEFAULT_STRIKE_MESSAGE_PRODUCER = info -> {
@@ -324,11 +324,11 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
             }
         };
         @Nonnull
-        public static final BiConsumer<StrikeInfo, ButtonClickEvent> DEFAULT_ON_STRIKE = MiscUtil.emptyBiConsumer();
+        public static final BiConsumer<StrikeInfo, ButtonInteractionEvent> DEFAULT_ON_STRIKE = MiscUtil.emptyBiConsumer();
         @Nonnull
-        public static final BiConsumer<UserStrikesInfo, ButtonClickEvent> DEFAULT_ON_USER_STRIKES = MiscUtil.emptyBiConsumer();
+        public static final BiConsumer<UserStrikesInfo, ButtonInteractionEvent> DEFAULT_ON_USER_STRIKES = MiscUtil.emptyBiConsumer();
         @Nonnull
-        public static final BiConsumer<StrikeResult, ButtonClickEvent> DEFAULT_ON_RESULT = MiscUtil.emptyBiConsumer();
+        public static final BiConsumer<StrikeResult, ButtonInteractionEvent> DEFAULT_ON_RESULT = MiscUtil.emptyBiConsumer();
         @Nonnull
         public static final Consumer<StrikeStagesTimeoutEvent> DEFAULT_ON_TIMEOUT = MiscUtil.emptyConsumer();
 
@@ -340,11 +340,11 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
             @Nonnull
             private Function<UpcomingStrikeInfo, Message> strikeMessageProducer = DEFAULT_STRIKE_MESSAGE_PRODUCER;
             @Nonnull
-            private BiConsumer<StrikeInfo, ButtonClickEvent> onStrike = DEFAULT_ON_STRIKE;
+            private BiConsumer<StrikeInfo, ButtonInteractionEvent> onStrike = DEFAULT_ON_STRIKE;
             @Nonnull
-            private BiConsumer<UserStrikesInfo, ButtonClickEvent> onUserStrikes = DEFAULT_ON_USER_STRIKES;
+            private BiConsumer<UserStrikesInfo, ButtonInteractionEvent> onUserStrikes = DEFAULT_ON_USER_STRIKES;
             @Nonnull
-            private BiConsumer<StrikeResult, ButtonClickEvent> onResult = DEFAULT_ON_RESULT;
+            private BiConsumer<StrikeResult, ButtonInteractionEvent> onResult = DEFAULT_ON_RESULT;
             @Nonnull
             private Consumer<StrikeStagesTimeoutEvent> onTimeout = DEFAULT_ON_TIMEOUT;
 
@@ -367,19 +367,19 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
             }
 
             @Nonnull
-            public Builder setOnStrike(@Nonnull BiConsumer<StrikeInfo, ButtonClickEvent> onStrike) {
+            public Builder setOnStrike(@Nonnull BiConsumer<StrikeInfo, ButtonInteractionEvent> onStrike) {
                 this.onStrike = onStrike;
                 return this;
             }
 
             @Nonnull
-            public Builder setOnUserStrikes(@Nonnull BiConsumer<UserStrikesInfo, ButtonClickEvent> onUserStrikes) {
+            public Builder setOnUserStrikes(@Nonnull BiConsumer<UserStrikesInfo, ButtonInteractionEvent> onUserStrikes) {
                 this.onUserStrikes = onUserStrikes;
                 return this;
             }
 
             @Nonnull
-            public Builder setOnResult(@Nonnull BiConsumer<StrikeResult, ButtonClickEvent> onResult) {
+            public Builder setOnResult(@Nonnull BiConsumer<StrikeResult, ButtonInteractionEvent> onResult) {
                 this.onResult = onResult;
                 return this;
             }
@@ -401,17 +401,17 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
             }
 
             @Nonnull
-            public BiConsumer<StrikeInfo, ButtonClickEvent> getOnStrike() {
+            public BiConsumer<StrikeInfo, ButtonInteractionEvent> getOnStrike() {
                 return onStrike;
             }
 
             @Nonnull
-            public BiConsumer<UserStrikesInfo, ButtonClickEvent> getOnUserStrikes() {
+            public BiConsumer<UserStrikesInfo, ButtonInteractionEvent> getOnUserStrikes() {
                 return onUserStrikes;
             }
 
             @Nonnull
-            public BiConsumer<StrikeResult, ButtonClickEvent> getOnResult() {
+            public BiConsumer<StrikeResult, ButtonInteractionEvent> getOnResult() {
                 return onResult;
             }
 

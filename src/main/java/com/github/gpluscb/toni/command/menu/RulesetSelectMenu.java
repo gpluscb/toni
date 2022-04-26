@@ -10,9 +10,9 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
-import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
-import net.dv8tion.jda.api.events.interaction.SelectionMenuEvent;
-import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
@@ -74,7 +74,7 @@ public class RulesetSelectMenu extends ActionMenu {
     }
 
     @Override
-    public void displaySlashReplying(@Nonnull SlashCommandEvent event) {
+    public void displaySlashReplying(@Nonnull SlashCommandInteractionEvent event) {
         underlying.displaySlashReplying(event);
     }
 
@@ -99,12 +99,12 @@ public class RulesetSelectMenu extends ActionMenu {
         return settings;
     }
 
-    private synchronized void onSelect(@Nonnull ConfirmableSelectionActionMenu<Ruleset>.OptionChoiceInfo info, @Nonnull SelectionMenuEvent event) {
+    private synchronized void onSelect(@Nonnull ConfirmableSelectionActionMenu<Ruleset>.OptionChoiceInfo info, @Nonnull SelectMenuInteractionEvent event) {
         settings.onOptionSelect().accept(new RulesetSelectOptionInfo(info), event);
     }
 
     @Nonnull
-    private synchronized MenuAction onConfirmation(@Nonnull ConfirmableSelectionActionMenu<Ruleset>.ConfirmationInfo info, @Nonnull ButtonClickEvent event) {
+    private synchronized MenuAction onConfirmation(@Nonnull ConfirmableSelectionActionMenu<Ruleset>.ConfirmationInfo info, @Nonnull ButtonInteractionEvent event) {
         settings.onRulesetSelect().accept(new RulesetSelectionInfo(info), event);
 
         return MenuAction.CANCEL;
@@ -186,19 +186,19 @@ public class RulesetSelectMenu extends ActionMenu {
 
     public record Settings(@Nonnull ActionMenu.Settings actionMenuSettings, long user, @Nonnull List<Ruleset> rulesets,
                            @Nonnull Message start,
-                           @Nonnull BiConsumer<RulesetSelectOptionInfo, SelectionMenuEvent> onOptionSelect,
-                           @Nonnull BiConsumer<RulesetSelectionInfo, ButtonClickEvent> onRulesetSelect,
+                           @Nonnull BiConsumer<RulesetSelectOptionInfo, SelectMenuInteractionEvent> onOptionSelect,
+                           @Nonnull BiConsumer<RulesetSelectionInfo, ButtonInteractionEvent> onRulesetSelect,
                            @Nonnull Consumer<RulesetSelectTimeoutEvent> onTimeout) {
         @Nonnull
-        public static final BiConsumer<RulesetSelectionInfo, ButtonClickEvent> DEFAULT_ON_RULESET_SELECT = MiscUtil.emptyBiConsumer();
+        public static final BiConsumer<RulesetSelectionInfo, ButtonInteractionEvent> DEFAULT_ON_RULESET_SELECT = MiscUtil.emptyBiConsumer();
         @Nonnull
-        public static final BiConsumer<RulesetSelectOptionInfo, SelectionMenuEvent> DEFAULT_ON_OPTION_SELECT = MiscUtil.emptyBiConsumer();
+        public static final BiConsumer<RulesetSelectOptionInfo, SelectMenuInteractionEvent> DEFAULT_ON_OPTION_SELECT = MiscUtil.emptyBiConsumer();
         @Nonnull
         public static final Consumer<RulesetSelectTimeoutEvent> DEFAULT_ON_TIMEOUT = MiscUtil.emptyConsumer();
 
         @Nonnull
         public static Settings getDefaultSettings(@Nonnull EventWaiter waiter, @Nullable Member member, @Nonnull User user, @Nonnull List<Ruleset> rulesets,
-                                                  @Nonnull BiConsumer<RulesetSelectMenu.RulesetSelectionInfo, ButtonClickEvent> afterRulesetSelect) {
+                                                  @Nonnull BiConsumer<RulesetSelectMenu.RulesetSelectionInfo, ButtonInteractionEvent> afterRulesetSelect) {
             return new RulesetSelectMenu.Settings.Builder()
                     .setActionMenuSettings(new ActionMenu.Settings.Builder()
                             .setWaiter(waiter)
@@ -248,9 +248,9 @@ public class RulesetSelectMenu extends ActionMenu {
             @Nullable
             private Message start;
             @Nonnull
-            private BiConsumer<RulesetSelectOptionInfo, SelectionMenuEvent> onOptionSelect = DEFAULT_ON_OPTION_SELECT;
+            private BiConsumer<RulesetSelectOptionInfo, SelectMenuInteractionEvent> onOptionSelect = DEFAULT_ON_OPTION_SELECT;
             @Nonnull
-            private BiConsumer<RulesetSelectionInfo, ButtonClickEvent> onRulesetSelect = DEFAULT_ON_RULESET_SELECT;
+            private BiConsumer<RulesetSelectionInfo, ButtonInteractionEvent> onRulesetSelect = DEFAULT_ON_RULESET_SELECT;
             @Nonnull
             private Consumer<RulesetSelectTimeoutEvent> onTimeout = DEFAULT_ON_TIMEOUT;
 
@@ -279,13 +279,13 @@ public class RulesetSelectMenu extends ActionMenu {
             }
 
             @Nonnull
-            public Builder setOnOptionSelect(@Nonnull BiConsumer<RulesetSelectOptionInfo, SelectionMenuEvent> onOptionSelect) {
+            public Builder setOnOptionSelect(@Nonnull BiConsumer<RulesetSelectOptionInfo, SelectMenuInteractionEvent> onOptionSelect) {
                 this.onOptionSelect = onOptionSelect;
                 return this;
             }
 
             @Nonnull
-            public Builder setOnRulesetSelect(@Nonnull BiConsumer<RulesetSelectionInfo, ButtonClickEvent> onRulesetSelect) {
+            public Builder setOnRulesetSelect(@Nonnull BiConsumer<RulesetSelectionInfo, ButtonInteractionEvent> onRulesetSelect) {
                 this.onRulesetSelect = onRulesetSelect;
                 return this;
             }

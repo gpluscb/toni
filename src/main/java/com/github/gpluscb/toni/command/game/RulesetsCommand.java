@@ -3,27 +3,24 @@ package com.github.gpluscb.toni.command.game;
 import com.github.gpluscb.toni.command.Command;
 import com.github.gpluscb.toni.command.CommandContext;
 import com.github.gpluscb.toni.command.CommandInfo;
-import com.github.gpluscb.toni.util.discord.EmbedUtil;
 import com.github.gpluscb.toni.menu.ActionMenu;
 import com.github.gpluscb.toni.menu.SelectionActionMenu;
 import com.github.gpluscb.toni.smashset.Ruleset;
-import com.github.gpluscb.toni.smashset.Stage;
+import com.github.gpluscb.toni.util.discord.EmbedUtil;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.events.interaction.SelectionMenuEvent;
-import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.interactions.components.selections.SelectMenu;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
-import net.dv8tion.jda.api.interactions.components.selections.SelectionMenu;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -99,7 +96,7 @@ public class RulesetsCommand implements Command {
                         `rulesets`
                         Lists all the available rulesets with their IDs. You can select a specific ruleset through the menu to see how it operates.
                         Aliases: `ruleset`, `rulesets`""")
-                .setCommandData(new CommandData("rulesets", "Lists all the available rulesets"))
+                .setCommandData(Commands.slash("rulesets", "Lists all the available rulesets"))
                 .build();
     }
 
@@ -115,14 +112,14 @@ public class RulesetsCommand implements Command {
          * @param idx -1 is rulesets info page
          */
         @Nonnull
-        public synchronized ActionMenu.MenuAction onPageSelect(@Nonnull SelectionActionMenu.SelectionInfo info, @Nonnull SelectionMenuEvent event, int idx) {
+        public synchronized ActionMenu.MenuAction onPageSelect(@Nonnull SelectionActionMenu.SelectionInfo info, @Nonnull SelectMenuInteractionEvent event, int idx) {
             try {
                 EmbedBuilder builder = new EmbedBuilder(template);
 
                 if (idx == -1) applyRulesetList(builder);
                 else EmbedUtil.applyRuleset(builder, rulesets.get(idx));
 
-                SelectionMenu menu = SelectionMenu.create(info.getSelectionActionMenuSettings().id())
+                SelectMenu menu = SelectMenu.create(info.getSelectionActionMenuSettings().id())
                         .addOptions(info.getInitialSelectOptions())
                         .setDefaultValues(Collections.singleton(String.valueOf(idx)))
                         .build();

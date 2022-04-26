@@ -12,10 +12,10 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.TimeUnit;
@@ -104,7 +104,7 @@ public class RPSCommand implements Command {
                 .onU(slash -> menu.displaySlashReplying(slash.getEvent()));
     }
 
-    private void onRPSResult(@Nonnull RPSMenu.RPSResult result, @Nonnull ButtonClickEvent e, long user1, long user2) {
+    private void onRPSResult(@Nonnull RPSMenu.RPSResult result, @Nonnull ButtonInteractionEvent e, long user1, long user2) {
         String user1Mention = MiscUtil.mentionUser(user1);
         String user2Mention = MiscUtil.mentionUser(user2);
 
@@ -158,7 +158,7 @@ public class RPSCommand implements Command {
                         `rps [PLAYER 1 (default: message author)] <PLAYER 2>`
                         Helps you play the world famous game of [rock paper scissors](https://en.wikipedia.org/wiki/Rock_paper_scissors). After performing the command, both participants will have to DM me. So you might have to unblock me (but what kind of monster would have me blocked in the first place?)
                         Aliases: `rockpaperscissors`, `rps`""")
-                .setCommandData(new CommandData("rps", "Helps you play rock paper scissors")
+                .setCommandData(Commands.slash("rps", "Helps you play rock paper scissors")
                         .addOption(OptionType.USER, "player-1", "The first rps player", true)
                         .addOption(OptionType.USER, "player-2", "The second rps player. This is yourself by default", false))
                 .build();

@@ -26,7 +26,7 @@ Data sources:
 - [smashdata.gg database](https://github.com/smashdata/ThePlayerDatabase) for the player command.
 - [smash.gg API](https://developer.smashg.gg) for the tournament command.
 
-Built on [JDA](https://github.com/DV8FromTheWorld/JDA) with [JDA-Utils](https://github.com/JDA-Applications/JDA-Utilities).
+Built on [JDA](https://github.com/DV8FromTheWorld/JDA) with [JDA-Chewtils](https://github.com/Chew/JDA-Chewtils).
 
 ## About self hosting
 I don't know why you would self-host, and I'd discourage it, but you can if you really want to.

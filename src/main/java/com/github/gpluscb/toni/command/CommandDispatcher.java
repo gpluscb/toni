@@ -6,7 +6,6 @@ import com.github.gpluscb.toni.util.OneOfTwo;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.GuildMessageChannel;
-import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,7 +13,6 @@ import org.apache.logging.log4j.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -49,9 +47,17 @@ public class CommandDispatcher {
                 slash -> findSlashCommandByName(slash.getName()));
 
         if (command != null) {
-            context.onT(msg -> msg.reply("Commands invoked by a prefix (e.g. `toni`, `!t`) or mention are being phased out in favour of slash commands. " +
-                    "These prefix commands might stop working after April, so please switch to slash commands until then. " +
-                    "To use slash commands, just type `/` and a selection of slash commands should appear.").queue());
+            if (context.isT()) {
+                ctx.reply(String.format("""
+                                Commands invoked by a prefix (e.g. `toni`, `!t`) have been deprecated. Please use slash commands instead.
+                                If you type `/` in the message box, my slash commands should appear.
+                                If you're confused by slash commands, the support article (<https://support.discord.com/hc/en-us/articles/1500000368501-Slash-Commands-FAQ>) might help you.
+                                If you have any other issues, please ask in my support server (%s)
+                                """, ctx.getConfig().supportServer()))
+                        .queue();
+
+                return;
+            }
 
             boolean isFromGuild = context.map(msg -> msg.getEvent().isFromGuild(), slash -> slash.getEvent().isFromGuild());
             if (isFromGuild) {

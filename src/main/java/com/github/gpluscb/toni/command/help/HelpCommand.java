@@ -94,15 +94,14 @@ public class HelpCommand implements Command {
 
         EmbedBuilder builder = EmbedUtil.getPreparedAuthor(ctx.getMember(), ctx.getUser()).setTitle("Toni's general help");
 
-        builder.setDescription("My prefixes are `!t`, `noti` and `toni`, but you can mention me instead too.\n")
-                .appendDescription("`|` means \"or\", `[brackets]` mean \"optional\", and `...` means that an argument is allowed to have spaces. ")
-                .appendDescription("If you want to use spaces in other arguments, you will have to wrap that argument in quotation marks (e.g. \"this is all one argument\").\n")
-                .appendDescription("Use `/help [CATEGORY]` for more info on specific command categories.\n")
-                .appendDescription("I am still in an early state. So if you have any questions, problems, bugs, or suggestions, **please** tell my dev about that.\n")
-                .appendDescription(String.format("• You can DM them directly if you have common servers: <@%d>%n", config.devId()))
-                .appendDescription(String.format("• You can go to [my support server](%s)%n", config.supportServer()))
-                .appendDescription(String.format("• You can @ or dm me on Twitter, I promise you only the highest quality of tweets: [@%s](https://twitter.com/%1$s)%n", config.twitterHandle()))
-                .appendDescription(String.format("Invite me to your server by clicking [here](%s)", config.inviteUrl()));
+        builder.setDescription(String.format("""
+                You can also see all my commands by typing `/` in the discord client.
+                For more detailed info on a specific command category, you can use `/help [CATEGORY]`.
+                I am still in an early state. So if you have any questions, problems, bugs, or suggestions, **please** tell my dev about that.
+                • You can DM them directly if you have common servers: <@%d>
+                • You can go to [my support server](%s)
+                • You can @ or dm me on Twitter, I promise you only the highest quality of tweets: [@%s](https://twitter.com/%1$s)
+                """, config.devId(), config.supportServer(), config.twitterHandle()));
 
         List<EmbedUtil.InlineField> helpFields = commands.stream()
                 .filter(category -> category.categoryName() != null)

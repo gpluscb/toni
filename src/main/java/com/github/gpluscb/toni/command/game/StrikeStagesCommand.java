@@ -281,13 +281,15 @@ public class StrikeStagesCommand implements Command {
         return new CommandInfo.Builder()
                 .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_HISTORY})
                 .setAliases(new String[]{"strike", "strikestarters", "strikestages"})
-                .setShortHelp("[Beta] Helps you do the stage striking procedure with a specific ruleset. Usage: `strike [PLAYER 1] <PLAYER 2> [RULESET ID] [DO RPS]`")
+                .setShortHelp("[Beta] Helps you do the stage striking procedure with a specific ruleset.")
                 // TODO If we get passed ctx here, we can actually name the server default ruleset
                 .setDetailedHelp("""
-                        `strike [PLAYER 1] <PLAYER 2> [RULESET ID (default: selection menu)] [DO RPS (true|false(default))]`
                         Helps you perform the [stage striking procedure](https://www.ssbwiki.com/Stage_striking) for a given ruleset. Depending on the `DO RPS` argument, you'll play a game of RPS first to determine who gets to strike first.
-                        For a list of rulesets and their IDs, use the `rulesets` command.
-                        Aliases: `strike`, `strikestarters`, `strikestages`""")
+                        Slash command options:
+                        • `striker-1`: One participant.
+                        • (Optional) `striker-2`: The other participant. This is yourself by default.
+                        • (Optional) `rps`: Whether to play RPs for who strikes first. Default is to randomly determine first striker.
+                        • (Optional) `ruleset-id`: The ruleset id. By default, I will ask you to select a ruleset after you execute the command. Use the `rulesets` command to check out available rulesets.""")
                 .setCommandData(Commands.slash("strikestarters", "Helps you perform the stage striking procedure")
                         .addOption(OptionType.USER, "striker-1", "One participant in the striking procedure", true)
                         .addOption(OptionType.USER, "striker-2", "The other participant in the striking procedure. This is yourself by default", false)

@@ -153,11 +153,12 @@ public class RPSCommand implements Command {
         return new CommandInfo.Builder()
                 .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_HISTORY})
                 .setAliases(new String[]{"rps", "rockpaperscissors"})
-                .setShortHelp("Helps you play rock paper scissors. Usage: `rps [PLAYER 1] <PLAYER 2>`")
+                .setShortHelp("Helps you play rock paper scissors.")
                 .setDetailedHelp("""
-                        `rps [PLAYER 1 (default: message author)] <PLAYER 2>`
-                        Helps you play the world famous game of [rock paper scissors](https://en.wikipedia.org/wiki/Rock_paper_scissors). After performing the command, both participants will have to DM me. So you might have to unblock me (but what kind of monster would have me blocked in the first place?)
-                        Aliases: `rockpaperscissors`, `rps`""")
+                        Helps you play the world famous game of [rock paper scissors](https://en.wikipedia.org/wiki/Rock_paper_scissors).
+                        Slash command options:
+                        • `player-1`: The first rps contestant.
+                        • (Optional) `player-2`: The second rps contestant. This is yourself by default.""")
                 .setCommandData(Commands.slash("rps", "Helps you play rock paper scissors")
                         .addOption(OptionType.USER, "player-1", "The first rps player", true)
                         .addOption(OptionType.USER, "player-2", "The second rps player. This is yourself by default", false))

@@ -192,16 +192,24 @@ public class RandomCharacterCommand implements Command {
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
                 .setAliases(new String[]{"random", "randomchar", "random-char", "random-character", "randomcharacter"})
-                .setShortHelp("Picks a random character for you. Usage: `random [GAME] [GAME SPECIFIC OPTIONS...]`")
+                .setShortHelp("Picks a random character for you.")
                 .setDetailedHelp("""
-                        `random` (default game is ult)
-                        `random 64`
-                        `random melee [TREAT SHEIK/ZELDA AS ONE CHARACTER? (true(default)|false)]`
-                        `random brawl [TREAT SHEIK/ZELDA AS ONE? (true(default)|false)] [TREAT SAMUS/ZSS AS ONE? (true(default)|false)]`
-                        `random 4 [TREAT MIIS AS ONE? (true|false(default))]`
-                        `random ult [TREAT MIIS AS ONE? (true|false(default))] [TREAT ECHOES AS ONE? (true|false(default))]`
                         Selects a random character from the roster of a smash game.
-                        Aliases: `random`, `randomchar`, `randomcharacter`""")
+                        `/random 64`: Use the Smash 64 roster.
+                        `/random melee`: Use the Melee roster.
+                        Slash command options:
+                        • (Optional) `stack-sheik-zelda`: Whether I should treat Sheik and Zelda as the same character. Default is `true`.
+                        `/random brawl`: Use the Brawl roster.
+                        Slash command options:
+                        • (Optional) `stack-sheik-zelda`: Whether I should treat Sheik and Zelda as the same character. Default is `true`.
+                        • (Optional) `stack-samus-zss`: Whether I should treat Samus and ZSS as a single character. Default is `true`.
+                        `random 4`: Use the Smash 4 roster.
+                        Slash command options:
+                        • (Optional) `stack-miis`: Whether I should treat all the Miis as a single character. Default is `false`.
+                        `random ult`: Use the Smash Ultimate roster.
+                        Slash command options:
+                        • (Optional) `stack-miis`: Whether I should treat all the Miis as a single character. Default is `false`.
+                        • (Optional) `stack-echos`: Whether I should treat different echo fighters as a single character. Default is `false`.""")
                 .setCommandData(Commands.slash("random", "Picks a random character")
                         .addSubcommands(new SubcommandData("64", "Random character for smash 64"),
                                 new SubcommandData("melee", "Random character for melee")

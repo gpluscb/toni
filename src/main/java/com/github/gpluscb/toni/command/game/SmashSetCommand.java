@@ -226,13 +226,15 @@ public class SmashSetCommand implements Command {
         return new CommandInfo.Builder()
                 .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_HISTORY, Permission.MESSAGE_EMBED_LINKS})
                 .setAliases(new String[]{"playset", "set"})
-                .setShortHelp("[Beta] Helps you play a competitive set of Smash for a specific ruleset. Usage: `playset [PLAYER 1] <PLAYER 2> [BEST OF X] [RULESET ID]`")
+                .setShortHelp("[Beta] Helps you play a competitive set of Smash for a specific ruleset.")
                 .setDetailedHelp("""
-                        `playset [PLAYER 1 (default: you)] <PLAYER 2> [BEST OF X (default: 3)] [RULESET ID (default: selection menu)]`
                         Guides you through a competitive set of Smash Bros. Ultimate according to a given ruleset. This will help you with double blind character picks, stage striking, game reporting, and character and stage counterpicking.
                         The `BEST OF X` argument specifies how many games you will play (i.e. with `3` you'll play a best of 3, with `5` you'll play a best of 5 etc.).
-                        For a list of rulesets and their IDs, use the `rulesets` command.
-                        Aliases: `playset`, `set`""")
+                        Slash command options:
+                        • `player-1`: The first player.
+                        • (Optional) `player-2`: The second player. This is yourself by default.
+                        • (Optional) `best-of`: Will this be a best of 3/best of 5/best of whatever set? Default is 3.
+                        • (Optional) `ruleset-id`: The ruleset id. By default, I will ask you to select a ruleset after you execute the command. Use the `rulesets` command to check out available rulesets.""")
                 .setCommandData(Commands.slash("playset", "Helps you play a set in a specific ruleset")
                         .addOption(OptionType.USER, "player-1", "The first player", true)
                         .addOption(OptionType.USER, "player-2", "The opponent. This is yourself by default", false)

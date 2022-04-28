@@ -196,12 +196,12 @@ public class BlindPickCommand implements Command {
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
                 .setAliases(new String[]{"doubleblind", "doubleblindpick", "blind", "blindpick"})
-                .setShortHelp("Helps you do a (double) blind pick. Usage: `blind <USERS...>`")
+                .setShortHelp("Helps you do a (double) blind pick.`")
                 .setDetailedHelp("""
-                        `doubleblind <USERS...>`
                         Assists you in doing a [blind pick](https://gist.github.com/gpluscb/559f00e750854b46c0a71827e094ab3e).
-                        The slash command version supports at most two (2) participants.
-                        Aliases: `doubleblind`, `blindpick`, `blind`""")
+                        Slash command options:
+                        • `player-1`: the first participant in the double blind pick.
+                        • (Optional) `player-2`: the second participant in the double blind pick. This is yourself by default.""")
                 .setCommandData(Commands.slash("doubleblind", "Helps you do a double blind pick")
                         .addOption(OptionType.USER, "player-1", "The first participant in the double blind", true)
                         .addOption(OptionType.USER, "player-2", "The second participant in the double blind. This is yourself by default", false))

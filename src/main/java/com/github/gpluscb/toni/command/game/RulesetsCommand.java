@@ -93,9 +93,7 @@ public class RulesetsCommand implements Command {
                 .setAliases(new String[]{"rulesets", "ruleset"})
                 .setShortHelp("[Beta] Lists all the available rulesets. Usage: `rulesets`")
                 .setDetailedHelp("""
-                        `rulesets`
-                        Lists all the available rulesets with their IDs. You can select a specific ruleset through the menu to see how it operates.
-                        Aliases: `ruleset`, `rulesets`""")
+                        Lists all the available rulesets with their IDs. You can select a specific ruleset through the menu to see how it operates.""")
                 .setCommandData(Commands.slash("rulesets", "Lists all the available rulesets"))
                 .build();
     }

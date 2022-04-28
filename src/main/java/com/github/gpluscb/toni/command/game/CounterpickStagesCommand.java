@@ -189,14 +189,17 @@ public class CounterpickStagesCommand implements Command {
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
                 .setAliases(new String[]{"counterpick", "banstages"})
-                .setShortHelp("[Beta] Helps you through the stage ban/counterpick phase of a set. Usage: `counterpick <BANNING USER> [COUNTERPICKING USER] [RULESET ID]`")
+                .setShortHelp("[Beta] Helps you through the stage ban/counterpick phase of a set.")
                 .setDetailedHelp("""
-                        `counterpick <BANNING USER> [COUNTERPICKING USER (default: you)] [RULESET ID (default: selection menu)]`
                         Helps you perform the [stage counterpicking procedure](https://www.ssbwiki.com/Counterpick) after a match for a given ruleset.
                         For a list of rulesets and their IDs, use the `rulesets` command.
-                        Aliases: `counterpick`, `banstages`""")
+                        Slash command options:
+                        • `banning-user`: The user banning stages
+                        • (Optional) `counterpicking-user`: The user counterpicking. This is yourself by default.
+                        • (Optional) `ruleset-id`: The ruleset id. Use the `rulesets` command to check out the different rulesets. By default, I will ask you to select a ruleset after you execute the command.
+                        """)
                 .setCommandData(Commands.slash("counterpick", "Helps you through the stage ban/counterpick phase of a set")
-                        .addOption(OptionType.USER, "banning-user", "The user banning the stage", true)
+                        .addOption(OptionType.USER, "banning-user", "The user banning stages", true)
                         .addOption(OptionType.USER, "counterpicking-user", "The user counterpicking. This is yourself by default", false)
                         .addOption(OptionType.INTEGER, "ruleset-id", "The ruleset id. Use the 'rulesets' command to check out the different rulesets", false)) // TODO: Yea that feels unintuitive
                 .build();

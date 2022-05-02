@@ -296,11 +296,18 @@ public class UnrankedConfigCommand implements Command {
                 .setAliases(new String[]{"unrankedconfig", "unrankedcfg"})
                 .setShortHelp("Helps you configure unranked matchmaking. For more info on usage, see `/help unrankedconfig`.")
                 .setDetailedHelp("""
-                        `unrankedconfig <ROLE> [CHANNEL]` Sets up matchmaking with the specified matchmaking role, optionally only in a specific channel.
-                        `unrankedconfig channel <CHANNEL|"ALL">` Sets a specific channel for the matchmaking configuration, or removes channel restrictions if the argument is `all`.
-                        `unrankedconfig role <ROLE>` Sets a matchmaking role.
-                        `unrankedconfig reset` Removes matchmaking from this server.
-                        Aliases: `unrankedconfig`, `unrankedcfg`""")
+                        Configures unranked matchmaking in this server. You need to have the Manage Server and Manage Roles permissions to use this command.
+                        `/unrankedconfig setup`: Set up unranked matchmaking for this server.
+                        Slash command options:
+                        • `role`: The matchmaking role.
+                        • (Optional) `channel`: The matchmaking channel. By default, using matchmaking commands will be possible in all channels.
+                        `/unrankedconfig role`: Updates the matchmaking role.
+                        Slash command options:
+                        • `role`: The new matchmaking role.
+                        `/unrankedconfig channel` Update the matchmaking channel.
+                        Slash command options:
+                        • (Optional) `channel`: The new matchmaking channel. If no channel is given, using matchmaking commands will be possible in all channels.
+                        `/unrankedconfig reset` Removes unranked matchmaking from this server.""")
                 .setCommandData(Commands.slash("unrankedconfig", "Configuration for unranked matchmaking")
                         .addSubcommands(new SubcommandData("channel", "Update the matchmaking channel. Resets the channel to none if no channel is given")
                                         .addOption(OptionType.CHANNEL, "channel", "The new matchmaking channel", true),

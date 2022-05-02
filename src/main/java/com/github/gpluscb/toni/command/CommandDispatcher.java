@@ -51,8 +51,10 @@ public class CommandDispatcher {
                 ctx.reply(String.format("""
                                 Commands invoked by a prefix (e.g. `toni`, `!t`) have been deprecated. Please use slash commands instead.
                                 If you type `/` in the message box, my slash commands should appear.
+                                The slash command for the command you're trying to use is `/%s`.
                                 If you're confused by slash commands, the support article (<https://support.discord.com/hc/en-us/articles/1500000368501-Slash-Commands-FAQ>) might help you.
                                 If you have any other issues, please ask in my support server %s""",
+                                command.getInfo().commandData().getName(),
                                 ctx.getConfig().supportServer()))
                         .queue();
 

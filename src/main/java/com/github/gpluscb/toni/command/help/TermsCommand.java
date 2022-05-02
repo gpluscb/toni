@@ -6,7 +6,6 @@ import com.github.gpluscb.toni.command.CommandContext;
 import com.github.gpluscb.toni.command.CommandInfo;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 
 import javax.annotation.Nonnull;
@@ -31,8 +30,8 @@ public class TermsCommand implements Command {
         return new CommandInfo.Builder()
                 .setAliases(new String[]{"terms", "privacy", "tos"})
                 .setShortHelp("Shows my Terms of Service and Privacy Policy. Usage: `terms`")
-                .setDetailedHelp("`terms`\n" +
-                        "Shows my Terms of Service and Privacy Policy. The Privacy Policy shows what data I collect and other privacy concerns as per <https://discord.com/developers/docs/legal#a-implement-good-privacy-practices>.")
+                .setDetailedHelp("""
+                        Shows my Terms of Service and Privacy Policy. The Privacy Policy shows what data I collect and other privacy concerns as per <https://discord.com/developers/docs/legal#a-implement-good-privacy-practices>.""")
                 .setCommandData(Commands.slash("terms", "Shows my Terms of Service and Privacy Policy"))
                 .build();
     }

@@ -133,7 +133,7 @@ public class HelpCommand implements Command {
         return new CommandInfo.Builder()
                 .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_EMBED_LINKS})
                 .setAliases(new String[]{"help", "h"})
-                .setShortHelp("Helps you out. Usage: `help [CATEGORY|COMMAND]`")
+                .setShortHelp("Helps you out.")
                 .setDetailedHelp("`stack owoflow - Circular reference`")
                 .setCommandData(Commands.slash("help", "Helps you out")
                         .addOption(OptionType.STRING, "command-or-category", "The specific command or category name", false))

@@ -41,12 +41,10 @@ public class PingCommand implements Command {
                 .setAliases(new String[]{"ping", "rtt"})
                 .setShortHelp("My ping. Usage: `ping`")
                 .setDetailedHelp("""
-                        `ping`
                         Gives you my ping ("round trip time" for Discord, basically my reaction time). The average reaction time of a human is ~250ms, let's see if I can beat that.
                         Keep in mind that for some commands I need to crunch some numbers and even look at other web services, so I might take a bit longer to respond than my ping would suggest (I also have to respect Discords rate limits *yikes*).
                         **Keep in mind that this might yield inaccurate results during leap seconds!**
-                        *(Idea of repeating 'o's stolen from [FloofBot](https://top.gg/bot/177222984157757440) with no permission and no shame (Floof's a really really good bot for the smash community and you should check him out))*
-                        Aliases: `ping`, `rtt`""")
+                        *(Idea of repeating 'o's stolen from [FloofBot](https://top.gg/bot/177222984157757440) with no permission and no shame (Floof's a really really good bot for the smash community and you should check him out))*""")
                 .setCommandData(Commands.slash("ping", "Displays my current ping"))
                 .build();
     }

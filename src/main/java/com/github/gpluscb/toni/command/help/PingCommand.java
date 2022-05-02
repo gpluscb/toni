@@ -39,7 +39,7 @@ public class PingCommand implements Command {
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
                 .setAliases(new String[]{"ping", "rtt"})
-                .setShortHelp("My ping. Usage: `ping`")
+                .setShortHelp("My ping.")
                 .setDetailedHelp("""
                         Gives you my ping ("round trip time" for Discord, basically my reaction time). The average reaction time of a human is ~250ms, let's see if I can beat that.
                         Keep in mind that for some commands I need to crunch some numbers and even look at other web services, so I might take a bit longer to respond than my ping would suggest (I also have to respect Discords rate limits *yikes*).

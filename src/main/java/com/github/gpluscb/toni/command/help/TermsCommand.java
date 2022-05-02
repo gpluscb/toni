@@ -29,7 +29,7 @@ public class TermsCommand implements Command {
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
                 .setAliases(new String[]{"terms", "privacy", "tos"})
-                .setShortHelp("Shows my Terms of Service and Privacy Policy. Usage: `terms`")
+                .setShortHelp("Shows my Terms of Service and Privacy Policy.")
                 .setDetailedHelp("""
                         Shows my Terms of Service and Privacy Policy. The Privacy Policy shows what data I collect and other privacy concerns as per <https://discord.com/developers/docs/legal#a-implement-good-privacy-practices>.""")
                 .setCommandData(Commands.slash("terms", "Shows my Terms of Service and Privacy Policy"))

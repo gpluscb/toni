@@ -101,7 +101,10 @@ public class MovesCommand implements Command {
             // I think this is ok here, I don't really want Optional<Optional<Short>> or other weird constructs
             //noinspection OptionalAssignedToNull
             if (idOptional == null) {
-                ctx.reply("I don't know that character, sorry. Note that I only know the English names").queue();
+                ctx.reply(String.format("""
+                                I don't know the character "%s", sorry. Note that I only know the English names.
+                                Also make sure you only put the **character name** in the `character` option, and put the **move name** in the `move` option.""",
+                        characterName)).queue();
                 return;
             }
 

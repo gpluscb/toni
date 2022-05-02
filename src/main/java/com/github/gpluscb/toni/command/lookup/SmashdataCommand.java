@@ -211,11 +211,13 @@ public class SmashdataCommand implements Command {
         return new CommandInfo.Builder()
                 .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_EMBED_LINKS})
                 .setAliases(new String[]{"smasher", "player", "smashdata", "data"})
-                .setShortHelp("Displays info about a smasher using data from [smashdata.gg](https://smashdata.gg). Usage: `smasher <TAG...>`")
-                .setDetailedHelp("`smasher <TAG...>`\n" +
-                        "Looks up a smash ultimate player by their tag using data from [smashdata.gg](https://smashdata.gg).\n" +
-                        String.format("If there are multiple smashers matching the given tag, use the %s/%s to cycle through them.%n", Constants.ARROW_BACKWARD, Constants.ARROW_FORWARD) +
-                        "Aliases: `smasher`, `player`, `smashdata`, `data`")
+                .setShortHelp("Displays info about a smasher using data from [smashdata.gg](https://smashdata.gg).")
+                .setDetailedHelp(String.format("""
+                        Looks up a smash ultimate player by their tag using data from [smashdata.gg](https://smashdata.gg).
+                        If there are multiple smashers matching the given tag, use the %s/%s to cycle through them.
+                        Slash command options:
+                        • `tag`: The smasher's tag.""",
+                        Constants.ARROW_BACKWARD, Constants.ARROW_FORWARD))
                 .setCommandData(Commands.slash("smasher", "Displays info about a smasher")
                         .addOption(OptionType.STRING, "tag", "The smasher's tag", true))
                 .build();

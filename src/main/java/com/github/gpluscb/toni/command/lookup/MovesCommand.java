@@ -454,12 +454,13 @@ public class MovesCommand implements Command {
         return new CommandInfo.Builder()
                 .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_EMBED_LINKS, Permission.MESSAGE_HISTORY})
                 .setAliases(new String[]{"character", "char", "ufd", "moves", "move", "hitboxes", "hitbox"})
-                .setShortHelp("Displays the moves of a character using data from [ultimateframedata.com](https://ultimateframedata.com). Usage: `character <CHARACTER NAME...> [MOVE NAME...]`")
+                .setShortHelp("Displays the moves of a character using data from [ultimateframedata.com](https://ultimateframedata.com).")
                 .setDetailedHelp("""
-                        `character <CHARACTER NAME...> [MOVE NAME...]`
                         Looks up the moves of a character on [ultimateframedata.com](https://ultimateframedata.com).
                         Use the drop-down menus to select the move section, move, and hitbox image.
-                        Aliases: `character`, `char`, `ufd`, `move`, `moves`, `hitboxes`, `hitbox`""")
+                        Slash command options:
+                        • `character`: The character name (or nickname). Has to be English.
+                        • (Optional) `move`: The move name. By default I'll show you jab 1, and you can select the move/hitbox you want to see via the select menus.""")
                 .setCommandData(Commands.slash("moves", "Displays moves of a smash ultimate character")
                         .addOption(OptionType.STRING, "character", "The character name", true, true)
                         .addOption(OptionType.STRING, "move", "The move name (e.g. `fair`, `down b`)", false))

@@ -368,12 +368,16 @@ public class TournamentCommand implements Command {
         return new CommandInfo.Builder()
                 .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_EMBED_LINKS})
                 .setAliases(new String[]{"tournament", "tourney", "tournaments", "tourneys"})
-                .setShortHelp("Finds and displays tournaments from [smash.gg](https://smash.gg). Usage: `tournament <SEARCH TERM...>`")
-                .setDetailedHelp("`tournament <SEARCH TERM...>`\n" +
-                        "Searches for tournaments on [smash.gg](https://smash.gg) by their name, id, or slug (end of url).\n" +
-                        String.format("If there are multiple tournaments matching the given term, use the %s/%s reactions to cycle through them.%n", Constants.ARROW_BACKWARD, Constants.ARROW_FORWARD) +
-                        String.format("Use the %s/%s reactions to cycle through events in a tournament.%n", Constants.ARROW_DOWNWARD, Constants.ARROW_UPWARD) +
-                        "Aliases: `tournaments`, `tournament`, `tourney`, `tourneys`")
+                .setShortHelp("Finds and displays tournaments from [smash.gg](https://smash.gg).`")
+                .setDetailedHelp(String.format("""
+                                `tournament <SEARCH TERM...>`
+                                Searches for tournaments on [smash.gg](https://smash.gg) by their name, id, or slug (end of url).
+                                If there are multiple tournaments matching the given term, use the %s/%s reactions to cycle through them.
+                                Use the %s/%s reactions to cycle through events in a tournament.
+                                Slash command options:
+                                • `search-term`: The search term (e.g. the end of the tournament url).""",
+                        Constants.ARROW_BACKWARD, Constants.ARROW_FORWARD,
+                        Constants.ARROW_DOWNWARD, Constants.ARROW_UPWARD))
                 .setCommandData(Commands.slash("tournament", "Displays info about a tournament")
                         .addOption(OptionType.STRING, "search-term", "The search term (e.g. the end of the tournament url)", true))
                 .build();

@@ -52,7 +52,7 @@ public class CommandDispatcher {
                                 Commands invoked by a prefix (e.g. `toni`, `!t`) have been deprecated. Please use slash commands instead.
                                 If you type `/` in the message box, my slash commands should appear.
                                 If you're confused by slash commands, the support article (<https://support.discord.com/hc/en-us/articles/1500000368501-Slash-Commands-FAQ>) might help you.
-                                If you have any other issues, please ask in my support server (%s)
+                                If you have any other issues, please ask in my support server %s
                                 """, ctx.getConfig().supportServer()))
                         .queue();
 

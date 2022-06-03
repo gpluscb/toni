@@ -1,4 +1,4 @@
-package com.github.gpluscb.toni.smashgg;
+package com.github.gpluscb.toni.startgg;
 
 import com.github.gpluscb.ggjava.api.GGClient;
 import com.github.gpluscb.ggjava.api.exception.DeserializationException;

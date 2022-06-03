@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class EmbedUtil {
-    public static final String GG_ICON_URL = "https://images.squarespace-cdn.com/content/v1/5a9f03823917eedc1f3d70a8/1532389053471-VAS050M2RWB844686YC4/ke17ZwdGBToddI8pDm48kI2QMvs45oEqGNkHyq2-PDuoCXeSvxnTEQmG4uwOsdIceAoHiyRoc52GMN5_2H8Wp398LIBXMf3VXjZWpujXlt99wLTlXFoVAPff3oiife71cO0v_IXC4WMiKO6Ds5TAIw/favicon.ico";
+    public static final String GG_ICON_URL = "https://cdn.discordapp.com/attachments/756494920772091924/982380357255065660/start.gg_Icon_Large_RGB.png";
     public static final String UFD_ICON_URL = "https://ultimateframedata.com/ogimage.png";
     public static final String SMASHDATA_ICON_URL = "https://pbs.twimg.com/profile_images/1225945446226350080/3V1FENbf_400x400.jpg";
 
@@ -34,7 +34,7 @@ public class EmbedUtil {
 
     @Nonnull
     public static EmbedBuilder getPreparedGG(@Nullable Member member, @Nonnull User author) {
-        return applySmashGGFooter(getPreparedAuthor(member, author));
+        return applyStartGGFooter(getPreparedAuthor(member, author));
     }
 
     @Nonnull
@@ -63,8 +63,8 @@ public class EmbedUtil {
     }
 
     @Nonnull
-    public static EmbedBuilder applySmashGGFooter(@Nonnull EmbedBuilder builder) {
-        return builder.setFooter("Data from the smash.gg GraphQL API (https://developer.smash.gg)", GG_ICON_URL);
+    public static EmbedBuilder applyStartGGFooter(@Nonnull EmbedBuilder builder) {
+        return builder.setFooter("Data from the start.gg GraphQL API (https://developer.start.gg)", GG_ICON_URL);
     }
 
     @Nonnull

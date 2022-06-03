@@ -22,7 +22,7 @@ import com.github.gpluscb.toni.command.matchmaking.UnrankedConfigCommand;
 import com.github.gpluscb.toni.command.matchmaking.UnrankedLfgCommand;
 import com.github.gpluscb.toni.matchmaking.UnrankedManager;
 import com.github.gpluscb.toni.smashdata.SmashdataManager;
-import com.github.gpluscb.toni.smashgg.GGManager;
+import com.github.gpluscb.toni.startgg.GGManager;
 import com.github.gpluscb.toni.smashset.CharacterTree;
 import com.github.gpluscb.toni.smashset.Ruleset;
 import com.github.gpluscb.toni.smashset.Rulesets;

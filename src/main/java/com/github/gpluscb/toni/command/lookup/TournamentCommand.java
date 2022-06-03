@@ -9,7 +9,7 @@ import com.github.gpluscb.ggjava.entity.object.response.enums.BracketTypeRespons
 import com.github.gpluscb.ggjava.entity.object.response.objects.*;
 import com.github.gpluscb.ggjava.entity.object.response.scalars.*;
 import com.github.gpluscb.toni.command.*;
-import com.github.gpluscb.toni.smashgg.GGManager;
+import com.github.gpluscb.toni.startgg.GGManager;
 import com.github.gpluscb.toni.util.*;
 import com.github.gpluscb.toni.util.discord.EmbedUtil;
 import com.github.gpluscb.toni.menu.ReactionActionMenu;
@@ -76,8 +76,7 @@ public class TournamentCommand implements Command {
         ggManager.searchTouranmentsByName(searchTerm, 15, 8).whenComplete(FailLogger.logFail((response, t) -> {
             try {
                 if (t != null) {
-                    ctx.reply("The request to smash.gg failed. Tell my dev if this happens a lot - I've already annoyed them about it, but it can't hurt to give them some more context.").queue();
-                    // TODO: Potentially quite spammy during smash.gg outages
+                    ctx.reply("The request to start.gg failed. Tell my dev if this happens a lot - I've already annoyed them about it, but it can't hurt to give them some more context.").queue();
                     log.catching(t);
                     return;
                 }
@@ -100,12 +99,12 @@ public class TournamentCommand implements Command {
         else
             log.error("response.onError executed but neither exception nor errors field found, full response: " + errorResponse.getResponseRoot());
 
-        ctx.reply("An error during the parsing of the response smash.gg sent me... I'll go annoy my dev. If this happens consistently, go give them some context too.").queue();
+        ctx.reply("An error during the parsing of the response start.gg sent me... I'll go annoy my dev. If this happens consistently, go give them some context too.").queue();
     }
 
     private void sendReply(@Nonnull CommandContext<?> ctx, @Nonnull List<TournamentResponse> tournaments) {
         if (tournaments.isEmpty()) {
-            ctx.reply("Sorry, I couldn't find any tournament matching that on smash.gg.").queue();
+            ctx.reply("Sorry, I couldn't find any tournament matching that on start.gg.").queue();
             return;
         }
 
@@ -214,7 +213,7 @@ public class TournamentCommand implements Command {
 
                 return eventSlug == null ?
                         String.format("• `%s`", eventNameValue) :
-                        String.format("• [`%s`](https://smash.gg/%s)", eventNameValue, eventSlug.getValue());
+                        String.format("• [`%s`](https://start.gg/%s)", eventNameValue, eventSlug.getValue());
             }).collect(Collectors.joining("\n")), false);
         }
 
@@ -227,7 +226,7 @@ public class TournamentCommand implements Command {
         StringResponse nameResponse = event.getName();
         String name = nameResponse == null ? "[not named]" : nameResponse.getValue();
         StringResponse slugResponse = event.getSlug();
-        String url = slugResponse == null ? null : String.format("https://smash.gg/%s", event.getSlug().getValue());
+        String url = slugResponse == null ? null : String.format("https://start.gg/%s", event.getSlug().getValue());
 
         StringResponse tournamentNameResponse = tournament.getName();
         String tournamentName = tournamentNameResponse == null ? "[not named]" : tournamentNameResponse.getValue();
@@ -368,10 +367,10 @@ public class TournamentCommand implements Command {
         return new CommandInfo.Builder()
                 .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_EMBED_LINKS})
                 .setAliases(new String[]{"tournament", "tourney", "tournaments", "tourneys"})
-                .setShortHelp("Finds and displays tournaments from [smash.gg](https://smash.gg).`")
+                .setShortHelp("Finds and displays tournaments from [start.gg](https://start.gg).`")
                 .setDetailedHelp(String.format("""
                                 `tournament <SEARCH TERM...>`
-                                Searches for tournaments on [smash.gg](https://smash.gg) by their name, id, or slug (end of url).
+                                Searches for tournaments on [start.gg](https://start.gg) by their name, id, or slug (end of url).
                                 If there are multiple tournaments matching the given term, use the %s/%s reactions to cycle through them.
                                 Use the %s/%s reactions to cycle through events in a tournament.
                                 Slash command options:
@@ -476,7 +475,7 @@ public class TournamentCommand implements Command {
                 return message;
             } catch (Exception e) {
                 log.catching(e);
-                return new MessageBuilder("There was an error with displaying the tournament, looks like smash.gg sent me unexpected data (or the other way around...). I'll tell  my dev, you can go shoot them a message about this too if you want to.").build();
+                return new MessageBuilder("There was an error with displaying the tournament, looks like start.gg sent me unexpected data (or the other way around...). I'll tell  my dev, you can go shoot them a message about this too if you want to.").build();
             }
         }
     }

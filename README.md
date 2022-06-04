@@ -24,7 +24,7 @@ Feel free to pr stuff too.
 Data sources:
 - [ultimateframedata](https://ultimateframedata.com) for the character command.
 - [smashdata.gg database](https://github.com/smashdata/ThePlayerDatabase) for the player command.
-- [smash.gg API](https://developer.smashg.gg) for the tournament command.
+- [start.gg API](https://developer.start.gg) for the tournament command.
 
 Built on [JDA](https://github.com/DV8FromTheWorld/JDA) with [JDA-Chewtils](https://github.com/Chew/JDA-Chewtils).
 

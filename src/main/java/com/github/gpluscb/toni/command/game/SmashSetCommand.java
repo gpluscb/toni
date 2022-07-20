@@ -126,6 +126,16 @@ public class SmashSetCommand implements Command {
             }
         }
 
+        if (user1.getIdLong() == user2.getIdLong()) {
+            ctx.reply("You need two people for a game of smash!").queue();
+            return;
+        }
+
+        if (user1.isBot() || user2.isBot()) {
+            ctx.reply("Bot users are not supported!").queue();
+            return;
+        }
+
         if (bestOfWhat % 2 == 0) {
             ctx.reply("`BEST OF` argument can not be an even number - you can only play a `best of x` for odd values of `x`.").queue();
             return;

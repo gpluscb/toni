@@ -287,8 +287,8 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
         Character user2Char = game.getPlayer2Char();
 
         // Stage is already chosen here
-        @SuppressWarnings("ConstantConditions")
-        Stage stage = settings.ruleset().getStageAtIdx(game.getStageIdx());
+        @SuppressWarnings({"ConstantConditions", "OptionalGetWithoutIsPresent"})
+        Stage stage = settings.ruleset().getStagesStream().filter(stage_ -> stage_.stageId() == game.getStageIdx()).findAny().get();
 
         // Characters are already chosen here
         @SuppressWarnings("ConstantConditions")

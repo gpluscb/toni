@@ -29,7 +29,10 @@ public class CommandListener extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
-        if (event.isFromGuild() && !event.getGuildChannel().canTalk()) return;
+        // getGuildChannel will return null for forum channels until #2184 (https://github.com/DV8FromTheWorld/JDA/pull/2184) merges probably
+        // Apparently trying slash commands in forum channels won't call onSlashCommandInteraction at all tho
+        //noinspection ConstantConditions
+        if (event.isFromGuild() && (event.getGuildChannel() == null || !event.getGuildChannel().canTalk())) return;
         if (event.getAuthor().isBot() || !prefixPattern.matcher(event.getMessage().getContentRaw()).matches()) return;
 
         CommandContext<?> ctx = CommandContext.fromMessageReceivedEvent(event, config);

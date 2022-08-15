@@ -1,6 +1,7 @@
 package com.github.gpluscb.toni.command;
 
 import com.github.gpluscb.toni.Config;
+import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -29,10 +30,8 @@ public class CommandListener extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
-        // getGuildChannel will return null for forum channels until #2184 (https://github.com/DV8FromTheWorld/JDA/pull/2184) merges probably
-        // Apparently trying slash commands in forum channels won't call onSlashCommandInteraction at all tho
-        //noinspection ConstantConditions
-        if (event.isFromGuild() && (event.getGuildChannel() == null || !event.getGuildChannel().canTalk())) return;
+        // For forum channels, canTalk will NPE
+        if (event.isFromGuild() && (event.getChannelType() == ChannelType.UNKNOWN || !event.getGuildChannel().canTalk())) return;
         if (event.getAuthor().isBot() || !prefixPattern.matcher(event.getMessage().getContentRaw()).matches()) return;
 
         CommandContext<?> ctx = CommandContext.fromMessageReceivedEvent(event, config);

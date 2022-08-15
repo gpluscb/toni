@@ -30,8 +30,14 @@ public class CommandListener extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
-        // For forum channels, canTalk will NPE
-        if (event.isFromGuild() && (event.getChannelType() == ChannelType.UNKNOWN || !event.getGuildChannel().canTalk())) return;
+        try {
+            if (event.isFromGuild() && !event.getGuildChannel().canTalk()) return;
+        } catch (NullPointerException e) {
+            // For forum channels, canTalk will NPE
+            // I only really need this until end of the month so I mean yea I hate this solution
+            // But eh
+            return;
+        }
         if (event.getAuthor().isBot() || !prefixPattern.matcher(event.getMessage().getContentRaw()).matches()) return;
 
         CommandContext<?> ctx = CommandContext.fromMessageReceivedEvent(event, config);

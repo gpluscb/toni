@@ -6,7 +6,7 @@ plugins {
 
 mainClassName = 'com.github.gpluscb.toni.Bot'
 
-version '1.2.9'
+version '1.2.10'
 
 sourceCompatibility = 17
 

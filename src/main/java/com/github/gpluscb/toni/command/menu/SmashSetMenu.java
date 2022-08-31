@@ -288,7 +288,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
 
         // Stage is already chosen here
         @SuppressWarnings({"ConstantConditions", "OptionalGetWithoutIsPresent"})
-        Stage stage = settings.ruleset().getStagesStream().filter(stage_ -> stage_.stageId() == game.getStageIdx()).findAny().get();
+        Stage stage = settings.ruleset().getStagesStream().filter(stage_ -> stage_.stageId() == game.getStageId()).findAny().get();
 
         // Characters are already chosen here
         @SuppressWarnings("ConstantConditions")
@@ -357,7 +357,7 @@ public class SmashSetMenu extends TwoUsersChoicesActionMenu {
                         .setUsers(banningUser, pickingUser)
                         .build())
                 .setRuleset(settings.ruleset())
-                .setDsrIllegalStages(banState.getDSRIllegalStageIndizes())
+                .setDsrIllegalStages(banState.getDSRIllegalStageIds())
                 .setBanMessageProducer(banMessageProducer)
                 .setPickStageStart(pickStageStart)
                 .setPickTimeout(settings.pickStageTimeout(), settings.pickStageUnit())

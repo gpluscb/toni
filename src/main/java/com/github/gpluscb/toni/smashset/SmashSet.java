@@ -21,7 +21,7 @@ public class SmashSet {
     @Nullable
     private Player firstStageStriker;
     @Nonnull
-    private final List<Set<Integer>> stageStrikingIdxHistory;
+    private final List<Set<Integer>> stageStrikingIdHistory;
     @Nullable
     private SetState state;
     @Nonnull
@@ -32,7 +32,7 @@ public class SmashSet {
         this.firstToWhatScore = firstToWhatScore;
         this.doRPS = doRPS;
         firstStageStriker = null;
-        stageStrikingIdxHistory = new ArrayList<>(ruleset.starterStrikePattern().length);
+        stageStrikingIdHistory = new ArrayList<>(ruleset.starterStrikePattern().length);
         state = null;
         games = new ArrayList<>();
 
@@ -87,8 +87,8 @@ public class SmashSet {
     }
 
     @Nonnull
-    public List<Set<Integer>> getStageStrikingIdxHistory() {
-        return stageStrikingIdxHistory;
+    public List<Set<Integer>> getStageStrikingIdHistory() {
+        return stageStrikingIdHistory;
     }
 
     @Nonnull
@@ -178,7 +178,7 @@ public class SmashSet {
         }
 
         @Nonnull
-        public Set<Integer> getDSRIllegalStageIndizes() {
+        public Set<Integer> getDSRIllegalStageIds() {
             checkValid();
 
             switch (ruleset.dsrMode()) {
@@ -192,7 +192,7 @@ public class SmashSet {
                             .collect(Collectors.toSet());
                 case GAME_RESTRICTED:
                     return games.stream()
-                            .map(GameData::getStageIdx)
+                            .map(GameData::getStageId)
                             .filter(Objects::nonNull)
                             .collect(Collectors.toSet());
                 case WINNERS_VARIATION:
@@ -213,17 +213,17 @@ public class SmashSet {
                         if (prevGameLoser != getPrevLoser()) continue;
 
                         // Only counterpick stages are relevant
-                        Integer stageIdx = game.getStageIdx();
+                        Integer stageId = game.getStageId();
 
                         // Every game before the current one (before games.size() - 1) will have a stage
                         //noinspection ConstantConditions
-                        if (ruleset.counterpicks().stream().map(Stage::stageId).noneMatch(stageIdx::equals))
+                        if (ruleset.counterpicks().stream().map(Stage::stageId).noneMatch(stageId::equals))
                             continue;
 
                         // Only stages where the current previous loser won are relevant
                         if (game.getWinner() != getPrevLoser()) continue;
 
-                        dsrIllegal.add(stageIdx);
+                        dsrIllegal.add(stageId);
                     }
 
                     return dsrIllegal;
@@ -236,7 +236,7 @@ public class SmashSet {
         private Stream<Integer> getPreviousLoserWinningStagesStream() {
             return games.stream()
                     .filter(game -> game.getWinner() != null && game.getWinner() == getPrevLoser())
-                    .map(GameData::getStageIdx);
+                    .map(GameData::getStageId);
         }
     }
 
@@ -248,6 +248,7 @@ public class SmashSet {
         @Nonnull
         public synchronized SetStarterStrikingState completeRPS(@Nonnull Player rpsWinner, @Nonnull Player firstStriker) {
             checkValid();
+
             SmashSet.this.rpsWinner = rpsWinner;
             SmashSet.this.firstStageStriker = firstStriker;
             SetStarterStrikingState state = new SetStarterStrikingState(getGame());
@@ -274,36 +275,37 @@ public class SmashSet {
          */
         // TODO: Custom exceptions, keep as much info as possible in computer readable format
         @Nullable
-        public synchronized OneOfTwo<SetDoubleBlindState, SetInGameState> strikeStages(@Nonnull Set<Integer> stageStrikingIndizes) {
+        public synchronized OneOfTwo<SetDoubleBlindState, SetInGameState> strikeStages(@Nonnull Set<Integer> stageStrikingIds) {
             checkValid();
+
             // Verification checks
             int[] starterStrikePattern = ruleset.starterStrikePattern();
-            int neededStrikeAmount = starterStrikePattern[stageStrikingIdxHistory.size()];
-            if (neededStrikeAmount != stageStrikingIndizes.size())
-                throw new IllegalStateException(String.format("%d strikes were needed, %d given", neededStrikeAmount, stageStrikingIndizes.size()));
-            if (stageStrikingIdxHistory.stream().flatMap(Collection::stream).anyMatch(stageStrikingIndizes::contains))
-                throw new IllegalStateException("A stage in stageStrikingIndizes was already struck");
+            int neededStrikeAmount = starterStrikePattern[stageStrikingIdHistory.size()];
+            if (neededStrikeAmount != stageStrikingIds.size())
+                throw new IllegalStateException(String.format("%d strikes were needed, %d given", neededStrikeAmount, stageStrikingIds.size()));
+            if (stageStrikingIdHistory.stream().flatMap(Collection::stream).anyMatch(stageStrikingIds::contains))
+                throw new IllegalStateException("A stage in stageStrikingIds was already struck");
 
             // Do the strike
-            stageStrikingIdxHistory.add(stageStrikingIndizes);
-            if (stageStrikingIdxHistory.size() == starterStrikePattern.length) {
+            stageStrikingIdHistory.add(stageStrikingIds);
+            if (stageStrikingIdHistory.size() == starterStrikePattern.length) {
                 int starterAmount = ruleset.starters().size();
                 // TODO: Better algorithm??
-                int stageIdx = -1;
+                int stageId = -1;
                 for (int i = 0; i < starterAmount; i++) {
                     int finalI = i;
-                    if (stageStrikingIdxHistory.stream().flatMap(Collection::stream).noneMatch(struck -> finalI == struck)) {
-                        stageIdx = i;
+                    if (stageStrikingIdHistory.stream().flatMap(Collection::stream).noneMatch(struck -> finalI == struck)) {
+                        stageId = ruleset.starters().get(i).stageId();
                         break;
                     }
                 }
 
-                if (stageIdx < 0)
+                if (stageId < 0)
                     throw new IllegalStateException("No stage left after striking, the ruleset validation might be broken");
 
                 GameData game = getGame();
 
-                game.setStageIdx(stageIdx);
+                game.setStageId(stageId);
 
                 if (ruleset.blindPickBeforeStage()) {
                     SetInGameState state = new SetInGameState(game);
@@ -384,6 +386,7 @@ public class SmashSet {
         @Nonnull
         public synchronized OneOfTwo<OneOfTwo<SetWinnerStageBanState, SetWinnerCharPickState>, SetCompletedState> completeGame(@Nonnull Player winner) {
             checkValid();
+
             getGame().setWinner(winner);
             if (games.stream().map(GameData::getWinner).filter(w -> w == winner).count() == firstToWhatScore) {
                 SetCompletedState state = new SetCompletedState();
@@ -460,22 +463,22 @@ public class SmashSet {
         }
 
         @Nonnull
-        public synchronized SetLoserStageCounterpickState banStages(@Nonnull Set<Integer> stageBanIndices) {
+        public synchronized SetLoserStageCounterpickState banStages(@Nonnull Set<Integer> stageBanIds) {
             checkValid();
 
-            if (stageBanIndices.size() != ruleset.stageBans())
-                throw new IllegalArgumentException(String.format("Wrong number of stage bans: %d given, %d required.", stageBanIndices.size(), ruleset.stageBans()));
+            if (stageBanIds.size() != ruleset.stageBans())
+                throw new IllegalArgumentException(String.format("Wrong number of stage bans: %d given, %d required.", stageBanIds.size(), ruleset.stageBans()));
 
             GameData game = getGame();
 
-            Set<Integer> alreadyBannedIndices = game.getStageBanIndices();
-            if (alreadyBannedIndices != null && stageBanIndices.stream().anyMatch(alreadyBannedIndices::contains))
+            Set<Integer> alreadyBannedIds = game.getStageBanIds();
+            if (alreadyBannedIds != null && stageBanIds.stream().anyMatch(alreadyBannedIds::contains))
                 throw new IllegalStateException("Stage was banned twice");
 
-            if (stageBanIndices.stream().anyMatch(getDSRIllegalStageIndizes()::contains))
+            if (stageBanIds.stream().anyMatch(getDSRIllegalStageIds()::contains))
                 throw new IllegalStateException("DSR illegal stage was banned");
 
-            game.setStageBanIndices(stageBanIndices);
+            game.setStageBanIds(stageBanIds);
 
             SetLoserStageCounterpickState state = new SetLoserStageCounterpickState(game, getPrevWinner());
             return switchState(state);
@@ -488,16 +491,16 @@ public class SmashSet {
         }
 
         @Nonnull
-        public synchronized OneOfTwo<SetWinnerCharPickState, SetInGameState> pickStage(int stageIdx) {
+        public synchronized OneOfTwo<SetWinnerCharPickState, SetInGameState> pickStage(int stageId) {
             checkValid();
 
             GameData game = getGame();
 
             // This will only be called once bans were done
             //noinspection ConstantConditions
-            if (game.getStageBanIndices().contains(stageIdx)) throw new IllegalStateException("StageIdx is banned");
+            if (game.getStageBanIds().contains(stageId)) throw new IllegalStateException("StageId is banned");
 
-            game.setStageIdx(stageIdx);
+            game.setStageId(stageId);
 
             if (ruleset.stageBeforeCharacter()) {
                 SetWinnerCharPickState state = new SetWinnerCharPickState(game, getPrevWinner());
@@ -529,9 +532,9 @@ public class SmashSet {
          * null if this is the first game in the set (see strikes) or bans have not taken place yet
          */
         @Nullable
-        private Set<Integer> stageBanIndices;
+        private Set<Integer> stageBanIds;
         @Nullable
-        private Integer stageIdx;
+        private Integer stageId;
 
         public GameData(boolean useBans) {
             this.useBans = useBans;
@@ -553,13 +556,13 @@ public class SmashSet {
             this.player2Char = player2Char;
         }
 
-        public void setStageIdx(int stageIdx) {
-            this.stageIdx = stageIdx;
+        public void setStageId(int stageId) {
+            this.stageId = stageId;
         }
 
-        public void setStageBanIndices(@Nonnull Set<Integer> stageBanIndices) {
+        public void setStageBanIds(@Nonnull Set<Integer> stageBanIds) {
             if (!useBans) throw new IllegalStateException("Stage bans are not active in this game");
-            this.stageBanIndices = stageBanIndices;
+            this.stageBanIds = stageBanIds;
         }
 
         @Nullable
@@ -591,13 +594,13 @@ public class SmashSet {
          * @return Null if this is the first game in the set (see strikes) or if bans haven't taken place yet
          */
         @Nullable
-        public Set<Integer> getStageBanIndices() {
-            return stageBanIndices;
+        public Set<Integer> getStageBanIds() {
+            return stageBanIds;
         }
 
         @Nullable
-        public Integer getStageIdx() {
-            return stageIdx;
+        public Integer getStageId() {
+            return stageId;
         }
     }
 

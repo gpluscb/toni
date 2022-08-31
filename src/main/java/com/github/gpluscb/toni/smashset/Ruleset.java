@@ -58,12 +58,6 @@ public record Ruleset(int rulesetId, @Nonnull String name, @Nonnull String short
         return Stream.concat(starters.stream(), counterpicks.stream());
     }
 
-    @Nonnull
-    public Stage getStageAtIdx(int idx) {
-        if (idx < starters.size()) return starters.get(idx);
-        else return counterpicks.get(idx - starters.size());
-    }
-
     /**
      * Depends on the dsr setting, how many games can be played
      * Null if there is no limit

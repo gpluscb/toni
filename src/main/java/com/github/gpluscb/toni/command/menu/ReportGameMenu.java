@@ -125,7 +125,8 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
 
         // Conflict
 
-        // TODO: We don't really need to do anything if the choice hasn't changed,
+        // We don't really need to do anything if there was a conflict before (the choice hasn't changed)
+        if (conflict != null) return MenuAction.CONTINUE;
 
         conflict = new SmashSet.Conflict(user1ReportedWinner == user1);
         settings.onConflict().accept(new ReportGameConflict(info), event);

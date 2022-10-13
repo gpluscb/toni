@@ -2,7 +2,6 @@ package com.github.gpluscb.toni.command;
 
 import com.github.gpluscb.toni.util.FailLogger;
 import com.github.gpluscb.toni.util.MiscUtil;
-import com.github.gpluscb.toni.util.OneOfTwo;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.GuildMessageChannel;
@@ -40,52 +39,36 @@ public class CommandDispatcher {
         });
     }
 
-    public void dispatch(@Nonnull CommandContext<?> ctx) {
-        OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
+    public void dispatch(@Nonnull CommandContext ctx) {
+        Command command = findCommandByName(ctx.getName());
 
-        Command command = context.map(msg -> findMsgCommandByName(msg.getInvokedName()),
-                slash -> findSlashCommandByName(slash.getName()));
+        if (command == null) return;
 
-        if (command != null) {
-            if (context.isT()) {
-                ctx.reply(String.format("""
-                                Commands invoked by a prefix (e.g. `toni`, `!t`) have been deprecated. Please use slash commands instead.
-                                If you type `/` in the message box, my slash commands should appear.
-                                The slash command for the command you're trying to use is `/%s`.
-                                If you're confused by slash commands, the support article (<https://support.discord.com/hc/en-us/articles/1500000368501-Slash-Commands-FAQ>) might help you.
-                                If you have any other issues, please ask in my support server %s""",
-                                command.getInfo().commandData().getName(),
-                                ctx.getConfig().supportServer()))
+        if (ctx.getEvent().isFromGuild()) {
+            Permission[] perms = command.getInfo().requiredBotPerms();
+            Guild guild = ctx.getEvent().getGuild();
+            GuildMessageChannel channel = ctx.getEvent().getGuildChannel();
+
+            // Checked for isFromGuild already
+            //noinspection ConstantConditions
+            if (!guild.getSelfMember().hasPermission(channel, perms)) {
+                log.debug("Missing perms: {}", (Object) perms);
+                ctx.reply(String.format("I need the following permissions for this command: %s.",
+                                Arrays.stream(perms).map(MiscUtil::getPermName).collect(Collectors.joining(", "))))
                         .queue();
-
                 return;
             }
+        }
 
-            boolean isFromGuild = context.map(msg -> msg.getEvent().isFromGuild(), slash -> slash.getEvent().isFromGuild());
-            if (isFromGuild) {
-                Permission[] perms = command.getInfo().requiredBotPerms();
-                Guild guild = context.map(msg -> msg.getEvent().getGuild(), slash -> slash.getEvent().getGuild());
-                GuildMessageChannel channel = context.map(msg -> msg.getEvent().getGuildChannel(), slash -> slash.getEvent().getGuildChannel());
-
-                if (!guild.getSelfMember().hasPermission(channel, perms)) {
-                    log.debug("Missing perms: {}", (Object) perms);
-                    ctx.reply(String.format("I need the following permissions for this command: %s.",
-                                    Arrays.stream(perms).map(MiscUtil::getPermName).collect(Collectors.joining(", "))))
-                            .queue();
-                    return;
-                }
-            }
-
-            synchronized (executor) {
-                if (!executor.isShutdown()) {
-                    log.trace("Dispatching command: {}", command);
-                    executor.execute(FailLogger.logFail(() -> executeCommandSafe(command, ctx)));
-                } else log.info("Rejecting dispatch of command {} - already shut down", command);
-            }
+        synchronized (executor) {
+            if (!executor.isShutdown()) {
+                log.trace("Dispatching command: {}", command);
+                executor.execute(FailLogger.logFail(() -> executeCommandSafe(command, ctx)));
+            } else log.info("Rejecting dispatch of command {} - already shut down", command);
         }
     }
 
-    private void executeCommandSafe(@Nonnull Command command, @Nonnull CommandContext<?> ctx) {
+    private void executeCommandSafe(@Nonnull Command command, @Nonnull CommandContext ctx) {
         try {
             command.execute(ctx);
         } catch (Exception e) {
@@ -95,7 +78,7 @@ public class CommandDispatcher {
     }
 
     public void dispatchAutoComplete(@Nonnull CommandAutoCompleteInteractionEvent event) {
-        Command command = findSlashCommandByName(event.getName());
+        Command command = findCommandByName(event.getName());
         if (command == null) {
             log.error("Auto complete event was received, but no corresponding command was found: {}", event.getName());
             return;
@@ -106,15 +89,7 @@ public class CommandDispatcher {
     }
 
     @Nullable
-    private Command findMsgCommandByName(@Nonnull String name) {
-        return commands.stream().flatMap(category -> category.commands().stream())
-                .filter(command -> Arrays.asList(command.getInfo().aliases()).contains(name.toLowerCase()))
-                .findAny()
-                .orElse(null);
-    }
-
-    @Nullable
-    private Command findSlashCommandByName(@Nonnull String name) {
+    private Command findCommandByName(@Nonnull String name) {
         return commands.stream().flatMap(category -> category.commands().stream())
                 .filter(command -> command.getInfo().commandData().getName().equals(name))
                 .findAny()

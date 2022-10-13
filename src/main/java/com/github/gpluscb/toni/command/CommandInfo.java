@@ -7,15 +7,12 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public record CommandInfo(boolean adminOnly, @Nonnull Permission[] requiredBotPerms,
-                          @Nonnull String[] aliases,
                           @Nonnull CommandData commandData,
                           @Nullable String shortHelp, @Nullable String detailedHelp) {
     public static class Builder {
         private boolean adminOnly;
         @Nonnull
         private Permission[] requiredBotPerms;
-        @Nullable
-        private String[] aliases;
         @Nullable
         private CommandData commandData;
         @Nullable
@@ -40,12 +37,6 @@ public record CommandInfo(boolean adminOnly, @Nonnull Permission[] requiredBotPe
         @Nonnull
         public Builder setRequiredBotPerms(@Nonnull Permission[] requiredBotPerms) {
             this.requiredBotPerms = requiredBotPerms;
-            return this;
-        }
-
-        @Nonnull
-        public Builder setAliases(@Nonnull String[] aliases) {
-            this.aliases = aliases;
             return this;
         }
 
@@ -75,10 +66,10 @@ public record CommandInfo(boolean adminOnly, @Nonnull Permission[] requiredBotPe
 
         @Nonnull
         public CommandInfo build() {
-            if (aliases == null || commandData == null)
-                throw new IllegalStateException("All fields must be set");
+            if (commandData == null)
+                throw new IllegalStateException("commandData must be set");
 
-            return new CommandInfo(adminOnly, requiredBotPerms, aliases, commandData, shortHelp, detailedHelp);
+            return new CommandInfo(adminOnly, requiredBotPerms, commandData, shortHelp, detailedHelp);
         }
     }
 }

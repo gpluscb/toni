@@ -40,7 +40,7 @@ public class RulesetsCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull CommandContext<?> ctx) {
+    public void execute(@Nonnull CommandContext ctx) {
         EmbedBuilder template = EmbedUtil.getPreparedAuthor(ctx.getMember(), ctx.getUser());
 
         Message start = new MessageBuilder(applyRulesetList(new EmbedBuilder(template)).build()).build();
@@ -67,9 +67,8 @@ public class RulesetsCommand implements Command {
 
         SelectionActionMenu menu = new SelectionActionMenu(menuBuilder.build());
 
-        ctx.getContext()
-                .onT(msg -> menu.displayReplying(msg.getMessage()))
-                .onU(slash -> menu.displaySlashReplying(slash.getEvent()));
+
+        menu.displaySlashReplying(ctx.getEvent());
     }
 
     @Nonnull
@@ -90,7 +89,6 @@ public class RulesetsCommand implements Command {
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
                 .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_HISTORY, Permission.MESSAGE_EMBED_LINKS})
-                .setAliases(new String[]{"rulesets", "ruleset"})
                 .setShortHelp("[Beta] Lists all the available rulesets. Usage: `rulesets`")
                 .setDetailedHelp("""
                         Lists all the available rulesets with their IDs. You can select a specific ruleset through the menu to see how it operates.""")

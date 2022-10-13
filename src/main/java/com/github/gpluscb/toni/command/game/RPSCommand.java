@@ -1,11 +1,12 @@
 package com.github.gpluscb.toni.command.game;
 
-import com.github.gpluscb.toni.command.*;
+import com.github.gpluscb.toni.command.Command;
+import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.CommandInfo;
 import com.github.gpluscb.toni.command.menu.RPSMenu;
 import com.github.gpluscb.toni.menu.ActionMenu;
 import com.github.gpluscb.toni.menu.TwoUsersChoicesActionMenu;
 import com.github.gpluscb.toni.util.MiscUtil;
-import com.github.gpluscb.toni.util.OneOfTwo;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
@@ -30,40 +31,13 @@ public class RPSCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull CommandContext<?> ctx) {
-        User user1User;
-        User user2User;
+    public void execute(@Nonnull CommandContext ctx) {
 
-        OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
+        User user1User = ctx.getOptionNonNull("player-1").getAsUser();
 
-        if (context.isT()) {
-            MessageCommandContext msg = context.getTOrThrow();
-            OneOfTwo<CommandUtil.OneOrTwoUserArgs, CommandUtil.TwoUserArgsErrorType> argResult = CommandUtil.getTwoUserArgs(msg, false);
-            CommandUtil.TwoUserArgsErrorType error = argResult.getU().orElse(null);
-            if (error != null) {
-                String reply = switch (error) {
-                    case WRONG_NUMBER_ARGS -> "You must mention either one or two users.";
-                    case NOT_USER_MENTION_ARG -> "Arguments must be user mentions.";
-                    case BOT_USER -> "This command doesn't support bot or webhook users.";
-                    case USER_1_EQUALS_USER_2 -> "I can't have someone rps with themselves, what would that even look like?";
-                };
+        OptionMapping user2Option = ctx.getOption("player-2");
 
-                ctx.reply(reply).queue();
-                return;
-            }
-
-            CommandUtil.OneOrTwoUserArgs users = argResult.getTOrThrow();
-            user1User = users.user1User();
-            user2User = users.user2User();
-        } else {
-            SlashCommandContext slash = context.getUOrThrow();
-
-            user1User = slash.getOptionNonNull("player-1").getAsUser();
-
-            OptionMapping user2Option = slash.getOption("player-2");
-
-            user2User = user2Option == null ? ctx.getUser() : user2Option.getAsUser();
-        }
+        User user2User = user2Option == null ? ctx.getUser() : user2Option.getAsUser();
 
         if (user1User.isBot() || user2User.isBot()) {
             ctx.reply("I can't support bot/webhook users right now, sorry.").queue();
@@ -99,9 +73,7 @@ public class RPSCommand implements Command {
                 .setOnResult((result, e) -> onRPSResult(result, e, user1, user2))
                 .build());
 
-        context
-                .onT(msg -> menu.displayReplying(msg.getMessage()))
-                .onU(slash -> menu.displaySlashReplying(slash.getEvent()));
+        menu.displaySlashReplying(ctx.getEvent());
     }
 
     private void onRPSResult(@Nonnull RPSMenu.RPSResult result, @Nonnull ButtonInteractionEvent e, long user1, long user2) {
@@ -152,7 +124,6 @@ public class RPSCommand implements Command {
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
                 .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_HISTORY})
-                .setAliases(new String[]{"rps", "rockpaperscissors"})
                 .setShortHelp("Helps you play rock paper scissors.")
                 .setDetailedHelp("""
                         Helps you play the world famous game of [rock paper scissors](https://en.wikipedia.org/wiki/Rock_paper_scissors).

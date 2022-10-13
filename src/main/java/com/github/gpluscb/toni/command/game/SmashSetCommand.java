@@ -1,6 +1,8 @@
 package com.github.gpluscb.toni.command.game;
 
-import com.github.gpluscb.toni.command.*;
+import com.github.gpluscb.toni.command.Command;
+import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.CommandInfo;
 import com.github.gpluscb.toni.command.menu.RulesetSelectMenu;
 import com.github.gpluscb.toni.command.menu.SmashSetMenu;
 import com.github.gpluscb.toni.menu.ActionMenu;
@@ -45,84 +47,27 @@ public class SmashSetCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull CommandContext<?> ctx) {
+    public void execute(@Nonnull CommandContext ctx) {
         User user1;
         User user2;
         Ruleset ruleset = null; // TODO: Default ruleset
         int bestOfWhat = 3;
 
-        OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
+        user1 = ctx.getOptionNonNull("player-1").getAsUser();
 
-        if (context.isT()) {
-            MessageCommandContext msg = context.getTOrThrow();
-            OneOfTwo<CommandUtil.OneOrTwoUserArgs, CommandUtil.TwoUserArgsErrorType> argResult = CommandUtil.getTwoUserArgs(msg, true);
-            CommandUtil.TwoUserArgsErrorType error = argResult.getU().orElse(null);
-            if (error != null) {
-                String reply = switch (error) {
-                    case WRONG_NUMBER_ARGS -> "You must mention either one or two users.";
-                    case NOT_USER_MENTION_ARG -> "The first two arguments must be user mentions.";
-                    case BOT_USER -> "This command doesn't support bot or webhook users.";
-                    case USER_1_EQUALS_USER_2 -> "I can't have someone play a smash set with themselves, what would that even look like?";
-                };
+        OptionMapping user2Option = ctx.getOption("player-2");
+        user2 = user2Option == null ? ctx.getUser() : user2Option.getAsUser();
 
-                ctx.reply(reply).queue();
+        OptionMapping bestOfWhatOption = ctx.getOption("best-of");
+        if (bestOfWhatOption != null) bestOfWhat = (int) bestOfWhatOption.getAsLong();
+
+        OptionMapping rulesetIdMapping = ctx.getOption("ruleset-id");
+        if (rulesetIdMapping != null) {
+            long rulesetId = rulesetIdMapping.getAsLong();
+            ruleset = rulesets.stream().filter(ruleset_ -> ruleset_.rulesetId() == rulesetId).findAny().orElse(null);
+            if (ruleset == null) {
+                ctx.reply("The given ruleset id is invalid.").queue();
                 return;
-            }
-
-            CommandUtil.OneOrTwoUserArgs users = argResult.getTOrThrow();
-            user1 = users.user1User();
-            user2 = users.user2User();
-
-            int continuedArgsIdx = users.twoArgumentsGiven() ? 2 : 1;
-            int argNum = msg.getArgNum();
-
-            if (argNum >= continuedArgsIdx + 1) {
-                String bestOfString = msg.getArg(continuedArgsIdx);
-
-                try {
-                    bestOfWhat = Integer.parseInt(bestOfString);
-                } catch (NumberFormatException e) {
-                    ctx.reply("The `BEST OF` argument was not a number. Use `toni, help set` for detailed help.").queue();
-                    return;
-                }
-            }
-
-            if (argNum == continuedArgsIdx + 2) {
-                String rulesetIdString = msg.getArg(continuedArgsIdx + 1);
-                try {
-                    int rulesetId = Integer.parseInt(rulesetIdString);
-                    ruleset = rulesets.stream().filter(ruleset_ -> ruleset_.rulesetId() == rulesetId).findAny().orElse(null);
-                    if (ruleset == null) {
-                        ctx.reply("The given ruleset id is invalid.").queue();
-                        return;
-                    }
-                } catch (NumberFormatException e) {
-                    ctx.reply("The ruleset id must be an integer. Use `toni, help strike` for details.").queue();
-                    return;
-                }
-            } else if (argNum > continuedArgsIdx + 3) {
-                ctx.reply("You gave too many arguments. Use `toni, help strike` for details.").queue();
-                return;
-            }
-        } else {
-            SlashCommandContext slash = context.getUOrThrow();
-
-            user1 = slash.getOptionNonNull("player-1").getAsUser();
-
-            OptionMapping user2Option = slash.getOption("player-2");
-            user2 = user2Option == null ? ctx.getUser() : user2Option.getAsUser();
-
-            OptionMapping bestOfWhatOption = slash.getOption("best-of");
-            if (bestOfWhatOption != null) bestOfWhat = (int) bestOfWhatOption.getAsLong();
-
-            OptionMapping rulesetIdMapping = slash.getOption("ruleset-id");
-            if (rulesetIdMapping != null) {
-                long rulesetId = rulesetIdMapping.getAsLong();
-                ruleset = rulesets.stream().filter(ruleset_ -> ruleset_.rulesetId() == rulesetId).findAny().orElse(null);
-                if (ruleset == null) {
-                    ctx.reply("The given ruleset id is invalid.").queue();
-                    return;
-                }
             }
         }
 
@@ -144,7 +89,7 @@ public class SmashSetCommand implements Command {
         int firstToWhatScore = (bestOfWhat + 1) / 2;
 
         if (ruleset != null) {
-            startSmashSet(ruleset, ctx.getContext().mapT(MessageCommandContext::getMessage).mapU(SlashCommandContext::getEvent), firstToWhatScore, user1, user2);
+            startSmashSet(ruleset, OneOfTwo.ofU(ctx.getEvent()), firstToWhatScore, user1, user2);
             return;
         }
 
@@ -156,9 +101,7 @@ public class SmashSetCommand implements Command {
                 (info, event) -> startSmashSet(info.getSelectedRuleset(), OneOfTwo.ofT(event.getMessage()), firstToWhatScore, user1, user2)
         ));
 
-        ctx.getContext()
-                .onT(msg -> rulesetMenu.displayReplying(msg.getMessage()))
-                .onU(slash -> rulesetMenu.displaySlashReplying(slash.getEvent()));
+        rulesetMenu.displaySlashReplying(ctx.getEvent());
     }
 
     private void startSmashSet(@Nonnull Ruleset ruleset, @Nonnull OneOfTwo<Message, SlashCommandInteractionEvent> replyTo, int firstToWhatScore, @Nonnull User user1, @Nonnull User user2) {
@@ -235,7 +178,6 @@ public class SmashSetCommand implements Command {
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
                 .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_HISTORY, Permission.MESSAGE_EMBED_LINKS})
-                .setAliases(new String[]{"playset", "set"})
                 .setShortHelp("[Beta] Helps you play a competitive set of Smash for a specific ruleset.")
                 .setDetailedHelp("""
                         Guides you through a competitive set of Smash Bros. Ultimate according to a given ruleset. This will help you with double blind character picks, stage striking, game reporting, and character and stage counterpicking.

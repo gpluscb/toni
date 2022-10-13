@@ -1,12 +1,13 @@
 package com.github.gpluscb.toni.command.game;
 
-import com.github.gpluscb.toni.command.*;
+import com.github.gpluscb.toni.command.Command;
+import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.CommandInfo;
 import com.github.gpluscb.toni.command.menu.BlindPickMenu;
 import com.github.gpluscb.toni.menu.ActionMenu;
 import com.github.gpluscb.toni.smashset.Character;
 import com.github.gpluscb.toni.smashset.CharacterTree;
 import com.github.gpluscb.toni.util.MiscUtil;
-import com.github.gpluscb.toni.util.OneOfTwo;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
@@ -22,7 +23,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -43,68 +43,30 @@ public class BlindPickCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull CommandContext<?> ctx) {
+    public void execute(@Nonnull CommandContext ctx) {
         Set<Long> users = new HashSet<>();
 
-        OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
-        if (context.isT()) {
-            MessageCommandContext msg = context.getTOrThrow();
+        User user1User = ctx.getOptionNonNull("player-1").getAsUser();
+        long user1 = user1User.getIdLong();
+        users.add(user1);
 
-            for (int i = 0; i < msg.getArgNum(); i++) {
-                User user = msg.getUserMentionArg(i);
-                if (user == null) {
-                    ctx.reply("Arguments must be user mentions of users in this server.").queue();
-                    return;
-                }
+        User user2User;
+        OptionMapping user2Option = ctx.getOption("player-2");
+        if (user2Option == null) user2User = ctx.getUser();
+        else user2User = user2Option.getAsUser();
+        long user2 = user2User.getIdLong();
 
-                if (user.isBot()) {
-                    ctx.reply("Sorry, I can't support bots or webhook users.").queue();
-                    return;
-                }
-
-                long userId = user.getIdLong();
-                if (users.contains(userId)) {
-                    ctx.reply("Users must be unique.").queue();
-                    return;
-                }
-
-                users.add(userId);
-            }
-
-            if (users.size() < 2) {
-                ctx.reply("You must mention at least two (2) users.").queue();
-                return;
-            }
-
-            if (users.size() > 8) {
-                ctx.reply("You must not mention more than eight (8) users.").queue();
-                return;
-            }
-        } else {
-            SlashCommandContext slash = context.getUOrThrow();
-
-            User user1User = slash.getOptionNonNull("player-1").getAsUser();
-            long user1 = user1User.getIdLong();
-            users.add(user1);
-
-            User user2User;
-            OptionMapping user2Option = slash.getOption("player-2");
-            if (user2Option == null) user2User = ctx.getUser();
-            else user2User = user2Option.getAsUser();
-            long user2 = user2User.getIdLong();
-
-            if (user1User.isBot() || user2User.isBot()) {
-                ctx.reply("Sorry, I can't support bots or webhook users.").queue();
-                return;
-            }
-
-            if (user1 == user2) {
-                ctx.reply("The users must be different from each other.").queue();
-                return;
-            }
-
-            users.add(user2);
+        if (user1User.isBot() || user2User.isBot()) {
+            ctx.reply("Sorry, I can't support bots or webhook users.").queue();
+            return;
         }
+
+        if (user1 == user2) {
+            ctx.reply("The users must be different from each other.").queue();
+            return;
+        }
+
+        users.add(user2);
 
         // TODO: Avoid too many mentions somehow -> could potentially be a vector for ping spams
         String userMentions = users.stream().map(id -> String.format("<@%d>", id)).collect(Collectors.joining(", "));
@@ -112,7 +74,6 @@ public class BlindPickCommand implements Command {
 
         JDA jda = ctx.getJDA();
         long channelId = ctx.getChannel().getIdLong();
-        Long referenceId = context.map(msg -> msg.getMessage().getIdLong(), slash -> null);
 
         Message start = new MessageBuilder(String.format("Alright, %s, please click on the button below to enter your character choice now. You have three (3) minutes!", userMentions))
                 .mentionUsers(userMentionsArray)
@@ -128,12 +89,10 @@ public class BlindPickCommand implements Command {
                 .setStart(start)
                 .setCharacters(characters)
                 .setOnResult(this::onResult)
-                .setOnTimeout(timeout -> onTimeout(timeout, jda, channelId, referenceId))
+                .setOnTimeout(timeout -> onTimeout(timeout, jda, channelId))
                 .build());
 
-        context
-                .onT(msg -> menu.displayReplying(msg.getMessage()))
-                .onU(slash -> menu.displaySlashReplying(slash.getEvent()));
+        menu.displaySlashReplying(ctx.getEvent());
     }
 
     private void onResult(@Nonnull BlindPickMenu.BlindPickResult result, @Nonnull ModalInteractionEvent event) {
@@ -165,7 +124,7 @@ public class BlindPickCommand implements Command {
         action.queue();
     }
 
-    private void onTimeout(@Nonnull BlindPickMenu.BlindPickTimeoutEvent timeout, @Nonnull JDA jda, long channelId, @Nullable Long referenceId) {
+    private void onTimeout(@Nonnull BlindPickMenu.BlindPickTimeoutEvent timeout, @Nonnull JDA jda, long channelId) {
         MessageChannel channel = jda.getChannelById(MessageChannel.class, channelId);
         if (channel == null) {
             log.warn("MessageChannel not in cache for timeout: {}", channelId);
@@ -186,8 +145,6 @@ public class BlindPickCommand implements Command {
 
         for (long user : users) action = action.mentionUsers(user);
 
-        if (referenceId != null) action = action.referenceById(referenceId);
-
         action.queue();
     }
 
@@ -195,8 +152,7 @@ public class BlindPickCommand implements Command {
     @Override
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
-                .setAliases(new String[]{"doubleblind", "doubleblindpick", "blind", "blindpick"})
-                .setShortHelp("Helps you do a (double) blind pick.`")
+                .setShortHelp("Helps you do a (double) blind pick.")
                 .setDetailedHelp("""
                         Assists you in doing a [blind pick](https://gist.github.com/gpluscb/559f00e750854b46c0a71827e094ab3e).
                         Slash command options:

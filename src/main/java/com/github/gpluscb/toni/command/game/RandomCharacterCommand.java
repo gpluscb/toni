@@ -1,10 +1,11 @@
 package com.github.gpluscb.toni.command.game;
 
-import com.github.gpluscb.toni.command.*;
+import com.github.gpluscb.toni.command.Command;
+import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.CommandInfo;
 import com.github.gpluscb.toni.smashset.Character;
 import com.github.gpluscb.toni.smashset.CharacterTree;
 import com.github.gpluscb.toni.util.MiscUtil;
-import com.github.gpluscb.toni.util.OneOfTwo;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
@@ -31,132 +32,40 @@ public class RandomCharacterCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull CommandContext<?> ctx) {
+    public void execute(@Nonnull CommandContext ctx) {
         CharacterTree.Game game = CharacterTree.Game.ULTIMATE;
         boolean stackEchos = false;
         boolean stackMiis = false;
         boolean stackSheikZelda = false;
         boolean stackZssSamus = false;
 
-        OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
-        if (context.isT()) {
-            MessageCommandContext msg = context.getTOrThrow();
+        String gameName = ctx.getEvent().getSubcommandName();
 
-            List<String> args = msg.getArgs();
-            int argsSize = args.size();
-            if (argsSize > 0) {
-                String gameName = args.get(0);
-                game = CharacterTree.Game.getForName(gameName);
-                if (game == null) {
-                    ctx.reply("I don't know that game. Please use one of the following: `64`, `melee`, `brawl`, `4`, `ult`.").queue();
-                    return;
-                }
+        if (gameName != null)
+            game = CharacterTree.Game.getForName(gameName);
 
-                // Stack Sheik/Zelda by default for these games
-                if (game == CharacterTree.Game.BRAWL || game == CharacterTree.Game.MELEE) stackSheikZelda = true;
-                // Stack ZSS/Samus by default for Brawl
-                if (game == CharacterTree.Game.BRAWL) stackZssSamus = true;
-            }
-
-            switch (game) {
-                case SMASH_64:
-                    if (argsSize > 1) {
-                        tooManyArgs(ctx);
-                        return;
-                    }
-                    break;
-                case MELEE:
-                    if (argsSize > 2) {
-                        tooManyArgs(ctx);
-                        return;
-                    }
-
-                    if (argsSize > 1) {
-                        Boolean stackSheikZeldaTemp = shouldStackX(ctx, args.get(1), "Sheik and Zelda");
-                        if (stackSheikZeldaTemp == null) return;
-                        stackSheikZelda = stackSheikZeldaTemp;
-                    }
-                    break;
-                case BRAWL:
-                    if (argsSize > 3) {
-                        tooManyArgs(ctx);
-                        return;
-                    }
-
-                    if (argsSize > 1) {
-                        Boolean stackSheikZeldaTemp = shouldStackX(ctx, args.get(1), "Sheik and Zelda");
-                        if (stackSheikZeldaTemp == null) return;
-                        stackSheikZelda = stackSheikZeldaTemp;
-                    }
-
-                    if (argsSize > 2) {
-                        Boolean stackZssSamusTemp = shouldStackX(ctx, args.get(2), "ZSS and Samus");
-                        if (stackZssSamusTemp == null) return;
-                        stackZssSamus = stackZssSamusTemp;
-                    }
-                    break;
-                case SMASH_4:
-                    if (argsSize > 2) {
-                        tooManyArgs(ctx);
-                        return;
-                    }
-
-                    if (argsSize > 1) {
-                        Boolean stackMiisTemp = shouldStackX(ctx, args.get(1), "Miis");
-                        if (stackMiisTemp == null) return;
-                        stackMiis = stackMiisTemp;
-                    }
-                    break;
-                case ULTIMATE:
-                    if (argsSize > 3) {
-                        tooManyArgs(ctx);
-                        return;
-                    }
-
-                    if (argsSize > 1) {
-                        Boolean stackMiisTemp = shouldStackX(ctx, args.get(1), "Miis");
-                        if (stackMiisTemp == null) return;
-                        stackMiis = stackMiisTemp;
-                    }
-
-                    if (argsSize > 2) {
-                        Boolean stackEchosTemp = shouldStackX(ctx, args.get(2), "Echos");
-                        if (stackEchosTemp == null) return;
-                        stackEchos = stackEchosTemp;
-                    }
-                    break;
-            }
-        } else {
-            SlashCommandContext slash = context.getUOrThrow();
-
-            String gameName = slash.getEvent().getSubcommandName();
-
-            if (gameName != null)
-                game = CharacterTree.Game.getForName(gameName);
-
-            if (game == null) {
-                log.error("Game name from subcommand not found: {}", gameName);
-                ctx.reply("This is a bad error - the subcommand you used apparently does not correspond to any game. I've notified my dev, but you can give them some context too.").queue();
-                return;
-            }
-
-            // Stack Sheik/Zelda by default for these games
-            if (game == CharacterTree.Game.BRAWL || game == CharacterTree.Game.MELEE) stackSheikZelda = true;
-            // Stack ZSS/Samus by default for Brawl
-            if (game == CharacterTree.Game.BRAWL) stackZssSamus = true;
-
-            OptionMapping stackSheikZeldaMapping = slash.getOption("stack-sheik-zelda");
-            if (stackSheikZeldaMapping != null) stackSheikZelda = stackSheikZeldaMapping.getAsBoolean();
-
-            OptionMapping stackZSSSamusMapping = slash.getOption("stack-samus-zss");
-            if (stackZSSSamusMapping != null) stackZssSamus = stackZSSSamusMapping.getAsBoolean();
-
-            OptionMapping stackMiisMapping = slash.getOption("stack-miis");
-            if (stackMiisMapping != null) stackMiis = stackMiisMapping.getAsBoolean();
-
-            OptionMapping stackEchosMapping = slash.getOption("stack-echos");
-            if (stackEchosMapping != null) stackEchos = stackEchosMapping.getAsBoolean();
+        if (game == null) {
+            log.error("Game name from subcommand not found: {}", gameName);
+            ctx.reply("This is a bad error - the subcommand you used apparently does not correspond to any game. I've notified my dev, but you can give them some context too.").queue();
+            return;
         }
+
+        // Stack Sheik/Zelda by default for these games
+        if (game == CharacterTree.Game.BRAWL || game == CharacterTree.Game.MELEE) stackSheikZelda = true;
+        // Stack ZSS/Samus by default for Brawl
+        if (game == CharacterTree.Game.BRAWL) stackZssSamus = true;
+
+        OptionMapping stackSheikZeldaMapping = ctx.getOption("stack-sheik-zelda");
+        if (stackSheikZeldaMapping != null) stackSheikZelda = stackSheikZeldaMapping.getAsBoolean();
+
+        OptionMapping stackZSSSamusMapping = ctx.getOption("stack-samus-zss");
+        if (stackZSSSamusMapping != null) stackZssSamus = stackZSSSamusMapping.getAsBoolean();
+
+        OptionMapping stackMiisMapping = ctx.getOption("stack-miis");
+        if (stackMiisMapping != null) stackMiis = stackMiisMapping.getAsBoolean();
+
+        OptionMapping stackEchosMapping = ctx.getOption("stack-echos");
+        if (stackEchosMapping != null) stackEchos = stackEchosMapping.getAsBoolean();
 
         List<List<Character>> possibleCharacters = characterTree.getAllCharacters(game, stackEchos, stackMiis, stackSheikZelda, stackZssSamus);
         ThreadLocalRandom rng = ThreadLocalRandom.current();
@@ -166,7 +75,7 @@ public class RandomCharacterCommand implements Command {
         sendResponse(ctx, selectedCharacters);
     }
 
-    private void sendResponse(@Nonnull CommandContext<?> ctx, @Nonnull List<Character> selectedCharacters) {
+    private void sendResponse(@Nonnull CommandContext ctx, @Nonnull List<Character> selectedCharacters) {
         String emotes = selectedCharacters.stream()
                 .map(Character::getDisplayName)
                 .collect(Collectors.joining("/"));
@@ -174,24 +83,10 @@ public class RandomCharacterCommand implements Command {
         ctx.reply(emotes).queue();
     }
 
-    private void tooManyArgs(@Nonnull CommandContext<?> ctx) {
-        ctx.reply("Too many arguments. Use `/help random` for a detailed description.").queue();
-    }
-
-    @Nullable
-    private Boolean shouldStackX(@Nonnull CommandContext<?> ctx, @Nonnull String arg, @Nonnull String name) {
-        Boolean stackX = MiscUtil.boolFromString(arg);
-        if (stackX == null)
-            ctx.reply(String.format("I don't understand if you want %s to be treated as one character or not. " +
-                    "Please type either `true` or `false` for that argument.", name)).queue();
-        return stackX;
-    }
-
     @Nonnull
     @Override
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
-                .setAliases(new String[]{"random", "randomchar", "random-char", "random-character", "randomcharacter"})
                 .setShortHelp("Picks a random character for you.")
                 .setDetailedHelp("""
                         Selects a random character from the roster of a smash game.

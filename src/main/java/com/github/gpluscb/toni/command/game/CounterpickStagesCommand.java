@@ -1,6 +1,8 @@
 package com.github.gpluscb.toni.command.game;
 
-import com.github.gpluscb.toni.command.*;
+import com.github.gpluscb.toni.command.Command;
+import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.CommandInfo;
 import com.github.gpluscb.toni.command.menu.BanPickStagesMenu;
 import com.github.gpluscb.toni.command.menu.BanStagesMenu;
 import com.github.gpluscb.toni.command.menu.PickStageMenu;
@@ -15,8 +17,8 @@ import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
-import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
@@ -37,77 +39,30 @@ public class CounterpickStagesCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull CommandContext<?> ctx) {
+    public void execute(@Nonnull CommandContext ctx) {
         long banningUser;
         long pickingUser;
         // TODO: Server default ruleset
         Ruleset ruleset = null;
 
-        OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
-        if (context.isT()) {
-            MessageCommandContext msg = context.getTOrThrow();
+        banningUser = ctx.getOptionNonNull("banning-user").getAsUser().getIdLong();
 
-            OneOfTwo<CommandUtil.OneOrTwoUserArgs, CommandUtil.TwoUserArgsErrorType> result = CommandUtil.getTwoUserArgs(msg, true);
+        OptionMapping pickingUserMapping = ctx.getOption("counterpicking-user");
+        pickingUser = (pickingUserMapping == null ? ctx.getUser() : pickingUserMapping.getAsUser())
+                .getIdLong();
 
-            CommandUtil.TwoUserArgsErrorType error = result.getU().orElse(null);
-            if (error != null) {
-                String reply = switch (error) {
-                    case WRONG_NUMBER_ARGS -> "You must mention two users, and give the ruleset id.";
-                    case NOT_USER_MENTION_ARG -> "Arguments must be user mentions.";
-                    case BOT_USER -> "This command doesn't support bot or webhook users.";
-                    case USER_1_EQUALS_USER_2 -> "I can't have someone do a stage ban/counterpick procedure with themselves, what would that even look like?";
-                };
-
-                ctx.reply(reply).queue();
+        OptionMapping rulesetIdMapping = ctx.getOption("ruleset-id");
+        if (rulesetIdMapping != null) {
+            long rulesetId = rulesetIdMapping.getAsLong();
+            ruleset = rulesets.stream().filter(ruleset_ -> ruleset_.rulesetId() == rulesetId).findAny().orElse(null);
+            if (ruleset == null) {
+                ctx.reply("The given ruleset id is invalid.").queue();
                 return;
-            }
-
-            CommandUtil.OneOrTwoUserArgs users = result.getTOrThrow();
-            banningUser = users.getUser1();
-            pickingUser = users.getUser2();
-
-            int continuedArgsIdx = users.twoArgumentsGiven() ? 2 : 1;
-            int argNum = msg.getArgNum();
-
-            if (argNum == continuedArgsIdx + 1) {
-                String rulesetIdString = msg.getArg(continuedArgsIdx);
-                try {
-                    int rulesetId = Integer.parseInt(rulesetIdString);
-                    ruleset = rulesets.stream().filter(ruleset_ -> ruleset_.rulesetId() == rulesetId).findAny().orElse(null);
-                    if (ruleset == null) {
-                        ctx.reply("The given ruleset id is invalid.").queue();
-                        return;
-                    }
-                } catch (NumberFormatException e) {
-                    ctx.reply("The ruleset id must be an integer. Use `toni, help strike` for details.").queue();
-                    return;
-                }
-            } else if (argNum > continuedArgsIdx + 2) {
-                ctx.reply("You gave too many arguments. Use `toni, help strike` for details.").queue();
-                return;
-            }
-        } else {
-            SlashCommandContext slash = context.getUOrThrow();
-
-            banningUser = slash.getOptionNonNull("banning-user").getAsUser().getIdLong();
-
-            OptionMapping pickingUserMapping = slash.getOption("counterpicking-user");
-            pickingUser = (pickingUserMapping == null ? ctx.getUser() : pickingUserMapping.getAsUser())
-                    .getIdLong();
-
-            OptionMapping rulesetIdMapping = slash.getOption("ruleset-id");
-            if (rulesetIdMapping != null) {
-                long rulesetId = rulesetIdMapping.getAsLong();
-                ruleset = rulesets.stream().filter(ruleset_ -> ruleset_.rulesetId() == rulesetId).findAny().orElse(null);
-                if (ruleset == null) {
-                    ctx.reply("The given ruleset id is invalid.").queue();
-                    return;
-                }
             }
         }
 
         if (ruleset != null) {
-            startCounterpickStages(pickingUser, banningUser, ruleset, context.mapT(MessageCommandContext::getMessage).mapU(SlashCommandContext::getEvent));
+            startCounterpickStages(pickingUser, banningUser, ruleset, OneOfTwo.ofU(ctx.getEvent()));
             return;
         }
 
@@ -119,9 +74,7 @@ public class CounterpickStagesCommand implements Command {
                 (info, event) -> startCounterpickStages(pickingUser, banningUser, info.getSelectedRuleset(), OneOfTwo.ofT(event.getMessage()))
         ));
 
-        context
-                .onT(msg -> rulesetMenu.displayReplying(msg.getMessage()))
-                .onU(slash -> rulesetMenu.displaySlashReplying(slash.getEvent()));
+        rulesetMenu.displaySlashReplying(ctx.getEvent());
     }
 
     private void startCounterpickStages(long pickingUser, long banningUser, @Nonnull Ruleset ruleset, @Nonnull OneOfTwo<Message, SlashCommandInteractionEvent> replyTo) {
@@ -188,7 +141,6 @@ public class CounterpickStagesCommand implements Command {
     @Override
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
-                .setAliases(new String[]{"counterpick", "banstages"})
                 .setShortHelp("[Beta] Helps you through the stage ban/counterpick phase of a set.")
                 .setDetailedHelp("""
                         Helps you perform the [stage counterpicking procedure](https://www.ssbwiki.com/Counterpick) after a match for a given ruleset.

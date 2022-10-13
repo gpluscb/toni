@@ -1,6 +1,8 @@
 package com.github.gpluscb.toni.command.game;
 
-import com.github.gpluscb.toni.command.*;
+import com.github.gpluscb.toni.command.Command;
+import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.CommandInfo;
 import com.github.gpluscb.toni.command.menu.RPSAndStrikeStagesMenu;
 import com.github.gpluscb.toni.command.menu.RPSMenu;
 import com.github.gpluscb.toni.command.menu.RulesetSelectMenu;
@@ -39,109 +41,31 @@ public class StrikeStagesCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull CommandContext<?> ctx) {
-        long user1;
-        long user2;
-        boolean doRPS = false;
+    public void execute(@Nonnull CommandContext ctx) {
         // TODO: Server default ruleset (and maybe even server default doRPS setting?)
         Ruleset ruleset = null;
 
-        OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
-        if (context.isT()) {
-            MessageCommandContext msg = context.getTOrThrow();
+        long user1 = ctx.getOptionNonNull("striker-1").getAsUser().getIdLong();
 
-            OneOfTwo<CommandUtil.OneOrTwoUserArgs, CommandUtil.TwoUserArgsErrorType> result = CommandUtil.getTwoUserArgs(msg, true);
+        OptionMapping user2Mapping = ctx.getOption("striker-2");
+        long user2 = (user2Mapping == null ? ctx.getUser() : user2Mapping.getAsUser())
+                .getIdLong();
 
-            CommandUtil.TwoUserArgsErrorType error = result.getU().orElse(null);
-            if (error != null) {
-                String reply = switch (error) {
-                    case WRONG_NUMBER_ARGS -> "You must mention either one or two users.";
-                    case NOT_USER_MENTION_ARG -> "Arguments must be user mentions.";
-                    case BOT_USER -> "This command doesn't support bot or webhook users.";
-                    case USER_1_EQUALS_USER_2 -> "I can't have someone strike with themselves, what would that even look like?";
-                };
-
-                ctx.reply(reply).queue();
+        OptionMapping rulesetIdMapping = ctx.getOption("ruleset-id");
+        if (rulesetIdMapping != null) {
+            long rulesetId = rulesetIdMapping.getAsLong();
+            ruleset = rulesets.stream().filter(ruleset_ -> ruleset_.rulesetId() == rulesetId).findAny().orElse(null);
+            if (ruleset == null) {
+                ctx.reply("The given ruleset id is invalid.").queue();
                 return;
             }
-
-            CommandUtil.OneOrTwoUserArgs users = result.getTOrThrow();
-            user1 = users.getUser1();
-            user2 = users.getUser2();
-
-            int continuedArgsIdx = users.twoArgumentsGiven() ? 2 : 1;
-            int argNum = msg.getArgNum();
-
-            if (argNum == continuedArgsIdx + 1) {
-                String eitherString = msg.getArg(continuedArgsIdx);
-                Boolean doRPSNullable = MiscUtil.boolFromString(eitherString);
-                if (doRPSNullable == null) {
-                    // TODO: Dupe code
-                    try {
-                        int rulesetId = Integer.parseInt(eitherString);
-                        ruleset = rulesets.stream().filter(ruleset_ -> ruleset_.rulesetId() == rulesetId).findAny().orElse(null);
-                        if (ruleset == null) {
-                            ctx.reply("The given ruleset id is invalid.").queue();
-                            return;
-                        }
-                    } catch (NumberFormatException e) {
-                        ctx.reply("A given argument is invalid. It must either be a ruleset id, or true, or false. Use `toni, help strike` for details.").queue();
-                        return;
-                    }
-                } else {
-                    doRPS = doRPSNullable;
-                }
-            } else if (argNum == continuedArgsIdx + 2) {
-                String rulesetIdString = msg.getArg(continuedArgsIdx);
-                try {
-                    int rulesetId = Integer.parseInt(rulesetIdString);
-                    ruleset = rulesets.stream().filter(ruleset_ -> ruleset_.rulesetId() == rulesetId).findAny().orElse(null);
-                    if (ruleset == null) {
-                        ctx.reply("The given ruleset id is invalid.").queue();
-                        return;
-                    }
-                } catch (NumberFormatException e) {
-                    ctx.reply("The ruleset id must be an integer. Use `toni, help strike` for details.").queue();
-                    return;
-                }
-
-                String doRPSString = msg.getArg(continuedArgsIdx + 1);
-                Boolean doRPSNullable = MiscUtil.boolFromString(doRPSString);
-                if (doRPSNullable == null) {
-                    ctx.reply("The indication whether to do RPS must be either `true` or `false`. Use `toni, help strike` for details.").queue();
-                    return;
-                }
-
-                doRPS = doRPSNullable;
-            } else if (argNum > continuedArgsIdx + 2) {
-                ctx.reply("You gave too many arguments. Use `toni, help strike` for details.").queue();
-                return;
-            }
-        } else {
-            SlashCommandContext slash = context.getUOrThrow();
-
-            user1 = slash.getOptionNonNull("striker-1").getAsUser().getIdLong();
-
-            OptionMapping user2Mapping = slash.getOption("striker-2");
-            user2 = (user2Mapping == null ? ctx.getUser() : user2Mapping.getAsUser())
-                    .getIdLong();
-
-            OptionMapping rulesetIdMapping = slash.getOption("ruleset-id");
-            if (rulesetIdMapping != null) {
-                long rulesetId = rulesetIdMapping.getAsLong();
-                ruleset = rulesets.stream().filter(ruleset_ -> ruleset_.rulesetId() == rulesetId).findAny().orElse(null);
-                if (ruleset == null) {
-                    ctx.reply("The given ruleset id is invalid.").queue();
-                    return;
-                }
-            }
-
-            OptionMapping doRpsMapping = slash.getOption("rps");
-            doRPS = doRpsMapping != null && doRpsMapping.getAsBoolean();
         }
 
+        OptionMapping doRpsMapping = ctx.getOption("rps");
+        boolean doRPS = doRpsMapping != null && doRpsMapping.getAsBoolean();
+
         if (ruleset != null) {
-            startStrikeStages(ruleset, context.mapT(MessageCommandContext::getMessage).mapU(SlashCommandContext::getEvent), doRPS, user1, user2);
+            startStrikeStages(ruleset, OneOfTwo.ofU(ctx.getEvent()), doRPS, user1, user2);
             return;
         }
 
@@ -156,9 +80,7 @@ public class StrikeStagesCommand implements Command {
                 (info, event) -> startStrikeStages(info.getSelectedRuleset(), OneOfTwo.ofT(event.getMessage()), doRPS_, user1, user2)
         ));
 
-        context
-                .onT(msg -> rulesetMenu.displayReplying(msg.getMessage()))
-                .onU(slash -> rulesetMenu.displaySlashReplying(slash.getEvent()));
+        rulesetMenu.displaySlashReplying(ctx.getEvent());
     }
 
     private void startStrikeStages(@Nonnull Ruleset ruleset, @Nonnull OneOfTwo<Message, SlashCommandInteractionEvent> replyTo, boolean doRPS, long user1, long user2) {
@@ -280,7 +202,6 @@ public class StrikeStagesCommand implements Command {
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
                 .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_HISTORY})
-                .setAliases(new String[]{"strike", "strikestarters", "strikestages"})
                 .setShortHelp("[Beta] Helps you do the stage striking procedure with a specific ruleset.")
                 // TODO If we get passed ctx here, we can actually name the server default ruleset
                 .setDetailedHelp("""

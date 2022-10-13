@@ -17,16 +17,10 @@ public class StatusCommand implements Command {
     private static final Logger log = LogManager.getLogger(StatusCommand.class);
 
     @Override
-    public void execute(@Nonnull CommandContext<?> ctx) {
+    public void execute(@Nonnull CommandContext ctx) {
         if (!ctx.memberHasBotAdminPermission()) return;
 
-        OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
-        if (context.isT() && context.getTOrThrow().getArgNum() < 2) {
-            ctx.reply("Too few args. `status <ACTIVITY(listening|watching|playing|competing)> <STATUS...>`").queue();
-            return;
-        }
-
-        String activityString = context.map(msg -> msg.getArg(0), slash -> slash.getOptionNonNull("activity").getAsString());
+        String activityString = ctx.getOptionNonNull("activity").getAsString();
 
         Activity.ActivityType activityType;
         switch (activityString.toLowerCase()) {
@@ -40,7 +34,7 @@ public class StatusCommand implements Command {
             }
         }
 
-        String newStatus = context.map(msg -> msg.getArgsFrom(1), slash -> slash.getOptionNonNull("status").getAsString());
+        String newStatus = ctx.getOptionNonNull("status").getAsString();
 
         JDA jda = ctx.getJDA();
         ShardManager shardManager = jda.getShardManager();
@@ -58,7 +52,6 @@ public class StatusCommand implements Command {
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
                 .setAdminOnly(true)
-                .setAliases(new String[]{"setstatus", "status"})
                 .setCommandData(Commands.slash("status", "Changes the bot status")
                         .addOptions(new OptionData(OptionType.STRING, "activity", "The displayed activity", true)
                                 .addChoice("listening", "listening")

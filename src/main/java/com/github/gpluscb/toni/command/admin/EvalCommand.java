@@ -14,10 +14,10 @@ import javax.script.ScriptEngineManager;
 
 public class EvalCommand implements Command {
     @Override
-    public void execute(@Nonnull CommandContext<?> ctx) {
+    public void execute(@Nonnull CommandContext ctx) {
         if (!ctx.memberHasBotAdminPermission()) return;
 
-        String toEval = ctx.getContext().map(msg -> msg.getArgsFrom(0), slash -> slash.getOptionNonNull("js").getAsString());
+        String toEval = ctx.getOptionNonNull("js").getAsString();
 
         // ScriptEngine code modified from https://github.com/jagrosh/Vortex/blob/f059c0b34e16093f25414dd05d4d93fa8bf0afa5/src/main/java/com/jagrosh/vortex/commands/owner/EvalCmd.java#L48-L62
         // Copyright notice of original file:
@@ -53,7 +53,6 @@ public class EvalCommand implements Command {
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
                 .setAdminOnly(true)
-                .setAliases(new String[]{"eval"})
                 .setCommandData(Commands.slash("eval", "Evaluates some js")
                         .addOption(OptionType.STRING, "js", "The JS to evaluate", true))
                 .build();

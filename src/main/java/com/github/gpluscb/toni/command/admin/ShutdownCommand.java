@@ -23,7 +23,7 @@ public class ShutdownCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull CommandContext<?> ctx) {
+    public void execute(@Nonnull CommandContext ctx) {
         if (!ctx.memberHasBotAdminPermission()) return;
 
         log.info("Shutdown command executed - shutting down");
@@ -38,7 +38,6 @@ public class ShutdownCommand implements Command {
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
                 .setAdminOnly(true)
-                .setAliases(new String[]{"shutdown", "shut", "stfu"})
                 .setCommandData(Commands.slash("shutdown", "Shuts down the bot"))
                 .build();
     }

@@ -23,16 +23,10 @@ public class UpdateSmashdataCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull CommandContext<?> ctx) {
+    public void execute(@Nonnull CommandContext ctx) {
         if (!ctx.memberHasBotAdminPermission()) return;
 
-        OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
-        if (context.isT() && context.getTOrThrow().getArgNum() < 1) {
-            ctx.reply("Too few args. `updatesmashdata <PATH TO NEW DB>`").queue();
-            return;
-        }
-
-        String dbPath = ctx.getContext().map(msg -> msg.getArgsFrom(0), slash -> slash.getOptionNonNull("path").getAsString());
+        String dbPath = ctx.getOptionNonNull("path").getAsString();
 
         try {
             smashdata.updateDb(dbPath);
@@ -49,7 +43,6 @@ public class UpdateSmashdataCommand implements Command {
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
                 .setAdminOnly(true)
-                .setAliases(new String[]{"updatesmashdata"})
                 .setCommandData(Commands.slash("updatesmashdata", "Updates the smashdata db path")
                         .addOption(OptionType.STRING, "path", "The new path", true))
                 .build();

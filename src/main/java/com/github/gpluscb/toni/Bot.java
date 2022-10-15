@@ -1,6 +1,5 @@
 package com.github.gpluscb.toni;
 
-import at.stefangeyer.challonge.exception.DataAccessException;
 import com.github.gpluscb.ggjava.api.GGClient;
 import com.github.gpluscb.toni.command.Command;
 import com.github.gpluscb.toni.command.CommandCategory;
@@ -22,10 +21,10 @@ import com.github.gpluscb.toni.command.matchmaking.UnrankedConfigCommand;
 import com.github.gpluscb.toni.command.matchmaking.UnrankedLfgCommand;
 import com.github.gpluscb.toni.matchmaking.UnrankedManager;
 import com.github.gpluscb.toni.smashdata.SmashdataManager;
-import com.github.gpluscb.toni.startgg.GGManager;
 import com.github.gpluscb.toni.smashset.CharacterTree;
 import com.github.gpluscb.toni.smashset.Ruleset;
 import com.github.gpluscb.toni.smashset.Rulesets;
+import com.github.gpluscb.toni.startgg.GGManager;
 import com.github.gpluscb.toni.statsposting.BotListClient;
 import com.github.gpluscb.toni.statsposting.PostGuildRoutine;
 import com.github.gpluscb.toni.statsposting.dbots.DBotsClient;
@@ -86,12 +85,6 @@ public class Bot {
     private final GGManager ggManager;
     @Nonnull
     private final PostGuildRoutine postGuildRoutine;
-    /*@Nonnull
-    private final ListenerManager challongeManager;
-    @Nonnull
-    private final TournamentListener listener;
-    @Nonnull
-    private final RetrofitRestClient client;*/ // TODO: CHALLONGE FEATURES ON HOLD
     @Nonnull
     private final SmashdataManager smashdata;
     @Nonnull
@@ -130,7 +123,7 @@ public class Bot {
         }
     }
 
-    public Bot(@Nonnull String configLocation, boolean hookCommands) throws LoginException, SQLException, DataAccessException, IOException {
+    public Bot(@Nonnull String configLocation, boolean hookCommands) throws LoginException, SQLException, IOException {
         log.trace("Loading Gson");
         gson = new GsonBuilder()
                 .registerTypeAdapterFactory(new RecordTypeAdapterFactory())
@@ -154,21 +147,6 @@ public class Bot {
 
         log.trace("Building GGManager");
         ggManager = new GGManager(GGClient.builder(cfg.ggToken()).client(okHttp).build(), stopwords);
-
-		/*log.trace("Building ListenerManager");
-		client = new RetrofitRestClient();
-
-		ChallongeExtension challonge;
-		try {
-			challonge = new ChallongeExtension(new Credentials(config.getChallongeUsername(), config.getChallongeToken()), new GsonSerializer(), client);
-
-			challongeManager = new ListenerManager(challonge, 30 * 1000);
-		} catch(DataAccessException e) {
-			log.error("DataAccessException - shutting down", e);
-			ggManager.shutdown();
-			client.close();
-			throw e;
-		}*/
 
         // Avoid unintentional pings.
         MessageAction.setDefaultMentions(Collections.emptyList());
@@ -215,9 +193,6 @@ public class Bot {
         } catch (Exception e) {
             log.error("Exception while loading characters - shutting down", e);
             ggManager.shutdown();
-            // challongeManager.shutdown();
-            // listener.shutdown();
-            // client.close();
             waiterPool.shutdownNow();
             throw e;
         }
@@ -228,9 +203,6 @@ public class Bot {
         } catch (SQLException e) {
             log.error("Exception while loading unranked manager - shutting down", e);
             ggManager.shutdown();
-            // challongeManager.shutdown();
-            // listener.shutdown();
-            // client.close();
             waiterPool.shutdownNow();
             throw e;
         }
@@ -244,9 +216,6 @@ public class Bot {
             log.error("Exception while loading rulesets - shutting down", e);
             ggManager.shutdown();
             unrankedManager.shutdown();
-            // challongeManager.shutdown();
-            // listener.shutdown();
-            // client.close();
             waiterPool.shutdownNow();
             throw e;
         }
@@ -258,9 +227,6 @@ public class Bot {
             log.error("Exception while loading smashdata - shutting down", e);
             ggManager.shutdown();
             unrankedManager.shutdown();
-            // challongeManager.shutdown();
-            // listener.shutdown();
-            // client.close();
             waiterPool.shutdownNow();
             throw e;
         }
@@ -303,26 +269,9 @@ public class Bot {
             log.error("LoginException - shutting down", e);
             ggManager.shutdown();
             unrankedManager.shutdown();
-            //challongeManager.shutdown();
-            //client.close();
             waiterPool.shutdownNow();
             throw e;
         }
-
-		/* log.trace("Registering TournamentListener");
-		try {
-			listener = new TournamentListener(shardManager, cfg.getStateDbLocation());
-			challongeManager.addListener(listener);
-		} catch(SQLException e) {
-			log.error("Exception while registering TournamentListener - shutting down", e);
-			ggManager.shutdown();
-			shardManager.shutdown();
-			unrankedManager.shutdown();
-			challongeManager.shutdown();
-			client.close();
-			waiterPool.shutdownNow();
-			throw e;
-		}*/
 
         log.trace("Starting command listener and dispatcher");
         dispatcher = new CommandDispatcher(commands);
@@ -388,9 +337,6 @@ public class Bot {
         lookupCommands.add(new TournamentCommand(ggManager, waiter));
         lookupCommands.add(new MovesCommand(ufdClient, waiter, characterTree));
         lookupCommands.add(new SmashdataCommand(waiter, smashdata));
-        // TODO: Feature is on hold
-        // lookupCommands.add(new SubscribeCommand(challonge, listener));
-        // lookupCommands.add(new UnsubscribeCommand(challonge, listener));
         commands.add(new CommandCategory("lookup", "Lookup commands for other websites", lookupCommands));
 
         List<Command> matchmakingCommands = new ArrayList<>();
@@ -430,13 +376,6 @@ public class Bot {
             log.catching(e);
         }
 
-		/*challongeManager.shutdown();
-		try {
-			listener.shutdown();
-		} catch (SQLException e) {
-			log.catching(e);
-		}
-		client.close();*/
         waiterPool.shutdownNow();
     }
 }

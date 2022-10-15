@@ -1,6 +1,5 @@
 package com.github.gpluscb.toni.util;
 
-import at.stefangeyer.challonge.async.Callback;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import retrofit2.Call;
@@ -34,18 +33,6 @@ public class FailLogger {
         return arg -> {
             try {
                 consumer.accept(arg);
-            } catch (Throwable t) {
-                log.catching(t);
-                throw t;
-            }
-        };
-    }
-
-    @Nonnull
-    public static <T> Callback<T> logFail(@Nonnull Callback<T> callback) {
-        return arg -> {
-            try {
-                callback.accept(arg);
             } catch (Throwable t) {
                 log.catching(t);
                 throw t;

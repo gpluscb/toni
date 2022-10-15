@@ -1,8 +1,9 @@
 package com.github.gpluscb.toni.command.matchmaking;
 
-import com.github.gpluscb.toni.command.*;
+import com.github.gpluscb.toni.command.Command;
+import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.CommandInfo;
 import com.github.gpluscb.toni.matchmaking.UnrankedManager;
-import com.github.gpluscb.toni.util.OneOfTwo;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
@@ -27,21 +28,14 @@ public class UnrankedConfigCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull CommandContext<?> ctx) {
-        OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
-
-        if (!context.map(msg -> msg.getEvent().isFromGuild(), slash -> slash.getEvent().isFromGuild())) {
+    public void execute(@Nonnull CommandContext ctx) {
+        if (!ctx.getEvent().isFromGuild()) {
             ctx.reply("This command only works in servers, I won't set up matchmaking in our DMs.").queue();
             return;
         }
 
-        if (context.isT() && context.getTOrThrow().getArgNum() <= 0) {
-            ctx.reply("Too few arguments. For help, check out `/help unrankedconfig`.").queue();
-            return;
-        }
-
         Member member = ctx.getMember();
-        GuildMessageChannel messageChannel = context.map(msg -> msg.getEvent().getGuildChannel(), slash -> slash.getEvent().getGuildChannel());
+        GuildMessageChannel messageChannel = ctx.getEvent().getGuildChannel();
         // TODO: Is this too restrictive?
         // We know the member is not null because we're in a guild
         //noinspection ConstantConditions
@@ -50,8 +44,10 @@ public class UnrankedConfigCommand implements Command {
             return;
         }
 
-        String variant = context.map(msg -> msg.getArg(0).toLowerCase(), slash -> slash.getEvent().getSubcommandName());
+        String variant = ctx.getEvent().getSubcommandName();
 
+        // We know this is a subcommand
+        //noinspection ConstantConditions
         switch (variant) {
             case "channel" -> {
                 channelVariant(ctx);
@@ -67,61 +63,31 @@ public class UnrankedConfigCommand implements Command {
             }
         }
 
-        // Default variant / Setup variant
-        if (context.isT() && context.getTOrThrow().getArgNum() < 1) {
-            ctx.reply("Too few arguments. Correct usage is `/unrankedconfig <role mention> [channel mention]`.").queue();
-            return;
-        }
-
-        Role role;
-        if (context.isT()) {
-            MessageCommandContext msg = context.getTOrThrow();
-            role = msg.getRoleMentionArg(0);
-            if (role == null) {
-                ctx.reply("The first argument must be a mention of a role in this server.").queue();
-                return;
-            }
-        } else {
-            SlashCommandContext slash = context.getUOrThrow();
-            role = slash.getOptionNonNull("role").getAsRole();
-        }
+        Role role = ctx.getOptionNonNull("role").getAsRole();
 
         if (!checkRole(ctx, role)) return;
 
         long roleId = role.getIdLong();
 
         Long channelId = null;
-        if (context.isT()) {
-            MessageCommandContext msg = context.getTOrThrow();
-            if (msg.getArgNum() > 1) {
-                TextChannel channel = msg.getChannelMentionArg(1);
-                if (channel == null) {
-                    ctx.reply("The second argument must be a mention of a channel in this server." +
-                            " If you don't want matchmaking to be restricted to a channel, just leave that blank.").queue();
-                    return;
-                }
 
-                channelId = channel.getIdLong();
+        OptionMapping channelMapping = ctx.getOption("channel");
+        if (channelMapping != null) {
+            GuildChannel guildChannel = channelMapping.getAsGuildChannel();
+            if (!(guildChannel instanceof TextChannel)) {
+                ctx.reply("The channel must be a *text* channel.").queue();
+                return;
             }
-        } else {
-            SlashCommandContext slash = context.getUOrThrow();
-            OptionMapping channelMapping = slash.getOption("channel");
-            if (channelMapping != null) {
-                GuildChannel guildChannel = channelMapping.getAsGuildChannel();
-                if (!(guildChannel instanceof TextChannel)) {
-                    ctx.reply("The channel must be a *text* channel.").queue();
-                    return;
-                }
 
-                channelId = channelMapping.getAsGuildChannel().getIdLong();
-            }
+            channelId = channelMapping.getAsGuildChannel().getIdLong();
         }
 
         UnrankedManager.MatchmakingConfig config = new UnrankedManager.MatchmakingConfig(roleId, channelId);
 
         try {
             // TODO: You know maybe it would be nice to have an upsert here
-            long guildId = context.map(msg -> msg.getEvent().getGuild(), slash -> slash.getEvent().getGuild()).getIdLong();
+            @SuppressWarnings("ConstantConditions") // We already checked for isFromGuild
+            long guildId = ctx.getEvent().getGuild().getIdLong();
             boolean wasStored = manager.storeMatchmakingConfig(guildId, config);
 
             if (wasStored) {
@@ -148,43 +114,17 @@ public class UnrankedConfigCommand implements Command {
 
     }
 
-    private void channelVariant(@Nonnull CommandContext<?> ctx) {
-        OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
-
-        if (context.isT() && context.getTOrThrow().getArgNum() < 2) {
-            ctx.reply("Too few arguments. I need to know what the matchmaking role is!").queue();
+    private void channelVariant(@Nonnull CommandContext ctx) {
+        GuildChannel channel = ctx.getOptionNonNull("channel").getAsGuildChannel();
+        if (!(channel instanceof TextChannel)) {
+            ctx.reply("The channel must be a *text* channel.").queue();
             return;
         }
 
-        Long channelId;
+        Long channelId = channel.getIdLong();
 
-        if (context.isT()) {
-            MessageCommandContext msg = context.getTOrThrow();
-
-            if (msg.getArg(1).equalsIgnoreCase("all")) {
-                channelId = null;
-            } else {
-                TextChannel channel = msg.getChannelMentionArg(1);
-                if (channel == null) {
-                    ctx.reply("The first argument for the channel variant must be a channel mention.").queue();
-                    return;
-                }
-
-                channelId = channel.getIdLong();
-            }
-        } else {
-            SlashCommandContext slash = context.getUOrThrow();
-
-            GuildChannel channel = slash.getOptionNonNull("channel").getAsGuildChannel();
-            if (!(channel instanceof TextChannel)) {
-                ctx.reply("The channel must be a *text* channel.").queue();
-                return;
-            }
-
-            channelId = channel.getIdLong();
-        }
-
-        long guildId = context.map(msg -> msg.getEvent().getGuild(), slash -> slash.getEvent().getGuild()).getIdLong();
+        @SuppressWarnings("ConstantConditions") // Already checked for isFromGuild
+        long guildId = ctx.getEvent().getGuild().getIdLong();
 
         try {
             boolean wasPresent = manager.updateMatchmakingChannel(guildId, channelId);
@@ -203,34 +143,15 @@ public class UnrankedConfigCommand implements Command {
         }
     }
 
-    private void roleVariant(@Nonnull CommandContext<?> ctx) {
-        OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
-
-        if (context.isT() && context.getTOrThrow().getArgNum() < 2) {
-            ctx.reply("Too few arguments. I need to know what the matchmaking role is!").queue();
-            return;
-        }
-
-        Role role;
-        if (context.isT()) {
-            MessageCommandContext msg = context.getTOrThrow();
-
-            role = msg.getRoleMentionArg(1);
-            if (role == null) {
-                ctx.reply("When using the role update variant, the first argument has to be a role mention.").queue();
-                return;
-            }
-        } else {
-            SlashCommandContext slash = context.getUOrThrow();
-
-            role = slash.getOptionNonNull("role").getAsRole();
-        }
+    private void roleVariant(@Nonnull CommandContext ctx) {
+        Role role = ctx.getOptionNonNull("role").getAsRole();
 
         if (!checkRole(ctx, role)) return;
 
         long roleId = role.getIdLong();
 
-        long guildId = context.map(msg -> msg.getEvent().getGuild(), slash -> slash.getEvent().getGuild()).getIdLong();
+        @SuppressWarnings("ConstantConditions") // Already checked for isFromGuild
+        long guildId = ctx.getEvent().getGuild().getIdLong();
 
         try {
             boolean wasPresent = manager.updateMatchmakingRole(guildId, roleId);
@@ -252,8 +173,9 @@ public class UnrankedConfigCommand implements Command {
         }
     }
 
-    private void resetVariant(@Nonnull CommandContext<?> ctx) {
-        long guildId = ctx.getContext().map(msg -> msg.getEvent().getGuild(), slash -> slash.getEvent().getGuild()).getIdLong();
+    private void resetVariant(@Nonnull CommandContext ctx) {
+        @SuppressWarnings("ConstantConditions") // Already checked for isFromGuild
+        long guildId = ctx.getEvent().getGuild().getIdLong();
 
         try {
             boolean wasPresent = manager.deleteMatchmakingConfig(guildId);
@@ -271,14 +193,15 @@ public class UnrankedConfigCommand implements Command {
 
     // I don't like this warning I feel like it makes stuff less intuitive sometimes
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    private boolean checkRole(@Nonnull CommandContext<?> ctx, @Nonnull Role role) {
+    private boolean checkRole(@Nonnull CommandContext ctx, @Nonnull Role role) {
         if (!(role.getGuild().getSelfMember().hasPermission(Permission.MESSAGE_MENTION_EVERYONE) || role.isMentionable())) {
             ctx.reply("The role you provided is not mentionable, but I need to be able to ping it.").queue();
             return false;
         }
 
-        Guild guild = ctx.getContext().map(msg -> msg.getEvent().getGuild(), slash -> slash.getEvent().getGuild());
+        Guild guild = ctx.getEvent().getGuild();
 
+        @SuppressWarnings("ConstantConditions") // Already checked for isFromGuild
         Member selfMember = guild.getSelfMember();
         if (!(selfMember.canInteract(role) && selfMember.hasPermission(Permission.MANAGE_ROLES))) {
             ctx.reply("I won't be able to assign this role to people." +
@@ -293,7 +216,6 @@ public class UnrankedConfigCommand implements Command {
     @Override
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
-                .setAliases(new String[]{"unrankedconfig", "unrankedcfg"})
                 .setShortHelp("Helps you configure unranked matchmaking. For more info on usage, see `/help unrankedconfig`.")
                 .setDetailedHelp("""
                         Configures unranked matchmaking in this server. You need to have the Manage Server and Manage Roles permissions to use this command.

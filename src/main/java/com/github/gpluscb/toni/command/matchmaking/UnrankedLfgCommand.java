@@ -1,12 +1,13 @@
 package com.github.gpluscb.toni.command.matchmaking;
 
-import com.github.gpluscb.toni.command.*;
+import com.github.gpluscb.toni.command.Command;
+import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.CommandInfo;
 import com.github.gpluscb.toni.matchmaking.UnrankedManager;
 import com.github.gpluscb.toni.menu.ActionMenu;
 import com.github.gpluscb.toni.menu.ButtonActionMenu;
 import com.github.gpluscb.toni.util.Constants;
 import com.github.gpluscb.toni.util.MiscUtil;
-import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.PairNonnull;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.MessageBuilder;
@@ -51,18 +52,18 @@ public class UnrankedLfgCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull CommandContext<?> ctx) {
-        OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
-
-        if (!context.map(msg -> msg.getEvent().isFromGuild(), slash -> slash.getEvent().isFromGuild())) {
+    public void execute(@Nonnull CommandContext ctx) {
+        if (!ctx.getEvent().isFromGuild()) {
             ctx.reply("This command only works in servers. There is only us two in our DMs. And it's nice that you want to play with me, but sorry I don't have hands.").queue();
             return;
         }
 
-        Guild guild = context.map(msg -> msg.getEvent().getGuild(), slash -> slash.getEvent().getGuild());
+        Guild guild = ctx.getEvent().getGuild();
 
         UnrankedManager.MatchmakingConfig config;
         try {
+            // Already checked for isFromGuild
+            //noinspection ConstantConditions
             config = manager.loadMatchmakingConfig(guild.getIdLong());
         } catch (SQLException e) {
             log.catching(e);
@@ -82,27 +83,14 @@ public class UnrankedLfgCommand implements Command {
         }
 
         Duration duration = Duration.ofHours(2);
-        if (context.isT()) {
-            MessageCommandContext msg = context.getTOrThrow();
 
-            if (msg.getArgNum() > 0) {
-                duration = MiscUtil.parseDuration(msg.getArgsFrom(0));
-                if (duration == null) {
-                    ctx.reply("The given duration was not a valid duration. An example duration is `1h 30m`.").queue();
-                    return;
-                }
-            }
-        } else {
-            SlashCommandContext slash = context.getUOrThrow();
+        OptionMapping durationMapping = ctx.getOption("duration");
+        if (durationMapping != null) {
+            duration = MiscUtil.parseDuration(durationMapping.getAsString());
 
-            OptionMapping durationMapping = slash.getOption("duration");
-            if (durationMapping != null) {
-                duration = MiscUtil.parseDuration(durationMapping.getAsString());
-
-                if (duration == null) {
-                    ctx.reply("The given duration was not a valid duration. An example duration is `1h 30m`.").queue();
-                    return;
-                }
+            if (duration == null) {
+                ctx.reply("The given duration was not a valid duration. An example duration is `1h 30m`.").queue();
+                return;
             }
         }
 
@@ -150,9 +138,7 @@ public class UnrankedLfgCommand implements Command {
                 .setOnTimeout(handler::timeout)
                 .build());
 
-        context
-                .onT(msg -> menu.displayReplying(msg.getMessage()))
-                .onU(slash -> menu.displaySlashReplying(slash.getEvent()));
+        menu.displaySlashReplying(ctx.getEvent());
     }
 
     @Nonnull
@@ -160,7 +146,6 @@ public class UnrankedLfgCommand implements Command {
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
                 .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_HISTORY})
-                .setAliases(new String[]{"unranked", "lfg", "fight", "fite"})
                 .setShortHelp("Pings the matchmaking role and lets you know if someone wants to play for a given duration.")
                 .setDetailedHelp("""
                         Pings the matchmaking role and asks players to react if they want to play. Notifies you when they react within the given duration.

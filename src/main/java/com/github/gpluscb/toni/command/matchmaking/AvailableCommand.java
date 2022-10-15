@@ -1,9 +1,10 @@
 package com.github.gpluscb.toni.command.matchmaking;
 
-import com.github.gpluscb.toni.command.*;
+import com.github.gpluscb.toni.command.Command;
+import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.CommandInfo;
 import com.github.gpluscb.toni.matchmaking.UnrankedManager;
 import com.github.gpluscb.toni.util.MiscUtil;
-import com.github.gpluscb.toni.util.OneOfTwo;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
@@ -41,14 +42,14 @@ public class AvailableCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull CommandContext<?> ctx) {
-        OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
-        if (!context.map(msg -> msg.getEvent().isFromGuild(), slash -> slash.getEvent().isFromGuild())) {
+    public void execute(@Nonnull CommandContext ctx) {
+        if (!ctx.getEvent().isFromGuild()) {
             ctx.reply("This command only works in servers. And we are not in a server right now. We are in DMs.").queue();
             return;
         }
 
-        Guild guild = context.map(msg -> msg.getEvent().getGuild(), slash -> slash.getEvent().getGuild());
+        Guild guild = ctx.getEvent().getGuild();
+        @SuppressWarnings("ConstantConditions") // Checked for isFromGuild already
         long guildId = guild.getIdLong();
         try {
             UnrankedManager.MatchmakingConfig config = manager.loadMatchmakingConfig(guildId);
@@ -76,34 +77,14 @@ public class AvailableCommand implements Command {
             }
 
             Duration duration;
-            if (context.isT()) {
-                MessageCommandContext msg = context.getTOrThrow();
-
-                if (msg.getArgNum() > 0) {
-                    duration = MiscUtil.parseDuration(msg.getArgsFrom(0));
-                    if (duration == null) {
-                        ctx.reply("The given duration was not a valid duration. An example duration is `1h 30m`.").queue();
-                        return;
-                    }
-
-                    if (duration.compareTo(Duration.ofHours(12)) > 0) {
-                        ctx.reply("The maximum duration is 12h.").queue();
-                        return;
-                    }
-                } else
-                    duration = null; // We don't init it with null because duration needs to be effectively final later
-            } else {
-                SlashCommandContext slash = context.getUOrThrow();
-
-                OptionMapping durationMapping = slash.getOption("duration");
-                if (durationMapping != null) {
-                    duration = MiscUtil.parseDuration(durationMapping.getAsString());
-                    if (duration == null) {
-                        ctx.reply("The given duration was not a valid duration. An example duration is `1h 30m`.").queue();
-                        return;
-                    }
-                } else duration = null;
-            }
+            OptionMapping durationMapping = ctx.getOption("duration");
+            if (durationMapping != null) {
+                duration = MiscUtil.parseDuration(durationMapping.getAsString());
+                if (duration == null) {
+                    ctx.reply("The given duration was not a valid duration. An example duration is `1h 30m`.").queue();
+                    return;
+                }
+            } else duration = null;
 
             Member member = ctx.getMember();
             // We know member isn't null because this is in a guild.
@@ -175,13 +156,13 @@ public class AvailableCommand implements Command {
             ctx.reply("Oops, something went horribly wong talking to the database." +
                     " I've told my dev, if this keeps happening you can give them some context too.").queue();
         }
+
     }
 
     @Nonnull
     @Override
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
-                .setAliases(new String[]{"available"})
                 .setShortHelp("Gives you the matchmaking role for a given amount of time.")
                 .setDetailedHelp("""
                         Gives you the matchmaking role for the given duration, or permanently if you don't specify a duration. The duration can have the format `Xh Xm Xs`, and it can't be longer than 12h. Note that I can't remember to remove the role if I shut down during that time.

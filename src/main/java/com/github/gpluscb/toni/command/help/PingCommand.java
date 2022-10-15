@@ -11,19 +11,12 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class PingCommand implements Command {
     @Override
-    public void execute(@Nonnull CommandContext<?> ctx) {
+    public void execute(@Nonnull CommandContext ctx) {
         AtomicLong sendTime = new AtomicLong();
-        ctx.getContext().map(
-                msg ->
-                        msg.reply("Doing the measurement...").addCheck(() -> {
-                            sendTime.set(System.currentTimeMillis());
-                            return true;
-                        }).flatMap(m -> m.editMessage(calculateResponse(sendTime.get()))),
-                slash ->
-                        slash.getEvent().reply("Doing the measurement...").addCheck(() -> {
-                            sendTime.set(System.currentTimeMillis());
-                            return true;
-                        }).flatMap(hook -> hook.editOriginal(calculateResponse(sendTime.get())))
+        ctx.getEvent().reply("Doing the measurement...").addCheck(() -> {
+            sendTime.set(System.currentTimeMillis());
+            return true;
+        }).flatMap(hook -> hook.editOriginal(calculateResponse(sendTime.get()))
         ).queue();
     }
 
@@ -38,7 +31,6 @@ public class PingCommand implements Command {
     @Override
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
-                .setAliases(new String[]{"ping", "rtt"})
                 .setShortHelp("My ping.")
                 .setDetailedHelp("""
                         Gives you my ping ("round trip time" for Discord, basically my reaction time). The average reaction time of a human is ~250ms, let's see if I can beat that.

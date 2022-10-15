@@ -16,7 +16,6 @@ import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 
 import javax.annotation.Nonnull;
-import java.util.Arrays;
 import java.util.List;
 
 @SuppressWarnings("ClassCanBeRecord")
@@ -29,14 +28,10 @@ public class HelpCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull CommandContext<?> ctx) {
-        String commandArg = ctx.getContext().map(msg -> {
-            List<String> args = msg.getArgs();
-            return args.isEmpty() ? null : args.get(0).toLowerCase();
-        }, slash -> {
-            OptionMapping commandArgMapping = slash.getOption("command-or-category");
-            return commandArgMapping == null ? null : commandArgMapping.getAsString();
-        });
+    public void execute(@Nonnull CommandContext ctx) {
+        // TODO: slash command mentions
+        OptionMapping commandArgMapping = ctx.getOption("command-or-category");
+        String commandArg = commandArgMapping == null ? null : commandArgMapping.getAsString().toLowerCase();
 
         if (commandArg == null) {
             generalHelp(ctx);
@@ -59,7 +54,7 @@ public class HelpCommand implements Command {
             List<EmbedUtil.InlineField> helpFields = requestedCategory.commands().stream()
                     .map(Command::getInfo)
                     .filter(info -> info.shortHelp() != null)
-                    .map(info -> new EmbedUtil.InlineField(info.aliases()[0], info.shortHelp()))
+                    .map(info -> new EmbedUtil.InlineField(info.commandData().getName(), info.shortHelp()))
                     .toList();
             String parsedFields = EmbedUtil.parseInlineFields(helpFields);
             builder.addField("Commands", parsedFields, false);
@@ -71,14 +66,14 @@ public class HelpCommand implements Command {
 
         CommandInfo requestedCommand = commands.stream().flatMap(category -> category.commands().stream())
                 .map(Command::getInfo)
-                .filter(info -> Arrays.asList(info.aliases()).contains(commandArg))
                 .filter(info -> info.detailedHelp() != null)
+                .filter(info -> info.commandData().getName().equals(commandArg))
                 .findAny().orElse(null);
 
         if (requestedCommand != null) {
-            String[] aliases = requestedCommand.aliases();
+            String name = requestedCommand.commandData().getName();
 
-            builder.setTitle(String.format("Toni's %s help", aliases[0]))
+            builder.setTitle(String.format("Toni's %s help", name))
                     .setDescription(requestedCommand.detailedHelp());
 
             ctx.reply(builder.build()).queue();
@@ -89,7 +84,7 @@ public class HelpCommand implements Command {
         ctx.reply("I don't have that command or category.").queue();
     }
 
-    private void generalHelp(@Nonnull CommandContext<?> ctx) {
+    private void generalHelp(@Nonnull CommandContext ctx) {
         Config config = ctx.getConfig();
 
         EmbedBuilder builder = EmbedUtil.getPreparedAuthor(ctx.getMember(), ctx.getUser()).setTitle("Toni's general help");
@@ -117,14 +112,9 @@ public class HelpCommand implements Command {
         Button supportButton = Button.link(config.supportServer(), "Support server");
 
         MessageEmbed embed = builder.build();
-        ctx.getContext().onT(msg ->
-                        msg.reply(embed)
-                                .setActionRow(topGGButton, githubButton, inviteButton, supportButton)
-                                .queue())
-                .onU(slash ->
-                        slash.getEvent().reply(new MessageBuilder().setEmbeds(embed).build())
-                                .addActionRow(topGGButton, githubButton, inviteButton, supportButton)
-                                .queue());
+        ctx.getEvent().reply(new MessageBuilder().setEmbeds(embed).build())
+                .addActionRow(topGGButton, githubButton, inviteButton, supportButton)
+                .queue();
     }
 
     @Nonnull
@@ -132,7 +122,6 @@ public class HelpCommand implements Command {
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
                 .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_EMBED_LINKS})
-                .setAliases(new String[]{"help", "h"})
                 .setShortHelp("Helps you out.")
                 .setDetailedHelp("`stack owoflow - Circular reference`")
                 .setCommandData(Commands.slash("help", "Helps you out")

@@ -35,7 +35,6 @@ public class RandomPlayerCommand implements Command {
         int rngIndex = rng.nextInt(choices.size());
         OneOfTwo<Long, String> choice = choices.get(rngIndex);
 
-        // FIXME: I hate Java, how do I do like RestAction<?> + AllowedMentions or sth like that
         choice.map(id ->
                         ctx.reply(String.format("I choose you, %s!", MiscUtil.mentionUser(id))).mentionUsers(id),
                 str ->

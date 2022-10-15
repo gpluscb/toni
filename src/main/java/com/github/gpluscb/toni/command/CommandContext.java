@@ -1,13 +1,13 @@
 package com.github.gpluscb.toni.command;
 
 import com.github.gpluscb.toni.Config;
+import com.github.gpluscb.toni.util.discord.ReplyAction;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
-import net.dv8tion.jda.api.requests.RestAction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -37,25 +37,25 @@ public class CommandContext {
 
     @Nonnull
     @CheckReturnValue
-    public RestAction<?> reply(@Nonnull String message) {
+    public ReplyAction<?, ?> reply(@Nonnull String message) {
         return reply(new MessageBuilder(message).build());
     }
 
     @Nonnull
     @CheckReturnValue
-    public RestAction<?> reply(@Nonnull MessageEmbed embed) {
+    public ReplyAction<?, ?> reply(@Nonnull MessageEmbed embed) {
         return reply(new MessageBuilder().setEmbeds(embed).build());
     }
 
     @Nonnull
     @CheckReturnValue
-    public RestAction<?> reply(@Nonnull Message message) {
+    public ReplyAction<?, ?> reply(@Nonnull Message message) {
         String content = message.getContentRaw();
         log.debug("Reply: {}", content.isEmpty() ? message.getEmbeds() : content);
 
         return event.isAcknowledged() ?
-                event.getHook().sendMessage(message)
-                : event.reply(message);
+                new ReplyAction<>(event.getHook().sendMessage(message))
+                : new ReplyAction<>(event.reply(message));
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")

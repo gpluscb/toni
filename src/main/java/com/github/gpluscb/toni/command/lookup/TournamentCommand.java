@@ -8,11 +8,16 @@ import com.github.gpluscb.ggjava.entity.object.response.enums.ActivityStateRespo
 import com.github.gpluscb.ggjava.entity.object.response.enums.BracketTypeResponse;
 import com.github.gpluscb.ggjava.entity.object.response.objects.*;
 import com.github.gpluscb.ggjava.entity.object.response.scalars.*;
-import com.github.gpluscb.toni.command.*;
-import com.github.gpluscb.toni.startgg.GGManager;
-import com.github.gpluscb.toni.util.*;
-import com.github.gpluscb.toni.util.discord.EmbedUtil;
+import com.github.gpluscb.toni.command.Command;
+import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.CommandInfo;
 import com.github.gpluscb.toni.menu.ReactionActionMenu;
+import com.github.gpluscb.toni.startgg.GGManager;
+import com.github.gpluscb.toni.util.Constants;
+import com.github.gpluscb.toni.util.FailLogger;
+import com.github.gpluscb.toni.util.Pair;
+import com.github.gpluscb.toni.util.PairNonnull;
+import com.github.gpluscb.toni.util.discord.EmbedUtil;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
@@ -50,27 +55,10 @@ public class TournamentCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull CommandContext<?> ctx) {
-        String searchTerm;
+    public void execute(@Nonnull CommandContext ctx) {
+        String searchTerm = ctx.getOptionNonNull("search-term").getAsString();
 
-        OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
-        if (context.isT()) {
-            MessageCommandContext msg = context.getTOrThrow();
-
-            if (msg.getArgs().isEmpty()) {
-                ctx.reply("Too few arguments. I can't just find you a tournament if I don't know what you're searching for. Use `/help tournament` for help.").queue();
-                return;
-            }
-
-            searchTerm = msg.getArgsFrom(0);
-
-            ctx.getChannel().sendTyping().queue();
-        } else {
-            SlashCommandContext slash = context.getUOrThrow();
-            searchTerm = slash.getOptionNonNull("search-term").getAsString();
-
-            slash.getEvent().deferReply().queue();
-        }
+        ctx.getEvent().deferReply().queue();
 
         // more than 15 -> risk of query complexiy
         ggManager.searchTouranmentsByName(searchTerm, 15, 8).whenComplete(FailLogger.logFail((response, t) -> {
@@ -90,7 +78,7 @@ public class TournamentCommand implements Command {
         }));
     }
 
-    private void handleErrorResponse(@Nonnull CommandContext<?> ctx, @Nonnull GGResponse<QueryResponse> errorResponse) {
+    private void handleErrorResponse(@Nonnull CommandContext ctx, @Nonnull GGResponse<QueryResponse> errorResponse) {
         DeserializationException e = errorResponse.getException();
         List<GGError> errors = errorResponse.getErrors();
         if (e != null) log.catching(e);
@@ -102,7 +90,7 @@ public class TournamentCommand implements Command {
         ctx.reply("An error during the parsing of the response start.gg sent me... I'll go annoy my dev. If this happens consistently, go give them some context too.").queue();
     }
 
-    private void sendReply(@Nonnull CommandContext<?> ctx, @Nonnull List<TournamentResponse> tournaments) {
+    private void sendReply(@Nonnull CommandContext ctx, @Nonnull List<TournamentResponse> tournaments) {
         if (tournaments.isEmpty()) {
             ctx.reply("Sorry, I couldn't find any tournament matching that on start.gg.").queue();
             return;
@@ -126,9 +114,7 @@ public class TournamentCommand implements Command {
 
         ReactionActionMenu menu = menuBuilder.build();
 
-        ctx.getContext()
-                .onT(msg -> menu.displayReplying(msg.getMessage()))
-                .onU(slash -> menu.displaySlashCommandDeferred(slash.getEvent()));
+        menu.displaySlashCommandDeferred(ctx.getEvent());
     }
 
     @Nonnull
@@ -366,7 +352,6 @@ public class TournamentCommand implements Command {
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
                 .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_EMBED_LINKS})
-                .setAliases(new String[]{"tournament", "tourney", "tournaments", "tourneys"})
                 .setShortHelp("Finds and displays tournaments from [start.gg](https://start.gg).`")
                 .setDetailedHelp(String.format("""
                                 `tournament <SEARCH TERM...>`

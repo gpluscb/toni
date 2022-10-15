@@ -1,11 +1,16 @@
 package com.github.gpluscb.toni.command.lookup;
 
-import com.github.gpluscb.toni.command.*;
+import com.github.gpluscb.toni.command.Command;
+import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.CommandInfo;
 import com.github.gpluscb.toni.smashset.Character;
 import com.github.gpluscb.toni.smashset.CharacterTree;
 import com.github.gpluscb.toni.ultimateframedata.CharacterData;
 import com.github.gpluscb.toni.ultimateframedata.UltimateframedataClient;
-import com.github.gpluscb.toni.util.*;
+import com.github.gpluscb.toni.util.FailLogger;
+import com.github.gpluscb.toni.util.MiscUtil;
+import com.github.gpluscb.toni.util.OneOfTwo;
+import com.github.gpluscb.toni.util.PairNonnull;
 import com.github.gpluscb.toni.util.discord.EmbedUtil;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -24,7 +29,6 @@ import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.selections.SelectMenu;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
 import net.dv8tion.jda.api.requests.ErrorResponse;
-import net.dv8tion.jda.api.requests.restaction.MessageAction;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -57,70 +61,37 @@ public class MovesCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull CommandContext<?> ctx) {
-        short id;
-        @Nullable
-        String moveName;
+    public void execute(@Nonnull CommandContext ctx) {
+        String characterName = ctx.getOptionNonNull("character").getAsString().toLowerCase();
 
-        OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
-        if (context.isT()) {
-            MessageCommandContext msg = context.getTOrThrow();
+        Optional<Short> idOptional = characters.stream().filter(character -> character.altNames().contains(characterName)).map(c -> {
+                    Short id__ = c.id();
+                    return Optional.ofNullable(id__);
+                })
+                .findAny().orElse(null);
 
-            int argNum = msg.getArgNum();
-
-            if (argNum == 0) {
-                ctx.reply("You haven't given a character name. Use `/help character` for detailed help.").queue();
-                return;
-            }
-
-            // T: id, U: response in case Id is not found
-            OneOfTwo<Pair<Short, String>, String> idAndMoveNameOrResponse = findCharacterIdAndMoveNameOrResponse(msg);
-
-            if (idAndMoveNameOrResponse.isU()) {
-                // We know because of the isU
-                ctx.reply(idAndMoveNameOrResponse.getUOrThrow()).queue();
-                return;
-            }
-
-            Pair<Short, String> idAndMoveName = idAndMoveNameOrResponse.getTOrThrow();
-            id = idAndMoveName.getT();
-            moveName = idAndMoveName.getU();
-
-            ctx.getChannel().sendTyping().queue();
-        } else {
-            SlashCommandContext slash = context.getUOrThrow();
-
-            String characterName = slash.getOptionNonNull("character").getAsString().toLowerCase();
-
-            Optional<Short> idOptional = characters.stream().filter(character -> character.altNames().contains(characterName)).map(c -> {
-                        Short id__ = c.id();
-                        return Optional.ofNullable(id__);
-                    })
-                    .findAny().orElse(null);
-
-            // I think this is ok here, I don't really want Optional<Optional<Short>> or other weird constructs
-            //noinspection OptionalAssignedToNull
-            if (idOptional == null) {
-                ctx.reply(String.format("""
-                                I don't know the character "%s", sorry. Note that I only know the English names.
-                                Also make sure you only put the **character name** in the `character` option, and put the **move name** in the `move` option.""",
-                        characterName)).queue();
-                return;
-            }
-
-            if (idOptional.isEmpty()) {
-                ctx.reply("This character by itself doesn't have a page on ultimateframedata, but sub-characters probably do!" +
-                        " So try for example `Charizard` instead of `Pokémon Trainer`.").queue();
-                return;
-            }
-
-            id = idOptional.get();
-
-            OptionMapping moveNameMapping = slash.getOption("move");
-            moveName = moveNameMapping == null ? null : moveNameMapping.getAsString();
-
-            slash.getEvent().deferReply().queue();
+        // I think this is ok here, I don't really want Optional<Optional<Short>> or other weird constructs
+        //noinspection OptionalAssignedToNull
+        if (idOptional == null) {
+            ctx.reply(String.format("""
+                            I don't know the character "%s", sorry. Note that I only know the English names.
+                            Also make sure you only put the **character name** in the `character` option, and put the **move name** in the `move` option.""",
+                    characterName)).queue();
+            return;
         }
+
+        if (idOptional.isEmpty()) {
+            ctx.reply("This character by itself doesn't have a page on ultimateframedata, but sub-characters probably do!" +
+                    " So try for example `Charizard` instead of `Pokémon Trainer`.").queue();
+            return;
+        }
+
+        short id = idOptional.get();
+
+        OptionMapping moveNameMapping = ctx.getOption("move");
+        String moveName = moveNameMapping == null ? null : moveNameMapping.getAsString();
+
+        ctx.getEvent().deferReply().queue();
 
         client.getCharacter(id).whenComplete(FailLogger.logFail((response, t) -> {
             try {
@@ -140,46 +111,6 @@ public class MovesCommand implements Command {
                 ctx.reply("Ouch, an error. This one's really bad, sorry. I'll send a report to my dev. If it keeps happening you might want to provide them with some context too.").queue();
             }
         }));
-    }
-
-    /**
-     * @return T: Pair of id and move name. Note that move name may be null. U: Reason why we couldn't find anything.
-     */
-    @Nonnull
-    private OneOfTwo<Pair<Short, String>, String> findCharacterIdAndMoveNameOrResponse(@Nonnull MessageCommandContext ctx) {
-        int characterArgNum = 0;
-        OneOfTwo<Short, String> id = OneOfTwo.ofU("I don't know that character, sorry. " +
-                "Note that I only know the English names.");
-        int argNum = ctx.getArgNum();
-        for (int i = 1; i <= argNum; i++) {
-            String characterName = ctx.getArgsRange(0, i).toLowerCase();
-
-            OneOfTwo<Short, Optional<String>> id_ = characters.stream().filter(c -> c.altNames().contains(characterName))
-                    .<OneOfTwo<Short, Optional<String>>>map(c -> {
-                        Short id__ = c.id();
-                        return id__ == null ?
-                                OneOfTwo.ofU(Optional.of("This character by itself doesn't have a page on ultimateframedata, but sub-characters probably do!" +
-                                        " So try for example `Charizard` instead of `Pokémon Trainer`."))
-                                : OneOfTwo.ofT(id__);
-                    })
-                    .findAny().orElse(OneOfTwo.ofU(Optional.empty()));
-
-            if (id_.isU()) {
-                Optional<String> response = id_.getUOrThrow();
-                if (response.isPresent()) return OneOfTwo.ofU(response.get());
-                // Else we haven't found anything
-                continue;
-            }
-
-            // We know we found an id here, so let's store it for now in case we won't find anything better later
-            id = OneOfTwo.ofT(id_.getTOrThrow());
-            characterArgNum = i;
-        }
-
-        // Rest of the args will be move name
-        String moveName = characterArgNum < argNum ? ctx.getArgsFrom(characterArgNum).toLowerCase() : null;
-
-        return id.mapT(id_ -> new Pair<>(id_, moveName));
     }
 
     /**
@@ -283,7 +214,7 @@ public class MovesCommand implements Command {
         };
     }
 
-    private void sendReply(@Nonnull CommandContext<?> ctx, @Nullable CharacterData data, @Nullable PairNonnull<Integer, Integer> startMove, boolean startMoveRequested) {
+    private void sendReply(@Nonnull CommandContext ctx, @Nullable CharacterData data, @Nullable PairNonnull<Integer, Integer> startMove, boolean startMoveRequested) {
         if (data == null) {
             log.error("Valid character requested, but not found by ufd service.");
             ctx.reply("Oh this is a bug. I was sure my buddy program would know about that character but it didn't. I'll tell my dev about it, but you can give them some context too.").queue();
@@ -297,7 +228,7 @@ public class MovesCommand implements Command {
                 EmbedUtil.getPreparedUFD(member, author).build(),
                 author.getIdLong(),
                 data,
-                ctx.getContext().mapT(MessageCommandContext::getMessage).mapU(SlashCommandContext::getEvent),
+                ctx.getEvent(),
                 startMove,
                 startMoveRequested
         );
@@ -456,7 +387,6 @@ public class MovesCommand implements Command {
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
                 .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_EMBED_LINKS, Permission.MESSAGE_HISTORY})
-                .setAliases(new String[]{"character", "char", "ufd", "moves", "move", "hitboxes", "hitbox"})
                 .setShortHelp("Displays the moves of a character using data from [ultimateframedata.com](https://ultimateframedata.com).")
                 .setDetailedHelp("""
                         Looks up the moves of a character on [ultimateframedata.com](https://ultimateframedata.com).
@@ -491,7 +421,7 @@ public class MovesCommand implements Command {
 
         private boolean displayCouldNotFindMove;
 
-        public CustomSelectionActionMenu(@Nonnull MessageEmbed template, long user, @Nonnull CharacterData data, @Nonnull OneOfTwo<Message, SlashCommandInteractionEvent> referenceOrSlashEvent, @Nullable PairNonnull<Integer, Integer> startMove, boolean startMoveRequested) {
+        public CustomSelectionActionMenu(@Nonnull MessageEmbed template, long user, @Nonnull CharacterData data, @Nonnull SlashCommandInteractionEvent event, @Nullable PairNonnull<Integer, Integer> startMove, boolean startMoveRequested) {
             this.user = user;
             this.template = template;
             messageId = null;
@@ -508,29 +438,10 @@ public class MovesCommand implements Command {
                 movePage = startMove.getU();
             }
 
-            boolean hasPerms = true;
-            MessageChannel channel = referenceOrSlashEvent.map(Message::getChannel, SlashCommandInteractionEvent::getChannel);
-            if (channel instanceof TextChannel textChannel) {
-                hasPerms = textChannel.getGuild().getSelfMember().hasPermission(textChannel, Permission.MESSAGE_HISTORY);
-            }
-
             Message start = getCurrent();
             List<ActionRow> actionRows = prepareActionRows();
 
-            if (referenceOrSlashEvent.isT()) {
-                MessageAction action;
-                if (hasPerms) {
-                    action = channel.sendMessage(start).referenceById(referenceOrSlashEvent.getTOrThrow().getIdLong());
-                } else {
-                    action = channel.sendMessage(start);
-                }
-
-                action.setActionRows(actionRows).queue(this::awaitEvents);
-            } else {
-                // is slash event
-                SlashCommandInteractionEvent slash = referenceOrSlashEvent.getUOrThrow();
-                slash.getHook().sendMessage(start).addActionRows(actionRows).queue(this::awaitEvents);
-            }
+            event.getHook().sendMessage(start).addActionRows(actionRows).queue(this::awaitEvents);
         }
 
         private List<ActionRow> prepareActionRows() {

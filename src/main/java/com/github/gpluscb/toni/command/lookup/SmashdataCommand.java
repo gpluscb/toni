@@ -1,11 +1,12 @@
 package com.github.gpluscb.toni.command.lookup;
 
-import com.github.gpluscb.toni.command.*;
+import com.github.gpluscb.toni.command.Command;
+import com.github.gpluscb.toni.command.CommandContext;
+import com.github.gpluscb.toni.command.CommandInfo;
 import com.github.gpluscb.toni.menu.ReactionActionMenu;
 import com.github.gpluscb.toni.smashdata.SmashdataManager;
 import com.github.gpluscb.toni.util.Constants;
 import com.github.gpluscb.toni.util.MiscUtil;
-import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.discord.EmbedUtil;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -47,28 +48,10 @@ public class SmashdataCommand implements Command {
     }
 
     @Override
-    public void execute(@Nonnull CommandContext<?> ctx) {
-        String requestedTag;
+    public void execute(@Nonnull CommandContext ctx) {
+        String requestedTag = ctx.getOptionNonNull("tag").getAsString();
 
-        OneOfTwo<MessageCommandContext, SlashCommandContext> context = ctx.getContext();
-        if (context.isT()) {
-            MessageCommandContext msg = context.getTOrThrow();
-
-            if (msg.getArgs().isEmpty()) {
-                ctx.reply("Too few arguments. I can't just find you a player if I don't know what you're searching for. Use `/help player` for help.").queue();
-                return;
-            }
-
-            requestedTag = msg.getArgsFrom(0);
-
-            ctx.getChannel().sendTyping().queue();
-        } else {
-            SlashCommandContext slash = context.getUOrThrow();
-
-            requestedTag = slash.getOptionNonNull("tag").getAsString();
-
-            slash.getEvent().deferReply().queue();
-        }
+        ctx.getEvent().deferReply().queue();
 
         try {
             List<SmashdataManager.PlayerData> results = smashdata.loadSmashdataByTag(requestedTag);
@@ -118,7 +101,7 @@ public class SmashdataCommand implements Command {
         }
     }
 
-    private void sendReply(@Nonnull CommandContext<?> ctx, @Nonnull List<SmashdataManager.PlayerData> results) {
+    private void sendReply(@Nonnull CommandContext ctx, @Nonnull List<SmashdataManager.PlayerData> results) {
         if (results.isEmpty()) {
             ctx.reply("I couldn't find anything for that input, sorry.").queue();
             return;
@@ -140,9 +123,7 @@ public class SmashdataCommand implements Command {
 
         ReactionActionMenu menu = menuBuilder.build();
 
-        ctx.getContext()
-                .onT(msg -> menu.displayReplying(msg.getMessage()))
-                .onU(slash -> menu.displaySlashCommandDeferred(slash.getEvent()));
+        menu.displaySlashCommandDeferred(ctx.getEvent());
     }
 
     @Nonnull
@@ -210,13 +191,12 @@ public class SmashdataCommand implements Command {
     public CommandInfo getInfo() {
         return new CommandInfo.Builder()
                 .setRequiredBotPerms(new Permission[]{Permission.MESSAGE_EMBED_LINKS})
-                .setAliases(new String[]{"smasher", "player", "smashdata", "data"})
                 .setShortHelp("Displays info about a smasher using data from [smashdata.gg](https://smashdata.gg).")
                 .setDetailedHelp(String.format("""
-                        Looks up a smash ultimate player by their tag using data from [smashdata.gg](https://smashdata.gg).
-                        If there are multiple smashers matching the given tag, use the %s/%s to cycle through them.
-                        Slash command options:
-                        • `tag`: The smasher's tag.""",
+                                Looks up a smash ultimate player by their tag using data from [smashdata.gg](https://smashdata.gg).
+                                If there are multiple smashers matching the given tag, use the %s/%s to cycle through them.
+                                Slash command options:
+                                • `tag`: The smasher's tag.""",
                         Constants.ARROW_BACKWARD, Constants.ARROW_FORWARD))
                 .setCommandData(Commands.slash("smasher", "Displays info about a smasher")
                         .addOption(OptionType.STRING, "tag", "The smasher's tag", true))

@@ -7,9 +7,10 @@ import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.discord.EmbedUtil;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
@@ -18,6 +19,8 @@ import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
 import net.dv8tion.jda.api.requests.ErrorResponse;
+import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
@@ -185,7 +188,7 @@ public class RulesetSelectMenu extends ActionMenu {
     }
 
     public record Settings(@Nonnull ActionMenu.Settings actionMenuSettings, long user, @Nonnull List<Ruleset> rulesets,
-                           @Nonnull Message start,
+                           @Nonnull MessageCreateData start,
                            @Nonnull BiConsumer<RulesetSelectOptionInfo, SelectMenuInteractionEvent> onOptionSelect,
                            @Nonnull BiConsumer<RulesetSelectionInfo, ButtonInteractionEvent> onRulesetSelect,
                            @Nonnull Consumer<RulesetSelectTimeoutEvent> onTimeout) {
@@ -206,10 +209,12 @@ public class RulesetSelectMenu extends ActionMenu {
                             .build())
                     .setUser(user.getIdLong())
                     .setRulesets(rulesets)
-                    .setStart(new MessageBuilder(EmbedUtil.getPreparedAuthor(member, user)
-                            .setTitle("Ruleset Selection")
-                            .setDescription(String.format("**%s**, please select a ruleset from the list below.", user.getName()))
-                            .build()).build())
+                    .setStart(new MessageCreateBuilder()
+                            .setEmbeds(EmbedUtil.getPreparedAuthor(member, user)
+                                    .setTitle("Ruleset Selection")
+                                    .setDescription(String.format("**%s**, please select a ruleset from the list below.", user.getName()))
+                                    .build())
+                            .build())
                     .setOnOptionSelect((info, event) -> {
                         MessageEmbed embed = EmbedUtil.applyRuleset(EmbedUtil.getPreparedAuthor(member, user), info.getInfo().getUserSelection()).build();
 
@@ -220,7 +225,7 @@ public class RulesetSelectMenu extends ActionMenu {
                         event.editMessageEmbeds(EmbedUtil.getPreparedAuthor(member, user)
                                 .setTitle("Ruleset Selection")
                                 .setDescription(String.format("You chose: **%s**", info.getSelectedRuleset().name()))
-                                .build()).setActionRows().queue();
+                                .build()).setComponents().queue();
                         afterRulesetSelect.accept(info, event);
                     })
                     .setOnTimeout(timeout -> {
@@ -232,7 +237,7 @@ public class RulesetSelectMenu extends ActionMenu {
                         }
 
                         channel.retrieveMessageById(timeout.getMessageId())
-                                .flatMap(m -> m.editMessage("You didn't choose the ruleset in time.").setActionRows())
+                                .flatMap(m -> m.editMessage("You didn't choose the ruleset in time.").setComponents())
                                 .queue(null, new ErrorHandler().ignore(ErrorResponse.UNKNOWN_MESSAGE));
                     })
                     .build();
@@ -246,7 +251,7 @@ public class RulesetSelectMenu extends ActionMenu {
             @Nullable
             private List<Ruleset> rulesets;
             @Nullable
-            private Message start;
+            private MessageCreateData start;
             @Nonnull
             private BiConsumer<RulesetSelectOptionInfo, SelectMenuInteractionEvent> onOptionSelect = DEFAULT_ON_OPTION_SELECT;
             @Nonnull
@@ -273,7 +278,7 @@ public class RulesetSelectMenu extends ActionMenu {
             }
 
             @Nonnull
-            public Builder setStart(@Nullable Message start) {
+            public Builder setStart(@Nullable MessageCreateData start) {
                 this.start = start;
                 return this;
             }

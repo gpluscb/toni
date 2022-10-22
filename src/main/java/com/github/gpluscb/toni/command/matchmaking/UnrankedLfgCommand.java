@@ -10,12 +10,10 @@ import com.github.gpluscb.toni.util.Constants;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.PairNonnull;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
-import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.entities.Emoji;
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
@@ -24,6 +22,9 @@ import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.utils.TimeFormat;
+import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
+import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -117,12 +118,13 @@ public class UnrankedLfgCommand implements Command {
             currentlyLfgPerGuild.add(new PairNonnull<>(guildId, userId));
         }
 
-        Message start = new MessageBuilder(String.format("%s, %s is looking for a game for %s (until %s). %2$s, you can click on the %s button to cancel.",
-                MiscUtil.mentionRole(roleId),
-                MiscUtil.mentionUser(userId),
-                MiscUtil.durationToString(duration),
-                TimeFormat.RELATIVE.after(duration),
-                Constants.CROSS_MARK))
+        MessageCreateData start = new MessageCreateBuilder()
+                .setContent(String.format("%s, %s is looking for a game for %s (until %s). %2$s, you can click on the %s button to cancel.",
+                        MiscUtil.mentionRole(roleId),
+                        MiscUtil.mentionUser(userId),
+                        MiscUtil.durationToString(duration),
+                        TimeFormat.RELATIVE.after(duration),
+                        Constants.CROSS_MARK))
                 .mentionRoles(roleId).mentionUsers(userId).build();
 
         ButtonHandler handler = new ButtonHandler(guildId, userId, roleId);
@@ -198,10 +200,11 @@ public class UnrankedLfgCommand implements Command {
 
             long originalMessageId = e.getMessageIdLong();
 
-            Message start = new MessageBuilder(String.format("%s, %s wants to play with you." +
-                            " If you want me to disable the search on the original message," +
-                            " click on the %s button within three minutes.",
-                    MiscUtil.mentionUser(originalAuthorId), MiscUtil.mentionUser(challengerId), Constants.CHECK_MARK))
+            MessageCreateData start = new MessageCreateBuilder()
+                    .setContent(String.format("%s, %s wants to play with you." +
+                                    " If you want me to disable the search on the original message," +
+                                    " click on the %s button within three minutes.",
+                            MiscUtil.mentionUser(originalAuthorId), MiscUtil.mentionUser(challengerId), Constants.CHECK_MARK))
                     .mentionUsers(originalAuthorId, challengerId)
                     .build();
 
@@ -232,13 +235,14 @@ public class UnrankedLfgCommand implements Command {
                 currentlyLfgPerGuild.remove(new PairNonnull<>(guildId, originalAuthorId));
             }
 
-            e.editMessage(new MessageBuilder(String.format("%s, %s was looking for a game, but cancelled their search.",
-                            MiscUtil.mentionRole(matchmakingRoleId),
-                            MiscUtil.mentionUser(originalAuthorId)))
+            e.editMessage(new MessageEditBuilder()
+                            .setContent(String.format("%s, %s was looking for a game, but cancelled their search.",
+                                    MiscUtil.mentionRole(matchmakingRoleId),
+                                    MiscUtil.mentionUser(originalAuthorId)))
                             .mentionRoles(matchmakingRoleId)
                             .mentionUsers(originalAuthorId)
                             .build())
-                    .setActionRows()
+                    .setComponents()
                     .queue();
 
             return ActionMenu.MenuAction.CANCEL;
@@ -255,7 +259,7 @@ public class UnrankedLfgCommand implements Command {
             channel.editMessageById(event.getMessageId(), String.format("%s, %s was looking for a game.",
                             MiscUtil.mentionRole(matchmakingRoleId), MiscUtil.mentionUser(originalAuthorId)))
                     .mentionRoles(matchmakingRoleId).mentionUsers(originalAuthorId)
-                    .setActionRows()
+                    .setComponents()
                     .queue(null, new ErrorHandler().ignore(ErrorResponse.UNKNOWN_MESSAGE));
         }
 
@@ -279,13 +283,14 @@ public class UnrankedLfgCommand implements Command {
                 channel.editMessageById(originalMessageId, String.format("%s, %s was looking for a game, but they found someone.",
                                 MiscUtil.mentionRole(matchmakingRoleId), MiscUtil.mentionUser(originalAuthorId)))
                         .mentionRoles(matchmakingRoleId).mentionUsers(originalAuthorId)
-                        .setActionRows()
+                        .setComponents()
                         .queue();
 
-                e.editMessage(new MessageBuilder(String.format("%s, %s wants to play with you.", MiscUtil.mentionUser(originalAuthorId), MiscUtil.mentionUser(challengerId)))
+                e.editMessage(new MessageEditBuilder()
+                                .setContent(String.format("%s, %s wants to play with you.", MiscUtil.mentionUser(originalAuthorId), MiscUtil.mentionUser(challengerId)))
                                 .mentionUsers(originalAuthorId, challengerId)
                                 .build())
-                        .setActionRows()
+                        .setComponents()
                         .queue();
 
                 return ActionMenu.MenuAction.CANCEL;
@@ -297,7 +302,7 @@ public class UnrankedLfgCommand implements Command {
 
                 channel.editMessageById(event.getMessageId(), String.format("%s, %s wants to play with you.", MiscUtil.mentionUser(originalAuthorId), MiscUtil.mentionUser(challengerId)))
                         .mentionUsers(originalAuthorId, challengerId)
-                        .setActionRows()
+                        .setComponents()
                         .queue(null, new ErrorHandler().ignore(ErrorResponse.UNKNOWN_MESSAGE));
             }
         }

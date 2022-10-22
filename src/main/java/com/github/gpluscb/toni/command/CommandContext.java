@@ -3,11 +3,13 @@ package com.github.gpluscb.toni.command;
 import com.github.gpluscb.toni.Config;
 import com.github.gpluscb.toni.util.discord.ReplyAction;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -38,19 +40,19 @@ public class CommandContext {
     @Nonnull
     @CheckReturnValue
     public ReplyAction<?, ?> reply(@Nonnull String message) {
-        return reply(new MessageBuilder(message).build());
+        return reply(new MessageCreateBuilder().setContent(message).build());
     }
 
     @Nonnull
     @CheckReturnValue
     public ReplyAction<?, ?> reply(@Nonnull MessageEmbed embed) {
-        return reply(new MessageBuilder().setEmbeds(embed).build());
+        return reply(new MessageCreateBuilder().setEmbeds(embed).build());
     }
 
     @Nonnull
     @CheckReturnValue
-    public ReplyAction<?, ?> reply(@Nonnull Message message) {
-        String content = message.getContentRaw();
+    public ReplyAction<?, ?> reply(@Nonnull MessageCreateData message) {
+        String content = message.getContent();
         log.debug("Reply: {}", content.isEmpty() ? message.getEmbeds() : content);
 
         return event.isAcknowledged() ?

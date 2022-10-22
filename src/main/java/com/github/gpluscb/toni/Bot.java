@@ -46,12 +46,12 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.requests.RestAction;
-import net.dv8tion.jda.api.requests.restaction.MessageAction;
 import net.dv8tion.jda.api.sharding.DefaultShardManagerBuilder;
 import net.dv8tion.jda.api.sharding.ShardManager;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
+import net.dv8tion.jda.api.utils.messages.MessageRequest;
 import okhttp3.OkHttpClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -149,8 +149,8 @@ public class Bot {
         ggManager = new GGManager(GGClient.builder(cfg.ggToken()).client(okHttp).build(), stopwords);
 
         // Avoid unintentional pings.
-        MessageAction.setDefaultMentions(Collections.emptyList());
-        MessageAction.setDefaultMentionRepliedUser(false);
+        MessageRequest.setDefaultMentions(Collections.emptyList());
+        MessageRequest.setDefaultMentionRepliedUser(false);
         // Avoid too long request queue
         RestAction.setDefaultTimeout(30, TimeUnit.SECONDS);
 
@@ -265,7 +265,7 @@ public class Bot {
                     .setActivity(Activity.listening("Help: /help"))
                     .setUseShutdownNow(true)
                     .build();
-        } catch (LoginException e) {
+        } catch (Exception e) {
             log.error("LoginException - shutting down", e);
             ggManager.shutdown();
             unrankedManager.shutdown();

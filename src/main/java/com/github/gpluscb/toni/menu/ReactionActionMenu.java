@@ -8,13 +8,16 @@ import com.jagrosh.jdautilities.menu.Menu;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageChannel;
-import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.requests.RestAction;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
+import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -36,20 +39,20 @@ public class ReactionActionMenu extends Menu {
     private final Set<Long> users;
 
     @Nonnull
-    private final Map<String, Function<MessageReactionAddEvent, Message>> buttonActions;
+    private final Map<Emoji, Function<MessageReactionAddEvent, MessageEditData>> buttonActions;
     @Nonnull
-    private final Message start;
+    private final MessageCreateData start;
     /**
      * Inner is null until we're ready
      */
     @Nonnull
     private final AtomicReference<Long> botId;
     @Nullable
-    private final String deletionButton;
+    private final Emoji deletionButton;
     @Nonnull
     private final BiConsumer<MessageChannel, Long> timeoutAction;
 
-    public ReactionActionMenu(@Nonnull EventWaiter waiter, @Nonnull Set<Long> users, long timeout, @Nonnull TimeUnit unit, @Nonnull Map<String, Function<MessageReactionAddEvent, Message>> buttonActions, @Nonnull Message start, @Nullable String deletionButton, @Nonnull BiConsumer<MessageChannel, Long> timeoutAction) {
+    public ReactionActionMenu(@Nonnull EventWaiter waiter, @Nonnull Set<Long> users, long timeout, @Nonnull TimeUnit unit, @Nonnull Map<Emoji, Function<MessageReactionAddEvent, MessageEditData>> buttonActions, @Nonnull MessageCreateData start, @Nullable Emoji deletionButton, @Nonnull BiConsumer<MessageChannel, Long> timeoutAction) {
         super(waiter, Collections.emptySet(), Collections.emptySet(), timeout, unit);
         this.users = users;
         this.buttonActions = buttonActions;
@@ -86,14 +89,14 @@ public class ReactionActionMenu extends Menu {
         }
 
         if (hasPerms)
-            channel.sendMessage(start).referenceById(messageId).queue(this::init);
+            channel.sendMessage(start).setMessageReference(messageId).queue(this::init);
         else
             channel.sendMessage(start).queue(this::init);
     }
 
     @Override
     public void display(@Nonnull Message message) {
-        message.editMessage(start).queue(this::init);
+        message.editMessage(MessageEditData.fromCreateData(start)).queue(this::init);
     }
 
     private void init(@Nonnull Message message) {
@@ -140,17 +143,17 @@ public class ReactionActionMenu extends Menu {
         if (e.getMessageIdLong() != messageId) return false;
         if (!isValidUser(e.getUserIdLong())) return false;
 
-        String reactionName = e.getReactionEmote().getName();
-        return buttonActions.containsKey(reactionName) || reactionName.equals(deletionButton);
+        Emoji reaction = e.getEmoji();
+        return buttonActions.containsKey(reaction) || reaction.equals(deletionButton);
     }
 
     @Nonnull
     private ActionMenu.MenuAction handleMessageReactionAdd(@Nonnull MessageReactionAddEvent e) {
-        String reactionName = e.getReactionEmote().getName();
+        Emoji reaction = e.getEmoji();
 
         long messageId = e.getMessageIdLong();
         MessageChannel channel = e.getChannel();
-        if (reactionName.equals(deletionButton)) {
+        if (reaction.equals(deletionButton)) {
             channel.deleteMessageById(e.getMessageId()).queue();
             return ActionMenu.MenuAction.CANCEL;
         }
@@ -161,7 +164,7 @@ public class ReactionActionMenu extends Menu {
             else log.warn("User was null despite event being from guild. Not removing reaction");
         }
 
-        Message edited = buttonActions.get(reactionName).apply(e);
+        MessageEditData edited = buttonActions.get(reaction).apply(e);
         if (edited != null) channel.editMessageById(messageId, edited).queue();
 
         return ActionMenu.MenuAction.CONTINUE;
@@ -171,11 +174,11 @@ public class ReactionActionMenu extends Menu {
         @Nonnull
         private final Set<Long> users;
         @Nonnull
-        private final Map<String, Function<MessageReactionAddEvent, Message>> buttonActions;
+        private final Map<Emoji, Function<MessageReactionAddEvent, MessageEditData>> buttonActions;
         @Nullable
-        private Message start;
+        private MessageCreateData start;
         @Nullable
-        private String deletionButton;
+        private Emoji deletionButton;
         @Nullable
         private BiConsumer<MessageChannel, Long> timeoutAction;
 
@@ -185,7 +188,7 @@ public class ReactionActionMenu extends Menu {
         public Builder() {
             users = new HashSet<>();
             buttonActions = new LinkedHashMap<>(); // Preserve order
-            deletionButton = Constants.CROSS_MARK;
+            deletionButton = Emoji.fromUnicode(Constants.CROSS_MARK);
             setTimeout(20, TimeUnit.MINUTES);
         }
 
@@ -205,14 +208,14 @@ public class ReactionActionMenu extends Menu {
          * @throws IllegalArgumentException if reaction is already registered
          */
         @Nonnull
-        public synchronized Builder registerButton(@Nonnull String reaction, @Nonnull Function<MessageReactionAddEvent, Message> action) {
+        public synchronized Builder registerButton(@Nonnull Emoji reaction, @Nonnull Function<MessageReactionAddEvent, MessageEditData> action) {
             if (buttonActions.containsKey(reaction)) throw new IllegalArgumentException("Reaction already registered");
             buttonActions.put(reaction, action);
             return this;
         }
 
         @Nonnull
-        public Builder setStart(@Nullable Message start) {
+        public Builder setStart(@Nullable MessageCreateData start) {
             this.start = start;
             return this;
         }
@@ -222,7 +225,7 @@ public class ReactionActionMenu extends Menu {
          * {@code null} is none, not default
          */
         @Nonnull
-        public Builder setDeletionButton(@Nullable String deletionButton) {
+        public Builder setDeletionButton(@Nullable Emoji deletionButton) {
             this.deletionButton = deletionButton;
             return this;
         }
@@ -256,7 +259,7 @@ public class ReactionActionMenu extends Menu {
                         if (textChannel.getGuild().getSelfMember().hasPermission(textChannel, Permission.MESSAGE_MANAGE))
                             textChannel.clearReactionsById(id).queue();
                     } else {
-                        for (String button : buttonActions.keySet()) channel.removeReactionById(id, button).queue();
+                        for (Emoji button : buttonActions.keySet()) channel.removeReactionById(id, button).queue();
                         if (deletionButton != null) channel.removeReactionById(id, deletionButton).queue();
                     }
                 };

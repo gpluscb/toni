@@ -9,13 +9,13 @@ import com.github.gpluscb.toni.smashset.Ruleset;
 import com.github.gpluscb.toni.util.discord.EmbedUtil;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.components.selections.SelectMenu;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
+import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,7 +25,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@SuppressWarnings("ClassCanBeRecord")
 public class RulesetsCommand implements Command {
     private static final Logger log = LogManager.getLogger(RulesetsCommand.class);
 
@@ -43,7 +42,9 @@ public class RulesetsCommand implements Command {
     public void execute(@Nonnull CommandContext ctx) {
         EmbedBuilder template = EmbedUtil.getPreparedAuthor(ctx.getMember(), ctx.getUser());
 
-        Message start = new MessageBuilder(applyRulesetList(new EmbedBuilder(template)).build()).build();
+        MessageCreateData start = new MessageCreateBuilder()
+                .setEmbeds(applyRulesetList(new EmbedBuilder(template)).build())
+                .build();
 
         RulesetPaginator paginator = new RulesetPaginator(template);
 

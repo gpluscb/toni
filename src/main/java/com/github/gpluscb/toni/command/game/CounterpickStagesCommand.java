@@ -14,19 +14,19 @@ import com.github.gpluscb.toni.smashset.Stage;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
-import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 
-@SuppressWarnings("ClassCanBeRecord")
 public class CounterpickStagesCommand implements Command {
     @Nonnull
     private final EventWaiter waiter;
@@ -78,9 +78,10 @@ public class CounterpickStagesCommand implements Command {
     }
 
     private void startCounterpickStages(long pickingUser, long banningUser, @Nonnull Ruleset ruleset, @Nonnull OneOfTwo<Message, SlashCommandInteractionEvent> replyTo) {
-        Message pickStagesStart = new MessageBuilder(String.format("%s, since %s has chosen their bans, you can now pick one stage from the remaining stages.",
-                MiscUtil.mentionUser(pickingUser),
-                MiscUtil.mentionUser(banningUser)))
+        MessageCreateData pickStagesStart = new MessageCreateBuilder()
+                .setContent(String.format("%s, since %s has chosen their bans, you can now pick one stage from the remaining stages.",
+                        MiscUtil.mentionUser(pickingUser),
+                        MiscUtil.mentionUser(banningUser)))
                 .mentionUsers(banningUser, pickingUser)
                 .build();
 
@@ -112,7 +113,7 @@ public class CounterpickStagesCommand implements Command {
 
         channel.editMessageById(messageId, String.format("%s, you didn't ban the stages in time.", MiscUtil.mentionUser(banningUser)))
                 .mentionUsers(banningUser)
-                .setActionRows()
+                .setComponents()
                 .queue();
     }
 
@@ -125,7 +126,7 @@ public class CounterpickStagesCommand implements Command {
 
         channel.editMessageById(messageId, String.format("%s, you didn't pick the stage.", MiscUtil.mentionUser(pickingUser)))
                 .mentionUsers(pickingUser)
-                .setActionRows()
+                .setComponents()
                 .queue();
     }
 
@@ -133,7 +134,7 @@ public class CounterpickStagesCommand implements Command {
         Stage pickedStage = result.getPickResult().getPickedStage();
 
         event.editMessage(String.format("You will be playing your next game on %s!", pickedStage.getDisplayName()))
-                .setActionRows()
+                .setComponents()
                 .queue();
     }
 

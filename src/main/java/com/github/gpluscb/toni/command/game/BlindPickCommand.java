@@ -10,15 +10,16 @@ import com.github.gpluscb.toni.smashset.CharacterTree;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.MessageBuilder;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
-import net.dv8tion.jda.api.requests.restaction.MessageAction;
+import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
+import net.dv8tion.jda.api.requests.restaction.MessageEditAction;
+import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -75,7 +76,8 @@ public class BlindPickCommand implements Command {
         JDA jda = ctx.getJDA();
         long channelId = ctx.getChannel().getIdLong();
 
-        Message start = new MessageBuilder(String.format("Alright, %s, please click on the button below to enter your character choice now. You have three (3) minutes!", userMentions))
+        MessageCreateData start = new MessageCreateBuilder()
+                .setContent(String.format("Alright, %s, please click on the button below to enter your character choice now. You have three (3) minutes!", userMentions))
                 .mentionUsers(userMentionsArray)
                 .build();
 
@@ -115,9 +117,9 @@ public class BlindPickCommand implements Command {
                     character.getDisplayName());
         }).collect(Collectors.joining("\n"));
 
-        MessageAction action = channel.editMessageById(result.getMessageId(),
+        MessageEditAction action = channel.editMessageById(result.getMessageId(),
                         String.format("The characters have been decided:%n%n%s", choicesString))
-                .setActionRows();
+                .setComponents();
 
         for (long user : users) action = action.mentionUsers(user);
 
@@ -140,7 +142,7 @@ public class BlindPickCommand implements Command {
                 .map(MiscUtil::mentionUser)
                 .collect(Collectors.joining(", "));
 
-        MessageAction action = channel.sendMessage(String.format("The three (3) minutes are done." +
+        MessageCreateAction action = channel.sendMessage(String.format("The three (3) minutes are done." +
                 " Not all of you have given me your characters. Shame on you, %s!", lazyIdiots));
 
         for (long user : users) action = action.mentionUsers(user);

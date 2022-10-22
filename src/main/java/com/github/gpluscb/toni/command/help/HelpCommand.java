@@ -7,18 +7,17 @@ import com.github.gpluscb.toni.command.CommandContext;
 import com.github.gpluscb.toni.command.CommandInfo;
 import com.github.gpluscb.toni.util.discord.EmbedUtil;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 
-@SuppressWarnings("ClassCanBeRecord")
 public class HelpCommand implements Command {
     @Nonnull
     private final List<CommandCategory> commands;
@@ -112,7 +111,7 @@ public class HelpCommand implements Command {
         Button supportButton = Button.link(config.supportServer(), "Support server");
 
         MessageEmbed embed = builder.build();
-        ctx.getEvent().reply(new MessageBuilder().setEmbeds(embed).build())
+        ctx.getEvent().reply(new MessageCreateBuilder().setEmbeds(embed).build())
                 .addActionRow(topGGButton, githubButton, inviteButton, supportButton)
                 .queue();
     }

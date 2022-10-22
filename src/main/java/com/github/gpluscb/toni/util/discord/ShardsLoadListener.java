@@ -1,7 +1,7 @@
 package com.github.gpluscb.toni.util.discord;
 
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.events.ReadyEvent;
+import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.sharding.ShardManager;
 import org.apache.logging.log4j.LogManager;

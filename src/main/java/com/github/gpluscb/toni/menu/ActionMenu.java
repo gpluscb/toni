@@ -3,7 +3,7 @@ package com.github.gpluscb.toni.menu;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
@@ -65,7 +65,7 @@ public abstract class ActionMenu {
     }
 
     /**
-     * Displays this Menu in a {@link net.dv8tion.jda.api.entities.MessageChannel MessageChannel}.
+     * Displays this Menu in a {@link MessageChannel MessageChannel}.
      *
      * @param channel The MessageChannel to display this Menu in
      */

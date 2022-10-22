@@ -6,15 +6,17 @@ import com.github.gpluscb.toni.smashset.Ruleset;
 import com.github.gpluscb.toni.smashset.Stage;
 import com.github.gpluscb.toni.util.MiscUtil;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.MessageBuilder;
-import net.dv8tion.jda.api.entities.Emoji;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
+import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -54,7 +56,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
         strikes = new ArrayList<>();
         strikes.add(currentStrikes);
 
-        Message start = settings.strikeMessageProducer().apply(new UpcomingStrikeInfo());
+        MessageCreateData start = settings.strikeMessageProducer().apply(new UpcomingStrikeInfo());
 
         ButtonActionMenu.Settings.Builder underlyingBuilder = new ButtonActionMenu.Settings.Builder()
                 .setActionMenuSettings(getActionMenuSettings())
@@ -67,7 +69,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
             int id = starter.stageId();
             underlyingBuilder.registerButton(
                     Button.secondary(String.valueOf(id), StringUtils.abbreviate(starter.name(), LABEL_MAX_LENGTH))
-                            .withEmoji(Emoji.fromEmote("a", starter.stageEmoteId(), false)), // a as placeholder because it may not be empty
+                            .withEmoji(Emoji.fromCustom("a", starter.stageEmoteId(), false)), // a as placeholder because it may not be empty
                     e -> handleStrike(e, id)
             );
         }
@@ -148,9 +150,9 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
 
         List<ActionRow> actionRows = MiscUtil.disabledButtonActionRows(e);
 
-        Message newMessage = settings.strikeMessageProducer().apply(new UpcomingStrikeInfo());
+        MessageCreateData newMessage = settings.strikeMessageProducer().apply(new UpcomingStrikeInfo());
 
-        e.editMessage(newMessage).setActionRows(actionRows).queue();
+        e.editMessage(MessageEditData.fromCreateData(newMessage)).setComponents(actionRows).queue();
 
         return MenuAction.CONTINUE;
     }
@@ -292,33 +294,36 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
     }
 
     public record Settings(@Nonnull TwoUsersChoicesActionMenu.Settings twoUsersChoicesActionMenuSettings,
-                           @Nonnull Function<UpcomingStrikeInfo, Message> strikeMessageProducer,
+                           @Nonnull Function<UpcomingStrikeInfo, MessageCreateData> strikeMessageProducer,
                            @Nonnull BiConsumer<StrikeInfo, ButtonInteractionEvent> onStrike,
                            @Nonnull BiConsumer<UserStrikesInfo, ButtonInteractionEvent> onUserStrikes,
                            @Nonnull BiConsumer<StrikeResult, ButtonInteractionEvent> onResult, @Nonnull Ruleset ruleset,
                            @Nonnull Consumer<StrikeStagesTimeoutEvent> onTimeout) {
         @Nonnull
-        public static final Function<UpcomingStrikeInfo, Message> DEFAULT_STRIKE_MESSAGE_PRODUCER = info -> {
+        public static final Function<UpcomingStrikeInfo, MessageCreateData> DEFAULT_STRIKE_MESSAGE_PRODUCER = info -> {
             long currentStriker = info.getCurrentStriker();
             int stagesToStrike = info.getStagesToStrike();
 
             Ruleset ruleset = info.getStrikeStagesMenuSettings().ruleset();
             if (info.isNoStrikeRuleset()) {
-                return new MessageBuilder(String.format("Wow that's just very simple, there is only one stage in the ruleset. You're going to %s.",
-                        ruleset.starters().get(0).getDisplayName()))
+                return new MessageCreateBuilder()
+                        .setContent(String.format("Wow that's just very simple, there is only one stage in the ruleset. You're going to %s.",
+                                ruleset.starters().get(0).getDisplayName()))
                         .build();
             } else if (info.isFirstStrike()) {
-                return new MessageBuilder(String.format("Alright, time to strike stages. %s, you go first. Please strike %d stage%s from the list below.",
-                        MiscUtil.mentionUser(currentStriker),
-                        stagesToStrike,
-                        stagesToStrike > 1 ? "s" : ""))
+                return new MessageCreateBuilder()
+                        .setContent(String.format("Alright, time to strike stages. %s, you go first. Please strike %d stage%s from the list below.",
+                                MiscUtil.mentionUser(currentStriker),
+                                stagesToStrike,
+                                stagesToStrike > 1 ? "s" : ""))
                         .mentionUsers(currentStriker)
                         .build();
             } else {
-                return new MessageBuilder(String.format("%s, please strike %d stage%s from the list below.",
-                        MiscUtil.mentionUser(currentStriker),
-                        stagesToStrike,
-                        stagesToStrike > 1 ? "s" : ""))
+                return new MessageCreateBuilder()
+                        .setContent(String.format("%s, please strike %d stage%s from the list below.",
+                                MiscUtil.mentionUser(currentStriker),
+                                stagesToStrike,
+                                stagesToStrike > 1 ? "s" : ""))
                         .mentionUsers(currentStriker)
                         .build();
             }
@@ -338,7 +343,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
             @Nullable
             private Ruleset ruleset;
             @Nonnull
-            private Function<UpcomingStrikeInfo, Message> strikeMessageProducer = DEFAULT_STRIKE_MESSAGE_PRODUCER;
+            private Function<UpcomingStrikeInfo, MessageCreateData> strikeMessageProducer = DEFAULT_STRIKE_MESSAGE_PRODUCER;
             @Nonnull
             private BiConsumer<StrikeInfo, ButtonInteractionEvent> onStrike = DEFAULT_ON_STRIKE;
             @Nonnull
@@ -361,7 +366,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
             }
 
             @Nonnull
-            public Builder setStrikeMessageProducer(@Nonnull Function<UpcomingStrikeInfo, Message> strikeMessageProducer) {
+            public Builder setStrikeMessageProducer(@Nonnull Function<UpcomingStrikeInfo, MessageCreateData> strikeMessageProducer) {
                 this.strikeMessageProducer = strikeMessageProducer;
                 return this;
             }
@@ -396,7 +401,7 @@ public class StrikeStagesMenu extends TwoUsersChoicesActionMenu {
             }
 
             @Nonnull
-            public Function<UpcomingStrikeInfo, Message> getStrikeMessageProducer() {
+            public Function<UpcomingStrikeInfo, MessageCreateData> getStrikeMessageProducer() {
                 return strikeMessageProducer;
             }
 

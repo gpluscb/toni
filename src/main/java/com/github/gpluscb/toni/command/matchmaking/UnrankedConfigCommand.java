@@ -6,6 +6,9 @@ import com.github.gpluscb.toni.command.CommandInfo;
 import com.github.gpluscb.toni.matchmaking.UnrankedManager;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.channel.ChannelType;
+import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
+import net.dv8tion.jda.api.entities.channel.unions.GuildChannelUnion;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
@@ -16,7 +19,6 @@ import org.apache.logging.log4j.Logger;
 import javax.annotation.Nonnull;
 import java.sql.SQLException;
 
-@SuppressWarnings("ClassCanBeRecord")
 public class UnrankedConfigCommand implements Command {
     private static final Logger log = LogManager.getLogger(UnrankedConfigCommand.class);
 
@@ -73,13 +75,13 @@ public class UnrankedConfigCommand implements Command {
 
         OptionMapping channelMapping = ctx.getOption("channel");
         if (channelMapping != null) {
-            GuildChannel guildChannel = channelMapping.getAsGuildChannel();
-            if (!(guildChannel instanceof TextChannel)) {
+            GuildChannelUnion guildChannel = channelMapping.getAsChannel();
+            if (guildChannel.getType() != ChannelType.TEXT) {
                 ctx.reply("The channel must be a *text* channel.").queue();
                 return;
             }
 
-            channelId = channelMapping.getAsGuildChannel().getIdLong();
+            channelId = channelMapping.getAsChannel().getIdLong();
         }
 
         UnrankedManager.MatchmakingConfig config = new UnrankedManager.MatchmakingConfig(roleId, channelId);
@@ -115,8 +117,8 @@ public class UnrankedConfigCommand implements Command {
     }
 
     private void channelVariant(@Nonnull CommandContext ctx) {
-        GuildChannel channel = ctx.getOptionNonNull("channel").getAsGuildChannel();
-        if (!(channel instanceof TextChannel)) {
+        GuildChannelUnion channel = ctx.getOptionNonNull("channel").getAsChannel();
+        if (channel.getType() != ChannelType.TEXT) {
             ctx.reply("The channel must be a *text* channel.").queue();
             return;
         }

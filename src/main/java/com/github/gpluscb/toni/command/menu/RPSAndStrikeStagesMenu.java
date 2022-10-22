@@ -7,16 +7,16 @@ import com.github.gpluscb.toni.smashset.Ruleset;
 import com.github.gpluscb.toni.util.Constants;
 import com.github.gpluscb.toni.util.MiscUtil;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.MessageBuilder;
-import net.dv8tion.jda.api.entities.Emoji;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
-import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -47,7 +47,7 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
     }
 
     @Nonnull
-    private RPSMenu createRPS(@Nonnull Message start) {
+    private RPSMenu createRPS(@Nonnull MessageCreateData start) {
         return new RPSMenu(new RPSMenu.Settings.Builder()
                 .setTwoUsersChoicesActionMenuSettings(new TwoUsersChoicesActionMenu.Settings.Builder()
                         .setActionMenuSettings(new ActionMenu.Settings.Builder()
@@ -106,7 +106,7 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
         e.deferEdit().queue();
 
         if (rpsResult.getWinner() == RPSMenu.Winner.Tie) {
-            Message start = settings.rpsTieMessageProvider().apply(rpsResult, e);
+            MessageCreateData start = settings.rpsTieMessageProvider().apply(rpsResult, e);
 
             RPSMenu rpsUnderlying = createRPS(start);
 
@@ -118,7 +118,7 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
         @SuppressWarnings("ConstantConditions") long winner = rpsResult.getWinnerId();
         @SuppressWarnings("ConstantConditions") long loser = rpsResult.getLoserId();
 
-        Message start = settings.strikeFirstMessageProvider().apply(rpsResult, e);
+        MessageCreateData start = settings.strikeFirstMessageProvider().apply(rpsResult, e);
 
         Function<ButtonInteractionEvent, MenuAction> onButtonFirst = event -> {
             onStrikeFirstChoice(new StrikeFirstChoiceResult(winner, winner, loser), event);
@@ -274,16 +274,17 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
     }
 
     public record Settings(@Nonnull TwoUsersChoicesActionMenu.Settings twoUsersChoicesActionMenuSettings,
-                           @Nonnull BiFunction<RPSMenu.RPSResult, ButtonInteractionEvent, Message> strikeFirstMessageProvider,
+                           @Nonnull BiFunction<RPSMenu.RPSResult, ButtonInteractionEvent, MessageCreateData> strikeFirstMessageProvider,
                            @Nonnull BiConsumer<StrikeFirstChoiceResult, ButtonInteractionEvent> onStrikeFirstChoice,
                            @Nonnull Consumer<StrikeFirstChoiceTimeoutEvent> onStrikeFirstTimeout,
                            long rpsTimeout, @Nonnull TimeUnit rpsUnit,
-                           @Nonnull BiFunction<RPSMenu.RPSResult, ButtonInteractionEvent, Message> rpsTieMessageProvider,
+                           @Nonnull BiFunction<RPSMenu.RPSResult, ButtonInteractionEvent, MessageCreateData> rpsTieMessageProvider,
                            @Nonnull BiConsumer<RPSMenu.RPS, ButtonInteractionEvent> onRPSChoiceMade,
-                           @Nonnull BiConsumer<RPSMenu.RPSResult, ButtonInteractionEvent> onRPSResult, @Nonnull Message start,
+                           @Nonnull BiConsumer<RPSMenu.RPSResult, ButtonInteractionEvent> onRPSResult,
+                           @Nonnull MessageCreateData start,
                            @Nonnull Consumer<RPSMenu.RPSTimeoutEvent> onRPSTimeout,
                            long strikeTimeout, @Nonnull TimeUnit strikeUnit,
-                           @Nonnull Function<StrikeStagesMenu.UpcomingStrikeInfo, Message> strikeMessageProducer,
+                           @Nonnull Function<StrikeStagesMenu.UpcomingStrikeInfo, MessageCreateData> strikeMessageProducer,
                            @Nonnull BiConsumer<StrikeStagesMenu.StrikeInfo, ButtonInteractionEvent> onStrike,
                            @Nonnull BiConsumer<StrikeStagesMenu.UserStrikesInfo, ButtonInteractionEvent> onUserStrikes,
                            @Nonnull BiConsumer<StrikeStagesMenu.StrikeResult, ButtonInteractionEvent> onStrikeResult,
@@ -291,20 +292,22 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
                            @Nonnull Consumer<StrikeStagesMenu.StrikeStagesTimeoutEvent> onStrikeTimeout,
                            @Nonnull BiConsumer<RPSAndStrikeStagesResult, ButtonInteractionEvent> onResult) {
         @Nonnull
-        public static final BiFunction<RPSMenu.RPSResult, ButtonInteractionEvent, Message> DEFAULT_STRIKE_FIRST_MESSAGE_PROVIDER = (rpsResult, e) -> {
+        public static final BiFunction<RPSMenu.RPSResult, ButtonInteractionEvent, MessageCreateData> DEFAULT_STRIKE_FIRST_MESSAGE_PROVIDER = (rpsResult, e) -> {
             long user1 = rpsResult.getTwoUsersChoicesActionMenuSettings().user1();
             long user2 = rpsResult.getTwoUsersChoicesActionMenuSettings().user2();
 
             // This will be decisive at this point
             //noinspection ConstantConditions
-            return new MessageBuilder(String.format(
-                    "%s chose %s, and %s chose %s. So %s, you won the RPS. Will you strike first or second?",
-                    MiscUtil.mentionUser(user1),
-                    rpsResult.getChoice1().getDisplayName(),
-                    MiscUtil.mentionUser(user2),
-                    rpsResult.getChoice2().getDisplayName(),
-                    MiscUtil.mentionUser(rpsResult.getWinnerId())
-            )).mentionUsers(user1, user2).build();
+            return new MessageCreateBuilder()
+                    .setContent(String.format(
+                            "%s chose %s, and %s chose %s. So %s, you won the RPS. Will you strike first or second?",
+                            MiscUtil.mentionUser(user1),
+                            rpsResult.getChoice1().getDisplayName(),
+                            MiscUtil.mentionUser(user2),
+                            rpsResult.getChoice2().getDisplayName(),
+                            MiscUtil.mentionUser(rpsResult.getWinnerId())
+                    ))
+                    .mentionUsers(user1, user2).build();
         };
         @Nonnull
         public static final BiConsumer<StrikeFirstChoiceResult, ButtonInteractionEvent> DEFAULT_ON_STRIKE_FIRST_CHOICE = MiscUtil.emptyBiConsumer();
@@ -314,9 +317,10 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
         @Nonnull
         public static final TimeUnit DEFAULT_RPS_UNIT = TimeUnit.MINUTES;
         @Nonnull
-        public static final BiFunction<RPSMenu.RPSResult, ButtonInteractionEvent, Message> DEFAULT_RPS_TIE_MESSAGE_PROVIDER = (rpsResult, e) ->
-                new MessageBuilder(String.format("Both of you chose %s. So please try again.",
-                        rpsResult.getChoice1().getDisplayName()))
+        public static final BiFunction<RPSMenu.RPSResult, ButtonInteractionEvent, MessageCreateData> DEFAULT_RPS_TIE_MESSAGE_PROVIDER = (rpsResult, e) ->
+                new MessageCreateBuilder()
+                        .setContent(String.format("Both of you chose %s. So please try again.",
+                                rpsResult.getChoice1().getDisplayName()))
                         .build();
         @Nonnull
         public static final BiConsumer<RPSMenu.RPS, ButtonInteractionEvent> DEFAULT_ON_RPS_CHOICE_MADE = RPSMenu.Settings.DEFAULT_ON_CHOICE_MADE;
@@ -328,7 +332,7 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
         @Nonnull
         public static final TimeUnit DEFAULT_STRIKE_UNIT = TimeUnit.MINUTES;
         @Nonnull
-        public static final Function<StrikeStagesMenu.UpcomingStrikeInfo, Message> DEFAULT_STRIKE_MESSAGE_PRODUCER = StrikeStagesMenu.Settings.DEFAULT_STRIKE_MESSAGE_PRODUCER;
+        public static final Function<StrikeStagesMenu.UpcomingStrikeInfo, MessageCreateData> DEFAULT_STRIKE_MESSAGE_PRODUCER = StrikeStagesMenu.Settings.DEFAULT_STRIKE_MESSAGE_PRODUCER;
         @Nonnull
         public static final BiConsumer<StrikeStagesMenu.StrikeInfo, ButtonInteractionEvent> DEFAULT_ON_STRIKE = StrikeStagesMenu.Settings.DEFAULT_ON_STRIKE;
         @Nonnull
@@ -344,19 +348,19 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
             @Nullable
             private TwoUsersChoicesActionMenu.Settings twoUsersChoicesActionMenuSettings;
             @Nonnull
-            private BiFunction<RPSMenu.RPSResult, ButtonInteractionEvent, Message> strikeFirstMessageProvider = DEFAULT_STRIKE_FIRST_MESSAGE_PROVIDER;
+            private BiFunction<RPSMenu.RPSResult, ButtonInteractionEvent, MessageCreateData> strikeFirstMessageProvider = DEFAULT_STRIKE_FIRST_MESSAGE_PROVIDER;
             @Nonnull
             private BiConsumer<StrikeFirstChoiceResult, ButtonInteractionEvent> onStrikeFirstChoice = DEFAULT_ON_STRIKE_FIRST_CHOICE;
             @Nonnull
             private Consumer<StrikeFirstChoiceTimeoutEvent> onStrikeFirstTimeout = DEFAULT_ON_STRIKE_FIRST_TIMEOUT;
 
             @Nullable
-            private Message start;
+            private MessageCreateData start;
             private long rpsTimeout = DEFAULT_RPS_TIMEOUT;
             @Nonnull
             private TimeUnit rpsUnit = DEFAULT_RPS_UNIT;
             @Nonnull
-            private BiFunction<RPSMenu.RPSResult, ButtonInteractionEvent, Message> rpsTieMessageProvider = DEFAULT_RPS_TIE_MESSAGE_PROVIDER;
+            private BiFunction<RPSMenu.RPSResult, ButtonInteractionEvent, MessageCreateData> rpsTieMessageProvider = DEFAULT_RPS_TIE_MESSAGE_PROVIDER;
             @Nonnull
             private BiConsumer<RPSMenu.RPS, ButtonInteractionEvent> onRPSChoiceMade = DEFAULT_ON_RPS_CHOICE_MADE;
             @Nonnull
@@ -369,7 +373,7 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
             @Nonnull
             private TimeUnit strikeUnit = DEFAULT_STRIKE_UNIT;
             @Nonnull
-            private Function<StrikeStagesMenu.UpcomingStrikeInfo, Message> strikeMessageProducer = DEFAULT_STRIKE_MESSAGE_PRODUCER;
+            private Function<StrikeStagesMenu.UpcomingStrikeInfo, MessageCreateData> strikeMessageProducer = DEFAULT_STRIKE_MESSAGE_PRODUCER;
             @Nonnull
             private BiConsumer<StrikeStagesMenu.StrikeInfo, ButtonInteractionEvent> onStrike = DEFAULT_ON_STRIKE;
             @Nonnull
@@ -392,7 +396,7 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
             }
 
             @Nonnull
-            public Builder setStrikeFirstMessageProvider(@Nonnull BiFunction<RPSMenu.RPSResult, ButtonInteractionEvent, Message> strikeFirstMessageProvider) {
+            public Builder setStrikeFirstMessageProvider(@Nonnull BiFunction<RPSMenu.RPSResult, ButtonInteractionEvent, MessageCreateData> strikeFirstMessageProvider) {
                 this.strikeFirstMessageProvider = strikeFirstMessageProvider;
                 return this;
             }
@@ -410,7 +414,7 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
             }
 
             @Nonnull
-            public Builder setStart(@Nonnull Message start) {
+            public Builder setStart(@Nonnull MessageCreateData start) {
                 this.start = start;
                 return this;
             }
@@ -423,7 +427,7 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
             }
 
             @Nonnull
-            public Builder setRpsTieMessageProvider(@Nonnull BiFunction<RPSMenu.RPSResult, ButtonInteractionEvent, Message> rpsTieMessageProvider) {
+            public Builder setRpsTieMessageProvider(@Nonnull BiFunction<RPSMenu.RPSResult, ButtonInteractionEvent, MessageCreateData> rpsTieMessageProvider) {
                 this.rpsTieMessageProvider = rpsTieMessageProvider;
                 return this;
             }
@@ -460,7 +464,7 @@ public class RPSAndStrikeStagesMenu extends TwoUsersChoicesActionMenu {
             }
 
             @Nonnull
-            public Builder setStrikeMessageProducer(@Nonnull Function<StrikeStagesMenu.UpcomingStrikeInfo, Message> strikeMessageProducer) {
+            public Builder setStrikeMessageProducer(@Nonnull Function<StrikeStagesMenu.UpcomingStrikeInfo, MessageCreateData> strikeMessageProducer) {
                 this.strikeMessageProducer = strikeMessageProducer;
                 return this;
             }

@@ -20,15 +20,17 @@ import com.github.gpluscb.toni.util.PairNonnull;
 import com.github.gpluscb.toni.util.discord.EmbedUtil;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
+import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -40,7 +42,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@SuppressWarnings("ClassCanBeRecord")
 public class TournamentCommand implements Command {
     private static final Logger log = LogManager.getLogger(TournamentCommand.class);
 
@@ -103,13 +104,13 @@ public class TournamentCommand implements Command {
         ReactionActionMenu.Builder menuBuilder = new ReactionActionMenu.Builder()
                 .setEventWaiter(waiter)
                 .addUsers(author.getIdLong())
-                .registerButton(Constants.ARROW_DOWNWARD, pages::nextEvent)
-                .registerButton(Constants.ARROW_UPWARD, pages::prevEvent)
+                .registerButton(Emoji.fromUnicode(Constants.ARROW_DOWNWARD), pages::nextEvent)
+                .registerButton(Emoji.fromUnicode(Constants.ARROW_UPWARD), pages::prevEvent)
                 .setStart(pages.getCurrent());
 
         if (tournaments.size() > 1) {
-            menuBuilder.registerButton(Constants.ARROW_BACKWARD, pages::nextTournament)
-                    .registerButton(Constants.ARROW_FORWARD, pages::prevTournament);
+            menuBuilder.registerButton(Emoji.fromUnicode(Constants.ARROW_BACKWARD), pages::nextTournament)
+                    .registerButton(Emoji.fromUnicode(Constants.ARROW_FORWARD), pages::prevTournament);
         }
 
         ReactionActionMenu menu = menuBuilder.build();
@@ -378,7 +379,7 @@ public class TournamentCommand implements Command {
          */
         // TODO: Is this really practical? I mean I guess I have it for this so...
         @Nonnull
-        private final Message[][] lazyMessages;
+        private final MessageCreateData[][] lazyMessages;
 
         private int tournamentPage;
         /**
@@ -397,47 +398,47 @@ public class TournamentCommand implements Command {
                 return new PairNonnull<>(tournament, events);
             }).toList();
 
-            lazyMessages = new Message[tournaments.size()][];
+            lazyMessages = new MessageCreateData[tournaments.size()][];
             for (int i = 0; i < lazyMessages.length; i++) {
                 List<EventResponse> events = tournaments.get(i).getEvents();
-                lazyMessages[i] = new Message[events == null ? 1 : events.size() + 1];
+                lazyMessages[i] = new MessageCreateData[events == null ? 1 : events.size() + 1];
             }
             tournamentPage = 0;
             eventPage = 0;
         }
 
         @Nonnull
-        public synchronized Message nextTournament(@Nonnull MessageReactionAddEvent e) {
+        public synchronized MessageEditData nextTournament(@Nonnull MessageReactionAddEvent e) {
             tournamentPage = (tournamentPage + 1) % tournaments.size();
             eventPage = 0;
-            return getCurrent();
+            return MessageEditData.fromCreateData(getCurrent());
         }
 
         @Nonnull
-        public synchronized Message prevTournament(@Nonnull MessageReactionAddEvent e) {
+        public synchronized MessageEditData prevTournament(@Nonnull MessageReactionAddEvent e) {
             tournamentPage--;
             if (tournamentPage < 0) tournamentPage = tournaments.size() - 1;
             eventPage = 0;
-            return getCurrent();
+            return MessageEditData.fromCreateData(getCurrent());
         }
 
         @Nonnull
-        public synchronized Message nextEvent(@Nonnull MessageReactionAddEvent e) {
+        public synchronized MessageEditData nextEvent(@Nonnull MessageReactionAddEvent e) {
             eventPage = (eventPage + 1) % (tournaments.get(tournamentPage).getU().size() + 1);
-            return getCurrent();
+            return MessageEditData.fromCreateData(getCurrent());
         }
 
         @Nonnull
-        public synchronized Message prevEvent(@Nonnull MessageReactionAddEvent e) {
+        public synchronized MessageEditData prevEvent(@Nonnull MessageReactionAddEvent e) {
             eventPage--;
             if (eventPage < 0) eventPage = tournaments.get(tournamentPage).getU().size();
-            return getCurrent();
+            return MessageEditData.fromCreateData(getCurrent());
         }
 
         @Nonnull
-        public synchronized Message getCurrent() {
+        public synchronized MessageCreateData getCurrent() {
             try {
-                Message lazyMessage = lazyMessages[tournamentPage][eventPage];
+                MessageCreateData lazyMessage = lazyMessages[tournamentPage][eventPage];
                 if (lazyMessage != null) return lazyMessage;
 
                 EmbedBuilder embed = new EmbedBuilder(template);
@@ -448,19 +449,21 @@ public class TournamentCommand implements Command {
                         new PairNonnull<>(tournamentPage + 1, tournaments.size())
                         : null;
 
-                Message message;
+                MessageCreateData message;
                 if (eventPage == 0)
-                    message = new MessageBuilder().setEmbeds(applyOneTournament(embed, tournament, idxOutOfSize).build()).build();
+                    message = new MessageCreateBuilder().setEmbeds(applyOneTournament(embed, tournament, idxOutOfSize).build()).build();
                 else {
                     int eventIndex = eventPage - 1;
                     EventResponse event = pair.getU().get(eventIndex);
-                    message = new MessageBuilder().setEmbeds(applyOneEvent(embed, tournament, event).build()).build();
+                    message = new MessageCreateBuilder().setEmbeds(applyOneEvent(embed, tournament, event).build()).build();
                 }
                 lazyMessages[tournamentPage][eventPage] = message;
                 return message;
             } catch (Exception e) {
                 log.catching(e);
-                return new MessageBuilder("There was an error with displaying the tournament, looks like start.gg sent me unexpected data (or the other way around...). I'll tell  my dev, you can go shoot them a message about this too if you want to.").build();
+                return new MessageCreateBuilder()
+                        .setContent("There was an error with displaying the tournament, looks like start.gg sent me unexpected data (or the other way around...). I'll tell  my dev, you can go shoot them a message about this too if you want to.")
+                        .build();
             }
         }
     }

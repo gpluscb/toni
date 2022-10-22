@@ -3,13 +3,15 @@ package com.github.gpluscb.toni.menu;
 import com.github.gpluscb.toni.util.MiscUtil;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.LayoutComponent;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
+import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -117,7 +119,7 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
         }
 
         currentChoices.add(choice);
-        Message message = settings.choiceMessageProvider().apply(new ChoiceInfo(choice), event);
+        MessageEditData message = settings.choiceMessageProvider().apply(new ChoiceInfo(choice), event);
 
         List<ActionRow> actionRows = MiscUtil.disabledButtonActionRows(event);
 
@@ -133,7 +135,7 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
         LayoutComponent.updateComponent(actionRows, settings.confirmButton().getId(), settings.confirmButton().withDisabled(!canConfirm));
 
         event.editMessage(message)
-                .setActionRows(actionRows)
+                .setComponents(actionRows)
                 .queue();
 
         return MenuAction.CONTINUE;
@@ -160,12 +162,12 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
     private synchronized MenuAction onReset(@Nonnull ButtonInteractionEvent event) {
         currentChoices.clear();
 
-        Message message = settings.resetMessageProvider().apply(new ResetInfo(), event);
+        MessageEditData message = settings.resetMessageProvider().apply(new ResetInfo(), event);
 
         List<ActionRow> actionRows = underlying.getInitialActionRows();
 
         event.editMessage(message)
-                .setActionRows(actionRows)
+                .setComponents(actionRows)
                 .queue();
 
         return MenuAction.CONTINUE;
@@ -257,11 +259,11 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
     }
 
     public record Settings<T>(@Nonnull ActionMenu.Settings actionMenuSettings, long user,
-                              @Nonnull List<ChoiceButton<T>> choiceButtons, @Nonnull Message start,
+                              @Nonnull List<ChoiceButton<T>> choiceButtons, @Nonnull MessageCreateData start,
                               @Nonnull Button confirmButton, @Nonnull Button resetButton,
                               int minChoices, int maxChoices,
-                              @Nonnull BiFunction<ConfirmableButtonChoiceMenu<? super T>.ChoiceInfo, ButtonInteractionEvent, Message> choiceMessageProvider,
-                              @Nonnull BiFunction<ConfirmableButtonChoiceMenu<? super T>.ResetInfo, ButtonInteractionEvent, Message> resetMessageProvider,
+                              @Nonnull BiFunction<ConfirmableButtonChoiceMenu<? super T>.ChoiceInfo, ButtonInteractionEvent, MessageEditData> choiceMessageProvider,
+                              @Nonnull BiFunction<ConfirmableButtonChoiceMenu<? super T>.ResetInfo, ButtonInteractionEvent, MessageEditData> resetMessageProvider,
                               @Nonnull BiConsumer<ConfirmableButtonChoiceMenu<? super T>.ConfirmInfo, ButtonInteractionEvent> onChoicesConfirmed,
                               @Nonnull Consumer<ConfirmableButtonChoiceMenu<? super T>.ConfirmableButtonChoiceTimeoutEvent> onTimeout) {
         public static class Builder<T> {
@@ -272,7 +274,7 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
             @Nonnull
             private List<ChoiceButton<T>> choiceButtons = new ArrayList<>();
             @Nullable
-            private Message start;
+            private MessageCreateData start;
             @Nullable
             private Button confirmButton;
             @Nullable
@@ -282,9 +284,9 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
             @Nullable
             private Integer maxChoices;
             @Nullable
-            private BiFunction<ConfirmableButtonChoiceMenu<? super T>.ChoiceInfo, ButtonInteractionEvent, Message> choiceMessageProvider;
+            private BiFunction<ConfirmableButtonChoiceMenu<? super T>.ChoiceInfo, ButtonInteractionEvent, MessageEditData> choiceMessageProvider;
             @Nullable
-            private BiFunction<ConfirmableButtonChoiceMenu<? super T>.ResetInfo, ButtonInteractionEvent, Message> resetMessageProvider;
+            private BiFunction<ConfirmableButtonChoiceMenu<? super T>.ResetInfo, ButtonInteractionEvent, MessageEditData> resetMessageProvider;
             @Nullable
             private BiConsumer<ConfirmableButtonChoiceMenu<? super T>.ConfirmInfo, ButtonInteractionEvent> onChoicesConfirmed;
             @Nullable
@@ -320,7 +322,7 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
             }
 
             @Nonnull
-            public Builder<T> setStart(@Nullable Message start) {
+            public Builder<T> setStart(@Nullable MessageCreateData start) {
                 this.start = start;
                 return this;
             }
@@ -345,13 +347,13 @@ public class ConfirmableButtonChoiceMenu<T> extends ActionMenu {
             }
 
             @Nonnull
-            public Builder<T> setChoiceMessageProvider(@Nullable BiFunction<ConfirmableButtonChoiceMenu<? super T>.ChoiceInfo, ButtonInteractionEvent, Message> choiceMessageProvider) {
+            public Builder<T> setChoiceMessageProvider(@Nullable BiFunction<ConfirmableButtonChoiceMenu<? super T>.ChoiceInfo, ButtonInteractionEvent, MessageEditData> choiceMessageProvider) {
                 this.choiceMessageProvider = choiceMessageProvider;
                 return this;
             }
 
             @Nonnull
-            public Builder<T> setResetMessageProvider(@Nullable BiFunction<ConfirmableButtonChoiceMenu<? super T>.ResetInfo, ButtonInteractionEvent, Message> resetMessageProvider) {
+            public Builder<T> setResetMessageProvider(@Nullable BiFunction<ConfirmableButtonChoiceMenu<? super T>.ResetInfo, ButtonInteractionEvent, MessageEditData> resetMessageProvider) {
                 this.resetMessageProvider = resetMessageProvider;
                 return this;
             }

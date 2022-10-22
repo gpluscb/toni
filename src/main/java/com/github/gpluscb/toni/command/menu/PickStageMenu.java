@@ -6,14 +6,15 @@ import com.github.gpluscb.toni.smashset.Ruleset;
 import com.github.gpluscb.toni.smashset.Stage;
 import com.github.gpluscb.toni.util.MiscUtil;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.entities.Emoji;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -54,7 +55,7 @@ public class PickStageMenu extends ActionMenu {
         settings.ruleset().getStagesStream().forEach(stage -> {
             int id = stage.stageId();
             Button stageButton = Button.secondary(String.valueOf(id), StringUtils.abbreviate(stage.name(), LABEL_MAX_LENGTH))
-                    .withEmoji(Emoji.fromEmote("a", stage.stageEmoteId(), false)) // a as placeholder because it may not be empty
+                    .withEmoji(Emoji.fromCustom("a", stage.stageEmoteId(), false)) // a as placeholder because it may not be empty
                     .withDisabled(settings.bannedStageIds().contains(id));
 
             underlyingBuilder.registerButton(stageButton, e -> onPick(id, e));
@@ -172,7 +173,7 @@ public class PickStageMenu extends ActionMenu {
     public record Settings(@Nonnull ActionMenu.Settings actionMenuSettings, long pickingUser, @Nonnull Ruleset ruleset,
                            @Nonnull Set<Integer> bannedStageIds,
                            @Nonnull BiConsumer<PickStageResult, ButtonInteractionEvent> onResult,
-                           @Nonnull Message start,
+                           @Nonnull MessageCreateData start,
                            @Nonnull Consumer<PickStageTimeoutEvent> onTimeout) {
         @Nonnull
         public static final BiConsumer<PickStageResult, ButtonInteractionEvent> DEFAULT_ON_RESULT = MiscUtil.emptyBiConsumer();
@@ -187,7 +188,7 @@ public class PickStageMenu extends ActionMenu {
             @Nullable
             private Ruleset ruleset;
             @Nullable
-            private Message start;
+            private MessageCreateData start;
             @Nonnull
             private Set<Integer> bannedStageIds = new HashSet<>();
             @Nonnull
@@ -213,7 +214,7 @@ public class PickStageMenu extends ActionMenu {
             }
 
             @Nonnull
-            public Builder setStart(@Nonnull Message start) {
+            public Builder setStart(@Nonnull MessageCreateData start) {
                 this.start = start;
                 return this;
             }

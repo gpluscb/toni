@@ -1,8 +1,9 @@
 package com.github.gpluscb.toni.util;
 
 import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.entities.MessageChannel;
-import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.LayoutComponent;
@@ -104,7 +105,7 @@ public class MiscUtil {
 
     @Nonnull
     @CheckReturnValue
-    public static RestAction<Void> clearReactionsOrRemoveOwnReactions(@Nonnull MessageChannel channel, long messageId, @Nonnull String... reactions) {
+    public static RestAction<Void> clearReactionsOrRemoveOwnReactions(@Nonnull MessageChannel channel, long messageId, @Nonnull Emoji... reactions) {
         if (channel instanceof TextChannel textChannel) {
             if (textChannel.getGuild().getSelfMember().hasPermission(textChannel, Permission.MESSAGE_MANAGE))
                 return textChannel.clearReactionsById(messageId);

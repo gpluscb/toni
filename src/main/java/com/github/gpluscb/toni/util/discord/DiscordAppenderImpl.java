@@ -1,6 +1,6 @@
 package com.github.gpluscb.toni.util.discord;
 
-import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.sharding.ShardManager;
 import org.apache.logging.log4j.core.Filter;
 import org.apache.logging.log4j.core.Layout;

@@ -2,11 +2,10 @@ package com.github.gpluscb.toni.menu;
 
 import com.github.gpluscb.toni.util.OneOfTwo;
 import com.github.gpluscb.toni.util.PairNonnull;
-import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageChannel;
-import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -16,6 +15,9 @@ import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
 import net.dv8tion.jda.api.requests.ErrorResponse;
+import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
+import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -56,7 +58,7 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
         SelectionActionMenu.Settings.Builder selectionUnderlyingBuilder = new SelectionActionMenu.Settings.Builder()
                 .setActionMenuSettings(settings.actionMenuSettings())
                 .setUsers(settings.users())
-                .setStart(new MessageBuilder(" ").build()) // Start must be set but will be ignored (tech debt yay!!)
+                .setStart(new MessageCreateBuilder().setContent(" ").build()) // Start must be set but will be ignored (tech debt yay!!)
                 .setOnTimeout(this::onSelectionTimeout);
 
         for (ChoiceOption<T> choiceOption : settings.choices())
@@ -67,7 +69,7 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
         buttonUnderlying = new ButtonActionMenu(new ButtonActionMenu.Settings.Builder()
                 .setActionMenuSettings(settings.actionMenuSettings())
                 .setUsers(settings.users())
-                .setStart(new MessageBuilder(" ").build()) // Start must be set but will be ignored
+                .setStart(new MessageCreateBuilder().setContent(" ").build()) // Start must be set but will be ignored
                 .setDeletionButton(null)
                 .registerButton(settings.submitButton(), this::onSubmit)
                 .setOnTimeout(this::onSubmitTimeout)
@@ -79,29 +81,29 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
     @Override
     public void display(@Nonnull MessageChannel channel) {
         channel.sendMessage(settings.start())
-                .setActionRows(getComponents())
+                .setComponents(getComponents())
                 .queue(this::start);
     }
 
     @Override
     public void display(@Nonnull MessageChannel channel, long messageId) {
-        channel.editMessageById(messageId, settings.start())
-                .setActionRows(getComponents())
+        channel.editMessageById(messageId, MessageEditData.fromCreateData(settings.start()))
+                .setComponents(getComponents())
                 .queue(this::start);
     }
 
     @Override
     public void displayReplying(@Nonnull MessageChannel channel, long messageId) {
         channel.sendMessage(settings.start())
-                .referenceById(messageId)
-                .setActionRows(getComponents())
+                .setMessageReference(messageId)
+                .setComponents(getComponents())
                 .queue(this::start);
     }
 
     @Override
     public void displaySlashReplying(@Nonnull SlashCommandInteractionEvent event) {
         event.reply(settings.start())
-                .addActionRows(getComponents())
+                .addComponents(getComponents())
                 .flatMap(InteractionHook::retrieveOriginal)
                 .queue(this::start);
     }
@@ -109,7 +111,7 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
     @Override
     public void displayDeferredReplying(@Nonnull InteractionHook hook) {
         hook.sendMessage(settings.start())
-                .addActionRows(getComponents())
+                .addComponents(getComponents())
                 .queue(this::start);
     }
 
@@ -251,7 +253,7 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
     public record ChoiceOption<T>(@Nonnull SelectOption option, @Nonnull T associatedChoice) {
     }
 
-    public record Settings<T>(@Nonnull ActionMenu.Settings actionMenuSettings, @Nonnull Message start,
+    public record Settings<T>(@Nonnull ActionMenu.Settings actionMenuSettings, @Nonnull MessageCreateData start,
                               @Nonnull Set<Long> users, @Nonnull Button submitButton,
                               @Nonnull List<ChoiceOption<T>> choices,
                               @Nonnull BiConsumer<ConfirmableSelectionActionMenu<T>.OptionChoiceInfo, SelectMenuInteractionEvent> onOptionChoice,
@@ -280,7 +282,7 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
             }
 
             channel.retrieveMessageById(id)
-                    .flatMap(m -> m.editMessage(m).setActionRows())
+                    .flatMap(m -> m.editMessage(MessageEditData.fromMessage(m)).setComponents())
                     .queue(null, new ErrorHandler().ignore(ErrorResponse.UNKNOWN_MESSAGE));
         }
 
@@ -288,7 +290,7 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
             @Nullable
             private ActionMenu.Settings actionMenuSettings;
             @Nullable
-            private Message start;
+            private MessageCreateData start;
             @Nonnull
             private Set<Long> users = new HashSet<>();
             @Nonnull
@@ -311,7 +313,7 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
             }
 
             @Nonnull
-            public Builder<T> setStart(@Nonnull Message start) {
+            public Builder<T> setStart(@Nonnull MessageCreateData start) {
                 this.start = start;
                 return this;
             }

@@ -6,15 +6,17 @@ import com.github.gpluscb.toni.smashset.Ruleset;
 import com.github.gpluscb.toni.smashset.Stage;
 import com.github.gpluscb.toni.util.MiscUtil;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.MessageBuilder;
-import net.dv8tion.jda.api.entities.Emoji;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
+import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -53,7 +55,7 @@ public class BanStagesMenu extends ActionMenu {
         if (settings.ruleset().stageBans() == 0)
             throw new IllegalArgumentException("The ruleset must have at least one ban.");
 
-        Message start = settings.banMessageProducer().apply(new UpcomingBanInfo());
+        MessageCreateData start = settings.banMessageProducer().apply(new UpcomingBanInfo());
 
         ButtonActionMenu.Settings.Builder underlyingBuilder = new ButtonActionMenu.Settings.Builder()
                 .setActionMenuSettings(getActionMenuSettings())
@@ -65,7 +67,7 @@ public class BanStagesMenu extends ActionMenu {
         settings.ruleset().getStagesStream().forEach(stage -> {
             int id = stage.stageId();
             Button stageButton = Button.secondary(String.valueOf(id), StringUtils.abbreviate(stage.name(), LABEL_MAX_LENGTH))
-                    .withEmoji(Emoji.fromEmote("a", stage.stageEmoteId(), false)) // a as placeholder because it may not be empty
+                    .withEmoji(Emoji.fromCustom("a", stage.stageEmoteId(), false)) // a as placeholder because it may not be empty
                     .withDisabled(settings.dsrIllegalStages().contains(id));
 
             underlyingBuilder.registerButton(stageButton, e -> onBan(id, e));
@@ -137,9 +139,9 @@ public class BanStagesMenu extends ActionMenu {
         // More stages are to be banned
         List<ActionRow> actionRows = MiscUtil.disabledButtonActionRows(e);
 
-        Message newMessage = settings.banMessageProducer().apply(new UpcomingBanInfo());
+        MessageCreateData newMessage = settings.banMessageProducer().apply(new UpcomingBanInfo());
 
-        e.editMessage(newMessage).setActionRows(actionRows).queue();
+        e.editMessage(MessageEditData.fromCreateData(newMessage)).setComponents(actionRows).queue();
 
         return MenuAction.CONTINUE;
     }
@@ -243,27 +245,29 @@ public class BanStagesMenu extends ActionMenu {
 
     public record Settings(@Nonnull ActionMenu.Settings actionMenuSettings, long banningUser, @Nonnull Ruleset ruleset,
                            @Nonnull Set<Integer> dsrIllegalStages,
-                           @Nonnull Function<UpcomingBanInfo, Message> banMessageProducer,
+                           @Nonnull Function<UpcomingBanInfo, MessageCreateData> banMessageProducer,
                            @Nonnull BiConsumer<StageBan, ButtonInteractionEvent> onBan,
                            @Nonnull BiConsumer<BanResult, ButtonInteractionEvent> onResult,
                            @Nonnull Consumer<BanStagesTimeoutEvent> onTimeout) {
         @Nonnull
-        public static final Function<UpcomingBanInfo, Message> DEFAULT_BAN_MESSAGE_PRODUCER = info -> {
+        public static final Function<UpcomingBanInfo, MessageCreateData> DEFAULT_BAN_MESSAGE_PRODUCER = info -> {
             long banningUser = info.getBanStagesMenuSettings().banningUser();
             int stagesToBan = info.getStagesToBan();
 
             if (info.getBannedStageIds().isEmpty()) {
-                return new MessageBuilder(String.format("%s, it is your turn to ban stages. Please ban %d stage%s from the list below.",
-                        MiscUtil.mentionUser(banningUser),
-                        stagesToBan,
-                        stagesToBan == 1 ? "" : "s"))
+                return new MessageCreateBuilder()
+                        .setContent(String.format("%s, it is your turn to ban stages. Please ban %d stage%s from the list below.",
+                                MiscUtil.mentionUser(banningUser),
+                                stagesToBan,
+                                stagesToBan == 1 ? "" : "s"))
                         .mentionUsers(banningUser)
                         .build();
             } else {
-                return new MessageBuilder(String.format("%s, please ban %d more stage%s from the list below.",
-                        MiscUtil.mentionUser(banningUser),
-                        stagesToBan,
-                        stagesToBan == 1 ? "" : "s"))
+                return new MessageCreateBuilder()
+                        .setContent(String.format("%s, please ban %d more stage%s from the list below.",
+                                MiscUtil.mentionUser(banningUser),
+                                stagesToBan,
+                                stagesToBan == 1 ? "" : "s"))
                         .mentionUsers(banningUser)
                         .build();
             }
@@ -285,7 +289,7 @@ public class BanStagesMenu extends ActionMenu {
             @Nonnull
             private Set<Integer> dsrIllegalStages = new HashSet<>();
             @Nonnull
-            private Function<UpcomingBanInfo, Message> banMessageProducer = DEFAULT_BAN_MESSAGE_PRODUCER;
+            private Function<UpcomingBanInfo, MessageCreateData> banMessageProducer = DEFAULT_BAN_MESSAGE_PRODUCER;
             @Nonnull
             private BiConsumer<StageBan, ButtonInteractionEvent> onBan = DEFAULT_ON_BAN;
             @Nonnull
@@ -318,7 +322,7 @@ public class BanStagesMenu extends ActionMenu {
             }
 
             @Nonnull
-            public Builder setBanMessageProducer(@Nonnull Function<UpcomingBanInfo, Message> banMessageProducer) {
+            public Builder setBanMessageProducer(@Nonnull Function<UpcomingBanInfo, MessageCreateData> banMessageProducer) {
                 this.banMessageProducer = banMessageProducer;
                 return this;
             }

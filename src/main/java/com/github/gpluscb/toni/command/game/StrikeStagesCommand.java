@@ -14,21 +14,21 @@ import com.github.gpluscb.toni.smashset.Stage;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.OneOfTwo;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
-import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-@SuppressWarnings("ClassCanBeRecord")
 public class StrikeStagesCommand implements Command {
     @Nonnull
     private final EventWaiter waiter;
@@ -70,14 +70,12 @@ public class StrikeStagesCommand implements Command {
         }
 
         // Load RulesetSelectMenu
-        boolean doRPS_ = doRPS;
-
         RulesetSelectMenu rulesetMenu = new RulesetSelectMenu(RulesetSelectMenu.Settings.getDefaultSettings(
                 waiter,
                 ctx.getMember(),
                 ctx.getUser(),
                 rulesets,
-                (info, event) -> startStrikeStages(info.getSelectedRuleset(), OneOfTwo.ofT(event.getMessage()), doRPS_, user1, user2)
+                (info, event) -> startStrikeStages(info.getSelectedRuleset(), OneOfTwo.ofT(event.getMessage()), doRPS, user1, user2)
         ));
 
         rulesetMenu.displaySlashReplying(ctx.getEvent());
@@ -99,11 +97,13 @@ public class StrikeStagesCommand implements Command {
 
         ActionMenu menu;
         if (doRPS) {
-            Message start = new MessageBuilder(String.format(
-                    "%s and %s, to figure out who strikes first, you will first play RPS.",
-                    MiscUtil.mentionUser(user1),
-                    MiscUtil.mentionUser(user2)
-            )).mentionUsers(user1, user2).build();
+            MessageCreateData start = new MessageCreateBuilder()
+                    .setContent(String.format(
+                            "%s and %s, to figure out who strikes first, you will first play RPS.",
+                            MiscUtil.mentionUser(user1),
+                            MiscUtil.mentionUser(user2)
+                    ))
+                    .mentionUsers(user1, user2).build();
 
             menu = new RPSAndStrikeStagesMenu(new RPSAndStrikeStagesMenu.Settings.Builder()
                     .setTwoUsersChoicesActionMenuSettings(twoUsersChoicesActionMenuSettingsBuilder
@@ -159,7 +159,7 @@ public class StrikeStagesCommand implements Command {
 
         channel.editMessageById(messageId, String.format("You didn't all complete the RPS! Be more alert next time, %s.", lazyIdiots))
                 .mentionUsers(user1, user2)
-                .setActionRows()
+                .setComponents()
                 .queue();
     }
 
@@ -172,7 +172,7 @@ public class StrikeStagesCommand implements Command {
 
         channel.editMessageById(messageId, String.format("%s, you didn't choose if you want to strike first in time.", MiscUtil.mentionUser(badUser)))
                 .mentionUsers(badUser)
-                .setActionRows()
+                .setComponents()
                 .queue();
     }
 
@@ -185,7 +185,7 @@ public class StrikeStagesCommand implements Command {
 
         channel.editMessageById(messageId, String.format("%s, you didn't strike the stage in time.", MiscUtil.mentionUser(badUser)))
                 .mentionUsers(badUser)
-                .setActionRows()
+                .setComponents()
                 .queue();
     }
 
@@ -194,7 +194,7 @@ public class StrikeStagesCommand implements Command {
         // In that case we have already printed the message
         if (resultingStage == null) return;
 
-        event.editMessage(String.format("You have struck to %s.", resultingStage.getDisplayName())).setActionRows().queue();
+        event.editMessage(String.format("You have struck to %s.", resultingStage.getDisplayName())).setComponents().queue();
     }
 
     @Nonnull

@@ -5,8 +5,8 @@ import com.github.gpluscb.toni.util.FailLogger;
 import com.github.gpluscb.toni.util.MiscUtil;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageChannel;
-import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
@@ -16,7 +16,10 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.dv8tion.jda.api.interactions.components.Component;
 import net.dv8tion.jda.api.requests.ErrorResponse;
-import net.dv8tion.jda.api.requests.restaction.MessageAction;
+import net.dv8tion.jda.api.requests.RestAction;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
+import net.dv8tion.jda.api.utils.messages.MessageEditData;
+import net.dv8tion.jda.api.utils.messages.MessageRequest;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -70,17 +73,17 @@ public class ButtonActionMenu extends ActionMenu {
 
     @Override
     public void display(@Nonnull MessageChannel channel, long messageId) {
-        init(channel.editMessageById(messageId, settings.start()));
+        init(channel.editMessageById(messageId, MessageEditData.fromCreateData(settings.start())));
     }
 
     @Override
     public void displaySlashReplying(@Nonnull SlashCommandInteractionEvent e) {
-        e.reply(settings.start()).addActionRows(initialActionRows).flatMap(InteractionHook::retrieveOriginal).queue(this::start);
+        e.reply(settings.start()).addComponents(initialActionRows).flatMap(InteractionHook::retrieveOriginal).queue(this::start);
     }
 
     @Override
     public void displayDeferredReplying(@Nonnull InteractionHook hook) {
-        hook.sendMessage(settings.start()).addActionRows(initialActionRows).queue(this::start);
+        init(hook.sendMessage(settings.start()));
     }
 
     @Override
@@ -90,9 +93,9 @@ public class ButtonActionMenu extends ActionMenu {
             hasPerms = textChannel.getGuild().getSelfMember().hasPermission(textChannel, Permission.MESSAGE_HISTORY);
         }
 
-        Message start = settings.start();
+        MessageCreateData start = settings.start();
         if (hasPerms)
-            init(channel.sendMessage(start).referenceById(messageId));
+            init(channel.sendMessage(start).setMessageReference(messageId));
         else
             init(channel.sendMessage(start));
     }
@@ -109,8 +112,8 @@ public class ButtonActionMenu extends ActionMenu {
         awaitEvents();
     }
 
-    private void init(@Nonnull MessageAction messageAction) {
-        messageAction.setActionRows(initialActionRows).queue(this::start);
+    private <T extends MessageRequest<R>, R extends RestAction<Message> & MessageRequest<R>> void init(@Nonnull T messageAction) {
+        messageAction.setComponents(initialActionRows).queue(this::start);
     }
 
     private void awaitEvents() {
@@ -188,7 +191,7 @@ public class ButtonActionMenu extends ActionMenu {
     }
 
     public record Settings(@Nonnull ActionMenu.Settings settings, @Nonnull Set<Long> users,
-                           @Nonnull List<RegisteredButton> buttons, @Nonnull Message start,
+                           @Nonnull List<RegisteredButton> buttons, @Nonnull MessageCreateData start,
                            @Nullable Button deletionButton,
                            @Nonnull Consumer<ButtonActionMenuTimeoutEvent> onTimeout) {
         @Nonnull
@@ -203,7 +206,7 @@ public class ButtonActionMenu extends ActionMenu {
             }
 
             channel.retrieveMessageById(event.getMessageId())
-                    .flatMap(m -> m.editMessage(m).setActionRows())
+                    .flatMap(m -> m.editMessage(MessageEditData.fromMessage(m)).setComponents())
                     .queue(null, new ErrorHandler().ignore(ErrorResponse.UNKNOWN_MESSAGE));
         };
 
@@ -215,7 +218,7 @@ public class ButtonActionMenu extends ActionMenu {
             @Nonnull
             private List<RegisteredButton> buttons = new ArrayList<>();
             @Nullable
-            private Message start;
+            private MessageCreateData start;
             @Nullable
             private Button deletionButton = DEFAULT_DELETION_BUTTON;
             @Nonnull
@@ -265,7 +268,7 @@ public class ButtonActionMenu extends ActionMenu {
             }
 
             @Nonnull
-            public Builder setStart(@Nonnull Message start) {
+            public Builder setStart(@Nonnull MessageCreateData start) {
                 this.start = start;
                 return this;
             }

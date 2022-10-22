@@ -10,15 +10,17 @@ import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.discord.EmbedUtil;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
+import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -33,7 +35,6 @@ import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-@SuppressWarnings("ClassCanBeRecord")
 public class SmashdataCommand implements Command {
     private static final Logger log = LogManager.getLogger(SmashdataCommand.class);
 
@@ -117,8 +118,8 @@ public class SmashdataCommand implements Command {
                 .setStart(pages.getCurrent());
 
         if (results.size() > 1) {
-            menuBuilder.registerButton(Constants.ARROW_BACKWARD, pages::prevResult)
-                    .registerButton(Constants.ARROW_FORWARD, pages::nextResult);
+            menuBuilder.registerButton(Emoji.fromUnicode(Constants.ARROW_BACKWARD), pages::prevResult)
+                    .registerButton(Emoji.fromUnicode(Constants.ARROW_FORWARD), pages::nextResult);
         }
 
         ReactionActionMenu menu = menuBuilder.build();
@@ -219,29 +220,31 @@ public class SmashdataCommand implements Command {
         }
 
         @Nonnull
-        public synchronized Message nextResult(@Nonnull MessageReactionAddEvent e) {
+        public synchronized MessageEditData nextResult(@Nonnull MessageReactionAddEvent e) {
             resultPage = (resultPage + 1) % results.size();
-            return getCurrent();
+            return MessageEditData.fromCreateData(getCurrent());
         }
 
         @Nonnull
-        public synchronized Message prevResult(@Nonnull MessageReactionAddEvent e) {
+        public synchronized MessageEditData prevResult(@Nonnull MessageReactionAddEvent e) {
             resultPage--;
             if (resultPage < 0) resultPage = results.size() - 1;
-            return getCurrent();
+            return MessageEditData.fromCreateData(getCurrent());
         }
 
         @Nonnull
-        public synchronized Message getCurrent() {
+        public synchronized MessageCreateData getCurrent() {
             try {
                 EmbedBuilder embed = new EmbedBuilder(template);
 
                 applyData(embed, results, resultPage);
 
-                return new MessageBuilder().setEmbeds(embed.build()).build();
+                return new MessageCreateBuilder().setEmbeds(embed.build()).build();
             } catch (Exception e) {
                 log.catching(e);
-                return new MessageBuilder("There was a severe unexpected problem with displaying the player data, I don't really know how that happened. I've told my dev, you can go shoot them a message about this too if you want to.").build();
+                return new MessageCreateBuilder()
+                        .setContent("There was a severe unexpected problem with displaying the player data, I don't really know how that happened. I've told my dev, you can go shoot them a message about this too if you want to.")
+                        .build();
             }
         }
     }

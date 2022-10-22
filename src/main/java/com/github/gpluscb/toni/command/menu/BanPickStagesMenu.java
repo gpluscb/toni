@@ -6,11 +6,12 @@ import com.github.gpluscb.toni.smashset.Ruleset;
 import com.github.gpluscb.toni.util.MiscUtil;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -182,15 +183,15 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
     public record Settings(@Nonnull TwoUsersChoicesActionMenu.Settings twoUsersChoicesActionMenuSettings,
                            @Nonnull Ruleset ruleset, @Nonnull Set<Integer> dsrIllegalStages,
                            @Nonnull BiConsumer<BanStagesMenu.StageBan, ButtonInteractionEvent> onBan,
-                           @Nonnull Function<BanStagesMenu.UpcomingBanInfo, Message> banMessageProducer,
+                           @Nonnull Function<BanStagesMenu.UpcomingBanInfo, MessageCreateData> banMessageProducer,
                            @Nonnull BiConsumer<BanStagesMenu.BanResult, ButtonInteractionEvent> onBanResult,
                            @Nonnull Consumer<BanStagesMenu.BanStagesTimeoutEvent> onBanTimeout, long pickStageTimeout,
-                           @Nonnull TimeUnit pickStageUnit, @Nonnull Message pickStageStart,
+                           @Nonnull TimeUnit pickStageUnit, @Nonnull MessageCreateData pickStageStart,
                            @Nonnull BiConsumer<PickStageMenu.PickStageResult, ButtonInteractionEvent> onPickResult,
                            @Nonnull Consumer<PickStageMenu.PickStageTimeoutEvent> onPickTimeout,
                            @Nonnull BiConsumer<BanPickStagesResult, ButtonInteractionEvent> onResult) {
         @Nonnull
-        public static final Function<BanStagesMenu.UpcomingBanInfo, Message> DEFAULT_BAN_MESSAGE_PRODUCER = BanStagesMenu.Settings.DEFAULT_BAN_MESSAGE_PRODUCER;
+        public static final Function<BanStagesMenu.UpcomingBanInfo, MessageCreateData> DEFAULT_BAN_MESSAGE_PRODUCER = BanStagesMenu.Settings.DEFAULT_BAN_MESSAGE_PRODUCER;
         @Nonnull
         public static final BiConsumer<BanStagesMenu.StageBan, ButtonInteractionEvent> DEFAULT_ON_BAN = BanStagesMenu.Settings.DEFAULT_ON_BAN;
         @Nonnull
@@ -215,7 +216,7 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
             @Nonnull
             private Set<Integer> dsrIllegalStages = new HashSet<>();
             @Nonnull
-            private Function<BanStagesMenu.UpcomingBanInfo, Message> banMessageProducer = DEFAULT_BAN_MESSAGE_PRODUCER;
+            private Function<BanStagesMenu.UpcomingBanInfo, MessageCreateData> banMessageProducer = DEFAULT_BAN_MESSAGE_PRODUCER;
             @Nonnull
             private BiConsumer<BanStagesMenu.StageBan, ButtonInteractionEvent> onBan = DEFAULT_ON_BAN;
             @Nonnull
@@ -226,7 +227,7 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
             @Nonnull
             private TimeUnit pickStageUnit = DEFAULT_PICK_STAGE_UNIT;
             @Nullable
-            private Message pickStageStart;
+            private MessageCreateData pickStageStart;
             @Nonnull
             private BiConsumer<PickStageMenu.PickStageResult, ButtonInteractionEvent> onPickResult = DEFAULT_ON_PICK_RESULT;
             @Nonnull
@@ -257,7 +258,7 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
             }
 
             @Nonnull
-            public Builder setBanMessageProducer(@Nonnull Function<BanStagesMenu.UpcomingBanInfo, Message> banMessageProducer) {
+            public Builder setBanMessageProducer(@Nonnull Function<BanStagesMenu.UpcomingBanInfo, MessageCreateData> banMessageProducer) {
                 this.banMessageProducer = banMessageProducer;
                 return this;
             }
@@ -288,7 +289,7 @@ public class BanPickStagesMenu extends TwoUsersChoicesActionMenu {
             }
 
             @Nonnull
-            public Builder setPickStageStart(@Nullable Message pickStageStart) {
+            public Builder setPickStageStart(@Nullable MessageCreateData pickStageStart) {
                 this.pickStageStart = pickStageStart;
                 return this;
             }

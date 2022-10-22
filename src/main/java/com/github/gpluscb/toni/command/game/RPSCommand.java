@@ -8,20 +8,19 @@ import com.github.gpluscb.toni.menu.ActionMenu;
 import com.github.gpluscb.toni.menu.TwoUsersChoicesActionMenu;
 import com.github.gpluscb.toni.util.MiscUtil;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
-import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.TimeUnit;
 
-@SuppressWarnings("ClassCanBeRecord")
 public class RPSCommand implements Command {
     @Nonnull
     private final EventWaiter waiter;
@@ -55,8 +54,9 @@ public class RPSCommand implements Command {
         String user1Mention = MiscUtil.mentionUser(user1);
         String user2Mention = MiscUtil.mentionUser(user2);
 
-        Message start = new MessageBuilder(String.format("Alrighty! %s and %s, please click on the button of your choice now. " +
-                "You have three (3) minutes!", user1Mention, user2Mention))
+        MessageCreateData start = new MessageCreateBuilder()
+                .setContent(String.format("Alrighty! %s and %s, please click on the button of your choice now. " +
+                        "You have three (3) minutes!", user1Mention, user2Mention))
                 .mentionUsers(user1, user2)
                 .build();
 
@@ -115,7 +115,7 @@ public class RPSCommand implements Command {
 
         channel.editMessageById(messageId, String.format("The three (3) minutes are done. Not all of you have given me your choice. Shame on you, %s!", lazyIdiots))
                 .mentionUsers(user1, user2)
-                .setActionRows()
+                .setComponents()
                 .queue();
     }
 

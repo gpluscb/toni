@@ -5,14 +5,16 @@ import com.github.gpluscb.toni.menu.TwoUsersChoicesActionMenu;
 import com.github.gpluscb.toni.smashset.SmashSet;
 import com.github.gpluscb.toni.util.MiscUtil;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
+import net.dv8tion.jda.api.utils.messages.MessageEditBuilder;
+import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
@@ -132,7 +134,7 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
         settings.onConflict().accept(new ReportGameConflict(info), event);
 
         event.editMessage(settings.conflictMessageProvider().apply(new ReportGameConflict(info), event))
-                .setActionRows(event.getMessage().getActionRows())
+                .setComponents(event.getMessage().getActionRows())
                 .queue();
 
         return MenuAction.CONTINUE;
@@ -275,22 +277,23 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
 
     public record Settings(@Nonnull TwoUsersChoicesActionMenu.Settings twoUsersChoicesActionMenuSettings,
                            @Nonnull String user1Display, @Nonnull String user2Display,
-                           @Nonnull BiFunction<ReportGameConflict, ButtonInteractionEvent, Message> conflictMessageProvider,
+                           @Nonnull BiFunction<ReportGameConflict, ButtonInteractionEvent, MessageEditData> conflictMessageProvider,
                            @Nonnull BiConsumer<ReportGameChoiceInfo, ButtonInteractionEvent> onChoice,
                            @Nonnull BiConsumer<ReportGameConflict, ButtonInteractionEvent> onConflict,
                            @Nonnull BiConsumer<ReportGameResult, ButtonInteractionEvent> onResult,
-                           @Nonnull Message start,
+                           @Nonnull MessageCreateData start,
                            @Nonnull Consumer<ReportGameTimeoutEvent> onTimeout) {
         @Nonnull
-        public static final BiFunction<ReportGameConflict, ButtonInteractionEvent, Message> DEFAULT_CONFLICT_MESSAGE_PROVIDER = (conflict, e) -> {
+        public static final BiFunction<ReportGameConflict, ButtonInteractionEvent, MessageEditData> DEFAULT_CONFLICT_MESSAGE_PROVIDER = (conflict, e) -> {
             long user1 = conflict.getTwoUsersChoicesActionMenuSettings().user1();
             long user2 = conflict.getTwoUsersChoicesActionMenuSettings().user2();
-            return new MessageBuilder(String.format("You reported different winners. %s reported %s, and %s reported %s as the winner. " +
-                            "One of you can now either change your choice or you can call a moderator to sort this out.",
-                    MiscUtil.mentionUser(user1),
-                    MiscUtil.mentionUser(conflict.getUser1ReportedWinner()),
-                    MiscUtil.mentionUser(user2),
-                    MiscUtil.mentionUser(conflict.getUser2ReportedWinner())))
+            return new MessageEditBuilder()
+                    .setContent(String.format("You reported different winners. %s reported %s, and %s reported %s as the winner. " +
+                                    "One of you can now either change your choice or you can call a moderator to sort this out.",
+                            MiscUtil.mentionUser(user1),
+                            MiscUtil.mentionUser(conflict.getUser1ReportedWinner()),
+                            MiscUtil.mentionUser(user2),
+                            MiscUtil.mentionUser(conflict.getUser2ReportedWinner())))
                     .mentionUsers(user1, user2)
                     .build();
         };
@@ -311,7 +314,7 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
             @Nullable
             private String user2Display;
             @Nonnull
-            private BiFunction<ReportGameConflict, ButtonInteractionEvent, Message> conflictMessageProvider = DEFAULT_CONFLICT_MESSAGE_PROVIDER;
+            private BiFunction<ReportGameConflict, ButtonInteractionEvent, MessageEditData> conflictMessageProvider = DEFAULT_CONFLICT_MESSAGE_PROVIDER;
             @Nonnull
             private BiConsumer<ReportGameChoiceInfo, ButtonInteractionEvent> onChoice = DEFAULT_ON_CHOICE;
             @Nonnull
@@ -319,7 +322,7 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
             @Nonnull
             private BiConsumer<ReportGameResult, ButtonInteractionEvent> onResult = DEFAULT_ON_RESULT;
             @Nullable
-            private Message start;
+            private MessageCreateData start;
             @Nonnull
             private Consumer<ReportGameTimeoutEvent> onTimeout = DEFAULT_ON_TIMEOUT;
 
@@ -337,7 +340,7 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
             }
 
             @Nonnull
-            public Builder setConflictMessageProvider(@Nonnull BiFunction<ReportGameConflict, ButtonInteractionEvent, Message> conflictMessageProvider) {
+            public Builder setConflictMessageProvider(@Nonnull BiFunction<ReportGameConflict, ButtonInteractionEvent, MessageEditData> conflictMessageProvider) {
                 this.conflictMessageProvider = conflictMessageProvider;
                 return this;
             }
@@ -361,7 +364,7 @@ public class ReportGameMenu extends TwoUsersChoicesActionMenu {
             }
 
             @Nonnull
-            public Builder setStart(@Nullable Message start) {
+            public Builder setStart(@Nullable MessageCreateData start) {
                 this.start = start;
                 return this;
             }

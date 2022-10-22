@@ -6,10 +6,10 @@ import com.github.gpluscb.toni.util.Constants;
 import com.github.gpluscb.toni.util.MiscUtil;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.entities.Emoji;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageChannel;
-import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
@@ -17,6 +17,8 @@ import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.requests.ErrorResponse;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
+import net.dv8tion.jda.api.utils.messages.MessageEditData;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -254,7 +256,7 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
 
     public record Settings(@Nonnull TwoUsersChoicesActionMenu.Settings twoUsersChoicesActionMenuSettings,
                            @Nonnull BiConsumer<RPS, ButtonInteractionEvent> onChoiceMade,
-                           @Nonnull BiConsumer<RPSResult, ButtonInteractionEvent> onResult, @Nonnull Message start,
+                           @Nonnull BiConsumer<RPSResult, ButtonInteractionEvent> onResult, @Nonnull MessageCreateData start,
                            @Nonnull Consumer<RPSTimeoutEvent> onTimeout) {
         @Nonnull
         public static final BiConsumer<RPS, ButtonInteractionEvent> DEFAULT_ON_CHOICE_MADE = MiscUtil.emptyBiConsumer();
@@ -271,7 +273,7 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
             }
 
             channel.retrieveMessageById(id)
-                    .flatMap(m -> m.editMessage(m).setActionRows())
+                    .flatMap(m -> m.editMessage(MessageEditData.fromMessage(m)).setComponents())
                     .queue(null, new ErrorHandler().ignore(ErrorResponse.UNKNOWN_MESSAGE));
         };
 
@@ -279,7 +281,7 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
             @Nullable
             private TwoUsersChoicesActionMenu.Settings twoUsersChoicesActionMenuSettings;
             @Nullable
-            private Message start;
+            private MessageCreateData start;
             @Nonnull
             private BiConsumer<RPS, ButtonInteractionEvent> onChoiceMade = DEFAULT_ON_CHOICE_MADE;
             @Nonnull
@@ -293,7 +295,7 @@ public class RPSMenu extends TwoUsersChoicesActionMenu {
             }
 
             @Nonnull
-            public Builder setStart(@Nonnull Message start) {
+            public Builder setStart(@Nonnull MessageCreateData start) {
                 this.start = start;
                 return this;
             }

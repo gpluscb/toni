@@ -15,9 +15,9 @@ import com.github.gpluscb.toni.util.discord.EmbedUtil;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
@@ -29,6 +29,9 @@ import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.selections.SelectMenu;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
 import net.dv8tion.jda.api.requests.ErrorResponse;
+import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
+import net.dv8tion.jda.api.utils.messages.MessageEditData;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -438,10 +441,10 @@ public class MovesCommand implements Command {
                 movePage = startMove.getU();
             }
 
-            Message start = getCurrent();
+            MessageCreateData start = getCurrent();
             List<ActionRow> actionRows = prepareActionRows();
 
-            event.getHook().sendMessage(start).addActionRows(actionRows).queue(this::awaitEvents);
+            event.getHook().sendMessage(start).addComponents(actionRows).queue(this::awaitEvents);
         }
 
         private List<ActionRow> prepareActionRows() {
@@ -505,22 +508,24 @@ public class MovesCommand implements Command {
                         // We know because of the check that messageId is not null here
                         //noinspection ConstantConditions
                         e.getChannel().editMessageById(messageId, "This is a bug! Sorry, I just got very unexpected Data. I've told my dev about it, but you can give them some context too.")
-                                .override(true)
+                                .setReplace(true)
                                 .queue();
                         return;
                     }
                 }
 
-                Message current = getCurrent();
+                MessageCreateData current = getCurrent();
                 // We know because of the check that messageId is not null here
                 //noinspection ConstantConditions
-                e.getChannel().editMessageById(messageId, current).setActionRows(prepareActionRows()).queue();
+                e.getChannel().editMessageById(messageId, MessageEditData.fromCreateData(current))
+                        .setComponents(prepareActionRows())
+                        .queue();
             } catch (NumberFormatException ex) {
                 log.error("Non-Integer component value: {}", value);
                 // We know because of the check that messageId is not null here
                 //noinspection ConstantConditions
                 e.getChannel().editMessageById(messageId, "This is a bug! Sorry, I just got very unexpected Data. I've told my dev about it, but you can give them some context too.")
-                        .override(true)
+                        .setReplace(true)
                         .queue();
             }
         }
@@ -535,7 +540,7 @@ public class MovesCommand implements Command {
             // We know it is set before waiter waits
             //noinspection ConstantConditions
             channel.retrieveMessageById(messageId)
-                    .flatMap(m -> m.editMessage(m).setActionRows())
+                    .flatMap(m -> m.editMessage(MessageEditData.fromMessage(m)).setComponents())
                     .queue(null, new ErrorHandler().ignore(ErrorResponse.UNKNOWN_MESSAGE));
         }
 
@@ -606,7 +611,7 @@ public class MovesCommand implements Command {
         }
 
         @Nonnull
-        public synchronized Message getCurrent() {
+        public synchronized MessageCreateData getCurrent() {
             try {
                 EmbedBuilder embed = new EmbedBuilder(template);
 
@@ -621,10 +626,12 @@ public class MovesCommand implements Command {
 
                 applyMove(embed, data, getCurrentSection(), hitboxPageAndMove);
 
-                return new MessageBuilder().setEmbeds(embed.build()).build();
+                return new MessageCreateBuilder().setEmbeds(embed.build()).build();
             } catch (Exception e) {
                 log.catching(e);
-                return new MessageBuilder("There was a severe unexpected problem with displaying the move data, I don't really know how that happened. I'll tell  my dev, you can go shoot them a message about this too if you want to.").build();
+                return new MessageCreateBuilder()
+                        .setContent("There was a severe unexpected problem with displaying the move data, I don't really know how that happened. I'll tell  my dev, you can go shoot them a message about this too if you want to.")
+                        .build();
             }
         }
     }

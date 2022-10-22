@@ -5,8 +5,8 @@ import com.github.gpluscb.toni.util.MiscUtil;
 import com.github.gpluscb.toni.util.PairNonnull;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageChannel;
-import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
@@ -15,7 +15,10 @@ import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.selections.SelectMenu;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
 import net.dv8tion.jda.api.requests.ErrorResponse;
-import net.dv8tion.jda.api.requests.restaction.MessageAction;
+import net.dv8tion.jda.api.requests.RestAction;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
+import net.dv8tion.jda.api.utils.messages.MessageEditData;
+import net.dv8tion.jda.api.utils.messages.MessageRequest;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -50,7 +53,7 @@ public class SelectionActionMenu extends ActionMenu {
 
     @Override
     public void display(@Nonnull MessageChannel channel, long messageId) {
-        init(channel.editMessageById(messageId, settings.start()));
+        init(channel.editMessageById(messageId, MessageEditData.fromCreateData(settings.start())));
     }
 
     @Override
@@ -73,7 +76,7 @@ public class SelectionActionMenu extends ActionMenu {
         }
 
         if (hasPerms)
-            init(channel.sendMessage(settings.start()).referenceById(messageId));
+            init(channel.sendMessage(settings.start()).setMessageReference(messageId));
         else
             init(channel.sendMessage(settings.start()));
     }
@@ -90,11 +93,10 @@ public class SelectionActionMenu extends ActionMenu {
         awaitEvents();
     }
 
-    private void init(@Nonnull MessageAction messageAction) {
+    private <T extends MessageRequest<R>, R extends RestAction<Message> & MessageRequest<R>> void init(@Nonnull T messageAction) {
         SelectMenu selectionMenu = SelectMenu.create(settings.id()).addOptions(getInitialSelectOptions()).build();
         messageAction.setActionRow(selectionMenu).queue(this::start);
     }
-
 
     @Nonnull
     private SelectMenu initSelectionMenu() {
@@ -166,7 +168,7 @@ public class SelectionActionMenu extends ActionMenu {
 
     public record Settings(@Nonnull ActionMenu.Settings actionMenuSettings, @Nonnull Set<Long> users,
                            @Nonnull List<PairNonnull<SelectOption, BiFunction<SelectionInfo, SelectMenuInteractionEvent, MenuAction>>> selectionActions,
-                           @Nonnull Message start, @Nonnull String id,
+                           @Nonnull MessageCreateData start, @Nonnull String id,
                            @Nonnull Consumer<SelectionMenuTimeoutEvent> onTimeout) {
         @Nonnull
         public static final Supplier<String> DEFAULT_ID_GENERATOR = () -> MiscUtil.randomString(5);
@@ -180,7 +182,7 @@ public class SelectionActionMenu extends ActionMenu {
             }
 
             channel.retrieveMessageById(timeout.getMessageId())
-                    .flatMap(m -> m.editMessage(m).setActionRows())
+                    .flatMap(m -> m.editMessage(MessageEditData.fromMessage(m)).setComponents())
                     .queue(null, new ErrorHandler().ignore(ErrorResponse.UNKNOWN_MESSAGE));
         };
 
@@ -192,7 +194,7 @@ public class SelectionActionMenu extends ActionMenu {
             @Nonnull
             private final List<PairNonnull<SelectOption, BiFunction<SelectionInfo, SelectMenuInteractionEvent, MenuAction>>> selectionActions = new ArrayList<>();
             @Nullable
-            private Message start;
+            private MessageCreateData start;
             @Nonnull
             private String id = DEFAULT_ID_GENERATOR.get();
             @Nonnull
@@ -228,7 +230,7 @@ public class SelectionActionMenu extends ActionMenu {
             }
 
             @Nonnull
-            public Builder setStart(@Nonnull Message start) {
+            public Builder setStart(@Nonnull MessageCreateData start) {
                 this.start = start;
                 return this;
             }

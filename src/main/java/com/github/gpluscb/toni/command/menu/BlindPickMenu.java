@@ -9,13 +9,14 @@ import com.github.gpluscb.toni.util.MiscUtil;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -180,7 +181,7 @@ public class BlindPickMenu extends ActionMenu {
     }
 
     public record Settings(@Nonnull ActionMenu.Settings actionMenuSettings, @Nonnull EventWaiter waiter,
-                           @Nonnull Set<Long> users, @Nonnull Message start, @Nonnull List<Character> characters,
+                           @Nonnull Set<Long> users, @Nonnull MessageCreateData start, @Nonnull List<Character> characters,
                            @Nonnull BiConsumer<BlindPickResult, ModalInteractionEvent> onResult,
                            @Nonnull Consumer<BlindPickTimeoutEvent> onTimeout) {
         @Nonnull
@@ -196,7 +197,7 @@ public class BlindPickMenu extends ActionMenu {
             @Nonnull
             private Set<Long> users = new HashSet<>();
             @Nullable
-            private Message start;
+            private MessageCreateData start;
             @Nullable
             private List<Character> characters;
             @Nonnull
@@ -229,7 +230,7 @@ public class BlindPickMenu extends ActionMenu {
             }
 
             @Nonnull
-            public Builder setStart(@Nonnull Message start) {
+            public Builder setStart(@Nonnull MessageCreateData start) {
                 this.start = start;
                 return this;
             }

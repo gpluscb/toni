@@ -11,7 +11,6 @@ import org.apache.logging.log4j.Logger;
 import javax.annotation.Nonnull;
 import java.sql.SQLException;
 
-@SuppressWarnings("ClassCanBeRecord")
 public class UpdateSmashdataCommand implements Command {
     private static final Logger log = LogManager.getLogger(UpdateSmashdataCommand.class);
 

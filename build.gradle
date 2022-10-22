@@ -25,7 +25,7 @@ repositories {
 
 dependencies {
     // Custom branch and commit for modals
-    implementation(group: 'net.dv8tion', name: 'JDA', version: '5.0.0-alpha.11') {
+    implementation(group: 'net.dv8tion', name: 'JDA', version: '5.0.0-alpha.21') {
         exclude module: 'opus-java'
     }
     implementation 'pw.chew:jda-chewtils:2.0-SNAPSHOT'

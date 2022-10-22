@@ -5,7 +5,6 @@ import com.github.gpluscb.toni.command.CommandContext;
 import com.github.gpluscb.toni.command.CommandInfo;
 import com.github.gpluscb.toni.smashset.Character;
 import com.github.gpluscb.toni.smashset.CharacterTree;
-import com.github.gpluscb.toni.util.MiscUtil;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
@@ -14,13 +13,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 // TODO: Melee Wolf? P+ Mewtwo?? This gonna be a headache
-@SuppressWarnings("ClassCanBeRecord")
 public class RandomCharacterCommand implements Command {
     private static final Logger log = LogManager.getLogger(RandomCharacterCommand.class);
 

@@ -95,7 +95,6 @@ public class MiscUtil {
                 ret.add(currentList);
                 currentList = new ArrayList<>();
             }
-
         }
 
         if (!currentList.isEmpty()) ret.add(currentList);

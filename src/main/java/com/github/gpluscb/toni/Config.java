@@ -4,7 +4,7 @@ import javax.annotation.Nonnull;
 
 public record Config(@Nonnull String ggToken, @Nonnull String discordToken,
                      @Nonnull String challongeUsername, @Nonnull String challongeToken,
-                     @Nonnull String dbotsToken, @Nonnull String topggToken, boolean mockBotLists,
+                     @Nonnull String dbotsToken, boolean mockBotLists,
                      @Nonnull String inviteUrl, long botId, @Nonnull String supportServer,
                      @Nonnull String twitterHandle, @Nonnull String github, long devId,
                      long adminGuildId, @Nonnull String stopwordListLocation,
@@ -17,7 +17,6 @@ public record Config(@Nonnull String ggToken, @Nonnull String discordToken,
         if (challongeToken == null) throw new IllegalStateException("challongeToken may not be null");
         if (discordToken == null) throw new IllegalStateException("discordToken may not be null");
         if (dbotsToken == null) throw new IllegalStateException("dbotsToken may not be null");
-        if (topggToken == null) throw new IllegalStateException("topggToken may not be null");
         if (inviteUrl == null) throw new IllegalStateException("inviteUrl may not be null");
         if (supportServer == null) throw new IllegalStateException("supportServer may not be null");
         if (twitterHandle == null) throw new IllegalStateException("twitterHandle may not be null");

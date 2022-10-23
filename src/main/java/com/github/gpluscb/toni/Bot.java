@@ -30,8 +30,6 @@ import com.github.gpluscb.toni.statsposting.PostGuildRoutine;
 import com.github.gpluscb.toni.statsposting.dbots.DBotsClient;
 import com.github.gpluscb.toni.statsposting.dbots.DBotsClientMock;
 import com.github.gpluscb.toni.statsposting.dbots.StatsResponse;
-import com.github.gpluscb.toni.statsposting.topgg.TopggClient;
-import com.github.gpluscb.toni.statsposting.topgg.TopggClientMock;
 import com.github.gpluscb.toni.ultimateframedata.UltimateframedataClient;
 import com.github.gpluscb.toni.util.RecordTypeAdapterFactory;
 import com.github.gpluscb.toni.util.discord.DiscordAppenderImpl;
@@ -173,17 +171,8 @@ public class Bot {
             dBotsClient = new DBotsClient(cfg.dbotsToken(), okHttp, botId, gson);
         }
 
-        BotListClient<Void> topggClient;
-        if (mockBotLists) {
-            log.trace("Creating TopggClientMock");
-            topggClient = new TopggClientMock();
-        } else {
-            log.trace("Creating TopggClient");
-            topggClient = new TopggClient(cfg.topggToken(), okHttp, botId);
-        }
-
         log.trace("Constructing post stats routine");
-        postGuildRoutine = new PostGuildRoutine(dBotsClient, topggClient);
+        postGuildRoutine = new PostGuildRoutine(dBotsClient);
 
         log.trace("Loading characters");
         CharacterTree characterTree;

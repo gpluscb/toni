@@ -17,15 +17,12 @@ public class PostGuildRoutine {
 
     @Nonnull
     private final BotListClient<StatsResponse> dBotsClient;
-    @Nonnull
-    private final BotListClient<Void> topggClient;
 
-    public PostGuildRoutine(@Nonnull BotListClient<StatsResponse> dBotsClient, @Nonnull BotListClient<Void> topggClient) {
+    public PostGuildRoutine(@Nonnull BotListClient<StatsResponse> dBotsClient) {
         executer = new ScheduledThreadPoolExecutor(1);
         executer.setThreadFactory(r -> new Thread(r, "PostGuildRoutine Schedule-Thread"));
 
         this.dBotsClient = dBotsClient;
-        this.topggClient = topggClient;
     }
 
     public void start(@Nonnull ShardManager shardManager) {
@@ -36,10 +33,6 @@ public class PostGuildRoutine {
                 if (t != null) log.catching(t);
                 else
                     log.debug("Successful guild stats post to dbots: guilds: {}, shards: {}", r.guildCount(), r.shardCount());
-            });
-            topggClient.postStats(guildCount).whenComplete((r, t) -> {
-                if (t != null) log.catching(t);
-                else log.debug("Successful guild stats post to topgg");
             });
         }, 0, 6, TimeUnit.HOURS);
     }

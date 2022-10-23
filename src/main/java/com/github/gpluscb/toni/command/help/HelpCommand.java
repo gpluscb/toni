@@ -105,14 +105,13 @@ public class HelpCommand implements Command {
         String parsedFields = EmbedUtil.parseInlineFields(helpFields);
         builder.addField("Command categories", parsedFields, false);
 
-        Button topGGButton = Button.link(String.format("https://top.gg/bot/%d", config.botId()), "Vote for me");
         Button githubButton = Button.link(config.github(), "Source code");
         Button inviteButton = Button.link(config.inviteUrl(), "Invite me");
         Button supportButton = Button.link(config.supportServer(), "Support server");
 
         MessageEmbed embed = builder.build();
         ctx.getEvent().reply(new MessageCreateBuilder().setEmbeds(embed).build())
-                .addActionRow(topGGButton, githubButton, inviteButton, supportButton)
+                .addActionRow(githubButton, inviteButton, supportButton)
                 .queue();
     }
 

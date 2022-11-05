@@ -55,7 +55,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
-import javax.security.auth.login.LoginException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
@@ -121,7 +120,7 @@ public class Bot {
         }
     }
 
-    public Bot(@Nonnull String configLocation, boolean hookCommands) throws LoginException, SQLException, IOException {
+    public Bot(@Nonnull String configLocation, boolean hookCommands) throws SQLException, IOException {
         log.trace("Loading Gson");
         gson = new GsonBuilder()
                 .registerTypeAdapterFactory(new RecordTypeAdapterFactory())

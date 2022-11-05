@@ -31,7 +31,6 @@ import com.github.gpluscb.toni.statsposting.dbots.DBotsClient;
 import com.github.gpluscb.toni.statsposting.dbots.DBotsClientMock;
 import com.github.gpluscb.toni.statsposting.dbots.StatsResponse;
 import com.github.gpluscb.toni.ultimateframedata.UltimateframedataClient;
-import com.github.gpluscb.toni.util.RecordTypeAdapterFactory;
 import com.github.gpluscb.toni.util.discord.DiscordAppenderImpl;
 import com.github.gpluscb.toni.util.discord.ShardsLoadListener;
 import com.google.gson.Gson;
@@ -122,9 +121,7 @@ public class Bot {
 
     public Bot(@Nonnull String configLocation, boolean hookCommands) throws SQLException, IOException {
         log.trace("Loading Gson");
-        gson = new GsonBuilder()
-                .registerTypeAdapterFactory(new RecordTypeAdapterFactory())
-                .create();
+        gson = new GsonBuilder().create();
 
         log.trace("Loading config");
         Config cfg = loadConfig(configLocation);

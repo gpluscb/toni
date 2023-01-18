@@ -174,4 +174,10 @@ public class ReplyAction<T, R extends RestAction<T> & MessageRequest<R>> impleme
     public boolean isMentionRepliedUser() {
         return action.isMentionRepliedUser();
     }
+
+    @Nonnull
+    @Override
+    public RestAction<T> deadline(long timestamp) {
+        return action.deadline(timestamp);
+    }
 }

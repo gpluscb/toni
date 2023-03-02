@@ -13,7 +13,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
-import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
@@ -102,7 +102,7 @@ public class RulesetSelectMenu extends ActionMenu {
         return settings;
     }
 
-    private synchronized void onSelect(@Nonnull ConfirmableSelectionActionMenu<Ruleset>.OptionChoiceInfo info, @Nonnull SelectMenuInteractionEvent event) {
+    private synchronized void onSelect(@Nonnull ConfirmableSelectionActionMenu<Ruleset>.OptionChoiceInfo info, @Nonnull StringSelectInteractionEvent event) {
         settings.onOptionSelect().accept(new RulesetSelectOptionInfo(info), event);
     }
 
@@ -189,13 +189,13 @@ public class RulesetSelectMenu extends ActionMenu {
 
     public record Settings(@Nonnull ActionMenu.Settings actionMenuSettings, long user, @Nonnull List<Ruleset> rulesets,
                            @Nonnull MessageCreateData start,
-                           @Nonnull BiConsumer<RulesetSelectOptionInfo, SelectMenuInteractionEvent> onOptionSelect,
+                           @Nonnull BiConsumer<RulesetSelectOptionInfo, StringSelectInteractionEvent> onOptionSelect,
                            @Nonnull BiConsumer<RulesetSelectionInfo, ButtonInteractionEvent> onRulesetSelect,
                            @Nonnull Consumer<RulesetSelectTimeoutEvent> onTimeout) {
         @Nonnull
         public static final BiConsumer<RulesetSelectionInfo, ButtonInteractionEvent> DEFAULT_ON_RULESET_SELECT = MiscUtil.emptyBiConsumer();
         @Nonnull
-        public static final BiConsumer<RulesetSelectOptionInfo, SelectMenuInteractionEvent> DEFAULT_ON_OPTION_SELECT = MiscUtil.emptyBiConsumer();
+        public static final BiConsumer<RulesetSelectOptionInfo, StringSelectInteractionEvent> DEFAULT_ON_OPTION_SELECT = MiscUtil.emptyBiConsumer();
         @Nonnull
         public static final Consumer<RulesetSelectTimeoutEvent> DEFAULT_ON_TIMEOUT = MiscUtil.emptyConsumer();
 
@@ -253,7 +253,7 @@ public class RulesetSelectMenu extends ActionMenu {
             @Nullable
             private MessageCreateData start;
             @Nonnull
-            private BiConsumer<RulesetSelectOptionInfo, SelectMenuInteractionEvent> onOptionSelect = DEFAULT_ON_OPTION_SELECT;
+            private BiConsumer<RulesetSelectOptionInfo, StringSelectInteractionEvent> onOptionSelect = DEFAULT_ON_OPTION_SELECT;
             @Nonnull
             private BiConsumer<RulesetSelectionInfo, ButtonInteractionEvent> onRulesetSelect = DEFAULT_ON_RULESET_SELECT;
             @Nonnull
@@ -284,7 +284,7 @@ public class RulesetSelectMenu extends ActionMenu {
             }
 
             @Nonnull
-            public Builder setOnOptionSelect(@Nonnull BiConsumer<RulesetSelectOptionInfo, SelectMenuInteractionEvent> onOptionSelect) {
+            public Builder setOnOptionSelect(@Nonnull BiConsumer<RulesetSelectOptionInfo, StringSelectInteractionEvent> onOptionSelect) {
                 this.onOptionSelect = onOptionSelect;
                 return this;
             }

@@ -10,10 +10,10 @@ import com.github.gpluscb.toni.util.discord.EmbedUtil;
 import com.jagrosh.jdautilities.commons.waiter.EventWaiter;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
-import net.dv8tion.jda.api.interactions.components.selections.SelectMenu;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
+import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
 import org.apache.commons.lang3.StringUtils;
@@ -109,14 +109,14 @@ public class RulesetsCommand implements Command {
          * @param idx -1 is rulesets info page
          */
         @Nonnull
-        public synchronized ActionMenu.MenuAction onPageSelect(@Nonnull SelectionActionMenu.SelectionInfo info, @Nonnull SelectMenuInteractionEvent event, int idx) {
+        public synchronized ActionMenu.MenuAction onPageSelect(@Nonnull SelectionActionMenu.SelectionInfo info, @Nonnull StringSelectInteractionEvent event, int idx) {
             try {
                 EmbedBuilder builder = new EmbedBuilder(template);
 
                 if (idx == -1) applyRulesetList(builder);
                 else EmbedUtil.applyRuleset(builder, rulesets.get(idx));
 
-                SelectMenu menu = SelectMenu.create(info.getSelectionActionMenuSettings().id())
+                StringSelectMenu menu = StringSelectMenu.create(info.getSelectionActionMenuSettings().id())
                         .addOptions(info.getInitialSelectOptions())
                         .setDefaultValues(Collections.singleton(String.valueOf(idx)))
                         .build();

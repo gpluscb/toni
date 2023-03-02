@@ -7,7 +7,7 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
-import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.interactions.InteractionHook;
@@ -129,7 +129,7 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
     }
 
     @Nonnull
-    private synchronized MenuAction onOptionChoice(@Nonnull T choice, @Nonnull SelectionActionMenu.SelectionInfo info, @Nonnull SelectMenuInteractionEvent event) {
+    private synchronized MenuAction onOptionChoice(@Nonnull T choice, @Nonnull SelectionActionMenu.SelectionInfo info, @Nonnull StringSelectInteractionEvent event) {
         // Cancel SelectionActionMenu if already submitted
         // The choice shouldn't happen because the menu will already be removed
         // tho it kinda is a race condition.
@@ -256,14 +256,14 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
     public record Settings<T>(@Nonnull ActionMenu.Settings actionMenuSettings, @Nonnull MessageCreateData start,
                               @Nonnull Set<Long> users, @Nonnull Button submitButton,
                               @Nonnull List<ChoiceOption<T>> choices,
-                              @Nonnull BiConsumer<ConfirmableSelectionActionMenu<T>.OptionChoiceInfo, SelectMenuInteractionEvent> onOptionChoice,
+                              @Nonnull BiConsumer<ConfirmableSelectionActionMenu<T>.OptionChoiceInfo, StringSelectInteractionEvent> onOptionChoice,
                               @Nonnull BiConsumer<ConfirmableSelectionActionMenu<T>.ConfirmationInfo, ButtonInteractionEvent> onConfirmation,
                               @Nonnull BiFunction<ConfirmableSelectionActionMenu<T>.ConfirmationInfo, ButtonInteractionEvent, MenuAction> onAllConfirmation,
                               @Nonnull Consumer<ConfirmableSelectionActionMenu<T>.ConfirmationInfoTimeoutEvent> onTimeout) {
         @Nonnull
         public static final Button DEFAULT_SUBMIT_BUTTON = Button.primary("submit", "Submit");
 
-        public static <T> void DEFAULT_ON_OPTION_CHOICE(ConfirmableSelectionActionMenu<T>.OptionChoiceInfo choiceInfo, SelectMenuInteractionEvent event) {
+        public static <T> void DEFAULT_ON_OPTION_CHOICE(ConfirmableSelectionActionMenu<T>.OptionChoiceInfo choiceInfo, StringSelectInteractionEvent event) {
         }
 
         public static <T> void DEFAULT_ON_CONFIRMATION(ConfirmableSelectionActionMenu<T>.ConfirmationInfo submitInfo, ButtonInteractionEvent event) {
@@ -298,7 +298,7 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
             @Nonnull
             private List<ChoiceOption<T>> choices = new ArrayList<>();
             @Nonnull
-            private BiConsumer<ConfirmableSelectionActionMenu<T>.OptionChoiceInfo, SelectMenuInteractionEvent> onOptionChoice = Settings::DEFAULT_ON_OPTION_CHOICE;
+            private BiConsumer<ConfirmableSelectionActionMenu<T>.OptionChoiceInfo, StringSelectInteractionEvent> onOptionChoice = Settings::DEFAULT_ON_OPTION_CHOICE;
             @Nonnull
             private BiConsumer<ConfirmableSelectionActionMenu<T>.ConfirmationInfo, ButtonInteractionEvent> onConfirmation = Settings::DEFAULT_ON_CONFIRMATION;
             @Nullable
@@ -360,7 +360,7 @@ public class ConfirmableSelectionActionMenu<T> extends ActionMenu {
             }
 
             @Nonnull
-            public Builder<T> setOnOptionChoice(@Nonnull BiConsumer<ConfirmableSelectionActionMenu<T>.OptionChoiceInfo, SelectMenuInteractionEvent> onOptionChoice) {
+            public Builder<T> setOnOptionChoice(@Nonnull BiConsumer<ConfirmableSelectionActionMenu<T>.OptionChoiceInfo, StringSelectInteractionEvent> onOptionChoice) {
                 this.onOptionChoice = onOptionChoice;
                 return this;
             }

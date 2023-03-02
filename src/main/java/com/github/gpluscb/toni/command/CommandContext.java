@@ -121,7 +121,7 @@ public class CommandContext {
     public String toString() {
         return "SlashCommandContext{" +
                 "event=" + event +
-                ", command=" + event.getCommandPath() +
+                ", command=" + event.getFullCommandName() +
                 ", options=" + event.getOptions() +
                 '}';
     }

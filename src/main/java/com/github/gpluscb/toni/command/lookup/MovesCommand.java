@@ -20,14 +20,14 @@ import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.selections.SelectMenu;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
+import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
@@ -345,7 +345,8 @@ public class MovesCommand implements Command {
             if (hopsAutocancel != null) fields.add(new EmbedUtil.InlineField("Autocancels on", hopsAutocancel));
 
             String hopsActionable = move.hopsActionable();
-            if (hopsActionable != null) fields.add(new EmbedUtil.InlineField("Actionable before landing", hopsActionable));
+            if (hopsActionable != null)
+                fields.add(new EmbedUtil.InlineField("Actionable before landing", hopsActionable));
 
             String whichHitbox = move.whichHitbox();
             if (whichHitbox != null) fields.add(new EmbedUtil.InlineField("Info about which hitbox?", whichHitbox));
@@ -459,19 +460,19 @@ public class MovesCommand implements Command {
         private List<ActionRow> prepareActionRows() {
             List<ActionRow> actionRows = new ArrayList<>(3);
 
-            actionRows.add(ActionRow.of(SelectMenu.create(sectionMenuId).addOptions(currentSectionOptions()).build()));
-            actionRows.add(ActionRow.of(SelectMenu.create(moveMenuId).addOptions(currentMoveOptions()).build()));
+            actionRows.add(ActionRow.of(StringSelectMenu.create(sectionMenuId).addOptions(currentSectionOptions()).build()));
+            actionRows.add(ActionRow.of(StringSelectMenu.create(moveMenuId).addOptions(currentMoveOptions()).build()));
 
             List<SelectOption> hitboxOptions = currentHitboxOptions();
             if (!hitboxOptions.isEmpty())
-                actionRows.add(ActionRow.of(SelectMenu.create(hitboxMenuId).addOptions(currentHitboxOptions()).build()));
+                actionRows.add(ActionRow.of(StringSelectMenu.create(hitboxMenuId).addOptions(currentHitboxOptions()).build()));
 
             return actionRows;
         }
 
         private synchronized void awaitEvents(@Nonnull Message message) {
             messageId = message.getIdLong();
-            waiter.waitForEvent(SelectMenuInteractionEvent.class,
+            waiter.waitForEvent(StringSelectInteractionEvent.class,
                     e -> {
                         if (checkSelection(e)) handleSelection(e);
                         // Return false to endlessly keep awaiting until timeout
@@ -483,7 +484,7 @@ public class MovesCommand implements Command {
             );
         }
 
-        private boolean checkSelection(@Nonnull SelectMenuInteractionEvent e) {
+        private boolean checkSelection(@Nonnull StringSelectInteractionEvent e) {
             String id = e.getComponentId();
             return messageId != null // Should never be null here but still
                     && e.getMessageIdLong() == messageId
@@ -493,7 +494,7 @@ public class MovesCommand implements Command {
                     || id.equals(hitboxMenuId));
         }
 
-        private void handleSelection(@Nonnull SelectMenuInteractionEvent e) {
+        private void handleSelection(@Nonnull StringSelectInteractionEvent e) {
             e.deferEdit().queue();
             String id = e.getComponentId();
             String value = e.getValues().get(0); // We require exactly one selection

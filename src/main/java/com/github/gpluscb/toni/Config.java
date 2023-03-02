@@ -3,7 +3,6 @@ package com.github.gpluscb.toni;
 import javax.annotation.Nonnull;
 
 public record Config(@Nonnull String ggToken, @Nonnull String discordToken,
-                     @Nonnull String challongeUsername, @Nonnull String challongeToken,
                      @Nonnull String dbotsToken, boolean mockBotLists,
                      @Nonnull String inviteUrl, long botId, @Nonnull String supportServer,
                      @Nonnull String twitterHandle, @Nonnull String github, long devId,
@@ -13,8 +12,6 @@ public record Config(@Nonnull String ggToken, @Nonnull String discordToken,
     @SuppressWarnings("ConstantConditions")
     public void check() {
         if (ggToken == null) throw new IllegalStateException("ggToken may not be null");
-        if (challongeUsername == null) throw new IllegalStateException("challongeUsername may not be null");
-        if (challongeToken == null) throw new IllegalStateException("challongeToken may not be null");
         if (discordToken == null) throw new IllegalStateException("discordToken may not be null");
         if (dbotsToken == null) throw new IllegalStateException("dbotsToken may not be null");
         if (inviteUrl == null) throw new IllegalStateException("inviteUrl may not be null");

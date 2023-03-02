@@ -109,8 +109,8 @@ public class TournamentCommand implements Command {
                 .setStart(pages.getCurrent());
 
         if (tournaments.size() > 1) {
-            menuBuilder.registerButton(Emoji.fromUnicode(Constants.ARROW_BACKWARD), pages::nextTournament)
-                    .registerButton(Emoji.fromUnicode(Constants.ARROW_FORWARD), pages::prevTournament);
+            menuBuilder.registerButton(Emoji.fromUnicode(Constants.ARROW_BACKWARD), pages::prevTournament)
+                    .registerButton(Emoji.fromUnicode(Constants.ARROW_FORWARD), pages::nextTournament);
         }
 
         ReactionActionMenu menu = menuBuilder.build();

@@ -551,7 +551,7 @@ public class MovesCommand implements Command {
 
             for (int i = 0; i < sections.size(); i++) {
                 CharacterData.MoveSection section = sections.get(i);
-                ret.add(SelectOption.of(StringUtils.abbreviate(section.sectionName(), LABEL_MAX_LENGTH), String.valueOf(i)).withDefault(i == sectionPage));
+                ret.add(SelectOption.of(StringUtils.abbreviate(section.sectionName().replaceAll("\\\\", ""), LABEL_MAX_LENGTH), String.valueOf(i)).withDefault(i == sectionPage));
             }
 
             ret.add(SelectOption.of("Misc", "-1").withDefault(-1 == sectionPage));
@@ -565,8 +565,11 @@ public class MovesCommand implements Command {
 
             for (int i = 0; i < moves.size(); i++) {
                 String moveName = moves.get(i).moveName();
+                moveName = moveName == null ?
+                        "Unknown Move"
+                        : StringUtils.abbreviate(moveName, LABEL_MAX_LENGTH).replaceAll("\\\\", "");
                 ret.add(
-                        SelectOption.of(moveName == null ? "Unknown Move" : StringUtils.abbreviate(moveName, LABEL_MAX_LENGTH), String.valueOf(i))
+                        SelectOption.of(moveName, String.valueOf(i))
                                 .withDefault(i == movePage)
                 );
             }

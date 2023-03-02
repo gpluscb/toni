@@ -24,7 +24,10 @@ public record CharacterData(@Nonnull @SerializedName("ufd_url") String ufdUrl, @
             @Nullable @SerializedName("shield_lag") String shieldLag,
             @SerializedName("shield_stun") @Nullable String shieldStun,
             @Nullable @SerializedName("which_hitbox") String whichHitbox, @Nullable String advantage,
-            @Nullable @SerializedName("active_frames") String activeFrames) {
+            @Nullable @SerializedName("active_frames") String activeFrames,
+            @Nullable @SerializedName("hops_autocancel") String hopsAutocancel,
+            @Nullable @SerializedName("hops_actionable") String hopsActionable,
+            @Nullable String endlag) {
     }
 
     public record HitboxData(@Nullable String name, @Nonnull String url) {

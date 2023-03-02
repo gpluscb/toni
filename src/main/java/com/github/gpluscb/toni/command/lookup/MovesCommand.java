@@ -338,6 +338,15 @@ public class MovesCommand implements Command {
             String activeFrames = move.activeFrames();
             if (activeFrames != null) fields.add(new EmbedUtil.InlineField("Active Frames", activeFrames));
 
+            String endlag = move.endlag();
+            if (endlag != null) fields.add(new EmbedUtil.InlineField("Endlag", endlag));
+
+            String hopsAutocancel = move.hopsAutocancel();
+            if (hopsAutocancel != null) fields.add(new EmbedUtil.InlineField("Autocancels on", hopsAutocancel));
+
+            String hopsActionable = move.hopsActionable();
+            if (hopsActionable != null) fields.add(new EmbedUtil.InlineField("Actionable before landing", hopsActionable));
+
             String whichHitbox = move.whichHitbox();
             if (whichHitbox != null) fields.add(new EmbedUtil.InlineField("Info about which hitbox?", whichHitbox));
 

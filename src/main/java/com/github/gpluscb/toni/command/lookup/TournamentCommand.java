@@ -192,16 +192,31 @@ public class TournamentCommand implements Command {
         ListResponse<EventResponse> events = tournament.getEvents();
 
         if (events != null && !events.isEmpty()) {
-            builder.addField("Events", events.stream().filter(Objects::nonNull).map(event -> {
+            StringBuilder currentField = new StringBuilder();
+
+            for (EventResponse event : events) {
+                if (event == null) continue;
+
                 StringResponse eventName = event.getName();
                 String eventNameValue = eventName == null ? "\\[not named\\]" : eventName.getValue();
 
                 StringResponse eventSlug = event.getSlug();
 
-                return eventSlug == null ?
+                String eventString = eventSlug == null ?
                         String.format("• `%s`", eventNameValue) :
                         String.format("• [`%s`](https://start.gg/%s)", eventNameValue, eventSlug.getValue());
-            }).collect(Collectors.joining("\n")), false);
+
+                if (currentField.length() + eventString.length() > MessageEmbed.VALUE_MAX_LENGTH) {
+                    builder.addField("Events", currentField.toString().stripTrailing(), true);
+                    currentField = new StringBuilder();
+                } else {
+                    currentField.append(eventString);
+                    currentField.append('\n');
+                }
+            }
+
+            if (!currentField.isEmpty())
+                builder.addField("Events", currentField.toString().stripTrailing(), true);
         }
 
         return builder;

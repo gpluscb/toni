@@ -61,8 +61,8 @@ public class TournamentCommand implements Command {
 
         ctx.getEvent().deferReply().queue();
 
-        // more than 15 -> risk of query complexiy
-        ggManager.searchTouranmentsByName(searchTerm, 15, 8).whenComplete(FailLogger.logFail((response, t) -> {
+        // more than 7 -> risk of query complexiy
+        ggManager.searchTouranmentsByName(searchTerm, 7, 8).whenComplete(FailLogger.logFail((response, t) -> {
             try {
                 if (t != null) {
                     ctx.reply("The request to start.gg failed. Tell my dev if this happens a lot - I've already annoyed them about it, but it can't hurt to give them some more context.").queue();

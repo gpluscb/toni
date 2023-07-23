@@ -118,6 +118,9 @@ public class GGManager implements GGClient {
      */
     @Nonnull
     private static List<TournamentResponse> deserializeTournamentsWorkaroundResponse(@Nonnull JsonObject response) throws DeserializationException {
+        if (response.has("errors"))
+            throw new IllegalArgumentException("Response had errors: " + response);
+
         List<TournamentResponse> ret = new ArrayList<>();
 
         // It's fine if we throw here on error response I think
@@ -169,7 +172,7 @@ public class GGManager implements GGClient {
             lightVariables.addProperty("id", Long.parseLong(filteredTerm));
         } catch (NumberFormatException ignored) {
         }
-        lightVariables.addProperty("numTournaments", 100);
+        lightVariables.addProperty("numTournaments", Math.max(Math.min(numTournaments, 100), numTournaments * 3));
 
         return query(LIGHT_TOURNAMENTS_QUERY, lightVariables).<OneOfTwo<List<Long>, GGResponse<QueryResponse>>>thenApply(response ->
                 response.map(OneOfTwo::ofU, success -> {

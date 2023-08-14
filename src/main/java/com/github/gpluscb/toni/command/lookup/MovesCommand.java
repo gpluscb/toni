@@ -299,7 +299,7 @@ public class MovesCommand implements Command {
                     fields.add(new EmbedUtil.InlineField("", oosOptions.get(i)));
 
                 String shieldGrab = stats.shieldGrab();
-                if (shieldGrab != null) fields.add(new EmbedUtil.InlineField("Shield Grab", shieldGrab));
+                if (shieldGrab != null) fields.add(new EmbedUtil.InlineField("Shield Grab (after shieldstun)", shieldGrab));
 
                 String shieldDrop = stats.shieldDrop();
                 if (shieldDrop != null) fields.add(new EmbedUtil.InlineField("Shield Drop", shieldDrop));

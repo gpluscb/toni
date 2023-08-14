@@ -120,9 +120,17 @@ public class SelectionActionMenu extends ActionMenu {
     }
 
     private boolean checkSelection(@Nonnull StringSelectInteractionEvent e, long messageId) {
-        return e.getMessageIdLong() == messageId
-                && e.getComponentId().equals(settings.id())
-                && isValidUser(e.getUser().getIdLong());
+        if (e.getMessageIdLong() != messageId
+                || !e.getComponentId().equals(settings.id())) {
+            return false;
+        }
+
+        if (!isValidUser(e.getUser().getIdLong())) {
+            e.reply("You cannot use this interaction.").setEphemeral(true).queue();
+            return false;
+        }
+
+        return true;
     }
 
     @Nonnull

@@ -143,12 +143,21 @@ public class ButtonActionMenu extends ActionMenu {
 
     private boolean checkButtonClick(@Nonnull ButtonInteractionEvent e, long messageId) {
         if (e.getMessageIdLong() != messageId) return false;
-        if (!isValidUser(e.getUser().getIdLong())) return false;
 
         String buttonId = e.getComponentId();
         Button deletionButton = settings.deletionButton();
-        return buttonActions.containsKey(buttonId) ||
-                (deletionButton != null && buttonId.equals(deletionButton.getId()));
+
+        if (!buttonActions.containsKey(buttonId) &&
+                !(deletionButton != null && buttonId.equals(deletionButton.getId()))) {
+            return false;
+        }
+
+        if (!isValidUser(e.getUser().getIdLong())) {
+            e.reply("You cannot use this interaction.").setEphemeral(true).queue();
+            return false;
+        }
+
+        return true;
     }
 
     @Nonnull

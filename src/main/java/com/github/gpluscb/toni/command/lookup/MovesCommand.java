@@ -486,12 +486,19 @@ public class MovesCommand implements Command {
 
         private boolean checkSelection(@Nonnull StringSelectInteractionEvent e) {
             String id = e.getComponentId();
-            return messageId != null // Should never be null here but still
-                    && e.getMessageIdLong() == messageId
-                    && e.getUser().getIdLong() == user
-                    && (id.equals(sectionMenuId)
+
+            if (messageId == null || e.getMessageIdLong() != messageId || !(id.equals(sectionMenuId)
                     || id.equals(moveMenuId)
-                    || id.equals(hitboxMenuId));
+                    || id.equals(hitboxMenuId))) {
+                return false;
+            }
+
+            if (e.getUser().getIdLong() == user) {
+                e.reply("You cannot use this interaction.").queue();
+                return false;
+            }
+
+            return true;
         }
 
         private void handleSelection(@Nonnull StringSelectInteractionEvent e) {

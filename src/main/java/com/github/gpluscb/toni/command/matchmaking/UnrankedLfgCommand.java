@@ -3,7 +3,7 @@ package com.github.gpluscb.toni.command.matchmaking;
 import com.github.gpluscb.toni.command.Command;
 import com.github.gpluscb.toni.command.CommandContext;
 import com.github.gpluscb.toni.command.CommandInfo;
-import com.github.gpluscb.toni.matchmaking.UnrankedManager;
+import com.github.gpluscb.toni.db.DBManager;
 import com.github.gpluscb.toni.menu.ActionMenu;
 import com.github.gpluscb.toni.menu.ButtonActionMenu;
 import com.github.gpluscb.toni.util.Constants;
@@ -39,14 +39,14 @@ public class UnrankedLfgCommand implements Command {
     private static final Logger log = LogManager.getLogger(UnrankedLfgCommand.class);
 
     @Nonnull
-    private final UnrankedManager manager;
+    private final DBManager manager;
     @Nonnull
     private final EventWaiter waiter;
 
     @Nonnull
     private final Set<PairNonnull<Long, Long>> currentlyLfgPerGuild;
 
-    public UnrankedLfgCommand(@Nonnull UnrankedManager manager, @Nonnull EventWaiter waiter) {
+    public UnrankedLfgCommand(@Nonnull DBManager manager, @Nonnull EventWaiter waiter) {
         this.manager = manager;
         this.waiter = waiter;
         currentlyLfgPerGuild = new HashSet<>();
@@ -61,7 +61,7 @@ public class UnrankedLfgCommand implements Command {
 
         Guild guild = ctx.getEvent().getGuild();
 
-        UnrankedManager.MatchmakingConfig config;
+        DBManager.MatchmakingConfig config;
         try {
             // Already checked for isFromGuild
             //noinspection ConstantConditions

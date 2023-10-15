@@ -19,7 +19,7 @@ import com.github.gpluscb.toni.command.lookup.TournamentCommand;
 import com.github.gpluscb.toni.command.matchmaking.AvailableCommand;
 import com.github.gpluscb.toni.command.matchmaking.UnrankedConfigCommand;
 import com.github.gpluscb.toni.command.matchmaking.UnrankedLfgCommand;
-import com.github.gpluscb.toni.matchmaking.UnrankedManager;
+import com.github.gpluscb.toni.db.DBManager;
 import com.github.gpluscb.toni.smashdata.SmashdataManager;
 import com.github.gpluscb.toni.smashset.CharacterTree;
 import com.github.gpluscb.toni.smashset.Ruleset;
@@ -84,7 +84,7 @@ public class Bot {
     @Nonnull
     private final SmashdataManager smashdata;
     @Nonnull
-    private final UnrankedManager unrankedManager;
+    private final DBManager DBManager;
     @Nonnull
     private final ScheduledExecutorService waiterPool;
     @Nonnull
@@ -184,7 +184,7 @@ public class Bot {
 
         log.trace("Loading unranked manager");
         try {
-            unrankedManager = new UnrankedManager(cfg.stateDbLocation());
+            DBManager = new DBManager(cfg.stateDbLocation());
         } catch (SQLException e) {
             log.error("Exception while loading unranked manager - shutting down", e);
             ggManager.shutdown();
@@ -200,7 +200,7 @@ public class Bot {
         } catch (Exception e) {
             log.error("Exception while loading rulesets - shutting down", e);
             ggManager.shutdown();
-            unrankedManager.shutdown();
+            DBManager.shutdown();
             waiterPool.shutdownNow();
             throw e;
         }
@@ -211,7 +211,7 @@ public class Bot {
         } catch (SQLException e) {
             log.error("Exception while loading smashdata - shutting down", e);
             ggManager.shutdown();
-            unrankedManager.shutdown();
+            DBManager.shutdown();
             waiterPool.shutdownNow();
             throw e;
         }
@@ -253,7 +253,7 @@ public class Bot {
         } catch (Exception e) {
             log.error("LoginException - shutting down", e);
             ggManager.shutdown();
-            unrankedManager.shutdown();
+            DBManager.shutdown();
             waiterPool.shutdownNow();
             throw e;
         }
@@ -313,7 +313,7 @@ public class Bot {
         gameCommands.add(new RPSCommand(waiter));
         gameCommands.add(new BlindPickCommand(waiter, characterTree));
         gameCommands.add(new StrikeStagesCommand(waiter, rulesets));
-        gameCommands.add(new CounterpickStagesCommand(waiter, rulesets));
+        gameCommands.add(new CounterpickStagesCommand(waiter, manager, rulesets));
         gameCommands.add(new SmashSetCommand(waiter, rulesets, characterTree));
         gameCommands.add(new RulesetsCommand(waiter, rulesets));
         commands.add(new CommandCategory("game", "Smash Bros. utility commands", gameCommands));
@@ -325,9 +325,9 @@ public class Bot {
         commands.add(new CommandCategory("lookup", "Lookup commands for other websites", lookupCommands));
 
         List<Command> matchmakingCommands = new ArrayList<>();
-        matchmakingCommands.add(new UnrankedConfigCommand(unrankedManager));
-        matchmakingCommands.add(new AvailableCommand(unrankedManager));
-        matchmakingCommands.add(new UnrankedLfgCommand(unrankedManager, waiter));
+        matchmakingCommands.add(new UnrankedConfigCommand(DBManager));
+        matchmakingCommands.add(new AvailableCommand(DBManager));
+        matchmakingCommands.add(new UnrankedLfgCommand(DBManager, waiter));
         commands.add(new CommandCategory("matchmaking", "Commands for matchmaking", matchmakingCommands));
 
         return commands;
@@ -356,7 +356,7 @@ public class Bot {
         }
 
         try {
-            unrankedManager.shutdown();
+            DBManager.shutdown();
         } catch (SQLException e) {
             log.catching(e);
         }

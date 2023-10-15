@@ -1,4 +1,4 @@
-package com.github.gpluscb.toni.matchmaking;
+package com.github.gpluscb.toni.db;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -7,15 +7,32 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public class UnrankedManager {
+public class DBManager {
     @Nonnull
     private final Connection connection;
     @Nonnull
     private final Map<Long, MatchmakingConfig> matchmakingConfigCache;
 
-    public UnrankedManager(@Nonnull String dbLocation) throws SQLException {
+    public DBManager(@Nonnull String dbLocation) throws SQLException {
         connection = DriverManager.getConnection("jdbc:sqlite:" + dbLocation);
         matchmakingConfigCache = Collections.synchronizedMap(new HashMap<>());
+    }
+
+    @Nullable
+    public Long loadForcedRuleset(long guildId) throws SQLException {
+        PreparedStatement statement = connection.prepareStatement("SELECT forced_ruleset FROM guild_preferences WHERE guild_id = ?");
+        statement.setQueryTimeout(10);
+
+        statement.setLong(1, guildId);
+
+        ResultSet rs = statement.executeQuery();
+
+        if (rs.isClosed()) return null;
+
+        Long ruleset = rs.getLong("forced_ruleset");
+        if (rs.wasNull()) ruleset = null;
+
+        return ruleset;
     }
 
     @Nullable

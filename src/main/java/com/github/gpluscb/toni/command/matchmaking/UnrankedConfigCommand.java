@@ -3,7 +3,7 @@ package com.github.gpluscb.toni.command.matchmaking;
 import com.github.gpluscb.toni.command.Command;
 import com.github.gpluscb.toni.command.CommandContext;
 import com.github.gpluscb.toni.command.CommandInfo;
-import com.github.gpluscb.toni.matchmaking.UnrankedManager;
+import com.github.gpluscb.toni.db.DBManager;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
@@ -23,9 +23,9 @@ public class UnrankedConfigCommand implements Command {
     private static final Logger log = LogManager.getLogger(UnrankedConfigCommand.class);
 
     @Nonnull
-    private final UnrankedManager manager;
+    private final DBManager manager;
 
-    public UnrankedConfigCommand(@Nonnull UnrankedManager manager) {
+    public UnrankedConfigCommand(@Nonnull DBManager manager) {
         this.manager = manager;
     }
 
@@ -84,7 +84,7 @@ public class UnrankedConfigCommand implements Command {
             channelId = channelMapping.getAsChannel().getIdLong();
         }
 
-        UnrankedManager.MatchmakingConfig config = new UnrankedManager.MatchmakingConfig(roleId, channelId);
+        DBManager.MatchmakingConfig config = new DBManager.MatchmakingConfig(roleId, channelId);
 
         try {
             // TODO: You know maybe it would be nice to have an upsert here
@@ -164,7 +164,7 @@ public class UnrankedConfigCommand implements Command {
             }
 
             // If not present, create:
-            manager.storeMatchmakingConfig(guildId, new UnrankedManager.MatchmakingConfig(roleId, null));
+            manager.storeMatchmakingConfig(guildId, new DBManager.MatchmakingConfig(roleId, null));
 
             ctx.reply("I have now set up unranked matchmaking with the given role." +
                     " If you want to restrict the matchmaking to a specific channel, use `/unrankedconfig channel [channel mention]`").queue();

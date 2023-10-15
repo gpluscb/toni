@@ -3,7 +3,7 @@ package com.github.gpluscb.toni.command.matchmaking;
 import com.github.gpluscb.toni.command.Command;
 import com.github.gpluscb.toni.command.CommandContext;
 import com.github.gpluscb.toni.command.CommandInfo;
-import com.github.gpluscb.toni.matchmaking.UnrankedManager;
+import com.github.gpluscb.toni.db.DBManager;
 import com.github.gpluscb.toni.util.MiscUtil;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
@@ -31,12 +31,12 @@ public class AvailableCommand implements Command {
     private static final Logger log = LogManager.getLogger(AvailableCommand.class);
 
     @Nonnull
-    private final UnrankedManager manager;
+    private final DBManager manager;
 
     @Nonnull
     private final Map<Long, ScheduledFuture<?>> scheduledRoleRemovals;
 
-    public AvailableCommand(@Nonnull UnrankedManager manager) {
+    public AvailableCommand(@Nonnull DBManager manager) {
         this.manager = manager;
         scheduledRoleRemovals = new HashMap<>();
     }
@@ -52,7 +52,7 @@ public class AvailableCommand implements Command {
         @SuppressWarnings("ConstantConditions") // Checked for isFromGuild already
         long guildId = guild.getIdLong();
         try {
-            UnrankedManager.MatchmakingConfig config = manager.loadMatchmakingConfig(guildId);
+            DBManager.MatchmakingConfig config = manager.loadMatchmakingConfig(guildId);
             if (config == null) {
                 ctx.reply("Looks like matchmaking isn't set up in this server. Moderators can use the `unrankedcfg` command to set it up.").queue();
                 return;

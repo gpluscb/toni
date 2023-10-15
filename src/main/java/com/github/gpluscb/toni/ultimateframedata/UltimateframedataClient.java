@@ -3,7 +3,6 @@ package com.github.gpluscb.toni.ultimateframedata;
 import com.github.gpluscb.toni.util.FailLogger;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import okhttp3.OkHttpClient;
 import retrofit2.Call;
 import retrofit2.Callback;

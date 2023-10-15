@@ -7,6 +7,7 @@ import com.github.gpluscb.toni.command.menu.BanPickStagesMenu;
 import com.github.gpluscb.toni.command.menu.BanStagesMenu;
 import com.github.gpluscb.toni.command.menu.PickStageMenu;
 import com.github.gpluscb.toni.command.menu.RulesetSelectMenu;
+import com.github.gpluscb.toni.db.DBManager;
 import com.github.gpluscb.toni.menu.ActionMenu;
 import com.github.gpluscb.toni.menu.TwoUsersChoicesActionMenu;
 import com.github.gpluscb.toni.smashset.Ruleset;
@@ -23,27 +24,57 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 import net.dv8tion.jda.api.utils.messages.MessageCreateData;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
+import java.sql.SQLException;
 import java.util.List;
 
 public class CounterpickStagesCommand implements Command {
+    private static final Logger log = LogManager.getLogger(CounterpickStagesCommand.class);
+
     @Nonnull
     private final EventWaiter waiter;
     @Nonnull
+    private final DBManager manager;
+    @Nonnull
     private final List<Ruleset> rulesets;
 
-    public CounterpickStagesCommand(@Nonnull EventWaiter waiter, @Nonnull List<Ruleset> rulesets) {
+    public CounterpickStagesCommand(@Nonnull EventWaiter waiter, @Nonnull DBManager manager, @Nonnull List<Ruleset> rulesets) {
         this.waiter = waiter;
+        this.manager = manager;
         this.rulesets = rulesets;
     }
 
     @Override
     public void execute(@Nonnull CommandContext ctx) {
+        long guildId;
+        if (ctx.getEvent().isFromGuild()) {
+            //noinspection DataFlowIssue
+            guildId = ctx.getEvent().getGuild().getIdLong();
+        } else {
+            ctx.reply("This command does not work in DMs.").queue();
+            return;
+        }
+
         long banningUser;
         long pickingUser;
-        // TODO: Server default ruleset
-        Ruleset ruleset = null;
+        Ruleset ruleset;
+        try {
+            Long rulesetId = manager.loadForcedRuleset(guildId);
+            if (rulesetId == null) {
+                ruleset = null;
+            } else {
+                ruleset = rulesets.stream().filter(ruleset_ -> ruleset_.rulesetId() == rulesetId).findAny().orElse(null);
+                if (ruleset == null) {
+                    log.error("Guild {} has invalid forced ruleset {}", guildId, rulesetId);
+                }
+            }
+        } catch (SQLException e) {
+            log.catching(e);
+            ruleset = null;
+        }
 
         banningUser = ctx.getOptionNonNull("banning-user").getAsUser().getIdLong();
 

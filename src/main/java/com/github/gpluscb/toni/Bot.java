@@ -312,9 +312,9 @@ public class Bot {
         gameCommands.add(new RandomPlayerCommand());
         gameCommands.add(new RPSCommand(waiter));
         gameCommands.add(new BlindPickCommand(waiter, characterTree));
-        gameCommands.add(new StrikeStagesCommand(waiter, rulesets));
+        gameCommands.add(new StrikeStagesCommand(waiter, dbManager, rulesets));
         gameCommands.add(new CounterpickStagesCommand(waiter, dbManager, rulesets));
-        gameCommands.add(new SmashSetCommand(waiter, rulesets, characterTree));
+        gameCommands.add(new SmashSetCommand(waiter, dbManager, rulesets, characterTree));
         gameCommands.add(new RulesetsCommand(waiter, rulesets));
         commands.add(new CommandCategory("game", "Smash Bros. utility commands", gameCommands));
 

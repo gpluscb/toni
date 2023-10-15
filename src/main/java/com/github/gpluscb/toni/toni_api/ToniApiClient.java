@@ -31,7 +31,7 @@ public class ToniApiClient {
     @Nonnull
     private final ToniApiService service;
 
-    public ToniApiClient(HttpUrl baseUrl, String token, @Nonnull OkHttpClient client, @Nonnull Gson gson) {
+    public ToniApiClient(@Nonnull HttpUrl baseUrl, @Nonnull String token, @Nonnull OkHttpClient client, @Nonnull Gson gson) {
         Executor callbackExecutor = Executors.newCachedThreadPool(new ThreadFactory() {
             int i;
 

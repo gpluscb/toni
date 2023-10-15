@@ -5,6 +5,7 @@ import com.github.gpluscb.toni.command.CommandContext;
 import com.github.gpluscb.toni.command.CommandInfo;
 import com.github.gpluscb.toni.command.menu.RulesetSelectMenu;
 import com.github.gpluscb.toni.command.menu.SmashSetMenu;
+import com.github.gpluscb.toni.db.DBManager;
 import com.github.gpluscb.toni.menu.ActionMenu;
 import com.github.gpluscb.toni.menu.TwoUsersChoicesActionMenu;
 import com.github.gpluscb.toni.smashset.Character;
@@ -27,6 +28,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -36,21 +38,48 @@ public class SmashSetCommand implements Command {
     @Nonnull
     private final EventWaiter waiter;
     @Nonnull
+    private final DBManager manager;
+    @Nonnull
     private final List<Ruleset> rulesets;
     @Nonnull
     private final List<Character> characters;
 
-    public SmashSetCommand(@Nonnull EventWaiter waiter, @Nonnull List<Ruleset> rulesets, @Nonnull CharacterTree characterTree) {
+    public SmashSetCommand(@Nonnull EventWaiter waiter, @Nonnull DBManager manager, @Nonnull List<Ruleset> rulesets, @Nonnull CharacterTree characterTree) {
         this.waiter = waiter;
+        this.manager = manager;
         this.rulesets = rulesets;
         this.characters = characterTree.getAllCharacters();
     }
 
     @Override
     public void execute(@Nonnull CommandContext ctx) {
+        long guildId;
+        if (ctx.getEvent().isFromGuild()) {
+            //noinspection DataFlowIssue
+            guildId = ctx.getEvent().getGuild().getIdLong();
+        } else {
+            ctx.reply("This command does not work in DMs.").queue();
+            return;
+        }
+
         User user1;
         User user2;
-        Ruleset ruleset = null; // TODO: Default ruleset
+        Ruleset ruleset;
+        try {
+            Long rulesetId = manager.loadForcedRuleset(guildId);
+            if (rulesetId == null) {
+                ruleset = null;
+            } else {
+                ruleset = rulesets.stream().filter(ruleset_ -> ruleset_.rulesetId() == rulesetId).findAny().orElse(null);
+                if (ruleset == null) {
+                    log.error("Guild {} has invalid forced ruleset {}", guildId, rulesetId);
+                }
+            }
+        } catch (SQLException e) {
+            log.catching(e);
+            ruleset = null;
+        }
+
         int bestOfWhat = 3;
 
         user1 = ctx.getOptionNonNull("player-1").getAsUser();

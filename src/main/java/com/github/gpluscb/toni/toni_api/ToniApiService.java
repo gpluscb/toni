@@ -2,7 +2,6 @@ package com.github.gpluscb.toni.toni_api;
 
 import com.github.gpluscb.toni.toni_api.model.GuildUserResponse;
 import com.github.gpluscb.toni.toni_api.model.SetIdResponse;
-import com.github.gpluscb.toni.toni_api.model.SimplePostResponse;
 import com.github.gpluscb.toni.toni_api.model.SmashSet;
 import retrofit2.Call;
 import retrofit2.http.Body;
@@ -11,7 +10,6 @@ import retrofit2.http.POST;
 import retrofit2.http.Path;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 
 public interface ToniApiService {
@@ -37,5 +35,5 @@ public interface ToniApiService {
 
     @POST("ranking/games/register.json")
     @Nonnull
-    Call<SetIdResponse> registerRatedSet(@Body SmashSet set);
+    Call<SetIdResponse> registerRatedSet(@Body @Nonnull SmashSet set);
 }

@@ -514,6 +514,33 @@
       ],
       "stageBeforeCharacter": true,
       "blindPickBeforeStage": true
+    },
+    {
+      "rulesetId": 16,
+      "name": "Smash Chile Ruleset",
+      "shortDescription": "The ruleset commonly used in Chile",
+      "url": "https://twitter.com/mandingasbc/status/1562559749228441601",
+      "starterIds": [
+        0,
+        1,
+        2,
+        3,
+        5
+      ],
+      "counterpickIds": [
+        6,
+        8,
+        14
+      ],
+      "dsrMode": "NONE",
+      "stageBans": 3,
+      "starterStrikePattern": [
+        1,
+        2,
+        1
+      ],
+      "stageBeforeCharacter": true,
+      "blindPickBeforeStage": true
     }
   ]
 }

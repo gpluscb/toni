@@ -84,7 +84,7 @@ public class Bot {
     @Nonnull
     private final SmashdataManager smashdata;
     @Nonnull
-    private final DBManager DBManager;
+    private final DBManager dbManager;
     @Nonnull
     private final ScheduledExecutorService waiterPool;
     @Nonnull
@@ -184,7 +184,7 @@ public class Bot {
 
         log.trace("Loading unranked manager");
         try {
-            DBManager = new DBManager(cfg.stateDbLocation());
+            dbManager = new DBManager(cfg.stateDbLocation());
         } catch (SQLException e) {
             log.error("Exception while loading unranked manager - shutting down", e);
             ggManager.shutdown();
@@ -200,7 +200,7 @@ public class Bot {
         } catch (Exception e) {
             log.error("Exception while loading rulesets - shutting down", e);
             ggManager.shutdown();
-            DBManager.shutdown();
+            dbManager.shutdown();
             waiterPool.shutdownNow();
             throw e;
         }
@@ -211,7 +211,7 @@ public class Bot {
         } catch (SQLException e) {
             log.error("Exception while loading smashdata - shutting down", e);
             ggManager.shutdown();
-            DBManager.shutdown();
+            dbManager.shutdown();
             waiterPool.shutdownNow();
             throw e;
         }
@@ -253,7 +253,7 @@ public class Bot {
         } catch (Exception e) {
             log.error("LoginException - shutting down", e);
             ggManager.shutdown();
-            DBManager.shutdown();
+            dbManager.shutdown();
             waiterPool.shutdownNow();
             throw e;
         }
@@ -291,7 +291,7 @@ public class Bot {
     }
 
     @Nonnull
-    private List<CommandCategory> loadCommands(@Nonnull UltimateframedataClient ufdClient, @Nonnull EventWaiter waiter, /*@Nonnull ChallongeExtension challonge, @Nonnull TournamentListener listener, */@Nonnull CharacterTree characterTree, @Nonnull List<Ruleset> rulesets) {
+    private List<CommandCategory> loadCommands(@Nonnull UltimateframedataClient ufdClient, @Nonnull EventWaiter waiter, @Nonnull CharacterTree characterTree, @Nonnull List<Ruleset> rulesets) {
         List<CommandCategory> commands = new ArrayList<>();
 
         List<Command> adminCommands = new ArrayList<>();
@@ -313,7 +313,7 @@ public class Bot {
         gameCommands.add(new RPSCommand(waiter));
         gameCommands.add(new BlindPickCommand(waiter, characterTree));
         gameCommands.add(new StrikeStagesCommand(waiter, rulesets));
-        gameCommands.add(new CounterpickStagesCommand(waiter, manager, rulesets));
+        gameCommands.add(new CounterpickStagesCommand(waiter, dbManager, rulesets));
         gameCommands.add(new SmashSetCommand(waiter, rulesets, characterTree));
         gameCommands.add(new RulesetsCommand(waiter, rulesets));
         commands.add(new CommandCategory("game", "Smash Bros. utility commands", gameCommands));
@@ -325,9 +325,9 @@ public class Bot {
         commands.add(new CommandCategory("lookup", "Lookup commands for other websites", lookupCommands));
 
         List<Command> matchmakingCommands = new ArrayList<>();
-        matchmakingCommands.add(new UnrankedConfigCommand(DBManager));
-        matchmakingCommands.add(new AvailableCommand(DBManager));
-        matchmakingCommands.add(new UnrankedLfgCommand(DBManager, waiter));
+        matchmakingCommands.add(new UnrankedConfigCommand(dbManager));
+        matchmakingCommands.add(new AvailableCommand(dbManager));
+        matchmakingCommands.add(new UnrankedLfgCommand(dbManager, waiter));
         commands.add(new CommandCategory("matchmaking", "Commands for matchmaking", matchmakingCommands));
 
         return commands;
@@ -356,7 +356,7 @@ public class Bot {
         }
 
         try {
-            DBManager.shutdown();
+            dbManager.shutdown();
         } catch (SQLException e) {
             log.catching(e);
         }

@@ -493,7 +493,7 @@ public class MovesCommand implements Command {
                 return false;
             }
 
-            if (e.getUser().getIdLong() == user) {
+            if (e.getUser().getIdLong() != user) {
                 e.reply("You cannot use this interaction.").queue();
                 return false;
             }

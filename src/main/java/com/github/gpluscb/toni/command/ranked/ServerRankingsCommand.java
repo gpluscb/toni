@@ -71,7 +71,7 @@ public class ServerRankingsCommand implements Command {
                             StringBuilder memberName = new StringBuilder(user.getName());
                             if (member.getNickname() != null) memberName.append(" (").append(member.getNickname()).append(')');
 
-                            String fieldValue = String.format("%s - %s", memberName.toString(), userResponse.rating().display());
+                            String fieldValue = String.format("%s - %s", memberName, userResponse.rating().display());
 
                             EmbedUtil.InlineField field = new EmbedUtil.InlineField(String.valueOf(userResponse.rank()), fieldValue);
 

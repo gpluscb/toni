@@ -19,6 +19,7 @@ import com.github.gpluscb.toni.command.lookup.TournamentCommand;
 import com.github.gpluscb.toni.command.matchmaking.AvailableCommand;
 import com.github.gpluscb.toni.command.matchmaking.UnrankedConfigCommand;
 import com.github.gpluscb.toni.command.matchmaking.UnrankedLfgCommand;
+import com.github.gpluscb.toni.command.ranked.ServerRankingsCommand;
 import com.github.gpluscb.toni.db.DBManager;
 import com.github.gpluscb.toni.smashdata.SmashdataManager;
 import com.github.gpluscb.toni.smashset.CharacterTree;
@@ -30,6 +31,7 @@ import com.github.gpluscb.toni.statsposting.PostGuildRoutine;
 import com.github.gpluscb.toni.statsposting.dbots.DBotsClient;
 import com.github.gpluscb.toni.statsposting.dbots.DBotsClientMock;
 import com.github.gpluscb.toni.statsposting.dbots.StatsResponse;
+import com.github.gpluscb.toni.toni_api.ToniApiClient;
 import com.github.gpluscb.toni.ultimateframedata.UltimateframedataClient;
 import com.github.gpluscb.toni.util.discord.DiscordAppenderImpl;
 import com.github.gpluscb.toni.util.discord.ShardsLoadListener;
@@ -49,6 +51,7 @@ import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import net.dv8tion.jda.api.utils.messages.MessageRequest;
+import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -167,6 +170,9 @@ public class Bot {
             dBotsClient = new DBotsClient(cfg.dbotsToken(), okHttp, botId, gson);
         }
 
+        log.trace("Creating ToniApiClient");
+        ToniApiClient toniApi = new ToniApiClient(HttpUrl.parse("http://localhost:8080"), cfg.toniApiToken(), okHttp, gson);
+
         log.trace("Constructing post stats routine");
         postGuildRoutine = new PostGuildRoutine(dBotsClient);
 
@@ -217,7 +223,7 @@ public class Bot {
         }
 
         log.trace("Loading commands");
-        List<CommandCategory> commands = loadCommands(ufdClient, waiter, /*challonge, listener, */characterTree, rulesets);
+        List<CommandCategory> commands = loadCommands(ufdClient, waiter, toniApi, characterTree, rulesets);
 
         log.trace("Creating loadListener");
         long adminGuildId = cfg.adminGuildId();
@@ -291,7 +297,7 @@ public class Bot {
     }
 
     @Nonnull
-    private List<CommandCategory> loadCommands(@Nonnull UltimateframedataClient ufdClient, @Nonnull EventWaiter waiter, @Nonnull CharacterTree characterTree, @Nonnull List<Ruleset> rulesets) {
+    private List<CommandCategory> loadCommands(@Nonnull UltimateframedataClient ufdClient, @Nonnull EventWaiter waiter, @Nonnull ToniApiClient toniApi, @Nonnull CharacterTree characterTree, @Nonnull List<Ruleset> rulesets) {
         List<CommandCategory> commands = new ArrayList<>();
 
         List<Command> adminCommands = new ArrayList<>();
@@ -329,6 +335,10 @@ public class Bot {
         matchmakingCommands.add(new AvailableCommand(dbManager));
         matchmakingCommands.add(new UnrankedLfgCommand(dbManager, waiter));
         commands.add(new CommandCategory("matchmaking", "Commands for matchmaking", matchmakingCommands));
+
+        List<Command> rankedCommands = new ArrayList<>();
+        rankedCommands.add(new ServerRankingsCommand(toniApi));
+        commands.add(new CommandCategory("ranked", "Commands for ranked matchmaking", rankedCommands));
 
         return commands;
     }

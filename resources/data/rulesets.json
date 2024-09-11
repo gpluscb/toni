@@ -53,7 +53,7 @@
     {
       "stageId": 10,
       "stageEmoteId": 944359753864347729,
-      "name": "Yoshi's Island Brawl"
+      "name": "Yoshi's Island"
     },
     {
       "stageId": 11,
@@ -79,6 +79,31 @@
       "stageId": 15,
       "stageEmoteId": 944355710056153108,
       "name": "Fountain of Dreams"
+    },
+    {
+      "stageId": 16,
+      "stageEmoteId": 944355709972271186,
+      "name": "Dream Land"
+    },
+    {
+      "stageId": 17,
+      "stageEmoteId": 1283474327739826237,
+      "name": "Halberd"
+    },
+    {
+      "stageId": 18,
+      "stageEmoteId": 1283475384775479328,
+      "name": "Prism Tower"
+    },
+    {
+      "stageId": 19,
+      "stageEmoteId": 1283475442233249835,
+      "name": "Wily Castle"
+    },
+    {
+      "stageId": 20,
+      "stageEmoteId": 944355709074694154,
+      "name": "Skyloft"
     }
   ],
   "rulesets": [
@@ -540,6 +565,59 @@
         1
       ],
       "stageBeforeCharacter": true,
+      "blindPickBeforeStage": true
+    },
+    {
+      "rulesetId": 17,
+      "name": "Kagaribi Ruleset",
+      "shortDescription": "The ruleset for the Kagaribi tournament series",
+      "url": "https://twitter.com/SHOUTSSBU/status/1690936618050572288",
+      "starterIds": [
+        0,
+        1,
+        2,
+        8,
+        14
+      ],
+      "counterpickIds": [
+        3,
+        5
+      ],
+      "dsrMode": "NONE",
+      "stageBans": 2,
+      "starterStrikePattern": [
+        1,
+        2,
+        1
+      ],
+      "stageBeforeCharacter": true,
+      "blindPickBeforeStage": true
+    },
+    {
+      "rulesetId": 18,
+      "name": "Restock Casual Ruleset",
+      "shortDescription": "The ruleset for the casual edition of South Korean tournament series Restock",
+      "url": "https://cdn.discordapp.com/attachments/757685482443505764/1283295639320658031/ROnlineRules.png?ex=66e279b2&is=66e12832&hm=d9bbdf311afe841b991b38e3daf5d73290fffd8b61fa133397dd2afd38850ae4&",
+      "starterIds": [
+        16,
+        11,
+        10,
+        17,
+        12,
+        9,
+        18,
+        20,
+        19
+      ],
+      "counterpickIds": [],
+      "dsrMode": "NONE",
+      "stageBans": 3,
+      "starterStrikePattern": [
+        3,
+        4,
+        1
+      ],
+      "stageBeforeCharacter": false,
       "blindPickBeforeStage": true
     }
   ]
